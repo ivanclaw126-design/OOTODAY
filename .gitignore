@@ -1,1 +1,7 @@
 .DS_Store
+node_modules/
+.next/
+.playwright-mcp/
+.env.local
+supabase/.temp/
+coverage/
