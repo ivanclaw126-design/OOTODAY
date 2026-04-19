@@ -5,9 +5,7 @@ node_modules/
 out/
 dist/
 coverage/
-.turbo/
 .cache/
-.playwright-mcp/
 .vercel/
 
 .env*
@@ -19,3 +17,4 @@ supabase/.temp/
 
 # gstack skill local artifacts
 .gstack/
+.claude/worktrees/
