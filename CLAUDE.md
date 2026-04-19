@@ -41,7 +41,31 @@ From the planning document (初版规划.md), V1 should deliver:
 
 ## Status
 
-Planning phase. No code implemented yet. See 初版规划.md for full product specification.
+**Phase 1 complete.** App shell + Supabase foundation shipped. See PROGRESS.md for current state and next steps.
+
+## Progress Tracking
+
+**Primary progress file:** `PROGRESS.md` (tracked in git, updated by all skills)
+
+**Execution plans:** `docs/superpowers/plans/*.md` (superpowers implementation plans)
+
+**gstack meta:** `.gstack-meta/` → symlink to ~/.gstack/projects/OOTODAY
+- Contains checkpoints, reviews, design docs from gstack skills
+- May be broken on fresh clone (run any gstack skill once to initialize)
+- Detailed context: `.gstack-meta/checkpoints/*.md`
+
+### Session start reading flow
+
+1. Read `PROGRESS.md` for current state and next steps
+2. Read `docs/superpowers/plans/*.md` for active execution plans
+3. If `.gstack-meta/` readable → Read latest checkpoint for detailed context
+4. If `.gstack-meta/` broken → Skip (gstack uninitialized on this machine)
+
+### After completing work
+
+1. Update `PROGRESS.md` with new status
+2. Run `/context-save` to checkpoint gstack state
+3. Ensure execution plan task checkboxes reflect actual progress
 
 ## gstack
 

@@ -16,3 +16,6 @@ coverage/
 *.log
 
 supabase/.temp/
+
+# gstack skill local artifacts
+.gstack/
