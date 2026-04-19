@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PrimaryButton } from '@/components/ui/button'
 import type { ClosetAnalysisDraft } from '@/lib/closet/types'
 
@@ -10,13 +10,36 @@ type ClosetUploadFormProps = {
   onSubmit: (draft: ClosetAnalysisDraft) => void | Promise<void>
 }
 
+function getDraftSignature(draft: ClosetAnalysisDraft) {
+  return JSON.stringify(draft)
+}
+
+function joinStyleTags(styleTags: string[]) {
+  return styleTags.join(', ')
+}
+
+function parseStyleTags(styleTagsText: string) {
+  return styleTagsText
+    .split(/[，,]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+}
+
 export function ClosetUploadForm({ initialDraft, disabled = false, onSubmit }: ClosetUploadFormProps) {
   const [draft, setDraft] = useState(initialDraft)
-  const [styleTagsText, setStyleTagsText] = useState(initialDraft.styleTags.join(', '))
+  const [styleTagsText, setStyleTagsText] = useState(joinStyleTags(initialDraft.styleTags))
+  const initialDraftSignatureRef = useRef(getDraftSignature(initialDraft))
 
   useEffect(() => {
+    const nextSignature = getDraftSignature(initialDraft)
+
+    if (initialDraftSignatureRef.current === nextSignature) {
+      return
+    }
+
+    initialDraftSignatureRef.current = nextSignature
     setDraft(initialDraft)
-    setStyleTagsText(initialDraft.styleTags.join(', '))
+    setStyleTagsText(joinStyleTags(initialDraft.styleTags))
   }, [initialDraft])
 
   return (
@@ -26,10 +49,7 @@ export function ClosetUploadForm({ initialDraft, disabled = false, onSubmit }: C
         event.preventDefault()
         void onSubmit({
           ...draft,
-          styleTags: styleTagsText
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter(Boolean)
+          styleTags: parseStyleTags(styleTagsText)
         })
       }}
     >
