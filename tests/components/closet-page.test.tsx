@@ -55,6 +55,11 @@ describe('ClosetPage', () => {
 
     expect(screen.getByText('已收录 2 件单品')).toBeInTheDocument()
     expect(screen.getByText('上衣')).toBeInTheDocument()
+    expect(screen.getByText('衬衫')).toBeInTheDocument()
+    expect(screen.getByText('蓝色')).toBeInTheDocument()
     expect(screen.getByText('裤装')).toBeInTheDocument()
+    expect(screen.getByText('西裤')).toBeInTheDocument()
+    expect(screen.getByText('黑色')).toBeInTheDocument()
+    expect(screen.getByText('暂无图片')).toBeInTheDocument()
   })
 })

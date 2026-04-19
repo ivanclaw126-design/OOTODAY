@@ -10,7 +10,7 @@ type ClosetUploadCardProps = {
   saveItem: (draft: ClosetAnalysisDraft) => Promise<void>
 }
 
-export function ClosetUploadCard({ userId, storageBucket }: ClosetUploadCardProps) {
+export function ClosetUploadCard(_props: ClosetUploadCardProps) {
   return (
     <Card>
       <div className="flex flex-col gap-2">
@@ -20,7 +20,6 @@ export function ClosetUploadCard({ userId, storageBucket }: ClosetUploadCardProp
           添加衣物
           <input aria-label="选择衣物图片" type="file" accept="image/*" capture="environment" className="sr-only" />
         </label>
-        <p className="text-xs text-[var(--color-neutral-dark)]">当前用户：{userId}，bucket：{storageBucket}</p>
       </div>
     </Card>
   )

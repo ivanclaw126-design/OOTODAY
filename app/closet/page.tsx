@@ -4,10 +4,7 @@ import { getSession } from '@/lib/auth/get-session'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { getEnv } from '@/lib/env'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
-
-const notReady = async () => {
-  throw new Error('Closet action not wired yet')
-}
+import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
 
 export default async function ClosetRoute() {
   const session = await getSession()
@@ -16,19 +13,33 @@ export default async function ClosetRoute() {
     redirect('/')
   }
 
-  await ensureProfile(session.user.id)
+  const userId = session.user.id
+
+  async function analyzeUpload(_input: { imageUrl: string }): Promise<ClosetAnalysisResult> {
+    'use server'
+
+    throw new Error('Closet action not wired yet')
+  }
+
+  async function saveItem(_draft: ClosetAnalysisDraft): Promise<void> {
+    'use server'
+
+    throw new Error('Closet action not wired yet')
+  }
+
+  await ensureProfile(userId)
 
   const { storageBucket } = getEnv()
-  const closet = await getClosetView(session.user.id)
+  const closet = await getClosetView(userId)
 
   return (
     <ClosetPage
-      userId={session.user.id}
+      userId={userId}
       itemCount={closet.itemCount}
       items={closet.items}
       storageBucket={storageBucket}
-      analyzeUpload={notReady}
-      saveItem={notReady}
+      analyzeUpload={analyzeUpload}
+      saveItem={saveItem}
     />
   )
 }
