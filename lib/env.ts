@@ -17,3 +17,15 @@ export function getEnv() {
 
   return { supabaseUrl, supabaseAnonKey, storageBucket }
 }
+
+export function getAiEnv() {
+  const apiKey = process.env.OPENAI_API_KEY
+  const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+
+  if (!apiKey) {
+    throw new Error('Missing OPENAI_API_KEY')
+  }
+
+  return { apiKey, baseUrl, model }
+}

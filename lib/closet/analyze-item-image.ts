@@ -1,14 +1,5 @@
 import type { ClosetAnalysisResult } from '@/lib/closet/types'
-
-function getOpenAiApiKey() {
-  const apiKey = process.env.OPENAI_API_KEY
-
-  if (!apiKey) {
-    throw new Error('Missing OPENAI_API_KEY')
-  }
-
-  return apiKey
-}
+import { getAiEnv } from '@/lib/env'
 
 function readRequiredString(value: unknown, fieldName: string) {
   if (typeof value !== 'string') {
@@ -37,14 +28,16 @@ function readStyleTags(value: unknown) {
 }
 
 export async function analyzeItemImage(imageUrl: string): Promise<ClosetAnalysisResult> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const { apiKey, baseUrl, model } = getAiEnv()
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${getOpenAiApiKey()}`
+      Authorization: `Bearer ${apiKey}`
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model,
       response_format: { type: 'json_object' },
       messages: [
         {

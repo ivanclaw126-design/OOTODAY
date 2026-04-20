@@ -12,9 +12,17 @@ export async function createSupabaseServerClient() {
         return cookieStore.getAll()
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options)
-        })
+        // In Server Components, cookies cannot be modified.
+        // Middleware handles session refresh and cookie writes.
+        // We catch the error to avoid breaking reads.
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options)
+          })
+        } catch {
+          // Cookie modification not allowed in Server Components
+          // This is expected - middleware handles auth cookie writes
+        }
       }
     }
   })
