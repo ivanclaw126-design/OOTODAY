@@ -1,13 +1,20 @@
 import { EmptyState } from '@/components/ui/empty-state'
 import { TodayRecommendationCard } from '@/components/today/today-recommendation-card'
-import type { TodayRecommendation } from '@/lib/today/types'
+import type { TodayOotdStatus, TodayRecommendation } from '@/lib/today/types'
 
 export function TodayRecommendationList({
   recommendations,
-  recommendationError
+  recommendationError,
+  ootdStatus,
+  submitOotd
 }: {
   recommendations: TodayRecommendation[]
   recommendationError: boolean
+  ootdStatus: TodayOotdStatus
+  submitOotd: (input: {
+    recommendation: TodayRecommendation
+    satisfactionScore: number
+  }) => Promise<{ error: string | null; wornAt: string | null }>
 }) {
   if (recommendationError) {
     return (
@@ -21,7 +28,12 @@ export function TodayRecommendationList({
   return (
     <div className="grid gap-4">
       {recommendations.map((recommendation) => (
-        <TodayRecommendationCard key={recommendation.id} recommendation={recommendation} />
+        <TodayRecommendationCard
+          key={recommendation.id}
+          recommendation={recommendation}
+          ootdStatus={ootdStatus}
+          submitOotd={submitOotd}
+        />
       ))}
     </div>
   )

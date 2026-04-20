@@ -27,10 +27,15 @@ export type TodayRecommendation = {
   outerLayer: TodayRecommendationItem | null
 }
 
+export type TodayOotdStatus =
+  | { status: 'not-recorded' }
+  | { status: 'recorded'; wornAt: string }
+
 export type TodayView = {
   itemCount: number
   city: string | null
   weatherState: TodayWeatherState
   recommendations: TodayRecommendation[]
   recommendationError: boolean
+  ootdStatus: TodayOotdStatus
 }

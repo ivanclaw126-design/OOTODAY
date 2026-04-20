@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth/get-session'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { saveTodayOotdFeedback } from '@/lib/today/save-today-ootd-feedback'
+import type { TodayRecommendation } from '@/lib/today/types'
 
 export async function updateTodayCityAction({ city }: { city: string }) {
   const session = await getSession()
@@ -27,6 +29,32 @@ export async function updateTodayCityAction({ city }: { city: string }) {
 
   revalidatePath('/today')
   return { error: null }
+}
+
+export async function submitTodayOotdAction({
+  recommendation,
+  satisfactionScore
+}: {
+  recommendation: TodayRecommendation
+  satisfactionScore: number
+}) {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  const result = await saveTodayOotdFeedback({
+    userId: session.user.id,
+    recommendation,
+    satisfactionScore
+  })
+
+  if (!result.error) {
+    revalidatePath('/today')
+  }
+
+  return result
 }
 
 export async function refreshTodayRecommendationsAction(offset: number) {

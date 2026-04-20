@@ -1,9 +1,14 @@
 import { redirect } from 'next/navigation'
 import { TodayPage } from '@/components/today/today-page'
-import { refreshTodayRecommendationsAction, updateTodayCityAction } from '@/app/today/actions'
+import {
+  refreshTodayRecommendationsAction,
+  submitTodayOotdAction,
+  updateTodayCityAction
+} from '@/app/today/actions'
 import { getSession } from '@/lib/auth/get-session'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getTodayView } from '@/lib/today/get-today-view'
+import type { TodayRecommendation } from '@/lib/today/types'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 
 export default async function TodayRoute({
@@ -41,11 +46,24 @@ export default async function TodayRoute({
     return updateTodayCityAction(input)
   }
 
+  async function submitOotd(input: { recommendation: TodayRecommendation; satisfactionScore: number }) {
+    'use server'
+
+    return submitTodayOotdAction(input)
+  }
+
   async function refreshRecommendations() {
     'use server'
 
     await refreshTodayRecommendationsAction((Number.isNaN(offset) ? 0 : offset) + 1)
   }
 
-  return <TodayPage view={view} updateCity={updateCity} refreshRecommendations={refreshRecommendations} />
+  return (
+    <TodayPage
+      view={view}
+      updateCity={updateCity}
+      submitOotd={submitOotd}
+      refreshRecommendations={refreshRecommendations}
+    />
+  )
 }

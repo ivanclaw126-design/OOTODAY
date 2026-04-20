@@ -8,18 +8,37 @@ import { TodayRecommendationList } from '@/components/today/today-recommendation
 import { TodayStatusCard } from '@/components/today/today-status-card'
 import { PrimaryLink, SecondaryButton } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
-import type { TodayView } from '@/lib/today/types'
+import type { TodayOotdStatus, TodayRecommendation, TodayView } from '@/lib/today/types'
 
 export function TodayPage({
   view,
   updateCity,
+  submitOotd,
   refreshRecommendations
 }: {
   view: TodayView
   updateCity: (input: { city: string }) => Promise<{ error: string | null }>
+  submitOotd: (input: {
+    recommendation: TodayRecommendation
+    satisfactionScore: number
+  }) => Promise<{ error: string | null; wornAt: string | null }>
   refreshRecommendations: () => Promise<void>
 }) {
   const [isEditingCity, setIsEditingCity] = useState(false)
+  const [ootdStatus, setOotdStatus] = useState<TodayOotdStatus>(view.ootdStatus)
+
+  async function submitTodayOotd(input: {
+    recommendation: TodayRecommendation
+    satisfactionScore: number
+  }) {
+    const result = await submitOotd(input)
+
+    if (!result.error && result.wornAt) {
+      setOotdStatus({ status: 'recorded', wornAt: result.wornAt })
+    }
+
+    return result
+  }
 
   return (
     <AppShell title="Today">
@@ -46,6 +65,8 @@ export function TodayPage({
           <TodayRecommendationList
             recommendations={view.recommendations}
             recommendationError={view.recommendationError}
+            ootdStatus={ootdStatus}
+            submitOotd={submitTodayOotd}
           />
 
           <div className="flex gap-2">
