@@ -6,7 +6,7 @@
 
 正在推进 OOTODAY 的衣橱上传流 MVP。
 
-代码层面，上传图片、AI 分析、用户确认后保存到 `items`、Closet 最近衣物展示，这条链路的主要实现和定向测试已经基本补齐。当前真正卡住的不是前端逻辑，而是登录态访问 `/closet` 时后端 Supabase 数据面异常，导致真实浏览器 QA 无法完成。
+代码层面，上传图片、AI 分析、用户确认后保存到 `items`、Closet 最近衣物展示，这条链路的主要实现和主仓测试已经补齐。刚刚确认 `/closet` 的本地 500 不是 Supabase 数据面异常，而是 Turbopack 会因为仓库根目录下的 `.gstack-meta` 符号链接越界扫描而崩溃，导致页面根本没有成功编译。
 
 ## 已完成
 
@@ -87,84 +87,68 @@
 
 已通过的本地验证包括：
 
-- 定向测试 24/24 通过
-- `npm run build` 通过
-
-## 当前 blocker
-
-### 登录态 `/closet` 真实 500
-
-浏览器登录后访问 `/closet`，本地 dev server 报错：
-
-```txt
-PGRST205: Could not find the table 'public.items' in the schema cache
-```
-
-进一步验证后，问题不只是 `items`：
-
-我直接用 `.env.local` 里的 `NEXT_PUBLIC_SUPABASE_URL` 和 `NEXT_PUBLIC_SUPABASE_ANON_KEY` 请求 Supabase REST，结果如下：
-
-- `GET /rest/v1/profiles?...` → `404 PGRST205`
-- `GET /rest/v1/items?...` → `404 PGRST205`
-
-这说明当前远端 Supabase 的 REST / PostgREST 层根本看不到这些 public 表，而不是单纯某个前端查询写错了。
+- 定向测试曾通过 24/24
+- 现在主仓 `npm test` 通过，`35/35` 通过
+- `/closet` 在本地 dev server 下不再返回 500
 
 ## 已确认的排查结论
 
-### 1. 当前 linked Supabase 项目与本地 env 一致
+### 1. `/closet` 的本地 500 根因不是 Supabase
 
-`supabase projects list` 显示当前 linked 项目是：
-
-- `xaoqhaakrzolcyivqutn`
-
-`.env.local` 中的 `NEXT_PUBLIC_SUPABASE_URL` 也指向：
-
-- `https://xaoqhaakrzolcyivqutn.supabase.co/`
-
-所以目前看起来不像“连错 Supabase 项目”。
-
-### 2. 用户已执行远端推送，但结果与运行时矛盾
-
-用户在自己的终端执行了：
-
-```bash
-supabase db push --include-all
-```
-
-返回：
+重新读取 dev server 日志后，真实报错是 Turbopack panic，而不是 `PGRST205`：
 
 ```txt
-Initialising login role...
-Connecting to remote database...
-Remote database is up to date.
+Failed to write app endpoint /closet/page
+Caused by:
+- [project]/app/globals.css [app-client] (css)
+- FileSystemPath("").join("../../.gstack/projects/OOTODAY") leaves the filesystem root
 ```
 
-这和当前 REST 层仍然看不到 `profiles` / `items` 的事实相矛盾。
+也就是说，页面在请求 Supabase 之前就已经因为构建阶段异常而失败。
 
-### 3. 我本地无法直接拿到远端 migration 明细
+### 2. 触发 panic 的是仓库根目录下的 `.gstack-meta` 符号链接
 
-我执行：
+`.gstack-meta` 指向 `~/.gstack/projects/OOTODAY`。在 Next.js 16 + Turbopack + Tailwind 4 的组合下，这个仓库外 symlink 会让 CSS 依赖扫描越界，直接把 `/closet` 页面编译打崩。
 
-```bash
-supabase migration list --linked
-```
+已采取的修复：
 
-失败，报的是直连 Postgres TLS timeout。
+- 删除本地 `.gstack-meta` 符号链接
+- 在 `.gitignore` 中加入 `.gstack-meta/`
 
-所以当前还缺一块关键证据：
+修复后，访问 `/closet` 会正常返回 `200`，未登录时跳转到登录页，不再是 500。
 
-- 远端数据库对象是否真实存在
-- 还是对象存在但 PostgREST schema cache / API 层异常
+### 3. `npm test` 的失败也不是业务代码回归
+
+Vitest 原来会把 `.claude/worktrees/` 和 `.worktrees/` 下的历史工作树测试一并扫进去，导致测试结果被旧副本污染。
+
+已采取的修复：
+
+- 在 `vitest.config.ts` 中显式排除 `.claude/worktrees/**` 和 `.worktrees/**`
+
+修复后，主仓测试恢复为只跑当前仓库代码，`11` 个测试文件、`35` 个测试全部通过。
+
+### 4. session pooler 连接串已经配置，但当前执行环境仍无法直连远端 Postgres
+
+我用 `.env.local` 中的 `SUPABASE_DB_URL` 调 `supabase migration list --db-url "$SUPABASE_DB_URL"`，不再是密码错误，而是 TCP/TLS timeout。
+
+这说明 session pooler 配置本身已被正确读取，但当前 Claude 执行环境到 `aws-1-us-east-1.pooler.supabase.com:5432` 仍然不可达，所以远端 schema 核验还不能在这里完成。
+
+## 当前 blocker
+
+### 真实浏览器 QA 还缺登录态
+
+`/closet` 本地页面已经恢复正常，但当前浏览器里还没有有效登录态，所以现在只能验证到未登录跳转登录页，暂时还没跑完完整上传链路。
 
 ## 下一步
 
-1. 继续验证远端数据库里 `public.profiles` 和 `public.items` 是否真实存在。
-2. 如果表存在，优先排查 PostgREST schema cache / Supabase API 层状态。
-3. 如果表不存在，就按远端真实状态补建或重新应用 migration。
-4. 一旦远端 schema 恢复，立刻继续登录态浏览器 QA：
-   - 打开 `/closet`
-   - 选择图片
-   - 等待 AI 分析
-   - 修改至少一个字段
-   - 保存
-   - 确认 recent grid 显示新 item
+1. 先在浏览器里完成一次登录，进入真正的 `/closet` 页面。
+2. 跑完整衣橱上传 QA：上传图片 → 等待 AI 分析 → 修改至少一个字段 → 保存 → 确认 recent grid 出现新 item。
+3. 如果真实上传链路通过，继续开发下一个功能。
+4. 如果登录后仍出现远端数据异常，再把远端 Supabase schema 核验放回用户本机网络环境里执行。  
+   推荐命令：`supabase migration list --db-url "$SUPABASE_DB_URL"`
+
+## 本次修复涉及文件
+
+- `.gitignore`
+- `vitest.config.ts`
+- `PROGRESS.md`
