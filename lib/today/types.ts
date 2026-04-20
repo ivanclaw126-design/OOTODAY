@@ -1,0 +1,41 @@
+import type { ClosetItemCardData } from '@/lib/closet/types'
+
+export type TodayWeather = {
+  city: string
+  temperatureC: number
+  conditionLabel: string
+  isWarm: boolean
+  isCold: boolean
+}
+
+export type TodayWeatherState =
+  | { status: 'not-set' }
+  | { status: 'ready'; weather: TodayWeather }
+  | { status: 'unavailable'; city: string }
+
+export type TodayRecommendationItem = Pick<
+  ClosetItemCardData,
+  'id' | 'imageUrl' | 'category' | 'subCategory' | 'colorCategory' | 'styleTags'
+>
+
+export type TodayRecommendation = {
+  id: string
+  reason: string
+  top: TodayRecommendationItem | null
+  bottom: TodayRecommendationItem | null
+  dress: TodayRecommendationItem | null
+  outerLayer: TodayRecommendationItem | null
+}
+
+export type TodayOotdStatus =
+  | { status: 'not-recorded' }
+  | { status: 'recorded'; wornAt: string }
+
+export type TodayView = {
+  itemCount: number
+  city: string | null
+  weatherState: TodayWeatherState
+  recommendations: TodayRecommendation[]
+  recommendationError: boolean
+  ootdStatus: TodayOotdStatus
+}

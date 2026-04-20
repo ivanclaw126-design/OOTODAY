@@ -29,3 +29,14 @@ export function getAiEnv() {
 
   return { apiKey, baseUrl, model }
 }
+
+export function getWeatherEnv() {
+  const apiKey = process.env.WEATHER_API_KEY
+  const baseUrl = process.env.WEATHER_BASE_URL || 'https://api.openweathermap.org/data/2.5/weather'
+
+  if (!apiKey) {
+    throw new Error('Missing WEATHER_API_KEY')
+  }
+
+  return { apiKey, baseUrl }
+}

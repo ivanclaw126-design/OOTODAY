@@ -20,3 +20,28 @@ describe('getEnv', () => {
     })
   })
 })
+
+describe('getWeatherEnv', () => {
+  it('returns the configured weather API values', async () => {
+    vi.stubEnv('WEATHER_API_KEY', 'weather-key')
+    vi.stubEnv('WEATHER_BASE_URL', 'https://api.example.com/weather')
+
+    const { getWeatherEnv } = await import('@/lib/env')
+
+    expect(getWeatherEnv()).toEqual({
+      apiKey: 'weather-key',
+      baseUrl: 'https://api.example.com/weather'
+    })
+  })
+
+  it('defaults the weather base url when only the key is set', async () => {
+    vi.stubEnv('WEATHER_API_KEY', 'weather-key')
+
+    const { getWeatherEnv } = await import('@/lib/env')
+
+    expect(getWeatherEnv()).toEqual({
+      apiKey: 'weather-key',
+      baseUrl: 'https://api.openweathermap.org/data/2.5/weather'
+    })
+  })
+})
