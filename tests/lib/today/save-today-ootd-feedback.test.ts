@@ -104,4 +104,40 @@ describe('saveTodayOotdFeedback', () => {
       notes: 'OOTD: 针织连衣裙；理由：一件完成搭配'
     })
   })
+
+  it('returns a duplicate error when the insert hits the unique day constraint', async () => {
+    maybeSingle.mockResolvedValue({ data: null, error: null })
+    insert.mockResolvedValue({ error: { code: '23505' } })
+
+    const { saveTodayOotdFeedback } = await import('@/lib/today/save-today-ootd-feedback')
+
+    await expect(
+      saveTodayOotdFeedback({
+        userId: 'user-1',
+        satisfactionScore: 5,
+        recommendation: {
+          id: 'rec-3',
+          reason: '基础组合稳定不出错',
+          top: {
+            id: 'top-1',
+            imageUrl: null,
+            category: '上衣',
+            subCategory: '衬衫',
+            colorCategory: '白色',
+            styleTags: ['通勤']
+          },
+          bottom: {
+            id: 'bottom-1',
+            imageUrl: null,
+            category: '裤装',
+            subCategory: '西裤',
+            colorCategory: '黑色',
+            styleTags: ['通勤']
+          },
+          dress: null,
+          outerLayer: null
+        }
+      })
+    ).resolves.toEqual({ error: '今天已经记录过穿搭了', wornAt: null })
+  })
 })

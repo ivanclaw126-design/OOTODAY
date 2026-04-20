@@ -56,6 +56,10 @@ export async function saveTodayOotdFeedback({
   })
 
   if (error) {
+    if ('code' in error && error.code === '23505') {
+      return { error: '今天已经记录过穿搭了', wornAt: null }
+    }
+
     throw error
   }
 
