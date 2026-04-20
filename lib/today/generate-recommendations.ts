@@ -65,6 +65,19 @@ export function generateTodayRecommendations(
     const bottom = bottoms.find((candidate) => !usedMainIds.has(candidate.id))
 
     if (!bottom) {
+      recommendations.push({
+        id: `single-${top.id}`,
+        reason: buildReason([
+          weather?.isWarm ? '天气偏暖，先从轻便上装开始' : '',
+          weather?.isCold ? '天气偏冷，建议先补下装或外套再完善整套' : '',
+          '先用已有单品起一套思路'
+        ]),
+        top: toRecommendationItem(top),
+        bottom: null,
+        dress: null,
+        outerLayer: null
+      })
+      usedMainIds.add(top.id)
       continue
     }
 

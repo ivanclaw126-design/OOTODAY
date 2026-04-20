@@ -2,7 +2,15 @@ import { getWeatherEnv } from '@/lib/env'
 import type { TodayWeather } from '@/lib/today/types'
 
 export async function getWeather(city: string): Promise<TodayWeather | null> {
-  const { apiKey, baseUrl } = getWeatherEnv()
+  let apiKey: string
+  let baseUrl: string
+
+  try {
+    ;({ apiKey, baseUrl } = getWeatherEnv())
+  } catch {
+    return null
+  }
+
   const searchParams = new URLSearchParams({
     q: city,
     appid: apiKey,

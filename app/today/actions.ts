@@ -33,11 +33,3 @@ export async function refreshTodayRecommendationsAction(offset: number) {
   revalidatePath('/today')
   redirect(`/today?offset=${offset}`)
 }
-
-export async function refreshTodayRecommendationsForTest() {
-  revalidatePath('/today')
-}
-
-export async function refreshTodayRecommendationsRedirectAction(offset: number) {
-  redirect(`/today?offset=${offset}`)
-}

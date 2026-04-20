@@ -5,6 +5,7 @@ const eq = vi.fn(() => Promise.resolve({ error: null }))
 const from = vi.fn(() => ({ update: () => ({ eq }) }))
 const createSupabaseServerClient = vi.fn(async () => ({ from }))
 const revalidatePath = vi.fn()
+const redirect = vi.fn()
 
 vi.mock('@/lib/auth/get-session', () => ({
   getSession
@@ -18,7 +19,11 @@ vi.mock('next/cache', () => ({
   revalidatePath
 }))
 
-describe('updateTodayCityAction', () => {
+vi.mock('next/navigation', () => ({
+  redirect
+}))
+
+describe('today actions', () => {
   it('updates the signed-in user city and revalidates Today', async () => {
     getSession.mockResolvedValue({ user: { id: 'user-1' } })
 
@@ -28,5 +33,14 @@ describe('updateTodayCityAction', () => {
     expect(from).toHaveBeenCalledWith('profiles')
     expect(eq).toHaveBeenCalledWith('id', 'user-1')
     expect(revalidatePath).toHaveBeenCalledWith('/today')
+  })
+
+  it('revalidates and redirects when refreshing recommendations', async () => {
+    const { refreshTodayRecommendationsAction } = await import('@/app/today/actions')
+
+    await refreshTodayRecommendationsAction(3)
+
+    expect(revalidatePath).toHaveBeenCalledWith('/today')
+    expect(redirect).toHaveBeenCalledWith('/today?offset=3')
   })
 })

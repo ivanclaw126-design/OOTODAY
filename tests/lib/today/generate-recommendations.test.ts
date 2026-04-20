@@ -80,4 +80,37 @@ describe('generateTodayRecommendations', () => {
 
     expect(recommendations.some((recommendation) => recommendation.outerLayer)).toBe(true)
   })
+
+  it('falls back to single-item recommendations when the closet lacks full outfits', () => {
+    const recommendations = generateTodayRecommendations(
+      [
+        {
+          id: 'top-only-1',
+          imageUrl: 'https://example.com/top-only-1.jpg',
+          category: '上衣',
+          subCategory: 'T恤',
+          colorCategory: '白色',
+          styleTags: ['基础'],
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'top-only-2',
+          imageUrl: 'https://example.com/top-only-2.jpg',
+          category: '上衣',
+          subCategory: '衬衫',
+          colorCategory: '蓝色',
+          styleTags: ['通勤'],
+          createdAt: '2026-04-19T10:01:00Z'
+        }
+      ],
+      null
+    )
+
+    expect(recommendations).toHaveLength(3)
+    expect(recommendations.every((recommendation) => recommendation.top && !recommendation.bottom && !recommendation.dress)).toBe(
+      true
+    )
+    expect(recommendations.some((recommendation) => recommendation.reason.includes('先用已有单品起一套思路'))).toBe(true)
+    expect(recommendations.some((recommendation) => recommendation.reason.includes('适合换一套思路'))).toBe(true)
+  })
 })

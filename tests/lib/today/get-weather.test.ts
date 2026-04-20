@@ -45,4 +45,10 @@ describe('getWeather', () => {
 
     await expect(getWeather('Shanghai')).resolves.toBeNull()
   })
+
+  it('returns null when weather config is missing', async () => {
+    const { getWeather } = await import('@/lib/today/get-weather')
+
+    await expect(getWeather('Shanghai')).resolves.toBeNull()
+  })
 })
