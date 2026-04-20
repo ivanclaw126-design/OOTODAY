@@ -1,159 +1,170 @@
 # OOTODAY 进度追踪
 
-> 最后更新：2026-04-19 16:30
+> 最后更新：2026-04-20
 
-## 已完成：第一阶段「App Shell + Supabase Foundation」
+## 当前状态
 
-**状态：** ✅ 全部完成并通过验证
+正在推进 OOTODAY 的衣橱上传流 MVP。
 
-### Commit 历史
+代码层面，上传图片、AI 分析、用户确认后保存到 `items`、Closet 最近衣物展示，这条链路的主要实现和定向测试已经基本补齐。当前真正卡住的不是前端逻辑，而是登录态访问 `/closet` 时后端 Supabase 数据面异常，导致真实浏览器 QA 无法完成。
 
-| Commit | 内容 |
-|--------|------|
-| `0c25376` | Bootstrap Next.js + Vitest + Tailwind |
-| `52a52e4` | UI 基础组件（Button, Card, EmptyState, StatusBanner）+ AppShell + BottomNav |
-| `ca66106` | Supabase env/client/server/middleware + auth callback |
-| `efa21a9` | 数据库 schema（profiles, items, outfits, ootd）+ RLS policies + TypeScript types |
-| `74d74a0` | Today/Closet 页面 + 认证路由保护 + 数据驱动空状态 |
-| `01ff58d` | Next 16 最终配置 + gitignore |
-| `dcb9abd` | gitignore 扩展 |
+## 已完成
 
-### 验证结果
+### 1. 第一阶段「App Shell + Supabase Foundation」
 
-| 测试项 | 状态 |
-|--------|------|
-| LandingPage 渲染正常 | ✅ |
-| `/today` 未登录重定向 | ✅ (307 → `/`) |
-| `/closet` 未登录重定向 | ✅ (307 → `/`) |
-| Console 无错误 | ✅ |
-| 生产构建通过 | ✅ (5 routes, 1.05s) |
-| 单元测试 7/7 | ✅ |
+已完成并落地的基础能力包括：
 
-### 已创建文件
+- Next.js 16 App Router + React 19 + Tailwind CSS 4 基础工程
+- Supabase env / browser client / server client / middleware
+- magic link 登录回调与受保护路由
+- `/today`、`/closet` 页面骨架与未登录重定向
+- 初始 schema migration：`profiles`、`items`、`outfits`、`ootd`
+- 基础测试与生产构建验证
 
+### 2. 衣橱上传流主链路代码
+
+已完成的核心文件包括：
+
+- `components/closet/closet-upload-card.tsx`
+  - 单图选择/拍照上传
+  - 上传中状态
+  - 调用 AI 分析
+  - 确认后保存
+  - 成功后刷新页面
+  - 预览 object URL 生命周期清理
+- `components/closet/closet-upload-form.tsx`
+  - AI 建议确认表单
+  - 标签输入标准化
+  - 避免无意义 draft 变化重置本地编辑
+- `app/closet/actions.ts`
+  - `analyzeClosetUploadAction`
+  - `saveClosetItemAction`
+  - 登录态校验
+  - upload URL 归属校验
+  - `revalidatePath('/closet')`
+- `lib/closet/analyze-item-image.ts`
+  - 服务端调用 OpenAI `gpt-4o-mini`
+  - 只接受 JSON 输出
+  - 校验 `category` / `sub_category` / `color_category` / `style_tags`
+- `lib/closet/save-closet-item.ts`
+  - 将前端 draft 映射到 `items` 表 snake_case 字段
+- `app/closet/page.tsx`
+  - 已完成 server action 接线
+  - 登录态下渲染 `ClosetPage`
+
+### 3. 测试覆盖
+
+已补齐并通过的定向测试包括：
+
+- `tests/components/closet-upload-card.test.tsx`
+  - 上传后展示 AI 表单
+  - 阻止重复选择导致并发上传
+  - 保存成功后调用 `saveItem`
+  - 保存成功后触发 `refresh`
+  - 保存失败时展示错误
+  - abandon flow 时 revoke object URL
+- `tests/app/closet/actions.test.ts`
+  - analyze action 未登录拒绝
+  - analyze action 非法 URL 拒绝
+  - save action 未登录拒绝
+  - save action 非法 URL 拒绝
+  - save action 成功调用 DB 保存并 revalidate
+- `tests/lib/closet/analyze-item-image.test.ts`
+  - API key 缺失
+  - OpenAI 请求失败
+  - 空 content
+  - invalid JSON
+  - 非法 `style_tags`
+  - 空字符串字段
+  - 正常 trim 与标签裁剪
+- `tests/lib/closet/save-closet-item.test.ts`
+  - camelCase → snake_case 映射
+  - 插入失败抛错
+- `tests/components/closet-page.test.tsx`
+  - 空状态与 recent items 展示保持可测
+
+### 4. 本地验证结果
+
+已通过的本地验证包括：
+
+- 定向测试 24/24 通过
+- `npm run build` 通过
+
+## 当前 blocker
+
+### 登录态 `/closet` 真实 500
+
+浏览器登录后访问 `/closet`，本地 dev server 报错：
+
+```txt
+PGRST205: Could not find the table 'public.items' in the schema cache
 ```
-app/
-  layout.tsx, page.tsx, globals.css
-  today/page.tsx, closet/page.tsx
-  auth/callback/route.ts, auth/login/route.ts
 
-components/
-  app-shell.tsx, bottom-nav.tsx
-  ui/button.tsx, card.tsx, empty-state.tsx, status-banner.tsx
-  landing/landing-page.tsx
-  today/today-page.tsx
-  closet/closet-page.tsx
+进一步验证后，问题不只是 `items`：
 
-lib/
-  env.ts
-  supabase/client.ts, server.ts, middleware.ts
-  auth/get-session.ts
-  profiles/ensure-profile.ts
-  data/get-closet-summary.ts, get-today-state.ts
+我直接用 `.env.local` 里的 `NEXT_PUBLIC_SUPABASE_URL` 和 `NEXT_PUBLIC_SUPABASE_ANON_KEY` 请求 Supabase REST，结果如下：
 
-types/database.ts
-middleware.ts
-supabase/migrations/20260419_initial_schema.sql
-tests/ (5 files, 7 tests)
-```
+- `GET /rest/v1/profiles?...` → `404 PGRST205`
+- `GET /rest/v1/items?...` → `404 PGRST205`
 
-### 待确认事项
+这说明当前远端 Supabase 的 REST / PostgREST 层根本看不到这些 public 表，而不是单纯某个前端查询写错了。
 
-- [ ] Supabase 项目迁移是否已手动应用？（需通过 Dashboard SQL Editor 或 CLI 执行 `supabase/migrations/20260419_initial_schema.sql`）
-- [ ] `.env.local` 已存在，配置是否正确？
+## 已确认的排查结论
 
----
+### 1. 当前 linked Supabase 项目与本地 env 一致
 
-## 下一步计划
+`supabase projects list` 显示当前 linked 项目是：
 
-### 选项 A：衣橱上传流（推荐）
+- `xaoqhaakrzolcyivqutn`
 
-**优先级：** 核心 MVP 功能
-**依赖：** items 表 + Closet 页面骨架 + Supabase Storage
+`.env.local` 中的 `NEXT_PUBLIC_SUPABASE_URL` 也指向：
 
-**功能点：**
-- 拍照/相册选择 → 图片上传到 Supabase Storage
-- GPT-4 Vision 识别 → 返回 category, color, style_tags
-- 用户确认/编辑 → 写入 items 表
-- 网格展示已上传衣物
+- `https://xaoqhaakrzolcyivqutn.supabase.co/`
 
-**技术挑战：**
-- Supabase Storage bucket 配置
-- 图片压缩（目标 200KB）
-- Vision API rate limit（5 uploads/day）
-- 前端状态管理（上传进度、错误处理）
+所以目前看起来不像“连错 Supabase 项目”。
 
----
+### 2. 用户已执行远端推送，但结果与运行时矛盾
 
-### 选项 B：推荐引擎
-
-**优先级：** 核心 MVP 功能
-**依赖：** items 表 + outfits 表 + OOTD 历史
-
-**功能点：**
-- 10 条穿搭规则（颜色搭配、场合匹配、季节适配）
-- Frequency penalty（避免重复推荐最近穿过的组合）
-- 缓存策略（每天刷新一次）
-- 3 张推荐卡片 + carousel
-
-**技术挑战：**
-- 规则引擎实现（纯 JS 或引入规则库）
-- 缓存设计（存储位置、过期策略）
-- 空衣橱时的 fallback（引导去上传）
-
----
-
-### 选项 C：Today 完善
-
-**优先级：** 增强体验
-**依赖：** 推荐引擎 + 天气 API
-
-**功能点：**
-- 天气 header（城市 + 温度 + 天气图标）
-- OpenWeatherMap API 接入
-- 用户手动输入城市（profile.city）
-- Outfit carousel + 详情展开
-
----
-
-### 选项 D：OOTD 记录
-
-**优先级：** MVP 完整闭环
-**依赖：** 推荐引擎 + ootd 表
-
-**功能点：**
-- 穿搭确认（从推荐选择或自定义）
-- 可选拍照记录
-- 满意度 slider（1-5）
-- 写入 ootd 表 + 更新 wear_count
-
----
-
-## 技术栈备忘
-
-- **Frontend:** Next.js 16 (App Router), React 19, TypeScript 5, Tailwind CSS 4
-- **Backend:** Supabase (Postgres + Auth + Storage)
-- **Vision:** GPT-4 Vision (server-side, rate limited)
-- **Weather:** OpenWeatherMap API (待接入)
-- **Deploy:** Vercel (free tier)
-- **Test:** Vitest + Testing Library + jsdom
-
----
-
-## 快速恢复
+用户在自己的终端执行了：
 
 ```bash
-# 启动开发
-npm run dev
-
-# 运行测试
-npm test
-
-# 生产构建
-npm run build
-
-# 检查 Supabase 状态
-# 1. 登录 Supabase Dashboard
-# 2. 检查 Table Editor 是否有 profiles/items/outfits/ootd 四张表
-# 3. 检查 RLS policies 是否启用
+supabase db push --include-all
 ```
+
+返回：
+
+```txt
+Initialising login role...
+Connecting to remote database...
+Remote database is up to date.
+```
+
+这和当前 REST 层仍然看不到 `profiles` / `items` 的事实相矛盾。
+
+### 3. 我本地无法直接拿到远端 migration 明细
+
+我执行：
+
+```bash
+supabase migration list --linked
+```
+
+失败，报的是直连 Postgres TLS timeout。
+
+所以当前还缺一块关键证据：
+
+- 远端数据库对象是否真实存在
+- 还是对象存在但 PostgREST schema cache / API 层异常
+
+## 下一步
+
+1. 继续验证远端数据库里 `public.profiles` 和 `public.items` 是否真实存在。
+2. 如果表存在，优先排查 PostgREST schema cache / Supabase API 层状态。
+3. 如果表不存在，就按远端真实状态补建或重新应用 migration。
+4. 一旦远端 schema 恢复，立刻继续登录态浏览器 QA：
+   - 打开 `/closet`
+   - 选择图片
+   - 等待 AI 分析
+   - 修改至少一个字段
+   - 保存
+   - 确认 recent grid 显示新 item
