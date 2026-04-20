@@ -5,6 +5,21 @@ import { ClosetPage } from '@/components/closet/closet-page'
 const analyzeUpload = vi.fn()
 const saveItem = vi.fn()
 
+vi.mock('@/lib/supabase/client', () => ({
+  createSupabaseBrowserClient: () => ({
+    storage: {
+      from: () => ({
+        upload: vi.fn(),
+        getPublicUrl: vi.fn()
+      })
+    }
+  })
+}))
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn() })
+}))
+
 describe('ClosetPage', () => {
   it('shows the upload entry when no items exist', () => {
     render(

@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth/get-session'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { getEnv } from '@/lib/env'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
+import { analyzeClosetUploadAction, saveClosetItemAction } from '@/app/closet/actions'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
 
 export default async function ClosetRoute() {
@@ -15,16 +16,16 @@ export default async function ClosetRoute() {
 
   const userId = session.user.id
 
-  async function analyzeUpload(_input: { imageUrl: string }): Promise<ClosetAnalysisResult> {
+  async function analyzeUpload(input: { imageUrl: string }): Promise<ClosetAnalysisResult> {
     'use server'
 
-    throw new Error('Closet action not wired yet')
+    return analyzeClosetUploadAction(input)
   }
 
-  async function saveItem(_draft: ClosetAnalysisDraft): Promise<void> {
+  async function saveItem(draft: ClosetAnalysisDraft): Promise<void> {
     'use server'
 
-    throw new Error('Closet action not wired yet')
+    await saveClosetItemAction(draft)
   }
 
   await ensureProfile(userId)
