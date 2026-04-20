@@ -1,32 +1,62 @@
-import { AppShell } from '@/components/app-shell'
-import { Card } from '@/components/ui/card'
-import { EmptyState } from '@/components/ui/empty-state'
-import { PrimaryLink } from '@/components/ui/button'
+'use client'
 
-export function TodayPage({ itemCount, hasProfile }: { itemCount: number; hasProfile: boolean }) {
+import { useState } from 'react'
+import { AppShell } from '@/components/app-shell'
+import { TodayCityForm } from '@/components/today/today-city-form'
+import { TodayCityPromptCard } from '@/components/today/today-city-prompt-card'
+import { TodayRecommendationList } from '@/components/today/today-recommendation-list'
+import { TodayStatusCard } from '@/components/today/today-status-card'
+import { PrimaryLink, SecondaryButton } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
+import type { TodayView } from '@/lib/today/types'
+
+export function TodayPage({
+  view,
+  updateCity,
+  refreshRecommendations
+}: {
+  view: TodayView
+  updateCity: (input: { city: string }) => Promise<{ error: string | null }>
+  refreshRecommendations: () => Promise<void>
+}) {
+  const [isEditingCity, setIsEditingCity] = useState(false)
+
   return (
     <AppShell title="Today">
-      <Card>
-        <p className="text-sm text-[var(--color-neutral-dark)]">今天先把基础页面和数据接通。</p>
-        <p className="mt-2 text-lg font-medium">{hasProfile ? '欢迎回来' : '正在准备你的个人档案'}</p>
-      </Card>
+      <TodayStatusCard weatherState={view.weatherState} />
 
-      {itemCount === 0 ? (
+      {view.itemCount === 0 ? (
         <EmptyState
           title="你的衣橱还是空的"
-          description="先上传几件常穿的单品，Tomorrow 才有推荐空间。"
+          description="先上传几件常穿的单品，Today 才能给出真实推荐。"
           action={<PrimaryLink href="/closet">去上传衣物</PrimaryLink>}
         />
       ) : (
-        <div className="grid gap-4">
-          <p className="text-sm text-[var(--color-neutral-dark)]">推荐功能即将接入</p>
-          {[1, 2, 3].map((slot) => (
-            <Card key={slot}>
-              <div className="aspect-[3/4] rounded-lg bg-[var(--color-secondary)]" />
-              <p className="mt-3 text-sm">Outfit placeholder</p>
-            </Card>
-          ))}
-        </div>
+        <>
+          {!view.city ? <TodayCityPromptCard /> : null}
+
+          {isEditingCity ? (
+            <TodayCityForm
+              initialCity={view.city ?? ''}
+              onSubmit={updateCity}
+              onCancel={() => setIsEditingCity(false)}
+            />
+          ) : null}
+
+          <TodayRecommendationList
+            recommendations={view.recommendations}
+            recommendationError={view.recommendationError}
+          />
+
+          <div className="flex gap-2">
+            <SecondaryButton type="button" onClick={() => void refreshRecommendations()}>
+              换一批推荐
+            </SecondaryButton>
+            <SecondaryButton type="button" onClick={() => setIsEditingCity(true)}>
+              {view.city ? '修改城市' : '设置城市'}
+            </SecondaryButton>
+          </div>
+        </>
       )}
     </AppShell>
   )
