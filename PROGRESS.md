@@ -146,6 +146,25 @@ WEATHER_API_KEY=<Weather API Key>
 - worktree 需要单独安装 `node_modules`
 - worktree 本地浏览器验证需要单独提供 `.env.local`
 
+## 记录同步约定
+
+- `PROGRESS.md` 是项目当前进展的唯一事实源
+- Superpowers 进度优先使用其原生产物与流程记录：
+  - `docs/superpowers/specs/*.md`
+  - `docs/superpowers/plans/*.md`
+  - plan checkbox 与执行状态
+- Gstack 进度优先使用其原生保存与恢复：
+  - `/context-save`
+  - `/context-restore`
+  - `.gstack-meta/` 或 `~/.gstack/projects/OOTODAY/` 下的 checkpoint / planning artifacts
+- 每次开发收尾都应同步更新：
+  - `PROGRESS.md`
+  - 涉及到的 `docs/superpowers/plans/*.md`
+  - Gstack `/context-save`
+  - `docs/process/progress-sync.md` 中的 latest sync snapshot（作为镜像，不替代原生存储）
+- 每次进入新会话都应优先尝试 Gstack `/context-restore`
+- 如果当前环境不能直接写入 Gstack checkpoint，至少要把 intended checkpoint summary 写进 `docs/process/progress-sync.md`
+
 ## 下一步
 
 1. 提交 Today recommendation + OOTD feedback MVP 工作树改动

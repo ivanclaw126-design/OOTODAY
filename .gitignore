@@ -21,3 +21,4 @@ supabase/.temp/
 .claude/worktrees/
 
 .worktrees/
+AGENTS.md

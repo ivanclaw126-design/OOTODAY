@@ -49,23 +49,49 @@ From the planning document (初版规划.md), V1 should deliver:
 
 **Execution plans:** `docs/superpowers/plans/*.md` (superpowers implementation plans)
 
+**Progress sync workflow:** `docs/process/progress-sync.md`
+- Mirrors how this repo uses Gstack and Superpowers native progress mechanisms
+- Do not treat it as a replacement for built-in save/restore flows
+- If instructions conflict, keep `PROGRESS.md` as the source of truth and prefer native tool flows first
+
 **gstack meta:** `.gstack-meta/` → symlink to ~/.gstack/projects/OOTODAY
 - Contains checkpoints, reviews, design docs from gstack skills
 - May be broken on fresh clone (run any gstack skill once to initialize)
 - Detailed context: `.gstack-meta/checkpoints/*.md`
+- Fallback real path when symlink is missing: `~/.gstack/projects/OOTODAY/`
 
 ### Session start reading flow
 
 1. Read `PROGRESS.md` for current state and next steps
-2. Read `docs/superpowers/plans/*.md` for active execution plans
-3. If `.gstack-meta/` readable → Read latest checkpoint for detailed context
-4. If `.gstack-meta/` broken → Skip (gstack uninitialized on this machine)
+2. Read `docs/process/progress-sync.md` for the current sync contract
+3. Read `docs/superpowers/plans/*.md` for active execution plans
+4. Use Gstack `/context-restore` when available to recover the latest checkpointed state
+5. If `.gstack-meta/` readable → Read latest checkpoint for detailed context
+6. If `.gstack-meta/` broken but `~/.gstack/projects/OOTODAY/` exists → read latest checkpoint there
+7. If neither path exists → continue without gstack checkpoint context
 
 ### After completing work
 
 1. Update `PROGRESS.md` with new status
-2. Run `/context-save` to checkpoint gstack state
-3. Ensure execution plan task checkboxes reflect actual progress
+2. Update any touched `docs/superpowers/plans/*.md` checkboxes to reflect actual execution status
+3. Preserve Superpowers progress in its native artifacts: specs, plans, and plan execution state
+4. Run Gstack `/context-save` to checkpoint state
+5. Add or refresh the "Latest sync snapshot" section in `docs/process/progress-sync.md` as a mirror only
+6. If Gstack cannot be updated in-session, note the intended gstack checkpoint summary in `docs/process/progress-sync.md`
+
+### Recordkeeping policy
+
+- `PROGRESS.md` is the canonical project status file for both Gstack and Superpowers
+- Superpowers progress should be tracked through its native artifacts and workflows:
+  - `docs/superpowers/specs/*.md`
+  - `docs/superpowers/plans/*.md`
+  - execution status reflected in plan checkboxes and related implementation docs
+- Gstack progress should be tracked through its native workflows first:
+  - `/context-save`
+  - `/context-restore`
+  - planning artifacts in `~/.gstack/projects/OOTODAY/`
+- `docs/process/progress-sync.md` is a repo-local mirror and recovery aid, not the primary persistence layer for either system
+- Every meaningful development session should leave behind enough written context that a new agent can understand: what changed, what was verified, what is still pending, and which external gstack artifact is the best next read
 
 ## gstack
 
