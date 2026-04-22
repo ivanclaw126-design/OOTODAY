@@ -15,7 +15,7 @@ export async function getClosetView(userId: string) {
 
   const { data, error } = await supabase
     .from('items')
-    .select('id, image_url, category, sub_category, color_category, style_tags, created_at')
+    .select('id, image_url, category, sub_category, color_category, style_tags, last_worn_date, wear_count, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(6)
@@ -31,6 +31,8 @@ export async function getClosetView(userId: string) {
     subCategory: item.sub_category,
     colorCategory: item.color_category,
     styleTags: item.style_tags,
+    lastWornDate: item.last_worn_date,
+    wearCount: item.wear_count,
     createdAt: item.created_at
   }))
 

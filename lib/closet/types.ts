@@ -5,6 +5,8 @@ export type ClosetItemCardData = {
   subCategory: string | null
   colorCategory: string | null
   styleTags: string[]
+  lastWornDate: string | null
+  wearCount: number
   createdAt: string
 }
 

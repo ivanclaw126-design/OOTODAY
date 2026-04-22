@@ -69,23 +69,22 @@ Native tool persistence comes before repo-local mirrors.
 
 ## Latest Sync Snapshot
 
-- Date: 2026-04-21
-- Product state: Today recommendation + OOTD feedback MVP complete in code, tests, and basic browser verification
+- Date: 2026-04-22
+- Product state: Today recommendation + OOTD feedback MVP is stable, `/today` real weather-success browser QA is complete, and `/shop` now supports product links, extensionless image URLs, local image upload, desktop drag-drop, and an apparel-only guardrail for non-fashion items
 - Superpowers state:
-  - Active plans in repo cover app shell, closet upload, today recommendation, and OOTD feedback MVP
-  - Native Superpowers persistence in this repo is the spec/plan artifact set plus execution checkbox state
-  - The 2026-04-20 Today recommendation plan and spec are now tracked in git alongside the other plan artifacts
+  - Active plans in repo still cover app shell, closet upload, today recommendation, and OOTD feedback MVP
+  - Native Superpowers persistence in this repo remains the spec/plan artifact set plus execution checkbox state
+  - Shop purchase analysis has moved from a link-only MVP into a multi-input flow: major CN commerce platforms now return more accurate site-specific outcomes, local uploads reuse Supabase Storage + the same analysis path, and non-fashion items are blocked before wardrobe scoring
+  - QA evidence now includes browser-level validation for `/today` weather success, `/shop` platform-specific behavior, the JD industrial-product rejection path, and component-level verification for local upload + drag-drop
 - Gstack state:
-  - Native Gstack progress flow for this repo should use `/context-save` and `/context-restore`
-  - Primary planning artifacts live under `~/.gstack/projects/OOTODAY/`
-  - Most relevant files today:
-    - `spicyclaw-unknown-design-20260419-122822.md`
-    - `spicyclaw-main-eng-review-test-plan-20260419-124838.md`
-    - `checkpoints/20260419-133023-mvp-planning-complete.md`
-  - Related implementation checkpoint also exists in `~/.gstack/projects/ivanclaw126-design-OOTODAY/checkpoints/20260420-152214-closet-upload-progress.md`
+  - Native Gstack progress flow for this repo continues to use `/context-save` and `/context-restore`
+  - Latest saved checkpoint is now `~/.gstack/projects/OOTODAY/checkpoints/20260422-132656-shop-local-upload.md`
+  - This checkpoint captures the new Shop local-upload / drag-drop flow plus the current roadmap decision to keep category scope limited to core apparel
+  - Useful operational note from the last checkpoint remains valid: importing local Chrome `localhost` cookies is enough to quickly recover an authenticated QA session
 - Pending sync work:
-  - Commit current repo-tracked plan/spec additions when the rest of the in-flight work is ready
-  - Continue writing end-of-session summaries that mention both repo status and the intended gstack checkpoint outcome
+  - TODO backlog: continue improving Shop compatibility specifically for Taobao and Dewu if a stable product-image source can be identified
+  - Keep Shop scoped to core apparel for now; no shoes / bags / accessories expansion in the current phase
+  - Optionally capture direct duplicate-submission UI or network evidence if stronger proof is needed
 
 ## Update Template
 

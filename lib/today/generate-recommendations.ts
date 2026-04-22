@@ -16,6 +16,45 @@ function buildReason(parts: string[]) {
   return parts.filter(Boolean).join('，')
 }
 
+function compareWearPriority(a: ClosetItemCardData, b: ClosetItemCardData) {
+  if (!a.lastWornDate && !b.lastWornDate) {
+    if (a.wearCount !== b.wearCount) {
+      return a.wearCount - b.wearCount
+    }
+
+    return b.createdAt.localeCompare(a.createdAt)
+  }
+
+  if (!a.lastWornDate) {
+    return -1
+  }
+
+  if (!b.lastWornDate) {
+    return 1
+  }
+
+  if (a.lastWornDate !== b.lastWornDate) {
+    return a.lastWornDate.localeCompare(b.lastWornDate)
+  }
+
+  if (a.wearCount !== b.wearCount) {
+    return a.wearCount - b.wearCount
+  }
+
+  return b.createdAt.localeCompare(a.createdAt)
+}
+
+function rotateItems(items: ClosetItemCardData[], offset: number) {
+  if (items.length === 0) {
+    return []
+  }
+
+  const sorted = [...items].sort(compareWearPriority)
+  const normalizedOffset = offset % sorted.length
+
+  return [...sorted.slice(normalizedOffset), ...sorted.slice(0, normalizedOffset)]
+}
+
 export function generateTodayRecommendations(
   items: ClosetItemCardData[],
   weather: TodayWeather | null,
@@ -24,15 +63,13 @@ export function generateTodayRecommendations(
   const tops = items.filter((item) => item.category === '上衣')
   const bottoms = items.filter((item) => item.category === '裤装' || item.category === '裙装')
   const dresses = items.filter((item) => item.category === '连衣裙')
-  const outerLayers = items.filter((item) => item.category === '外套')
+  const outerLayers = [...items.filter((item) => item.category === '外套')].sort(compareWearPriority)
 
   const recommendations: TodayRecommendation[] = []
   const usedMainIds = new Set<string>()
-  const rotatedTops = tops.length > 0 ? [...tops.slice(offset % tops.length), ...tops.slice(0, offset % tops.length)] : []
-  const rotatedDresses =
-    dresses.length > 0
-      ? [...dresses.slice(offset % dresses.length), ...dresses.slice(0, offset % dresses.length)]
-      : []
+  const rotatedTops = rotateItems(tops, offset)
+  const rotatedBottoms = rotateItems(bottoms, offset)
+  const rotatedDresses = rotateItems(dresses, offset)
 
   for (const dress of rotatedDresses) {
     if (recommendations.length === 3) {
@@ -62,7 +99,7 @@ export function generateTodayRecommendations(
       continue
     }
 
-    const bottom = bottoms.find((candidate) => !usedMainIds.has(candidate.id))
+    const bottom = rotatedBottoms.find((candidate) => !usedMainIds.has(candidate.id))
 
     if (!bottom) {
       recommendations.push({

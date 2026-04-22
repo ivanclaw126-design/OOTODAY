@@ -1,6 +1,7 @@
 const links = [
   { href: '/today', label: 'Today' },
-  { href: '/closet', label: 'Closet' }
+  { href: '/closet', label: 'Closet' },
+  { href: '/shop', label: 'Shop' }
 ] as const
 
 export function BottomNav() {

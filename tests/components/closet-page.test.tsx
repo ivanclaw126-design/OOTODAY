@@ -50,6 +50,8 @@ describe('ClosetPage', () => {
             subCategory: '衬衫',
             colorCategory: '蓝色',
             styleTags: ['通勤'],
+            lastWornDate: null,
+            wearCount: 0,
             createdAt: '2026-04-19T12:00:00Z'
           },
           {
@@ -59,6 +61,8 @@ describe('ClosetPage', () => {
             subCategory: '西裤',
             colorCategory: '黑色',
             styleTags: ['极简'],
+            lastWornDate: '2026-04-20',
+            wearCount: 2,
             createdAt: '2026-04-19T12:05:00Z'
           }
         ]}

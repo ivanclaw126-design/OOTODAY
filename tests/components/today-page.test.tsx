@@ -48,7 +48,8 @@ describe('TodayPage', () => {
           weatherState: { status: 'not-set' },
           recommendations: [],
           recommendationError: false,
-          ootdStatus: { status: 'not-recorded' }
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
         }}
         updateCity={updateCity}
         submitOotd={submitOotd}
@@ -69,7 +70,8 @@ describe('TodayPage', () => {
           weatherState: { status: 'not-set' },
           recommendations: [recommendation],
           recommendationError: false,
-          ootdStatus: { status: 'not-recorded' }
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
         }}
         updateCity={updateCity}
         submitOotd={submitOotd}
@@ -89,7 +91,8 @@ describe('TodayPage', () => {
           weatherState: { status: 'not-set' },
           recommendations: [recommendation],
           recommendationError: false,
-          ootdStatus: { status: 'not-recorded' }
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
         }}
         updateCity={updateCity}
         submitOotd={submitOotd}
@@ -117,7 +120,8 @@ describe('TodayPage', () => {
           weatherState: { status: 'unavailable', city: 'Shanghai' },
           recommendations: [recommendation, { ...recommendation, id: 'rec-2' }],
           recommendationError: false,
-          ootdStatus: { status: 'not-recorded' }
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
         }}
         updateCity={updateCity}
         submitOotd={submitOotd}
@@ -151,7 +155,8 @@ describe('TodayPage', () => {
           weatherState: { status: 'not-set' },
           recommendations: [recommendation],
           recommendationError: false,
-          ootdStatus: { status: 'not-recorded' }
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
         }}
         updateCity={updateCity}
         submitOotd={submitOotd}
@@ -179,7 +184,8 @@ describe('TodayPage', () => {
           ootdStatus: {
             status: 'recorded',
             wornAt: '2026-04-21T08:00:00.000Z'
-          }
+          },
+          recentOotdHistory: []
         }}
         updateCity={updateCity}
         submitOotd={submitOotd}
@@ -189,5 +195,38 @@ describe('TodayPage', () => {
 
     expect(screen.getByText('今日已记录')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '记为今日已穿' })).not.toBeInTheDocument()
+  })
+
+  it('renders recent ootd history when entries exist', () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 2,
+          city: 'Shanghai',
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: {
+            status: 'recorded',
+            wornAt: '2026-04-21T08:00:00.000Z'
+          },
+          recentOotdHistory: [
+            {
+              id: 'ootd-1',
+              wornAt: '2026-04-20T08:00:00.000Z',
+              satisfactionScore: 4,
+              notes: 'OOTD: 衬衫 + 西裤；理由：基础组合稳定不出错'
+            }
+          ]
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+      />
+    )
+
+    expect(screen.getByText('最近穿搭记录')).toBeInTheDocument()
+    expect(screen.getByText('4 / 5 分')).toBeInTheDocument()
+    expect(screen.getByText('OOTD: 衬衫 + 西裤；理由：基础组合稳定不出错')).toBeInTheDocument()
   })
 })

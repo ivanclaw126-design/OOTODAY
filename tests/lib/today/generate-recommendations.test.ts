@@ -9,6 +9,8 @@ const items = [
     subCategory: '针织衫',
     colorCategory: '米色',
     styleTags: ['通勤'],
+    lastWornDate: null,
+    wearCount: 0,
     createdAt: '2026-04-19T10:00:00Z'
   },
   {
@@ -18,6 +20,8 @@ const items = [
     subCategory: 'T恤',
     colorCategory: '白色',
     styleTags: ['极简'],
+    lastWornDate: '2026-04-21',
+    wearCount: 3,
     createdAt: '2026-04-19T10:01:00Z'
   },
   {
@@ -27,6 +31,8 @@ const items = [
     subCategory: '西裤',
     colorCategory: '黑色',
     styleTags: ['通勤'],
+    lastWornDate: null,
+    wearCount: 1,
     createdAt: '2026-04-19T10:02:00Z'
   },
   {
@@ -36,6 +42,8 @@ const items = [
     subCategory: '半裙',
     colorCategory: '灰色',
     styleTags: ['极简'],
+    lastWornDate: '2026-04-20',
+    wearCount: 2,
     createdAt: '2026-04-19T10:03:00Z'
   },
   {
@@ -45,6 +53,8 @@ const items = [
     subCategory: '针织连衣裙',
     colorCategory: '黑色',
     styleTags: ['通勤'],
+    lastWornDate: '2026-04-18',
+    wearCount: 4,
     createdAt: '2026-04-19T10:04:00Z'
   },
   {
@@ -54,6 +64,8 @@ const items = [
     subCategory: '西装外套',
     colorCategory: '藏蓝',
     styleTags: ['通勤'],
+    lastWornDate: '2026-04-15',
+    wearCount: 1,
     createdAt: '2026-04-19T10:05:00Z'
   }
 ]
@@ -91,6 +103,8 @@ describe('generateTodayRecommendations', () => {
           subCategory: 'T恤',
           colorCategory: '白色',
           styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 0,
           createdAt: '2026-04-19T10:00:00Z'
         },
         {
@@ -100,6 +114,8 @@ describe('generateTodayRecommendations', () => {
           subCategory: '衬衫',
           colorCategory: '蓝色',
           styleTags: ['通勤'],
+          lastWornDate: '2026-04-21',
+          wearCount: 2,
           createdAt: '2026-04-19T10:01:00Z'
         }
       ],
@@ -112,5 +128,49 @@ describe('generateTodayRecommendations', () => {
     )
     expect(recommendations.some((recommendation) => recommendation.reason.includes('先用已有单品起一套思路'))).toBe(true)
     expect(recommendations.some((recommendation) => recommendation.reason.includes('适合换一套思路'))).toBe(true)
+  })
+
+  it('prioritizes items that have not been worn recently', () => {
+    const recommendations = generateTodayRecommendations(
+      [
+        {
+          id: 'top-fresh',
+          imageUrl: 'https://example.com/top-fresh.jpg',
+          category: '上衣',
+          subCategory: '白T恤',
+          colorCategory: '白色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'top-recent',
+          imageUrl: 'https://example.com/top-recent.jpg',
+          category: '上衣',
+          subCategory: '针织衫',
+          colorCategory: '灰色',
+          styleTags: ['通勤'],
+          lastWornDate: '2026-04-21',
+          wearCount: 5,
+          createdAt: '2026-04-19T10:01:00Z'
+        },
+        {
+          id: 'bottom-fresh',
+          imageUrl: 'https://example.com/bottom-fresh.jpg',
+          category: '裤装',
+          subCategory: '西裤',
+          colorCategory: '黑色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-19T10:02:00Z'
+        }
+      ],
+      null
+    )
+
+    expect(recommendations[0]?.top?.id).toBe('top-fresh')
+    expect(recommendations[0]?.bottom?.id).toBe('bottom-fresh')
   })
 })

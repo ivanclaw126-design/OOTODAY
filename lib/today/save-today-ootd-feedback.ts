@@ -15,6 +15,15 @@ function todayRange(now = new Date()) {
   }
 }
 
+function getRecommendationItemIds(recommendation: TodayRecommendation) {
+  return [
+    recommendation.top?.id,
+    recommendation.bottom?.id,
+    recommendation.dress?.id,
+    recommendation.outerLayer?.id
+  ].filter((id): id is string => Boolean(id))
+}
+
 export async function saveTodayOotdFeedback({
   userId,
   recommendation,
@@ -61,6 +70,40 @@ export async function saveTodayOotdFeedback({
     }
 
     throw error
+  }
+
+  const itemIds = getRecommendationItemIds(recommendation)
+
+  if (itemIds.length > 0) {
+    const wornDate = wornAt.slice(0, 10)
+    const { data: existingItems, error: itemsError } = await supabase
+      .from('items')
+      .select('id, wear_count')
+      .eq('user_id', userId)
+      .in('id', itemIds)
+
+    if (itemsError) {
+      throw itemsError
+    }
+
+    const updateResults = await Promise.all(
+      (existingItems ?? []).map((item) =>
+        supabase
+          .from('items')
+          .update({
+            last_worn_date: wornDate,
+            wear_count: (item.wear_count ?? 0) + 1
+          })
+          .eq('user_id', userId)
+          .eq('id', item.id)
+      )
+    )
+
+    const updateError = updateResults.find((result) => result.error)?.error
+
+    if (updateError) {
+      throw updateError
+    }
   }
 
   return { error: null, wornAt }
