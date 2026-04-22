@@ -13,6 +13,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: 'Today' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute('href', '/today')
     expect(screen.getByRole('link', { name: 'Closet' })).toHaveAttribute('href', '/closet')
+    expect(screen.getByRole('link', { name: 'Inspiration' })).toHaveAttribute('href', '/inspiration')
     expect(screen.getByRole('link', { name: 'Shop' })).toHaveAttribute('href', '/shop')
   })
 })

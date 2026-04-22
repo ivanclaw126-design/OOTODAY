@@ -189,4 +189,51 @@ describe('ShopPage', () => {
 
     expect(screen.getByText('夹克 · 黑色')).toBeInTheDocument()
   })
+
+  it('clears the uploaded image state so users can reselect another file', async () => {
+    upload.mockResolvedValue({ error: null })
+    getPublicUrl.mockReturnValue({
+      data: { publicUrl: 'https://example.com/uploads/local-item.jpg' }
+    })
+
+    const analyzeCandidate = vi.fn().mockResolvedValue({
+      error: null,
+      analysis: {
+        candidate: {
+          imageUrl: 'https://example.com/uploads/local-item.jpg',
+          sourceUrl: 'https://example.com/uploads/local-item.jpg',
+          sourceTitle: null,
+          category: '上衣',
+          subCategory: '衬衫',
+          colorCategory: '白色',
+          styleTags: ['极简']
+        },
+        duplicateItems: [],
+        duplicateRisk: 'low',
+        estimatedOutfitCount: 2,
+        missingCategoryHints: [],
+        recommendation: 'consider',
+        recommendationReason: '它可以补充现有衣橱，但收益还没有高到闭眼入。'
+      }
+    })
+
+    render(<ShopPage itemCount={3} userId="user-1" storageBucket="ootd-images" analyzeCandidate={analyzeCandidate} />)
+
+    const file = new File(['image'], 'shirt.png', { type: 'image/png' })
+    fireEvent.change(screen.getByLabelText('上传商品图片'), {
+      target: { files: [file] }
+    })
+
+    await waitFor(() => {
+      expect(analyzeCandidate).toHaveBeenCalledWith({ sourceUrl: 'https://example.com/uploads/local-item.jpg' })
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '删除当前图片' }))
+
+    expect(screen.queryByText('已选择：shirt.png')).not.toBeInTheDocument()
+    expect(screen.queryByAltText('待分析商品预览')).not.toBeInTheDocument()
+    expect(screen.queryByText('衬衫 · 白色')).not.toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: '商品链接或图片链接' })).toHaveValue('')
+    expect(screen.queryByRole('button', { name: '删除当前图片' })).not.toBeInTheDocument()
+  })
 })

@@ -7,49 +7,25 @@ import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { buildClosetUploadPath } from '@/lib/closet/build-upload-path'
+import type { InspirationAnalysis } from '@/lib/inspiration/types'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import type { ShopPurchaseAnalysis } from '@/lib/shop/types'
 
-function recommendationLabel(recommendation: ShopPurchaseAnalysis['recommendation']) {
-  if (recommendation === 'buy') {
-    return '建议买'
-  }
-
-  if (recommendation === 'consider') {
-    return '可考虑'
-  }
-
-  return '建议暂缓'
-}
-
-function duplicateRiskLabel(risk: ShopPurchaseAnalysis['duplicateRisk']) {
-  if (risk === 'high') {
-    return '高'
-  }
-
-  if (risk === 'medium') {
-    return '中'
-  }
-
-  return '低'
-}
-
-export function ShopPage({
+export function InspirationPage({
   itemCount,
   userId,
   storageBucket,
-  analyzeCandidate
+  analyzeInspiration
 }: {
   itemCount: number
   userId: string
   storageBucket: string
-  analyzeCandidate: (input: {
+  analyzeInspiration: (input: {
     sourceUrl: string
-  }) => Promise<{ error: string | null; analysis: ShopPurchaseAnalysis | null }>
+  }) => Promise<{ error: string | null; analysis: InspirationAnalysis | null }>
 }) {
   const supabase = createSupabaseBrowserClient()
   const [sourceUrl, setSourceUrl] = useState('')
-  const [analysis, setAnalysis] = useState<ShopPurchaseAnalysis | null>(null)
+  const [analysis, setAnalysis] = useState<InspirationAnalysis | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -94,7 +70,7 @@ export function ShopPage({
     }
 
     setError(null)
-    const result = await analyzeCandidate({ sourceUrl: nextSourceUrl })
+    const result = await analyzeInspiration({ sourceUrl: nextSourceUrl })
 
     if (manageSubmittingState) {
       setIsSubmitting(false)
@@ -171,20 +147,20 @@ export function ShopPage({
   }
 
   return (
-    <AppShell title="Shop">
+    <AppShell title="Inspiration">
       <Card>
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-sm font-medium">买前分析</p>
+            <p className="text-sm font-medium">灵感拆解</p>
             <p className="text-sm text-[var(--color-neutral-dark)]">
-              先贴商品链接、商品主图链接，或者直接上传本地图片，我们会结合你现有衣橱判断它值不值得买。
+              贴一张灵感图，我们会先拆解它的穿搭逻辑，再告诉你衣橱里有哪些单品可以借用。
             </p>
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <SecondaryButton type="button" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting}>
-                上传本地图片
+                上传灵感图
               </SecondaryButton>
               {selectedFileName ? (
                 <SecondaryButton type="button" onClick={clearSelectedImage} disabled={isSubmitting}>
@@ -193,7 +169,7 @@ export function ShopPage({
               ) : null}
               <input
                 ref={fileInputRef}
-                aria-label="上传商品图片"
+                aria-label="上传灵感图片"
                 type="file"
                 accept="image/*"
                 capture="environment"
@@ -201,7 +177,7 @@ export function ShopPage({
                 onChange={handleFileChange}
                 disabled={isSubmitting}
               />
-              <span className="text-sm text-[var(--color-neutral-dark)]">电脑端支持拖拽，iPhone / iPad 可直接从相册或拍照上传。</span>
+              <span className="text-sm text-[var(--color-neutral-dark)]">支持电脑端拖拽，也支持 iPhone / iPad 相册或拍照上传。</span>
             </div>
 
             <label
@@ -217,7 +193,7 @@ export function ShopPage({
                   : 'border-[var(--color-neutral-mid)] text-[var(--color-neutral-dark)]'
               }`}
             >
-              <span className="font-medium text-[var(--color-primary)]">拖拽图片到这里</span>
+              <span className="font-medium text-[var(--color-primary)]">拖拽灵感图到这里</span>
               <span>{selectedFileName ? `已选择：${selectedFileName}` : '也可以点击上方按钮选择本地图片'}</span>
             </label>
 
@@ -225,7 +201,7 @@ export function ShopPage({
               <div className="overflow-hidden rounded-lg border border-[var(--color-neutral-mid)]">
                 <Image
                   src={previewUrl}
-                  alt="待分析商品预览"
+                  alt="待拆解灵感图预览"
                   width={960}
                   height={960}
                   unoptimized
@@ -236,9 +212,9 @@ export function ShopPage({
           </div>
 
           <label className="flex flex-col gap-1 text-sm">
-            <span>商品链接或图片链接</span>
+            <span>灵感图片链接</span>
             <input
-              aria-label="商品链接或图片链接"
+              aria-label="灵感图片链接"
               value={sourceUrl}
               onChange={(event) => setSourceUrl(event.target.value)}
               placeholder="https://..."
@@ -248,87 +224,129 @@ export function ShopPage({
 
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-          <PrimaryButton
-            type="button"
-            disabled={isSubmitting || !sourceUrl.trim()}
-            onClick={() => void runAnalysis(sourceUrl)}
-          >
-            {isSubmitting ? '分析中' : '开始分析'}
+          <PrimaryButton type="button" disabled={isSubmitting || !sourceUrl.trim()} onClick={() => void runAnalysis(sourceUrl)}>
+            {isSubmitting ? '拆解中' : '开始拆解'}
           </PrimaryButton>
         </div>
       </Card>
 
       {itemCount === 0 ? (
         <EmptyState
-          title="先把衣橱填起来"
-          description="购买分析要先知道你已经有什么，才能判断重复不重复、能搭几套。"
+          title="先加几件自己的衣服"
+          description="灵感页会把外部穿搭和你的真实衣橱对上号，没有衣橱数据时只能做纯拆解。"
         />
       ) : null}
 
       {analysis ? (
-        <Card>
-          <div className="flex flex-col gap-3">
-            <div>
-              <p className="text-sm text-[var(--color-neutral-dark)]">识别结果</p>
-              {analysis.candidate.sourceTitle ? (
-                <p className="text-sm text-[var(--color-neutral-dark)]">{analysis.candidate.sourceTitle}</p>
-              ) : null}
-              <p className="text-lg font-medium">
-                {analysis.candidate.subCategory} · {analysis.candidate.colorCategory}
-              </p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">
-                {analysis.candidate.category} · {analysis.candidate.styleTags.join(' / ') || '无明显风格标签'}
-              </p>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-lg bg-[var(--color-secondary)] p-3">
-                <p className="text-sm text-[var(--color-neutral-dark)]">结论</p>
-                <p className="text-base font-medium">{recommendationLabel(analysis.recommendation)}</p>
+        <>
+          <Card>
+            <div className="flex flex-col gap-3">
+              <div>
+                <p className="text-sm text-[var(--color-neutral-dark)]">整体判断</p>
+                {analysis.sourceTitle ? (
+                  <p className="text-sm text-[var(--color-neutral-dark)]">{analysis.sourceTitle}</p>
+                ) : null}
+                <p className="text-lg font-medium">{analysis.breakdown.summary}</p>
+                <p className="text-sm text-[var(--color-neutral-dark)]">
+                  {analysis.breakdown.scene} · {analysis.breakdown.vibe}
+                </p>
               </div>
-              <div className="rounded-lg bg-[var(--color-secondary)] p-3">
-                <p className="text-sm text-[var(--color-neutral-dark)]">重复风险</p>
-                <p className="text-base font-medium">{duplicateRiskLabel(analysis.duplicateRisk)}</p>
-              </div>
-              <div className="rounded-lg bg-[var(--color-secondary)] p-3">
-                <p className="text-sm text-[var(--color-neutral-dark)]">预计可搭套数</p>
-                <p className="text-base font-medium">{analysis.estimatedOutfitCount}</p>
-              </div>
-            </div>
 
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">建议原因</p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">{analysis.recommendationReason}</p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">衣橱里相近的单品</p>
-              {analysis.duplicateItems.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {analysis.duplicateItems.map((item) => (
-                    <p key={item.id} className="text-sm text-[var(--color-neutral-dark)]">
-                      {item.subCategory ?? item.category}
-                      {item.colorCategory ? ` · ${item.colorCategory}` : ''}
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-[var(--color-neutral-dark)]">当前没找到明显重复的单品。</p>
-              )}
-            </div>
-
-            {analysis.missingCategoryHints.length > 0 ? (
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium">还缺什么</p>
-                {analysis.missingCategoryHints.map((hint) => (
-                  <p key={hint} className="text-sm text-[var(--color-neutral-dark)]">
-                    {hint}
+                <p className="text-sm font-medium">关键单品</p>
+                {analysis.breakdown.keyItems.map((item) => (
+                  <div key={item.id} className="rounded-lg bg-[var(--color-secondary)] p-3">
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className="text-sm text-[var(--color-neutral-dark)]">
+                      {item.category}
+                      {item.colorHint ? ` · ${item.colorHint}` : ''}
+                      {item.styleTags.length > 0 ? ` · ${item.styleTags.join(' / ')}` : ''}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium">搭配逻辑</p>
+                {analysis.breakdown.stylingTips.map((tip) => (
+                  <p key={tip} className="text-sm text-[var(--color-neutral-dark)]">
+                    {tip}
                   </p>
                 ))}
               </div>
-            ) : null}
-          </div>
-        </Card>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex flex-col gap-3">
+              <div>
+                <p className="text-sm font-medium">你衣橱里能借什么</p>
+                <p className="text-sm text-[var(--color-neutral-dark)]">先从已有单品里找最接近这套灵感的借用点。</p>
+              </div>
+
+              {analysis.closetMatches.map((group) => (
+                <div key={group.inspirationItem.id} className="flex flex-col gap-2 rounded-lg bg-[var(--color-secondary)] p-3">
+                  <p className="text-sm font-medium">
+                    {group.inspirationItem.label} · {group.inspirationItem.category}
+                  </p>
+                  {group.matchedItems.length > 0 ? (
+                    group.matchedItems.map((item) => (
+                      <p key={item.id} className="text-sm text-[var(--color-neutral-dark)]">
+                        {item.subCategory ?? item.category}
+                        {item.colorCategory ? ` · ${item.colorCategory}` : ''}
+                        {item.styleTags.length > 0 ? ` · ${item.styleTags.join(' / ')}` : ''}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-sm text-[var(--color-neutral-dark)]">你衣橱里暂时没有很接近的同类单品。</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex flex-col gap-3">
+              <div>
+                <p className="text-sm font-medium">{analysis.remixPlan.title}</p>
+                <p className="text-sm text-[var(--color-neutral-dark)]">{analysis.remixPlan.summary}</p>
+              </div>
+
+              <div className="rounded-lg bg-[var(--color-secondary)] p-3">
+                <p className="text-sm font-medium">
+                  完成度：{analysis.remixPlan.matchedCount}/{analysis.remixPlan.totalCount}
+                </p>
+                <p className="text-sm text-[var(--color-neutral-dark)]">{analysis.remixPlan.coverageLabel}</p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium">复刻步骤</p>
+                {analysis.remixPlan.steps.map((step) => (
+                  <div key={step.inspirationItem.id} className="rounded-lg bg-[var(--color-secondary)] p-3">
+                    <p className="text-sm font-medium">
+                      {step.inspirationItem.label}
+                      {step.inspirationItem.colorHint ? ` · ${step.inspirationItem.colorHint}` : ''}
+                    </p>
+                    <p className="text-sm text-[var(--color-neutral-dark)]">{step.note}</p>
+                  </div>
+                ))}
+              </div>
+
+              {analysis.remixPlan.missingItems.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium">当前缺口</p>
+                  {analysis.remixPlan.missingItems.map((item) => (
+                    <p key={item.id} className="text-sm text-[var(--color-neutral-dark)]">
+                      {item.label}
+                      {item.colorHint ? ` · ${item.colorHint}` : ''}
+                      {item.styleTags.length > 0 ? ` · ${item.styleTags.join(' / ')}` : ''}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </Card>
+        </>
       ) : null}
     </AppShell>
   )

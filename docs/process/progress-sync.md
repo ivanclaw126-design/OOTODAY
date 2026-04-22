@@ -70,18 +70,20 @@ Native tool persistence comes before repo-local mirrors.
 ## Latest Sync Snapshot
 
 - Date: 2026-04-22
-- Product state: Today recommendation + OOTD feedback MVP is stable, `/today` real weather-success browser QA is complete, and `/shop` now supports product links, extensionless image URLs, local image upload, desktop drag-drop, and an apparel-only guardrail for non-fashion items
+- Product state: Today recommendation + OOTD feedback MVP is stable, `/shop` now supports links + local uploads + desktop drag-drop with an apparel-only guardrail, and Inspiration has advanced from basic breakdown into a first recreate-my-version MVP
 - Superpowers state:
   - Active plans in repo still cover app shell, closet upload, today recommendation, and OOTD feedback MVP
   - Native Superpowers persistence in this repo remains the spec/plan artifact set plus execution checkbox state
-  - Shop purchase analysis has moved from a link-only MVP into a multi-input flow: major CN commerce platforms now return more accurate site-specific outcomes, local uploads reuse Supabase Storage + the same analysis path, and non-fashion items are blocked before wardrobe scoring
-  - QA evidence now includes browser-level validation for `/today` weather success, `/shop` platform-specific behavior, the JD industrial-product rejection path, and component-level verification for local upload + drag-drop
+  - Shop has moved into a more usable multi-input flow, and the newest mainline development has now started the missing fourth product surface: Inspiration
+  - Inspiration now includes local upload / image-link input, AI-generated outfit breakdown, key-item extraction, styling tips, same-category closet matching, and a rule-based "my version" remix plan with gap prompts
+  - QA evidence now includes real browser validation for `/today` weather success, real browser validation for `/shop` local upload, user-confirmed real desktop drag-drop success on `/shop`, and test-level verification for Inspiration remix output
 - Gstack state:
   - Native Gstack progress flow for this repo continues to use `/context-save` and `/context-restore`
-  - Latest saved checkpoint is now `~/.gstack/projects/OOTODAY/checkpoints/20260422-132656-shop-local-upload.md`
-  - This checkpoint captures the new Shop local-upload / drag-drop flow plus the current roadmap decision to keep category scope limited to core apparel
-  - Useful operational note from the last checkpoint remains valid: importing local Chrome `localhost` cookies is enough to quickly recover an authenticated QA session
+  - Latest saved checkpoint was `~/.gstack/projects/OOTODAY/checkpoints/20260422-132656-shop-local-upload.md` before this round
+  - A fresh checkpoint should capture the new Inspiration remix-plan capability together with the synced Shop drag-drop QA result
+  - Useful operational note from earlier checkpoints remains valid: importing local Chrome `localhost` cookies is enough to quickly recover an authenticated QA session
 - Pending sync work:
+  - Dogfood the new Inspiration page in a real browser session
   - TODO backlog: continue improving Shop compatibility specifically for Taobao and Dewu if a stable product-image source can be identified
   - Keep Shop scoped to core apparel for now; no shoes / bags / accessories expansion in the current phase
   - Optionally capture direct duplicate-submission UI or network evidence if stronger proof is needed
