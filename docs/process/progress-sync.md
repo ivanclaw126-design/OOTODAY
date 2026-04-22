@@ -70,20 +70,27 @@ Native tool persistence comes before repo-local mirrors.
 ## Latest Sync Snapshot
 
 - Date: 2026-04-22
-- Product state: Today recommendation + OOTD feedback MVP is stable, `/shop` now supports links + local uploads + desktop drag-drop with an apparel-only guardrail, and Inspiration has advanced from basic breakdown into a first recreate-my-version MVP with real browser QA on URL and local-upload paths
+- Product state: Today recommendation + OOTD feedback MVP is stable, `/shop` now supports links + local uploads + desktop drag-drop with an apparel-only guardrail, Inspiration has advanced into a first recreate-my-version MVP, Closet now shows a first organizing-insights layer with clickable filters plus an ordered action plan, and `/travel` now supports planning, day-by-day rotation, plus saving, listing, reopening, and deleting recent travel plans with fallback snapshot preservation
 - Superpowers state:
   - Active plans in repo still cover app shell, closet upload, today recommendation, and OOTD feedback MVP
   - Native Superpowers persistence in this repo remains the spec/plan artifact set plus execution checkbox state
-  - Shop has moved into a more usable multi-input flow, and the newest mainline development has now started the missing fourth product surface: Inspiration
-  - Inspiration now includes local upload / image-link input, AI-generated outfit breakdown, key-item extraction, styling tips, same-category closet matching, and a rule-based "my version" remix plan with gap prompts
-  - QA evidence now includes real browser validation for `/today` weather success, real browser validation for `/shop` local upload, user-confirmed real desktop drag-drop success on `/shop`, and real browser validation for Inspiration URL/local-upload analysis plus remix output
+  - Shop has moved into a more usable multi-input flow, Inspiration now covers the "灵感图 -> 我的版本" path, Closet has started turning stored wardrobe data into organizing guidance, and Travel now has its first MVP spec/plan plus a working `/travel` route
+  - Closet organizing v1 currently includes duplicate-item grouping, idle-item reminders, missing-basics prompts, clickable filters that switch the Closet grid into the relevant view, and a new "下一步先做这些" action plan that surfaces the most useful next 3 actions
+  - Travel Packing MVP v1 currently supports destination city, trip days, scene selection, optional weather-aware messaging, grouped packing entries, missing hints, reuse strategy notes, a day-by-day rotation plan, plus saving, reopening, and deleting recent travel plans; when the dedicated `travel_plans` table is unavailable remotely, fallback storage now still keeps a full plan snapshot instead of only query parameters
+  - Closet saved items now also support deletion with a confirmation step before the server action runs, and the image cleanup step is now best-effort so successful deletes are not misreported as failures
+  - QA evidence now includes real browser validation for `/today` weather success, real browser validation for `/shop` local upload, user-confirmed real desktop drag-drop success on `/shop`, real browser validation for Inspiration URL/local-upload analysis plus remix output, real browser validation for Closet organizing cards, and real browser validation for `/travel` generate -> save -> recent-list rendering
+  - Fresh automated verification now also covers Travel snapshot reopening and the post-review fixes for delete/save semantics; `npm test` is now 107/107 green and the app builds successfully
+  - `/travel` has now also completed a real browser dogfood pass covering idle state, real form submission, result rendering, a weather-note bug fix for mild-weather destinations, a real-browser recheck of the new day-by-day rotation plan, and successful save-plan submission
+  - Travel save-plan persistence now prefers the new `travel_plans` table, but gracefully falls back to storing lightweight travel metadata in `outfits` when the remote schema has not yet been migrated
 - Gstack state:
   - Native Gstack progress flow for this repo continues to use `/context-save` and `/context-restore`
-  - Latest saved checkpoint was `~/.gstack/projects/OOTODAY/checkpoints/20260422-132656-shop-local-upload.md` before this round
-  - A fresh checkpoint should capture the new Inspiration remix-plan capability together with the synced Shop drag-drop QA result
+  - Latest saved checkpoint before this round was `~/.gstack/projects/OOTODAY/checkpoints/20260422-150452-travel-daily-plan.md`
+  - A fresh checkpoint should capture the Travel save-plan feature, the real browser save QA, and the fallback persistence strategy while `travel_plans` is not yet live remotely
   - Useful operational note from earlier checkpoints remains valid: importing local Chrome `localhost` cookies is enough to quickly recover an authenticated QA session
 - Pending sync work:
-  - If needed, add one more real-browser pass for Inspiration desktop drag-drop to complement the already verified URL and local-upload paths
+  - Continue the Travel mainline by turning saved plans into editable/updatable travel records instead of only reopenable snapshots
+  - When remote connectivity allows, push `supabase/migrations/20260422_add_travel_plans.sql` so Travel can move from fallback storage back to its dedicated table
+  - If needed, add one manual browser QA pass for the new Travel / Closet delete-confirm interactions
   - TODO backlog: continue improving Shop compatibility specifically for Taobao and Dewu if a stable product-image source can be identified
   - Keep Shop scoped to core apparel for now; no shoes / bags / accessories expansion in the current phase
   - Optionally capture direct duplicate-submission UI or network evidence if stronger proof is needed

@@ -1,0 +1,81 @@
+import type { ClosetItemCardData } from '@/lib/closet/types'
+import type { TodayWeather } from '@/lib/today/types'
+
+export type TravelScene = '通勤' | '休闲' | '正式' | '约会' | '户外'
+
+export type TravelPackingEntry = {
+  id: string
+  categoryLabel: string
+  quantity: number
+  itemLabels: string[]
+  reason: string
+}
+
+export type TravelPackingPlan = {
+  destinationCity: string
+  days: number
+  scenes: TravelScene[]
+  suggestedOutfitCount: number
+  weather: TodayWeather | null
+  entries: TravelPackingEntry[]
+  dailyPlan: TravelDailyPlanEntry[]
+  missingHints: string[]
+  notes: string[]
+}
+
+export type TravelDailyPlanEntry = {
+  dayLabel: string
+  outfitSummary: string
+  focus: string
+}
+
+export type TravelSavedPlan = {
+  id: string
+  title: string
+  destinationCity: string
+  days: number
+  scenes: TravelScene[]
+  weatherSummary: string | null
+  createdAt: string
+  source: TravelSavedPlanSource
+}
+
+export type TravelSavedPlanSource = 'travel_plans' | 'outfits'
+
+export type TravelSavedPlanSnapshot = TravelSavedPlan & {
+  plan: TravelPackingPlan
+}
+
+export type TravelPackingView =
+  | {
+      status: 'empty-closet'
+      itemCount: number
+      destinationCity: string | null
+      days: number | null
+      scenes: TravelScene[]
+    }
+  | {
+      status: 'idle'
+      itemCount: number
+      destinationCity: string | null
+      days: number | null
+      scenes: TravelScene[]
+    }
+  | {
+      status: 'ready'
+      itemCount: number
+      destinationCity: string
+      days: number
+      scenes: TravelScene[]
+      plan: TravelPackingPlan
+      recentSavedPlans: TravelSavedPlan[]
+      justSaved: boolean
+    }
+
+export type TravelPlannerInput = {
+  destinationCity: string
+  days: number
+  scenes: TravelScene[]
+  items: ClosetItemCardData[]
+  weather: TodayWeather | null
+}

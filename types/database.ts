@@ -100,6 +100,38 @@ export type Database = {
           notes?: string | null
         }
       }
+      travel_plans: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          destination_city: string
+          days: number
+          scenes: string[]
+          weather_summary: string | null
+          plan_json: unknown
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          title: string
+          destination_city: string
+          days: number
+          scenes?: string[]
+          weather_summary?: string | null
+          plan_json: unknown
+        }
+        Update: {
+          title?: string
+          destination_city?: string
+          days?: number
+          scenes?: string[]
+          weather_summary?: string | null
+          plan_json?: unknown
+          updated_at?: string
+        }
+      }
     }
   }
 }

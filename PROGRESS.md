@@ -10,6 +10,22 @@
 
 **Inspiration 灵感复刻 MVP 第一版已完成代码与测试，当前支持灵感图拆解、关键单品提炼、衣橱借用匹配与“我的版本怎么穿”复刻建议。**
 
+**Closet 现在已补上第一版整理建议，会把现有衣橱转成重复提醒、闲置提醒和基础缺口。**
+
+**Closet 整理建议现在也支持点选筛选，用户可以直接从建议卡片跳到对应衣物视角。**
+
+**Closet 现在还会把整理建议收束成一份“下一步先做这些”的动作清单，明确先补什么、先保留哪件、先复盘哪件。**
+
+**Travel Packing MVP 已正式启动并完成第一版代码落地，当前 `/travel` 已支持根据目的地、天数和场景生成基于真实衣橱的旅行打包清单。**
+
+**Travel 现在还会进一步给出“按天轮换建议”，把每天的大致穿搭节奏排出来。**
+
+**Travel 现在还支持保存旅行方案，并在同页展示可重新打开的最近保存方案列表。**
+
+**Travel 已保存方案与 Closet 已保存衣物现在都支持删除，并且会先弹确认再执行。**
+
+**Travel 保存方案现在在 fallback 存储下也会保留完整快照，重新打开时优先展示保存当时的方案结果，而不是偷偷按当前衣橱重算。**
+
 **已补充一轮真实浏览器 QA：`/today` 天气成功分支通过，`/shop` 对淘宝 / 京东 / 拼多多 / 得物链接已补上第一轮站点级处理，并会提前拦截非服饰商品。当前 `/shop` 也已支持本地图片上传与桌面拖拽分析。**
 
 当前主链路状态：
@@ -37,6 +53,16 @@
 - Inspiration 会输出整体风格总结、关键单品和可执行搭配提示 ✓
 - Inspiration 会结合现有衣橱，给出每个关键单品最接近的借用建议 ✓
 - Inspiration 现在会进一步整理出“我的版本怎么穿”复刻步骤，并明确当前缺口单品 ✓
+- Closet 页面现在会生成第一版整理建议：重复单品、闲置提醒、基础缺口 ✓
+- Closet 整理建议卡片现在可直接驱动列表筛选：支持查看重复单品、单件闲置单品和基础缺口对应视角 ✓
+- Closet 现在会把重复、闲置和缺口整合成最多 3 条优先动作，直接引导“先补 / 先留 / 先复盘” ✓
+- Travel 页面已上线第一版旅行打包能力：目的地 + 天数 + 场景 -> 打包清单 / 风险缺口 / 复穿策略 ✓
+- Travel 现在会继续把打包清单拆成按天轮换建议，帮助用户直接看到每天怎么复穿和切换 ✓
+- Travel 现在支持把当前打包方案保存下来，并在页面上展示最近 5 条可重新打开的旅行方案 ✓
+- Travel 最近保存方案现在支持删除，且删除前会弹确认 ✓
+- Closet 已保存衣物现在支持删除，且删除前会弹确认 ✓
+- Closet 删除衣物现在即使 Storage 清理失败，也不会把已经成功的删除操作伪装成失败 ✓
+- Travel fallback 保存现在也会保留完整方案快照，重新打开已保存方案时不再只按当前参数重算 ✓
 
 数据库已有 2 条衣物记录，未登录访问 `/today` 会正确跳回首页登录入口。
 
@@ -59,6 +85,8 @@
 - AI 分析衣物分类信息
 - 用户确认后保存到 `items` 表
 - 页面刷新后展示已上传衣物
+- Closet 页面会把全量衣橱数据整理成规则型建议：重复、闲置、缺口
+- Closet 页面现在也会给出一份按优先级排序的整理动作清单，帮助用户直接开始处理衣橱
 
 核心文件：
 - `components/closet/closet-upload-card.tsx`
@@ -107,7 +135,8 @@ Today + OOTD MVP 行为：
 - `tests/app/closet/actions.test.ts` (7 tests)
 - `tests/lib/closet/analyze-item-image.test.ts` (8 tests)
 - `tests/lib/closet/save-closet-item.test.ts` (2 tests)
-- `tests/components/closet-page.test.tsx` (2 tests)
+- `tests/lib/closet/build-closet-insights.test.ts` (1 test)
+- `tests/components/closet-page.test.tsx` (3 tests)
 - `tests/lib/today/get-weather.test.ts` (4 tests)
 - `tests/lib/shop/analyze-purchase-candidate.test.ts` (4 tests)
 - `tests/lib/shop/resolve-shop-input.test.ts` (8 tests)
@@ -119,15 +148,23 @@ Today + OOTD MVP 行为：
 - `tests/app/today/actions.test.ts` (4 tests)
 - `tests/app/shop/actions.test.ts` (4 tests)
 - `tests/components/today-page.test.tsx` (7 tests)
+- `tests/components/travel-page.test.tsx` (2 tests)
 - `tests/components/shop-page.test.tsx` (4 tests)
 - `tests/lib/inspiration/analyze-inspiration-image.test.ts` (1 test)
 - `tests/lib/inspiration/match-closet-to-inspiration.test.ts` (1 test)
 - `tests/lib/inspiration/build-inspiration-remix-plan.test.ts` (1 test)
+- `tests/lib/travel/build-travel-packing-plan.test.ts` (3 tests)
+  - 其中已覆盖温和天气分支与按天轮换建议
+- `tests/lib/travel/save-travel-plan.test.ts` (2 tests)
+- `tests/lib/travel/get-recent-travel-plans.test.ts` (2 tests)
+- `tests/lib/travel/get-travel-plan-by-id.test.ts` (2 tests)
+- `tests/app/travel/actions.test.ts` (1 test)
+- `tests/app/travel/actions.test.ts` (2 tests)
 - `tests/app/inspiration/actions.test.ts` (2 tests)
 - `tests/components/inspiration-page.test.tsx` (2 tests)
 - 其他组件测试
 
-**当前测试状态：90/90 通过**
+**当前测试状态：107/107 通过**
 
 ### 5. QA 验证结果
 
@@ -160,6 +197,13 @@ Today + OOTD MVP 行为：
 - 登录态下 `/shop` 的真实桌面拖拽已由用户手工验证成功
 - `/shop` 本地图片上传与桌面拖拽也已完成组件级验证：支持直接上传图片后走同一套购买分析链路，iOS 端继续通过 `image/* + capture=environment` 调起相册 / 拍照入口
 - Inspiration 现在已完成测试级验证：除了灵感拆解和衣橱借用匹配外，还会稳定返回复刻完成度、复刻步骤和缺口单品
+- `/closet` 已完成真实浏览器 QA：页面会基于真实衣橱数据展示整理建议，当前数据下已看到重复提醒与基础缺口卡片
+- `/closet` 的筛选交互已完成测试级验证：可从整理建议卡片切换到重复 / 缺口对应的衣物视角，并可恢复查看全部
+- `/closet` 的整理动作清单已完成测试级验证：点击“先补 / 先留 / 先复盘”会切到对应衣物或缺口视角
+- `/travel` 已完成测试级验证：能在空配置态显示规划表单，并在有旅行数据时输出打包清单、缺口提醒和策略说明
+- `/travel` 已完成真实浏览器 QA：空态、正常生成链路和真实天气摘要都已跑通
+- `/travel` 已完成真实浏览器复验：按天轮换建议会真实出现在生成结果里
+- `/travel` 已完成真实浏览器 QA：生成后的“保存这次方案”可成功提交，页面会重定向到 `saved=1`，出现保存成功提示，并在“最近保存方案”里显示刚保存的记录
 
 当前未完成的 QA：
 - “换一批推荐”在当前测试数据下 URL 会变化，但因衣橱只有 2 件同类上衣，推荐文案变化有限
@@ -176,6 +220,13 @@ Today + OOTD MVP 行为：
 - `/inspiration` 的“删除当前图片”已完成真实浏览器验证，点击后会清空预览、结果和自动填入的图片地址
 - 同日重复提交在浏览器实测中已确认首次提交后与页面刷新后都会稳定显示“今日已记录”，且数据库当天仅写入 1 条 `ootd` 记录；但尚未在浏览器 UI 中直接看到二次提交返回“今天已经记录过穿搭了”的错误文案
 - 真实 `ootd` 表写入结果已通过只读数据库查询复核：最新一条记录写入成功，且页面提交后与刷新后的 recorded 状态一致
+- Closet 新增的“下一步先做这些”动作清单当前已完成单测与组件测试，尚未补真实浏览器狗粮
+- `/travel` 真实浏览器 QA 中暴露并修复了一个问题：天气摘要已成功返回时，策略文案在“温和天气”分支仍错误显示成“天气数据暂时不可用”，现已修复
+- `/travel` 这次真实浏览器 QA 又暴露出一个运行时问题：当前远端 Supabase 还没有 `travel_plans` 表时，页面会直接报错；现已改成优先写 `travel_plans`，表未上线时自动回退到现有 `outfits` 表保存轻量旅行元数据，所以功能已可真实使用，后续再把 migration 推上去即可切回专用表
+- Travel / Closet 新增的删除能力当前已完成单测、组件测试、构建与 lint 验证，尚未补真实浏览器点击删除弹窗的手工 QA
+- 这轮又补掉了两个 review 暴露的问题：
+  - Closet 删除现在把 Storage 清理降级为 best-effort，不会因为清理图片失败而把已成功删除的衣物误报成失败
+  - Travel fallback 保存不再只存参数，现已保存完整方案快照，重新打开时会优先展示保存当时的方案结果
 
 ## 当前配置
 
@@ -199,6 +250,7 @@ WEATHER_API_KEY=<Weather API Key>
 ### Supabase 配置
 - Storage bucket: `ootd-images` (public)
 - 表：`profiles`、`items`、`outfits`、`ootd`（均已创建 RLS policies）
+- 已新增 migration：`travel_plans`；当前远端库尚未推上该表时，Travel 保存能力会自动回退到 `outfits`
 
 ## 验证过程中的环境发现
 
@@ -226,9 +278,9 @@ WEATHER_API_KEY=<Weather API Key>
 
 ## 下一步
 
-1. 如果需要，再补一轮 `/inspiration` 的真实桌面拖拽狗粮，和当前已验证的本地上传 / 图片链接路径形成完整 QA 闭环
-2. TODO：后续继续深挖 Shop 平台兼容性，优先评估淘宝与得物是否存在可稳定抓取的商品主图数据源
-3. 维持当前 Shop 支持范围为核心服饰类目，现阶段不扩展到鞋包 / 配饰
+1. 继续推进 Travel 主线，把已保存方案进一步升级成可编辑或可覆盖更新的旅行计划，而不只是一键重新打开
+2. 条件允许时，把 `supabase/migrations/20260422_add_travel_plans.sql` 真正推到远端 Supabase，让 Travel 从回退存储切回专用 `travel_plans` 表
+3. 如果需要，再补一轮真实浏览器 QA，手动验证 Travel / Closet 的删除确认弹窗与删除后页面刷新表现
 4. 补做一次更强的同日重复提交复现，直接捕获浏览器 UI 或网络层返回的重复提交错误文案
 
 ## 本次修改涉及文件

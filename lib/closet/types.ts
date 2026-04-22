@@ -20,3 +20,42 @@ export type ClosetAnalysisResult = {
 export type ClosetAnalysisDraft = ClosetAnalysisResult & {
   imageUrl: string
 }
+
+export type ClosetDuplicateGroup = {
+  id: string
+  label: string
+  count: number
+  itemIds: string[]
+  keepItemId: string
+  keepLabel: string
+  keepReason: string
+}
+
+export type ClosetIdleItem = {
+  id: string
+  label: string
+  reason: string
+}
+
+export type ClosetMissingBasic = {
+  id: string
+  label: string
+  reason: string
+  priority: 'high' | 'medium'
+  nextStep: string
+}
+
+export type ClosetInsights = {
+  duplicateGroups: ClosetDuplicateGroup[]
+  idleItems: ClosetIdleItem[]
+  missingBasics: ClosetMissingBasic[]
+  actionPlan: ClosetActionItem[]
+}
+
+export type ClosetActionItem = {
+  id: string
+  title: string
+  detail: string
+  filterId: string
+  tone: 'keep' | 'review' | 'buy'
+}

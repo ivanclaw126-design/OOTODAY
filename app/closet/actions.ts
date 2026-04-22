@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getSession } from '@/lib/auth/get-session'
 import { analyzeItemImage } from '@/lib/closet/analyze-item-image'
+import { deleteClosetItem } from '@/lib/closet/delete-closet-item'
 import { saveClosetItem } from '@/lib/closet/save-closet-item'
 import { getEnv } from '@/lib/env'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
@@ -51,4 +52,19 @@ export async function saveClosetItemAction(draft: ClosetAnalysisDraft) {
   revalidatePath('/closet')
 
   return data
+}
+
+export async function deleteClosetItemAction(input: { itemId: string }) {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  await deleteClosetItem({
+    userId: session.user.id,
+    itemId: input.itemId
+  })
+
+  revalidatePath('/closet')
 }
