@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OOTODAY | Friend Beta Progress</title>
+    <meta
+      name="description"
+      content="OOTODAY 的朋友内测进展页：衣橱导入、Today 推荐、Shop 购买分析、Travel 打包与当前内测状态。"
+    />
+    <meta property="og:title" content="OOTODAY | Friend Beta Progress" />
+    <meta
+      property="og:description"
+      content="一个 AI wardrobe desk：先导入衣橱，再得到 Today 推荐、购买分析和旅行打包建议。"
+    />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero shell">
+        <div class="hero-copy">
+          <p class="eyebrow">Friend Beta Progress</p>
+          <h1>OOTODAY</h1>
+          <p class="subtitle">先把衣橱导进来，今天穿什么才会开始变简单。</p>
+          <p class="body">
+            OOTODAY 是一个 AI wardrobe desk。它把衣橱导入、Today 推荐、买前分析和旅行打包接成一条更实用的日常决策链路。
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://github.com/ivanclaw126-design/OOTODAY">查看仓库</a>
+            <a class="button button-secondary" href="#status">查看当前进展</a>
+          </div>
+        </div>
+
+        <div class="hero-panel">
+          <div class="mini-card">
+            <p class="mini-label">当前阶段</p>
+            <p class="mini-value">5-10 人朋友内测准备中</p>
+          </div>
+          <div class="mini-grid">
+            <article class="mini-card">
+              <p class="mini-label">Closet</p>
+              <p>本地图片、商品链接、拼图拆分都可导入。</p>
+            </article>
+            <article class="mini-card">
+              <p class="mini-label">Today</p>
+              <p>天气 + 场景 + 已有衣橱，输出更像决策面板的穿搭建议。</p>
+            </article>
+            <article class="mini-card">
+              <p class="mini-label">Shop</p>
+              <p>用衣橱上下文回答这件值不值得买、会不会重复。</p>
+            </article>
+            <article class="mini-card">
+              <p class="mini-label">Travel</p>
+              <p>按目的地、天数和场景生成可复穿的旅行打包方案。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="shell section" id="status">
+        <div class="section-heading">
+          <p class="eyebrow">Current Status</p>
+          <h2>现在已经做到哪里</h2>
+        </div>
+
+        <div class="status-grid">
+          <article class="status-card">
+            <p class="status-kicker">Import</p>
+            <h3>低成本衣橱导入主线已经成型</h3>
+            <p>
+              支持单图、本地多图批量、商品链接 / 图片链接导入，以及拼图拆分后再进入同一条确认与保存链路。
+            </p>
+          </article>
+          <article class="status-card">
+            <p class="status-kicker">Today</p>
+            <h3>推荐页已经是可狗粮的核心体验</h3>
+            <p>
+              天气降级、城市修改、换一批推荐、OOTD 提交和最近历史都已经打通，并完成了一轮视觉精修。
+            </p>
+          </article>
+          <article class="status-card">
+            <p class="status-kicker">Shop</p>
+            <h3>买前分析已是可演示功能</h3>
+            <p>
+              可以分析商品链接或图片，判断重复风险、预计可搭套数和买不买建议，并已拦截非服饰类目。
+            </p>
+          </article>
+          <article class="status-card">
+            <p class="status-kicker">Travel</p>
+            <h3>旅行打包 MVP 已可保存与编辑</h3>
+            <p>
+              支持生成、保存、重新打开、删除和更新已保存方案，且页面层级已优化成更连续的出行决策流程。
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="shell section">
+        <div class="section-heading">
+          <p class="eyebrow">Beta Checklist</p>
+          <h2>朋友内测前的主线目标</h2>
+        </div>
+
+        <div class="timeline">
+          <article class="timeline-item">
+            <span class="timeline-index">01</span>
+            <div>
+              <h3>让新用户先导入 3-5 件常穿衣服</h3>
+              <p>把第一步压到最短，确保衣橱导入不会成为流失点。</p>
+            </div>
+          </article>
+          <article class="timeline-item">
+            <span class="timeline-index">02</span>
+            <div>
+              <h3>让 Today 推荐尽快给出价值感</h3>
+              <p>目标不是展示 AI，而是让用户觉得“这套我真的会穿”。</p>
+            </div>
+          </article>
+          <article class="timeline-item">
+            <span class="timeline-index">03</span>
+            <div>
+              <h3>补上最小观测与反馈闭环</h3>
+              <p>内测阶段最重要的是知道用户卡在哪、哪一步最有价值、出了问题能否快速定位。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="shell section">
+        <div class="section-heading">
+          <p class="eyebrow">Notes</p>
+          <h2>关于 GitHub Pages 这页</h2>
+        </div>
+
+        <div class="note-card">
+          <p>
+            这不是完整产品本体。当前 OOTODAY 是一个依赖 Next.js、Supabase 登录和服务端能力的动态应用，
+            所以 GitHub Pages 更适合作为公开进展页、分享页和朋友内测介绍页，而不是完整运行环境。
+          </p>
+          <p>
+            等你准备把真实应用公开给用户时，更适合部署到支持服务端运行的环境，比如 Vercel。
+          </p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
