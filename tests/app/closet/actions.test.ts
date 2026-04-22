@@ -4,6 +4,7 @@ const getSession = vi.fn()
 const analyzeItemImage = vi.fn()
 const saveClosetItem = vi.fn()
 const deleteClosetItem = vi.fn()
+const importRemoteImageToStorage = vi.fn()
 const resolveShopInput = vi.fn()
 const revalidatePath = vi.fn()
 
@@ -17,6 +18,10 @@ vi.mock('@/lib/auth/get-session', () => ({
 
 vi.mock('@/lib/closet/analyze-item-image', () => ({
   analyzeItemImage
+}))
+
+vi.mock('@/lib/closet/import-remote-image-to-storage', () => ({
+  importRemoteImageToStorage
 }))
 
 vi.mock('@/lib/shop/resolve-shop-input', () => ({
@@ -51,6 +56,7 @@ afterEach(() => {
   analyzeItemImage.mockReset()
   saveClosetItem.mockReset()
   deleteClosetItem.mockReset()
+  importRemoteImageToStorage.mockReset()
   resolveShopInput.mockReset()
   revalidatePath.mockReset()
   vi.unstubAllEnvs()
@@ -150,9 +156,9 @@ describe('saveClosetItemAction', () => {
     expect(revalidatePath).toHaveBeenCalledWith('/closet')
   })
 
-  it('also saves valid external image urls resolved from remote imports', async () => {
+  it('rejects remote image urls that were not rehosted into the current user storage path', async () => {
     getSession.mockResolvedValue({ user: { id: 'user-1' } })
-    saveClosetItem.mockResolvedValue({ id: 'item-remote-1' })
+    stubClosetEnv()
 
     const { saveClosetItemAction } = await import('@/app/closet/actions')
 
@@ -160,24 +166,6 @@ describe('saveClosetItemAction', () => {
       saveClosetItemAction({
         ...validDraft,
         imageUrl: 'https://cdn.example.com/item.jpg'
-      })
-    ).resolves.toEqual({ id: 'item-remote-1' })
-    expect(saveClosetItem).toHaveBeenCalledWith({
-      ...validDraft,
-      imageUrl: 'https://cdn.example.com/item.jpg',
-      userId: 'user-1'
-    })
-  })
-
-  it('rejects private external image urls', async () => {
-    getSession.mockResolvedValue({ user: { id: 'user-1' } })
-
-    const { saveClosetItemAction } = await import('@/app/closet/actions')
-
-    await expect(
-      saveClosetItemAction({
-        ...validDraft,
-        imageUrl: 'http://127.0.0.1/item.jpg'
       })
     ).rejects.toThrow('Invalid closet upload URL')
   })
@@ -199,12 +187,18 @@ describe('saveClosetItemAction', () => {
 
 describe('analyzeClosetImportUrlAction', () => {
   it('resolves a product link into a draft that can enter the closet flow', async () => {
+    stubClosetEnv()
     getSession.mockResolvedValue({ user: { id: 'user-1' } })
     resolveShopInput.mockResolvedValue({
       error: null,
       imageUrl: 'https://cdn.example.com/item.jpg',
       sourceTitle: '亚麻西装',
       sourceUrl: 'https://shop.example.com/item/1'
+    })
+    importRemoteImageToStorage.mockResolvedValue({
+      imageUrl: validImageUrl,
+      objectPath: 'user-1/remote-imports/item.jpg',
+      contentType: 'image/jpeg'
     })
     analyzeItemImage.mockResolvedValue({
       category: '外套',
@@ -218,13 +212,18 @@ describe('analyzeClosetImportUrlAction', () => {
     await expect(analyzeClosetImportUrlAction({ sourceUrl: 'https://shop.example.com/item/1' })).resolves.toEqual({
       error: null,
       draft: {
-        imageUrl: 'https://cdn.example.com/item.jpg',
+        imageUrl: validImageUrl,
         category: '外套',
         subCategory: '西装外套',
         colorCategory: '米色',
         styleTags: ['通勤']
       }
     })
+    expect(importRemoteImageToStorage).toHaveBeenCalledWith({
+      sourceUrl: 'https://cdn.example.com/item.jpg',
+      userId: 'user-1'
+    })
+    expect(analyzeItemImage).toHaveBeenCalledWith(validImageUrl)
   })
 
   it('passes through resolve errors for unsupported remote inputs', async () => {
@@ -242,5 +241,25 @@ describe('analyzeClosetImportUrlAction', () => {
       error: '淘宝链接当前会跳登录拦截，请先贴商品图片链接',
       draft: null
     })
+  })
+
+  it('returns remote import errors when rehosting the image fails safety checks', async () => {
+    stubClosetEnv()
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    resolveShopInput.mockResolvedValue({
+      error: null,
+      imageUrl: 'https://cdn.example.com/item.jpg',
+      sourceTitle: '亚麻西装',
+      sourceUrl: 'https://shop.example.com/item/1'
+    })
+    importRemoteImageToStorage.mockRejectedValue(new Error('暂不支持解析本地或内网地址'))
+
+    const { analyzeClosetImportUrlAction } = await import('@/app/closet/actions')
+
+    await expect(analyzeClosetImportUrlAction({ sourceUrl: 'https://shop.example.com/item/1' })).resolves.toEqual({
+      error: '暂不支持解析本地或内网地址',
+      draft: null
+    })
+    expect(analyzeItemImage).not.toHaveBeenCalled()
   })
 })

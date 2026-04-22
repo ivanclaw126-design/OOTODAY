@@ -12,6 +12,10 @@ const refresh = vi.fn()
 const createObjectURL = vi.fn()
 const revokeObjectURL = vi.fn()
 const analyzeImportUrl = vi.fn()
+const splitCollageFiles = [
+  new File(['split-1'], 'collage-split-1.jpg', { type: 'image/jpeg' }),
+  new File(['split-2'], 'collage-split-2.jpg', { type: 'image/jpeg' })
+]
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
@@ -26,6 +30,20 @@ vi.mock('@/lib/supabase/client', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh })
+}))
+
+vi.mock('@/components/closet/closet-collage-splitter', () => ({
+  ClosetCollageSplitter: ({
+    disabled,
+    onSplitComplete
+  }: {
+    disabled?: boolean
+    onSplitComplete: (files: File[]) => void
+  }) => (
+    <button type="button" disabled={disabled} onClick={() => onSplitComplete(splitCollageFiles)}>
+      模拟拼图拆分
+    </button>
+  )
 }))
 
 describe('ClosetUploadCard', () => {
@@ -379,5 +397,51 @@ describe('ClosetUploadCard', () => {
       })
     })
     expect(refresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('feeds collage split results back into the same local upload queue', async () => {
+    const analyzeUpload = vi
+      .fn()
+      .mockResolvedValueOnce({
+        category: '上衣',
+        subCategory: '针织衫',
+        colorCategory: '白色',
+        styleTags: ['日常']
+      })
+      .mockResolvedValueOnce({
+        category: '外套',
+        subCategory: '夹克',
+        colorCategory: '卡其色',
+        styleTags: ['休闲']
+      })
+    const saveItem = vi.fn().mockResolvedValue(undefined)
+
+    render(
+      <ClosetUploadCard
+        userId="user-1"
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '模拟拼图拆分' }))
+
+    expect(await screen.findByDisplayValue('上衣')).toBeInTheDocument()
+    expect(screen.getByText('当前正在处理第 1 / 2 张，后面还有 1 张排队')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
+
+    expect(await screen.findByDisplayValue('外套')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
+
+    await waitFor(() => {
+      expect(saveItem).toHaveBeenCalledTimes(2)
+    })
+    expect(analyzeUpload).toHaveBeenCalledTimes(2)
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(createObjectURL).toHaveBeenCalledWith(splitCollageFiles[0])
+    expect(createObjectURL).toHaveBeenCalledWith(splitCollageFiles[1])
   })
 })

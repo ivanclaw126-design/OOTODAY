@@ -70,33 +70,34 @@ Native tool persistence comes before repo-local mirrors.
 ## Latest Sync Snapshot
 
 - Date: 2026-04-22
-- Product state: Today recommendation + OOTD feedback MVP is stable, `/shop` now supports links + local uploads + desktop drag-drop with an apparel-only guardrail, Inspiration has advanced into a first recreate-my-version MVP, Closet now shows a first organizing-insights layer with clickable filters plus an ordered action plan and has now expanded into a lower-friction import flow with album batch import plus remote link import, and `/travel` now supports planning, day-by-day rotation, plus saving, listing, reopening, and deleting recent travel plans with fallback snapshot preservation
+- Product state: Today recommendation + OOTD feedback MVP is stable, `/shop` now supports links + local uploads + desktop drag-drop with an apparel-only guardrail, Inspiration has advanced into a first recreate-my-version MVP, Closet now shows a first organizing-insights layer with clickable filters plus an ordered action plan and has expanded its low-friction import flow to album batch import, remote link import with Storage rehosting, and a first collage-splitting import, and `/travel` now supports planning, day-by-day rotation, plus saving, listing, reopening, and deleting recent travel plans with fallback snapshot preservation
 - Superpowers state:
   - Active plans in repo still cover app shell, closet upload, today recommendation, and OOTD feedback MVP
   - Native Superpowers persistence in this repo remains the spec/plan artifact set plus execution checkbox state
   - Shop has moved into a more usable multi-input flow, Inspiration now covers the "灵感图 -> 我的版本" path, Closet has started turning stored wardrobe data into organizing guidance, and Travel now has its first MVP spec/plan plus a working `/travel` route
   - Closet organizing v1 currently includes duplicate-item grouping, idle-item reminders, missing-basics prompts, clickable filters that switch the Closet grid into the relevant view, and a new "下一步先做这些" action plan that surfaces the most useful next 3 actions
-  - Closet import v1 is no longer single-image-only: users can now select multiple local photos at once and step through a shared analyze -> confirm -> save queue, and they can also paste a product link or image URL to enter the same closet confirmation flow
+  - Closet import v1 is no longer single-image-only: users can now select multiple local photos at once and step through a shared analyze -> confirm -> save queue, paste a product link or image URL into the same confirmation flow, and split one collage image into 2-4 manually boxed item crops that re-enter the same queue
+  - Closet remote-link import now rehosts the resolved remote image into the current user's Supabase Storage path before AI analysis and save, with SSRF, redirect, content-type, and size checks on the server side
   - Travel Packing MVP v1 currently supports destination city, trip days, scene selection, optional weather-aware messaging, grouped packing entries, missing hints, reuse strategy notes, a day-by-day rotation plan, plus saving, reopening, and deleting recent travel plans; when the dedicated `travel_plans` table is unavailable remotely, fallback storage now still keeps a full plan snapshot instead of only query parameters
   - Closet saved items now also support deletion with a confirmation step before the server action runs, and the image cleanup step is now best-effort so successful deletes are not misreported as failures
   - QA evidence now includes real browser validation for `/today` weather success, real browser validation for `/shop` local upload, user-confirmed real desktop drag-drop success on `/shop`, real browser validation for Inspiration URL/local-upload analysis plus remix output, real browser validation for Closet organizing cards, and real browser validation for `/travel` generate -> save -> recent-list rendering
-  - Fresh automated verification now also covers Closet batch-import queue progression, Closet remote-link import, Travel snapshot reopening, and the post-review fixes for delete/save semantics; `npm test` is now 114/114 green and the app builds successfully
+  - Fresh automated verification now also covers Closet batch-import queue progression, Closet remote-link import rehosting, Closet collage splitting, Travel snapshot reopening, and the post-review fixes for delete/save semantics; `npm test` is now 118/118 green and the app builds successfully
   - `/travel` has now also completed a real browser dogfood pass covering idle state, real form submission, result rendering, a weather-note bug fix for mild-weather destinations, a real-browser recheck of the new day-by-day rotation plan, and successful save-plan submission
   - Travel save-plan persistence now prefers the new `travel_plans` table, but gracefully falls back to storing lightweight travel metadata in `outfits` when the remote schema has not yet been migrated
 - Gstack state:
   - Native Gstack progress flow for this repo continues to use `/context-save` and `/context-restore`
   - Latest saved checkpoint before this round was `~/.gstack/projects/OOTODAY/checkpoints/20260422-150452-travel-daily-plan.md`
-  - A fresh checkpoint should capture the Travel save-plan feature, the real browser save QA, and the fallback persistence strategy while `travel_plans` is not yet live remotely
+  - A fresh checkpoint should capture the new Closet collage-splitting import, remote-image Storage rehosting, the current browser-QA limitation caused by app focus/permission contention, and the already-landed Travel fallback persistence strategy while `travel_plans` is not yet live remotely
   - Useful operational note from earlier checkpoints remains valid: importing local Chrome `localhost` cookies is enough to quickly recover an authenticated QA session
 - Pending sync work:
   - Continue the Travel mainline by turning saved plans into editable/updatable travel records instead of only reopenable snapshots
   - When remote connectivity allows, push `supabase/migrations/20260422_add_travel_plans.sql` so Travel can move from fallback storage back to its dedicated table
   - If needed, add one manual browser QA pass for the new Travel / Closet delete-confirm interactions
-  - Add one real browser QA pass for the new Closet batch-import and remote-link-import flows
+  - Add one real browser QA pass for the new Closet batch-import, remote-link-import, and collage-splitting flows
   - TODO backlog: continue improving Shop compatibility specifically for Taobao and Dewu if a stable product-image source can be identified
   - Keep Shop scoped to core apparel for now; no shoes / bags / accessories expansion in the current phase
   - Optionally capture direct duplicate-submission UI or network evidence if stronger proof is needed
-  - The broader wardrobe-import roadmap still has meaningful room left: collage splitting and imported-image rehosting to Supabase Storage remain future iterations
+  - The broader wardrobe-import roadmap still has meaningful room left, but collage splitting and imported-image rehosting to Supabase Storage are no longer future iterations; the next likely step is polishing mobile UX and finishing a full manual browser pass
 
 ## Update Template
 

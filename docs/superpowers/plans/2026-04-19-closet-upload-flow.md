@@ -1,5 +1,15 @@
 # Closet Upload Flow Implementation Plan
 
+## Follow-on Execution Status
+
+- [x] Base single-image upload flow shipped
+- [x] Closet organizing insights shipped on top of the saved-item view
+- [x] Album batch import shipped
+- [x] Remote link import shipped
+- [x] Remote link import now rehosts images into Supabase Storage before save
+- [x] First collage-splitting import shipped with manual 2-4 crop boxes
+- [ ] Real browser QA for the latest batch-import, remote-link-import, and collage-splitting flows still needs one clean manual pass
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the first usable `/closet` upload flow so a signed-in user can select one clothing image, upload it to Supabase Storage, get AI-generated metadata suggestions, confirm edits, save a real `items` row, and immediately see the new card in Closet.

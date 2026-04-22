@@ -4,38 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { getSession } from '@/lib/auth/get-session'
 import { analyzeItemImage } from '@/lib/closet/analyze-item-image'
 import { deleteClosetItem } from '@/lib/closet/delete-closet-item'
+import { importRemoteImageToStorage } from '@/lib/closet/import-remote-image-to-storage'
 import { saveClosetItem } from '@/lib/closet/save-closet-item'
 import { getEnv } from '@/lib/env'
 import { resolveShopInput } from '@/lib/shop/resolve-shop-input'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
-
-function isPrivateHostname(hostname: string) {
-  const normalized = hostname.toLowerCase()
-
-  if (
-    normalized === 'localhost' ||
-    normalized === '0.0.0.0' ||
-    normalized === '127.0.0.1' ||
-    normalized === '::1' ||
-    normalized.endsWith('.local')
-  ) {
-    return true
-  }
-
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(normalized)) {
-    const [a, b] = normalized.split('.').map(Number)
-
-    if (a === 10 || a === 127 || a === 192 && b === 168 || a === 169 && b === 254) {
-      return true
-    }
-
-    if (a === 172 && b >= 16 && b <= 31) {
-      return true
-    }
-  }
-
-  return false
-}
 
 function validateClosetUploadUrl(imageUrl: string, userId: string) {
   const { storageBucket, supabaseUrl } = getEnv()
@@ -50,24 +23,7 @@ function validateClosetUploadUrl(imageUrl: string, userId: string) {
 }
 
 function validateClosetImageUrlForSave(imageUrl: string, userId: string) {
-  try {
-    validateClosetUploadUrl(imageUrl, userId)
-    return
-  } catch {
-    const uploadUrl = new URL(imageUrl)
-
-    if (uploadUrl.protocol !== 'https:' && uploadUrl.protocol !== 'http:') {
-      throw new Error('Invalid closet upload URL')
-    }
-
-    if (isPrivateHostname(uploadUrl.hostname)) {
-      throw new Error('Invalid closet upload URL')
-    }
-
-    if (uploadUrl.pathname.includes('/storage/v1/object/public/')) {
-      throw new Error('Invalid closet upload URL')
-    }
-  }
+  validateClosetUploadUrl(imageUrl, userId)
 }
 
 export async function analyzeClosetUploadAction({ imageUrl }: { imageUrl: string }): Promise<ClosetAnalysisResult> {
@@ -98,14 +54,25 @@ export async function analyzeClosetImportUrlAction({ sourceUrl }: { sourceUrl: s
     }
   }
 
-  const analysis = await analyzeItemImage(resolved.imageUrl)
+  try {
+    const importedImage = await importRemoteImageToStorage({
+      sourceUrl: resolved.imageUrl,
+      userId: session.user.id
+    })
+    const analysis = await analyzeItemImage(importedImage.imageUrl)
 
-  return {
-    error: null,
-    draft: {
-      imageUrl: resolved.imageUrl,
-      ...analysis
-    } satisfies ClosetAnalysisDraft
+    return {
+      error: null,
+      draft: {
+        imageUrl: importedImage.imageUrl,
+        ...analysis
+      } satisfies ClosetAnalysisDraft
+    }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : '导入失败，请换一个链接试试',
+      draft: null
+    }
   }
 }
 

@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ClosetCollageSplitter } from '@/components/closet/closet-collage-splitter'
 import { ClosetUploadForm } from '@/components/closet/closet-upload-form'
 import { SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -179,11 +180,7 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
     }
   }
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? [])
-
-    event.target.value = ''
-
+  const enqueueLocalFiles = (files: File[]) => {
     if (files.length === 0 || currentUpload || isSaving) {
       return
     }
@@ -214,6 +211,13 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
       errorMessage: null
     })
     void startUploadAndAnalyze(firstUpload, nextRequestId)
+  }
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? [])
+
+    event.target.value = ''
+    enqueueLocalFiles(files)
   }
 
   const runImportFromUrl = async (nextId: string) => {
@@ -414,6 +418,8 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
             </SecondaryButton>
           </div>
         </div>
+
+        <ClosetCollageSplitter disabled={isFlowActive} onSplitComplete={enqueueLocalFiles} />
 
         {currentUpload ? (
           <div className="rounded-lg bg-[var(--color-secondary)] p-3 text-sm text-[var(--color-neutral-dark)]">
