@@ -18,7 +18,5 @@ supabase/.temp/
 # gstack skill local artifacts
 .gstack/
 .gstack-meta/
-.claude/worktrees/
 
-.worktrees/
 AGENTS.md
