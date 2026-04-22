@@ -18,10 +18,14 @@ function normalizeScenes(sceneParam: string | string[] | undefined): TravelScene
   return values.filter((value): value is TravelScene => allowedScenes.includes(value as TravelScene))
 }
 
+function areScenesEqual(left: TravelScene[], right: TravelScene[]) {
+  return left.length === right.length && left.every((scene, index) => scene === right[index])
+}
+
 export default async function TravelRoute({
   searchParams
 }: {
-  searchParams?: Promise<{ city?: string; days?: string; scene?: string | string[]; saved?: string; savedPlanId?: string }>
+  searchParams?: Promise<{ city?: string; days?: string; scene?: string | string[]; saved?: string; updated?: string; savedPlanId?: string }>
 }) {
   const session = await getSession()
 
@@ -31,16 +35,32 @@ export default async function TravelRoute({
 
   await ensureProfile(session.user.id)
 
-  const closet = await getClosetView(session.user.id, { limit: 0 })
   const resolvedSearchParams = (await searchParams) ?? {}
-  const destinationCity = resolvedSearchParams.city?.trim() || null
-  const parsedDays = Number.parseInt(resolvedSearchParams.days ?? '', 10)
-  const days = Number.isNaN(parsedDays) ? null : Math.min(Math.max(parsedDays, 1), 14)
-  const scenes = normalizeScenes(resolvedSearchParams.scene)
   const justSaved = resolvedSearchParams.saved === '1'
+  const justUpdated = resolvedSearchParams.updated === '1'
   const savedPlanId = resolvedSearchParams.savedPlanId?.trim() || null
-  const recentSavedPlans = await getRecentTravelPlans(session.user.id)
   const savedPlanSnapshot = savedPlanId ? await getTravelPlanById(session.user.id, savedPlanId) : null
+  const destinationCity = resolvedSearchParams.city?.trim() || savedPlanSnapshot?.destinationCity || null
+  const parsedDays = Number.parseInt(resolvedSearchParams.days ?? '', 10)
+  const days = Number.isNaN(parsedDays)
+    ? savedPlanSnapshot?.days ?? null
+    : Math.min(Math.max(parsedDays, 1), 14)
+  const scenesFromParams = normalizeScenes(resolvedSearchParams.scene)
+  const scenes = scenesFromParams.length > 0 ? scenesFromParams : savedPlanSnapshot?.scenes ?? []
+  const closet = await getClosetView(session.user.id, { limit: 0 })
+  const recentSavedPlans = await getRecentTravelPlans(session.user.id)
+  const editingSavedPlan = savedPlanSnapshot
+    ? {
+        id: savedPlanSnapshot.id,
+        title: savedPlanSnapshot.title,
+        destinationCity: savedPlanSnapshot.destinationCity,
+        days: savedPlanSnapshot.days,
+        scenes: savedPlanSnapshot.scenes,
+        weatherSummary: savedPlanSnapshot.weatherSummary,
+        createdAt: savedPlanSnapshot.createdAt,
+        source: savedPlanSnapshot.source
+      }
+    : null
 
   let view: TravelPackingView
 
@@ -50,7 +70,8 @@ export default async function TravelRoute({
       itemCount: 0,
       destinationCity,
       days,
-      scenes
+      scenes,
+      savedPlanId
     }
   } else if (!destinationCity || !days) {
     view = {
@@ -58,13 +79,15 @@ export default async function TravelRoute({
       itemCount: closet.itemCount,
       destinationCity,
       days,
-      scenes
+      scenes,
+      savedPlanId
     }
   } else {
     const plan =
       savedPlanSnapshot?.plan &&
       savedPlanSnapshot.destinationCity === destinationCity &&
-      savedPlanSnapshot.days === days
+      savedPlanSnapshot.days === days &&
+      areScenesEqual(savedPlanSnapshot.scenes, scenes)
         ? savedPlanSnapshot.plan
         : buildTravelPackingPlan({
             destinationCity,
@@ -82,7 +105,10 @@ export default async function TravelRoute({
       scenes,
       plan,
       recentSavedPlans,
-      justSaved
+      justSaved,
+      justUpdated,
+      savedPlanId,
+      editingSavedPlan
     }
   }
 

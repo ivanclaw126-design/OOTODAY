@@ -53,6 +53,7 @@ export type TravelPackingView =
       destinationCity: string | null
       days: number | null
       scenes: TravelScene[]
+      savedPlanId: string | null
     }
   | {
       status: 'idle'
@@ -60,6 +61,7 @@ export type TravelPackingView =
       destinationCity: string | null
       days: number | null
       scenes: TravelScene[]
+      savedPlanId: string | null
     }
   | {
       status: 'ready'
@@ -70,6 +72,9 @@ export type TravelPackingView =
       plan: TravelPackingPlan
       recentSavedPlans: TravelSavedPlan[]
       justSaved: boolean
+      justUpdated: boolean
+      savedPlanId: string | null
+      editingSavedPlan: TravelSavedPlan | null
     }
 
 export type TravelPlannerInput = {

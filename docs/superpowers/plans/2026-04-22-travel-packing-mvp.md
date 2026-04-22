@@ -58,3 +58,16 @@
 - [x] Update `components/travel/travel-page.tsx` to show save CTA plus reopenable recent saved plans
 - [x] Add tests for save-plan persistence and action behavior
 - [x] Verify the browser flow from generate -> save -> recent saved list render
+
+## Task 5: Turn saved travel plans into editable plans
+
+- [x] Reopen a saved plan in an explicit editing state
+- [x] Update the current saved plan instead of always creating a new one
+- [x] Keep the current view bound to the same `savedPlanId` after update
+- [x] Add tests for update behavior in both `travel_plans` and fallback `outfits`
+- [x] Make “更新这份方案” rebuild from the current form inputs instead of requiring a separate regenerate click first
+
+## Follow-up
+
+- [x] Add a repo-local remote migration readiness check via `npm run travel:db:check`
+- [ ] Run the actual `travel_plans` remote push once the current environment can reach Supabase Postgres

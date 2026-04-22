@@ -34,6 +34,10 @@
 
 **Travel 保存方案现在在 fallback 存储下也会保留完整快照，重新打开时优先展示保存当时的方案结果，而不是偷偷按当前衣橱重算。**
 
+**Travel 现在支持直接编辑和更新已保存方案，重开旧方案后修改城市、天数或场景会覆盖当前方案，而不是重复新建。**
+
+**Travel 编辑态现在会直接按当前表单输入重算并更新已保存方案，不再要求先手动点一次“生成打包清单”。**
+
 **已补充一轮真实浏览器 QA：`/today` 天气成功分支通过，`/shop` 对淘宝 / 京东 / 拼多多 / 得物链接已补上第一轮站点级处理，并会提前拦截非服饰商品。当前 `/shop` 也已支持本地图片上传与桌面拖拽分析。**
 
 当前主链路状态：
@@ -75,6 +79,8 @@
 - Closet 已保存衣物现在支持删除，且删除前会弹确认 ✓
 - Closet 删除衣物现在即使 Storage 清理失败，也不会把已经成功的删除操作伪装成失败 ✓
 - Travel fallback 保存现在也会保留完整方案快照，重新打开已保存方案时不再只按当前参数重算 ✓
+- Travel 现在支持编辑已保存方案：重开后会进入编辑态，保存时优先更新当前方案而不是重复创建 ✓
+- Travel 编辑态现在会直接读取当前输入并重算后再保存，修改天数 / 城市 / 场景后可直接点“更新这份方案”完成覆盖 ✓
 
 数据库已有 2 条衣物记录，未登录访问 `/today` 会正确跳回首页登录入口。
 
@@ -163,6 +169,7 @@ Today + OOTD MVP 行为：
 - `tests/app/shop/actions.test.ts` (4 tests)
 - `tests/components/today-page.test.tsx` (7 tests)
 - `tests/components/travel-page.test.tsx` (2 tests)
+- `tests/components/travel-page.test.tsx` (3 tests)
 - `tests/components/shop-page.test.tsx` (4 tests)
 - `tests/lib/inspiration/analyze-inspiration-image.test.ts` (1 test)
 - `tests/lib/inspiration/match-closet-to-inspiration.test.ts` (1 test)
@@ -174,6 +181,7 @@ Today + OOTD MVP 行为：
 - `tests/lib/travel/get-travel-plan-by-id.test.ts` (2 tests)
 - `tests/app/travel/actions.test.ts` (1 test)
 - `tests/app/travel/actions.test.ts` (2 tests)
+- `tests/app/travel/actions.test.ts` (4 tests)
 - `tests/app/inspiration/actions.test.ts` (2 tests)
 - `tests/components/inspiration-page.test.tsx` (2 tests)
 - 其他组件测试
@@ -218,10 +226,19 @@ Today + OOTD MVP 行为：
 - `/closet` 的链接导入已完成测试级验证：商品链接或图片链接可直接进入同一套 AI 识别与保存表单
 - `/closet` 的拼图拆分导入已完成测试级验证：选择 1 张拼图、保留 2-4 个裁剪框后，可稳定拆成多张单品图并重新接入原有导入队列
 - `/closet` 的远程链接导入已完成服务端安全转存验证：远程图片会先做 SSRF / redirect / content-type / 大小校验，再转存到当前用户 Storage 路径后分析保存
+- `/closet` 已补一轮新的真实浏览器 QA：公网图片链接导入修复后可重新进入识别链路并成功保存，衣橱计数已从 `10` 增加到 `11`
+- `/closet` 已补一轮真实浏览器 QA：相册多图队列、链接导入、拼图拆分导入三条流都已在本地登录态下实际跑通
+- 相册多图队列真实表现：系统文件选择器支持多选，页面会真实显示 `1/3 -> 2/3 -> 3/3`，保存与跳过都会自动切到下一张，最后一张结束后会退出导入流并刷新列表
+- 链接导入真实表现：使用已有 Unsplash 图片链接可成功进入确认表单并保存，`已收录` 计数从 `8` 增到 `9`
+- 拼图拆分真实表现：默认 2 个裁剪框即可直接“拆成 2 张并继续导入”，拆分后会真实进入 `1/2` 导入队列，至少 1 张裁剪图已成功保存入橱
+- 这轮真实 QA 还看到两个待后续处理的交互问题：
+  - 多图 / 拼图导入过程中，预览区偶发会出现两张大图上下堆叠，当前处理项和排队项的视觉边界不够清楚
+  - AI 识别结果的语言归一化还不稳定，同样是导入衣物，部分结果会落成 `pants / jeans / blue` 这类英文值
 - `/travel` 已完成测试级验证：能在空配置态显示规划表单，并在有旅行数据时输出打包清单、缺口提醒和策略说明
 - `/travel` 已完成真实浏览器 QA：空态、正常生成链路和真实天气摘要都已跑通
 - `/travel` 已完成真实浏览器复验：按天轮换建议会真实出现在生成结果里
 - `/travel` 已完成真实浏览器 QA：生成后的“保存这次方案”可成功提交，页面会重定向到 `saved=1`，出现保存成功提示，并在“最近保存方案”里显示刚保存的记录
+- `/travel` 已补一轮新的真实浏览器 QA：编辑已保存方案时，直接把 `东京 5天 · 通勤/休闲` 改成 `东京 6天 · 通勤/休闲` 后，不需要先点“生成打包清单”，直接点“更新这份方案”即可完成重算与覆盖，最近方案列表也会同步更新
 
 当前未完成的 QA：
 - “换一批推荐”在当前测试数据下 URL 会变化，但因衣橱只有 2 件同类上衣，推荐文案变化有限
@@ -241,6 +258,9 @@ Today + OOTD MVP 行为：
 - Closet 新增的“下一步先做这些”动作清单当前已完成单测与组件测试，尚未补真实浏览器狗粮
 - `/travel` 真实浏览器 QA 中暴露并修复了一个问题：天气摘要已成功返回时，策略文案在“温和天气”分支仍错误显示成“天气数据暂时不可用”，现已修复
 - `/travel` 这次真实浏览器 QA 又暴露出一个运行时问题：当前远端 Supabase 还没有 `travel_plans` 表时，页面会直接报错；现已改成优先写 `travel_plans`，表未上线时自动回退到现有 `outfits` 表保存轻量旅行元数据，所以功能已可真实使用，后续再把 migration 推上去即可切回专用表
+- 这轮已经把 Travel 从“可保存快照”推进成“可编辑更新”：当前打开已保存方案时会进入明确编辑态，更新后仍回到同一份方案，不会越改越多条
+- 这轮真实 QA 又暴露并修复了一个 Travel 编辑态问题：旧实现虽然文案声称“改完可直接更新”，但实际上仍依赖旧隐藏方案；现已改成服务端按当前表单输入重新生成并覆盖保存
+- 这轮还补了一个可执行的远端检查入口：`npm run travel:db:check`。当前它能确认 linked project 存在，但这台环境连远端 Supabase Postgres 会超时，所以远端 migration 的阻塞点已经明确为网络连通性，而不是本地 migration 缺失
 - Travel / Closet 新增的删除能力当前已完成单测、组件测试、构建与 lint 验证，尚未补真实浏览器点击删除弹窗的手工 QA
 - 这轮又补掉了两个 review 暴露的问题：
   - Closet 删除现在把 Storage 清理降级为 best-effort，不会因为清理图片失败而把已成功删除的衣物误报成失败
@@ -301,8 +321,8 @@ WEATHER_API_KEY=<Weather API Key>
 
 ## 下一步
 
-1. 继续推进 Travel 主线，把已保存方案进一步升级成可编辑或可覆盖更新的旅行计划，而不只是一键重新打开
-2. 条件允许时，把 `supabase/migrations/20260422_add_travel_plans.sql` 真正推到远端 Supabase，让 Travel 从回退存储切回专用 `travel_plans` 表
+1. 条件允许时，在能连通远端 Supabase Postgres 的环境里运行 `npm run travel:db:check`，再执行 `supabase db push`，把 `travel_plans` 真正推上远端
+2. 给 Travel 已保存方案补更进一步的产品语义，例如“另存为新方案”或“未保存改动提醒”，避免所有编辑都只能覆盖
 3. 如果需要，再补一轮真实浏览器 QA，手动验证 Travel / Closet 的删除确认弹窗与删除后页面刷新表现
 4. 补做一次更强的同日重复提交复现，直接捕获浏览器 UI 或网络层返回的重复提交错误文案
 

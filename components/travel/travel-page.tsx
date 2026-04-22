@@ -34,6 +34,9 @@ export function TravelPage({
   deleteSavedPlan: (input: { planId: string; source: TravelSavedPlan['source'] }) => Promise<void>
 }) {
   const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null)
+  const [draftCity, setDraftCity] = useState(view.destinationCity ?? '')
+  const [draftDays, setDraftDays] = useState(view.days ? String(view.days) : '3')
+  const [draftScenes, setDraftScenes] = useState<TravelScene[]>(view.scenes)
   const router = useRouter()
 
   async function handleDeleteSavedPlan(plan: TravelSavedPlan) {
@@ -54,6 +57,16 @@ export function TravelPage({
     }
   }
 
+  function toggleDraftScene(scene: TravelScene, checked: boolean) {
+    setDraftScenes((current) => {
+      if (checked) {
+        return current.includes(scene) ? current : [...current, scene]
+      }
+
+      return current.filter((value) => value !== scene)
+    })
+  }
+
   return (
     <AppShell title="Travel">
       <Card>
@@ -67,7 +80,8 @@ export function TravelPage({
             目的地城市
             <input
               name="city"
-              defaultValue={view.destinationCity ?? ''}
+              value={draftCity}
+              onChange={(event) => setDraftCity(event.target.value)}
               placeholder="例如：东京"
               className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
             />
@@ -80,7 +94,8 @@ export function TravelPage({
               type="number"
               min={1}
               max={14}
-              defaultValue={view.days ?? 3}
+              value={draftDays}
+              onChange={(event) => setDraftDays(event.target.value)}
               className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
             />
           </label>
@@ -90,12 +105,20 @@ export function TravelPage({
             <div className="flex flex-wrap gap-2">
               {sceneOptions.map((scene) => (
                 <label key={scene} className="inline-flex items-center gap-2 rounded-md border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] px-3 py-2 text-sm">
-                  <input type="checkbox" name="scene" value={scene} defaultChecked={view.scenes.includes(scene)} />
+                  <input
+                    type="checkbox"
+                    name="scene"
+                    value={scene}
+                    checked={draftScenes.includes(scene)}
+                    onChange={(event) => toggleDraftScene(scene, event.target.checked)}
+                  />
                   {scene}
                 </label>
               ))}
             </div>
           </fieldset>
+
+          {view.savedPlanId ? <input type="hidden" name="savedPlanId" value={view.savedPlanId} /> : null}
 
           <div>
             <PrimaryButton type="submit">生成打包清单</PrimaryButton>
@@ -120,9 +143,26 @@ export function TravelPage({
 
       {view.status === 'ready' ? (
         <>
+          {view.editingSavedPlan ? (
+            <Card>
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium">正在编辑已保存方案</p>
+                <p className="text-sm text-[var(--color-neutral-dark)]">
+                  当前这页绑定的是“{view.editingSavedPlan.title}”。你现在改城市、天数或场景后，点击下面按钮会直接更新这份方案，不会新建一条重复记录。
+                </p>
+              </div>
+            </Card>
+          ) : null}
+
           {view.justSaved ? (
             <Card>
               <p className="text-sm text-[var(--color-primary)]">这次旅行方案已经保存下来了，后面可以继续基于它补细节。</p>
+            </Card>
+          ) : null}
+
+          {view.justUpdated ? (
+            <Card>
+              <p className="text-sm text-[var(--color-primary)]">这份已保存方案已经更新好了，当前内容和最近方案列表现在是同步的。</p>
             </Card>
           ) : null}
 
@@ -143,16 +183,19 @@ export function TravelPage({
 
           <Card>
             <div className="flex flex-col gap-3">
-              <p className="text-sm font-medium">保存这次方案</p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">如果这趟行程已经比较明确，先把方案存下来，后面就不用重新填一遍。</p>
+              <p className="text-sm font-medium">{view.editingSavedPlan ? '更新当前方案' : '保存这次方案'}</p>
+              <p className="text-sm text-[var(--color-neutral-dark)]">
+                {view.editingSavedPlan ? '这次改动会覆盖当前这份已保存方案，让最近列表和当前视图保持一致。' : '如果这趟行程已经比较明确，先把方案存下来，后面就不用重新填一遍。'}
+              </p>
               <form action={savePlan}>
-                <input type="hidden" name="city" value={view.destinationCity} />
-                <input type="hidden" name="days" value={String(view.days)} />
-                {view.scenes.map((scene) => (
+                <input type="hidden" name="city" value={draftCity} />
+                <input type="hidden" name="days" value={draftDays} />
+                {draftScenes.map((scene) => (
                   <input key={scene} type="hidden" name="scene" value={scene} />
                 ))}
-                <input type="hidden" name="plan" value={JSON.stringify(view.plan)} />
-                <PrimaryButton type="submit">保存这次方案</PrimaryButton>
+                {view.editingSavedPlan ? <input type="hidden" name="savedPlanId" value={view.editingSavedPlan.id} /> : null}
+                {view.editingSavedPlan ? <input type="hidden" name="savedPlanSource" value={view.editingSavedPlan.source} /> : null}
+                <PrimaryButton type="submit">{view.editingSavedPlan ? '更新这份方案' : '保存这次方案'}</PrimaryButton>
               </form>
             </div>
           </Card>
@@ -208,6 +251,7 @@ export function TravelPage({
                       <p className="text-sm text-[var(--color-neutral-dark)]">
                         {plan.destinationCity} · {plan.days} 天 · {plan.scenes.join(' / ') || '默认日常场景'}
                       </p>
+                      {view.editingSavedPlan?.id === plan.id ? <p className="text-sm text-[var(--color-primary)]">当前正在编辑这份方案</p> : null}
                       {plan.weatherSummary ? (
                         <p className="text-sm text-[var(--color-neutral-dark)]">{plan.weatherSummary}</p>
                       ) : null}

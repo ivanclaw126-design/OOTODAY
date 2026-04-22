@@ -17,7 +17,8 @@ describe('TravelPage', () => {
           itemCount: 3,
           destinationCity: null,
           days: null,
-          scenes: []
+          scenes: [],
+          savedPlanId: null
         }}
       />
     )
@@ -54,6 +55,18 @@ describe('TravelPage', () => {
             }
           ],
           justSaved: true,
+          justUpdated: false,
+          savedPlanId: 'travel-1',
+          editingSavedPlan: {
+            id: 'travel-1',
+            title: '上海 4天 · 通勤/休闲',
+            destinationCity: '上海',
+            days: 4,
+            scenes: ['通勤', '休闲'],
+            weatherSummary: 'Shanghai Municipality · 18°C · moderate rain',
+            createdAt: '2026-04-22T07:00:00.000Z',
+            source: 'travel_plans'
+          },
           plan: {
             destinationCity: '东京',
             days: 4,
@@ -90,15 +103,17 @@ describe('TravelPage', () => {
     )
 
     expect(screen.getByText('本次行程摘要')).toBeInTheDocument()
+    expect(screen.getByText('正在编辑已保存方案')).toBeInTheDocument()
     expect(screen.getByText('这次旅行方案已经保存下来了，后面可以继续基于它补细节。')).toBeInTheDocument()
     expect(screen.getByText(/东京 · 4 天/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '保存这次方案' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '更新这份方案' })).toBeInTheDocument()
     expect(screen.getByText('建议打包')).toBeInTheDocument()
     expect(screen.getByText('上衣 · 建议带 3 件')).toBeInTheDocument()
     expect(screen.getByText('按天轮换建议')).toBeInTheDocument()
     expect(screen.getByText('第 1 天')).toBeInTheDocument()
     expect(screen.getByText('最近保存方案')).toBeInTheDocument()
     expect(screen.getByText('上海 4天 · 通勤/休闲')).toBeInTheDocument()
+    expect(screen.getByText('当前正在编辑这份方案')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '重新打开这份方案' })).toHaveAttribute(
       'href',
       '/travel?savedPlanId=travel-1&city=%E4%B8%8A%E6%B5%B7&days=4&scene=%E9%80%9A%E5%8B%A4&scene=%E4%BC%91%E9%97%B2'
@@ -112,5 +127,67 @@ describe('TravelPage', () => {
       })
     })
     expect(screen.getByText('风险与缺口')).toBeInTheDocument()
+  })
+
+  it('submits the latest draft inputs when saving an edited plan', () => {
+    const { container } = render(
+      <TravelPage
+        savePlan={vi.fn()}
+        deleteSavedPlan={vi.fn()}
+        view={{
+          status: 'ready',
+          itemCount: 5,
+          destinationCity: '东京',
+          days: 4,
+          scenes: ['通勤', '休闲'],
+          recentSavedPlans: [],
+          justSaved: false,
+          justUpdated: false,
+          savedPlanId: 'travel-1',
+          editingSavedPlan: {
+            id: 'travel-1',
+            title: '东京 4天 · 通勤/休闲',
+            destinationCity: '东京',
+            days: 4,
+            scenes: ['通勤', '休闲'],
+            weatherSummary: 'Japan · 19°C · clear sky',
+            createdAt: '2026-04-22T07:00:00.000Z',
+            source: 'travel_plans'
+          },
+          plan: {
+            destinationCity: '东京',
+            days: 4,
+            scenes: ['通勤', '休闲'],
+            suggestedOutfitCount: 3,
+            weather: null,
+            entries: [],
+            dailyPlan: [],
+            missingHints: [],
+            notes: []
+          }
+        }}
+      />
+    )
+
+    const plannerForm = container.querySelector('form[action="/travel"]')
+    const cityInput = plannerForm?.querySelector('input[name="city"]')
+    const daysInput = plannerForm?.querySelector('input[name="days"]')
+    const leisureCheckbox = plannerForm?.querySelector('input[name="scene"][value="休闲"]')
+
+    expect(cityInput).not.toBeNull()
+    expect(daysInput).not.toBeNull()
+    expect(leisureCheckbox).not.toBeNull()
+
+    fireEvent.change(cityInput!, { target: { value: '大阪' } })
+    fireEvent.change(daysInput!, { target: { value: '5' } })
+    fireEvent.click(leisureCheckbox!)
+
+    const saveForm = container.querySelector('input[name="savedPlanSource"]')?.closest('form')
+
+    expect(saveForm).not.toBeNull()
+    expect(saveForm?.querySelector('input[name="city"]')).toHaveAttribute('value', '大阪')
+    expect(saveForm?.querySelector('input[name="days"]')).toHaveAttribute('value', '5')
+    expect(saveForm?.querySelectorAll('input[name="scene"]')).toHaveLength(1)
+    expect(saveForm?.querySelector('input[name="scene"]')).toHaveAttribute('value', '通勤')
   })
 })
