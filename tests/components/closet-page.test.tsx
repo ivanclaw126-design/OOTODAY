@@ -19,7 +19,8 @@ vi.mock('@/lib/supabase/client', () => ({
 }))
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ refresh: vi.fn() })
+  useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: () => '/closet'
 }))
 
 describe('ClosetPage', () => {
@@ -129,7 +130,7 @@ describe('ClosetPage', () => {
     expect(screen.getByText('西裤')).toBeInTheDocument()
     expect(screen.getByText('黑色')).toBeInTheDocument()
     expect(screen.getByText('暂无图片')).toBeInTheDocument()
-    expect(screen.getByText('整理建议')).toBeInTheDocument()
+    expect(screen.getAllByText('整理建议').length).toBeGreaterThan(0)
     expect(screen.getByText('下一步先做这些')).toBeInTheDocument()
     expect(screen.getByText('1. 先补 可叠穿外套')).toBeInTheDocument()
     expect(screen.getByText('优先保留：灰色 短袖T恤')).toBeInTheDocument()

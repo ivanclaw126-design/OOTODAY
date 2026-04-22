@@ -26,15 +26,28 @@ export function TodayRecommendationList({
   }
 
   return (
-    <div className="grid gap-4">
-      {recommendations.map((recommendation) => (
-        <TodayRecommendationCard
-          key={recommendation.id}
-          recommendation={recommendation}
-          ootdStatus={ootdStatus}
-          submitOotd={submitOotd}
-        />
-      ))}
-    </div>
+    <section className="space-y-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">
+            今日推荐
+          </p>
+          <p className="text-lg font-semibold tracking-[-0.03em]">3 套可直接做决定的搭配</p>
+        </div>
+        <p className="text-sm text-[var(--color-neutral-dark)]">按今天的场景、天气和最近穿着整理</p>
+      </div>
+
+      <div className="grid gap-3">
+        {recommendations.map((recommendation, index) => (
+          <TodayRecommendationCard
+            key={recommendation.id}
+            recommendation={recommendation}
+            index={index + 1}
+            ootdStatus={ootdStatus}
+            submitOotd={submitOotd}
+          />
+        ))}
+      </div>
+    </section>
   )
 }

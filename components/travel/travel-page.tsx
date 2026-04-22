@@ -70,53 +70,86 @@ export function TravelPage({
   return (
     <AppShell title="Travel">
       <Card>
-        <form action="/travel" className="flex flex-col gap-4">
-          <div>
-            <p className="text-sm font-medium">旅行打包</p>
-            <p className="text-sm text-[var(--color-neutral-dark)]">填目的地、天数和行程场景，先用现有衣橱拼出一份更轻更稳的打包方案。</p>
+        <form action="/travel" className="flex flex-col gap-5">
+          <div className="space-y-3">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Trip Setup</p>
+            <div className="space-y-2">
+              <p className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-primary)]">先把这趟行程压缩成一份够用、不臃肿的衣橱方案</p>
+              <p className="max-w-2xl text-sm leading-6 text-[var(--color-neutral-dark)]">
+                Travel 不只是列一个 packing list，而是优先从你已经拥有的单品里拼出更稳的出行轮换，尽量少带、少买、少临场犹豫。
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.75)] px-4 py-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Step 1</p>
+                <p className="mt-2 text-sm font-medium text-[var(--color-primary)]">填目的地和天数</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">先把这趟行程的约束条件说清楚，系统才知道该保守还是该灵活。</p>
+              </div>
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.75)] px-4 py-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Step 2</p>
+                <p className="mt-2 text-sm font-medium text-[var(--color-primary)]">声明场景密度</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">通勤、正式、户外这些场景会直接决定你带多少变化和保险件。</p>
+              </div>
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.75)] px-4 py-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Step 3</p>
+                <p className="mt-2 text-sm font-medium text-[var(--color-primary)]">拿到可执行轮换方案</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">不是堆清单，而是把每天的大致穿搭节奏也一起安排好。</p>
+              </div>
+            </div>
           </div>
 
-          <label className="flex flex-col gap-2 text-sm">
-            目的地城市
-            <input
-              name="city"
-              value={draftCity}
-              onChange={(event) => setDraftCity(event.target.value)}
-              placeholder="例如：东京"
-              className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-            />
-          </label>
+          <div className="rounded-[1.5rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4 shadow-[0_18px_60px_rgba(39,31,24,0.08)]">
+            <div className="grid gap-4 md:grid-cols-[1.1fr_0.6fr]">
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="font-medium">目的地城市</span>
+                <input
+                  name="city"
+                  value={draftCity}
+                  onChange={(event) => setDraftCity(event.target.value)}
+                  placeholder="例如：东京"
+                  className="rounded-[1rem] border border-[var(--color-neutral-mid)] bg-white/75 px-3 py-3"
+                />
+              </label>
 
-          <label className="flex flex-col gap-2 text-sm">
-            出行天数
-            <input
-              name="days"
-              type="number"
-              min={1}
-              max={14}
-              value={draftDays}
-              onChange={(event) => setDraftDays(event.target.value)}
-              className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-            />
-          </label>
-
-          <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-medium">行程场景</legend>
-            <div className="flex flex-wrap gap-2">
-              {sceneOptions.map((scene) => (
-                <label key={scene} className="inline-flex items-center gap-2 rounded-md border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] px-3 py-2 text-sm">
-                  <input
-                    type="checkbox"
-                    name="scene"
-                    value={scene}
-                    checked={draftScenes.includes(scene)}
-                    onChange={(event) => toggleDraftScene(scene, event.target.checked)}
-                  />
-                  {scene}
-                </label>
-              ))}
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="font-medium">出行天数</span>
+                <input
+                  name="days"
+                  type="number"
+                  min={1}
+                  max={14}
+                  value={draftDays}
+                  onChange={(event) => setDraftDays(event.target.value)}
+                  className="rounded-[1rem] border border-[var(--color-neutral-mid)] bg-white/75 px-3 py-3"
+                />
+              </label>
             </div>
-          </fieldset>
+
+            <fieldset className="mt-4 flex flex-col gap-3">
+              <legend className="text-sm font-medium">行程场景</legend>
+              <div className="flex flex-wrap gap-2">
+                {sceneOptions.map((scene) => (
+                  <label
+                    key={scene}
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition ${
+                      draftScenes.includes(scene)
+                        ? 'border-[var(--color-primary)] bg-[var(--color-secondary)] text-[var(--color-primary)]'
+                        : 'border-[var(--color-neutral-mid)] bg-white/70'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      name="scene"
+                      value={scene}
+                      checked={draftScenes.includes(scene)}
+                      onChange={(event) => toggleDraftScene(scene, event.target.checked)}
+                    />
+                    {scene}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </div>
 
           {view.savedPlanId ? <input type="hidden" name="savedPlanId" value={view.savedPlanId} /> : null}
 
@@ -146,8 +179,9 @@ export function TravelPage({
           {view.editingSavedPlan ? (
             <Card>
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium">正在编辑已保存方案</p>
-                <p className="text-sm text-[var(--color-neutral-dark)]">
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Editing Saved Plan</p>
+                <p className="text-lg font-semibold text-[var(--color-primary)]">正在编辑已保存方案</p>
+                <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">
                   当前这页绑定的是“{view.editingSavedPlan.title}”。你现在改城市、天数或场景后，点击下面按钮会直接更新这份方案，不会新建一条重复记录。
                 </p>
               </div>
@@ -167,24 +201,39 @@ export function TravelPage({
           ) : null}
 
           <Card>
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">本次行程摘要</p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">
-                {view.plan.destinationCity} · {view.plan.days} 天 · {view.plan.scenes.join(' / ') || '默认日常场景'}
-              </p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">
-                建议至少准备 {view.plan.suggestedOutfitCount} 套核心组合
-                {view.plan.weather
-                  ? `，当前天气参考为 ${view.plan.weather.city} · ${view.plan.weather.temperatureC}°C · ${view.plan.weather.conditionLabel}`
-                  : '，当前天气暂时不可用，已按场景和衣橱稳定度降级生成'}
-              </p>
+            <div className="flex flex-col gap-4">
+              <div className="space-y-2">
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Trip Summary</p>
+                <p className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-primary)]">
+                  {view.plan.destinationCity} · {view.plan.days} 天
+                </p>
+                <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">{view.plan.scenes.join(' / ') || '默认日常场景'}</p>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Core Looks</p>
+                  <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{view.plan.suggestedOutfitCount} 套</p>
+                </div>
+                <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4 md:col-span-2">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Weather Read</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--color-neutral-dark)]">
+                    {view.plan.weather
+                      ? `${view.plan.weather.city} · ${view.plan.weather.temperatureC}°C · ${view.plan.weather.conditionLabel}`
+                      : '当前天气暂时不可用，已按场景和衣橱稳定度降级生成'}
+                  </p>
+                </div>
+              </div>
             </div>
           </Card>
 
           <Card>
             <div className="flex flex-col gap-3">
-              <p className="text-sm font-medium">{view.editingSavedPlan ? '更新当前方案' : '保存这次方案'}</p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">
+                {view.editingSavedPlan ? 'Update Current Plan' : 'Save This Plan'}
+              </p>
+              <p className="text-lg font-semibold text-[var(--color-primary)]">{view.editingSavedPlan ? '更新当前方案' : '保存这次方案'}</p>
+              <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">
                 {view.editingSavedPlan ? '这次改动会覆盖当前这份已保存方案，让最近列表和当前视图保持一致。' : '如果这趟行程已经比较明确，先把方案存下来，后面就不用重新填一遍。'}
               </p>
               <form action={savePlan}>
@@ -203,18 +252,19 @@ export function TravelPage({
           <Card>
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-sm font-medium">建议打包</p>
-                <p className="text-sm text-[var(--color-neutral-dark)]">先带最稳的组合，再把变化留给上衣切换，而不是无限加件数。</p>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Packing List</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">建议打包</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">先带最稳的组合，再把变化留给上衣切换，而不是无限加件数。</p>
               </div>
 
               <div className="grid gap-3">
                 {view.plan.entries.map((entry) => (
-                  <div key={entry.id} className="rounded-lg bg-[var(--color-secondary)] p-4">
+                  <div key={entry.id} className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
                     <p className="text-sm font-medium">
                       {entry.categoryLabel} · 建议带 {entry.quantity} 件
                     </p>
-                    <p className="text-sm text-[var(--color-neutral-dark)]">{entry.reason}</p>
-                    <p className="mt-2 text-sm">{entry.itemLabels.join(' / ')}</p>
+                    <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">{entry.reason}</p>
+                    <p className="mt-3 text-sm">{entry.itemLabels.join(' / ')}</p>
                   </div>
                 ))}
               </div>
@@ -224,16 +274,17 @@ export function TravelPage({
           <Card>
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-sm font-medium">按天轮换建议</p>
-                <p className="text-sm text-[var(--color-neutral-dark)]">先把每天的大致节奏排出来，旅行中就不容易临场乱翻箱子。</p>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Daily Rotation</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">按天轮换建议</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">先把每天的大致节奏排出来，旅行中就不容易临场乱翻箱子。</p>
               </div>
 
               <div className="grid gap-3">
                 {view.plan.dailyPlan.map((entry) => (
-                  <div key={entry.dayLabel} className="rounded-lg bg-[var(--color-secondary)] p-4">
+                  <div key={entry.dayLabel} className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
                     <p className="text-sm font-medium">{entry.dayLabel}</p>
-                    <p className="text-sm">{entry.outfitSummary}</p>
-                    <p className="text-sm text-[var(--color-neutral-dark)]">{entry.focus}</p>
+                    <p className="mt-1 text-sm">{entry.outfitSummary}</p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--color-neutral-dark)]">{entry.focus}</p>
                   </div>
                 ))}
               </div>
@@ -242,13 +293,14 @@ export function TravelPage({
 
           <Card>
             <div className="flex flex-col gap-3">
-              <p className="text-sm font-medium">最近保存方案</p>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Saved Plans</p>
+              <p className="text-lg font-semibold text-[var(--color-primary)]">最近保存方案</p>
               {view.recentSavedPlans.length > 0 ? (
                 <div className="grid gap-3">
                   {view.recentSavedPlans.map((plan) => (
-                    <div key={plan.id} className="rounded-lg bg-[var(--color-secondary)] p-4">
+                    <div key={plan.id} className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
                       <p className="text-sm font-medium">{plan.title}</p>
-                      <p className="text-sm text-[var(--color-neutral-dark)]">
+                      <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">
                         {plan.destinationCity} · {plan.days} 天 · {plan.scenes.join(' / ') || '默认日常场景'}
                       </p>
                       {view.editingSavedPlan?.id === plan.id ? <p className="text-sm text-[var(--color-primary)]">当前正在编辑这份方案</p> : null}
@@ -272,26 +324,28 @@ export function TravelPage({
 
           <Card>
             <div className="flex flex-col gap-3">
-              <p className="text-sm font-medium">风险与缺口</p>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Risk & Gaps</p>
+              <p className="text-lg font-semibold text-[var(--color-primary)]">风险与缺口</p>
               {view.plan.missingHints.length > 0 ? (
                 <div className="flex flex-col gap-2">
                   {view.plan.missingHints.map((hint) => (
-                    <p key={hint} className="text-sm text-[var(--color-neutral-dark)]">
+                    <p key={hint} className="text-sm leading-6 text-[var(--color-neutral-dark)]">
                       {hint}
                     </p>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[var(--color-neutral-dark)]">当前这份衣橱已经能支撑这趟旅行的基础打包，不需要额外补很多新单品。</p>
+                <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">当前这份衣橱已经能支撑这趟旅行的基础打包，不需要额外补很多新单品。</p>
               )}
             </div>
           </Card>
 
           <Card>
             <div className="flex flex-col gap-3">
-              <p className="text-sm font-medium">打包策略</p>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Notes</p>
+              <p className="text-lg font-semibold text-[var(--color-primary)]">打包策略</p>
               {view.plan.notes.map((note) => (
-                <p key={note} className="text-sm text-[var(--color-neutral-dark)]">
+                <p key={note} className="text-sm leading-6 text-[var(--color-neutral-dark)]">
                   {note}
                 </p>
               ))}

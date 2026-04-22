@@ -16,7 +16,7 @@ export function ClosetItemGrid({
 }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-[var(--color-neutral-mid)] bg-white p-5 text-center">
+      <div className="rounded-[1.25rem] border border-dashed border-[var(--color-neutral-mid)] bg-white p-5 text-center">
         <p className="text-sm font-medium">{emptyTitle}</p>
         <p className="text-sm text-[var(--color-neutral-dark)]">{emptyDescription}</p>
       </div>
@@ -24,7 +24,7 @@ export function ClosetItemGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
         <ClosetItemCard key={item.id} item={item} onDelete={onDeleteItem} isDeleting={deletingItemId === item.id} />
       ))}

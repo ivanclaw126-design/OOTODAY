@@ -19,20 +19,37 @@ export function TodayOotdHistory({ entries }: { entries: TodayOotdHistoryEntry[]
 
   return (
     <Card>
-      <div className="flex flex-col gap-3">
-        <div>
-          <p className="text-sm font-medium">最近穿搭记录</p>
-          <p className="text-sm text-[var(--color-neutral-dark)]">你最近记过什么，系统会拿这些记录慢慢学你的真实穿搭节奏。</p>
+      <div className="space-y-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">
+              OOTD history
+            </p>
+            <p className="text-lg font-semibold tracking-[-0.03em]">最近穿搭记录</p>
+          </div>
+          <p className="text-sm text-[var(--color-neutral-dark)]">
+            记录会慢慢校准你对舒适度、搭配和重复穿着的偏好
+          </p>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="space-y-3">
           {entries.map((entry) => (
-            <div key={entry.id} className="border-t border-[var(--color-secondary)] pt-3 first:border-t-0 first:pt-0">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium">{formatDate(entry.wornAt)}</p>
-                <p className="text-xs text-[var(--color-neutral-dark)]">{formatScore(entry.satisfactionScore)}</p>
+            <div
+              key={entry.id}
+              className="rounded-[1.25rem] border border-black/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.86)_0%,rgba(248,245,238,0.86)_100%)] p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium tracking-[-0.02em]">{formatDate(entry.wornAt)}</p>
+                  <p className="text-xs text-[var(--color-neutral-dark)]">这条记录会被拿去优化后续推荐</p>
+                </div>
+                <p className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
+                  {formatScore(entry.satisfactionScore)}
+                </p>
               </div>
-              <p className="mt-1 text-sm text-[var(--color-neutral-dark)]">{entry.notes ?? '本次记录没有备注摘要'}</p>
+              <p className="mt-3 text-sm leading-6 text-[var(--color-neutral-dark)]">
+                {entry.notes ?? '本次记录没有备注摘要'}
+              </p>
             </div>
           ))}
         </div>

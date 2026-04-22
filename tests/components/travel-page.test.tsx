@@ -3,7 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TravelPage } from '@/components/travel/travel-page'
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ refresh: vi.fn() })
+  useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: () => '/travel'
 }))
 
 describe('TravelPage', () => {
@@ -102,7 +103,7 @@ describe('TravelPage', () => {
       />
     )
 
-    expect(screen.getByText('本次行程摘要')).toBeInTheDocument()
+    expect(screen.getByText('Trip Summary')).toBeInTheDocument()
     expect(screen.getByText('正在编辑已保存方案')).toBeInTheDocument()
     expect(screen.getByText('这次旅行方案已经保存下来了，后面可以继续基于它补细节。')).toBeInTheDocument()
     expect(screen.getByText(/东京 · 4 天/)).toBeInTheDocument()

@@ -375,88 +375,147 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
 
   return (
     <Card>
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium">添加衣物</p>
-            <p className="text-sm text-[var(--color-neutral-dark)]">支持一次多选相册图片，或者直接贴商品链接 / 图片链接，系统会顺着同一条识别链路帮你确认后入橱。</p>
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">导入入口</p>
+            <p className="text-base font-medium text-[var(--color-neutral-dark)]">添加衣物</p>
+            <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">
+              支持一次多选相册图片，或者直接贴商品链接 / 图片链接，系统会顺着同一条识别链路帮你确认后入橱。
+            </p>
           </div>
-          <label
-            className={`inline-flex rounded-md border border-[var(--color-neutral-mid)] px-4 py-2.5 text-sm font-medium text-[var(--color-primary)] ${
-              isFlowActive ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-            }`}
-          >
-            {isAnalyzing ? '分析中' : '选择图片'}
-            <input
-              aria-label="选择衣物图片"
-              type="file"
-              accept="image/*"
-              capture="environment"
-              multiple
-              className="sr-only"
-              onChange={handleFileChange}
-              disabled={isFlowActive}
-            />
-          </label>
-        </div>
 
-        <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-neutral-mid)] p-3">
-          <label className="flex flex-col gap-1 text-sm">
-            <span>商品链接或图片链接</span>
-            <input
-              aria-label="衣物商品链接或图片链接"
-              value={importSourceUrl}
-              onChange={(event) => setImportSourceUrl(event.target.value)}
-              placeholder="https://..."
-              className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-              disabled={isFlowActive}
-            />
-          </label>
-          <div className="flex justify-end">
-            <SecondaryButton type="button" onClick={() => void handleImportFromUrl()} disabled={isFlowActive || !importSourceUrl.trim()}>
-              通过链接导入
-            </SecondaryButton>
+          <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--color-neutral-dark)]">
+            <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">相册多选</span>
+            <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">商品链接</span>
+            <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">拼图拆分</span>
           </div>
         </div>
 
-        <ClosetCollageSplitter disabled={isFlowActive} onSplitComplete={enqueueLocalFiles} />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+          <div className="flex flex-col gap-4">
+            <div className="rounded-[1.25rem] border border-black/7 bg-[var(--color-secondary)]/45 p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-[var(--color-neutral-dark)]">相册 / 拍照</p>
+                  <p className="text-sm text-[var(--color-neutral-dark)]">一次多选后会自动排队逐张分析，方便把整批衣物顺着同一条流程入橱。</p>
+                </div>
+                <label
+                  className={`inline-flex rounded-md border border-[var(--color-neutral-mid)] px-4 py-2.5 text-sm font-medium text-[var(--color-primary)] ${
+                    isFlowActive ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                  }`}
+                >
+                  {isAnalyzing ? '分析中' : '选择图片'}
+                  <input
+                    aria-label="选择衣物图片"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    className="sr-only"
+                    onChange={handleFileChange}
+                    disabled={isFlowActive}
+                  />
+                </label>
+              </div>
+              <p className="text-sm text-[var(--color-neutral-dark)]">也可以直接从手机相册连选多张，完成后会自动进入确认区。</p>
+            </div>
 
-        {currentUpload ? (
-          <div className="rounded-lg bg-[var(--color-secondary)] p-3 text-sm text-[var(--color-neutral-dark)]">
-            当前正在处理第 {currentStep} / {totalCount} 张
-            {pendingUploads.length > 0 ? `，后面还有 ${pendingUploads.length} 张排队` : '，这是这一轮的最后一张'}
+            <div className="rounded-[1.25rem] border border-black/7 bg-white p-4 shadow-[0_12px_28px_rgba(26,26,26,0.05)]">
+              <div className="mb-3 space-y-1">
+                <p className="text-sm font-medium text-[var(--color-neutral-dark)]">商品链接或图片链接</p>
+                <p className="text-sm text-[var(--color-neutral-dark)]">贴商品页或图片直链都可以，系统会复用同一条识别链路帮你确认后入橱。</p>
+              </div>
+              <label className="flex flex-col gap-1 text-sm">
+                <span>链接地址</span>
+                <input
+                  aria-label="衣物商品链接或图片链接"
+                  value={importSourceUrl}
+                  onChange={(event) => setImportSourceUrl(event.target.value)}
+                  placeholder="https://..."
+                  className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
+                  disabled={isFlowActive}
+                />
+              </label>
+              <div className="mt-3 flex justify-end">
+                <SecondaryButton type="button" onClick={() => void handleImportFromUrl()} disabled={isFlowActive || !importSourceUrl.trim()}>
+                  通过链接导入
+                </SecondaryButton>
+              </div>
+            </div>
+
+            <div className="rounded-[1.25rem] border border-black/7 bg-[var(--color-secondary)]/35 p-4">
+              <div className="mb-3 space-y-1">
+                <p className="text-sm font-medium text-[var(--color-neutral-dark)]">拼图拆分</p>
+                <p className="text-sm text-[var(--color-neutral-dark)]">先手动框出 2-4 个单品，再拆成多张图片继续排队处理。</p>
+              </div>
+              <ClosetCollageSplitter disabled={isFlowActive} onSplitComplete={enqueueLocalFiles} />
+            </div>
           </div>
-        ) : null}
 
-        {currentUpload?.previewUrl ? <img src={currentUpload.previewUrl} alt="本地预览" className="aspect-square w-full rounded-lg object-cover" /> : null}
+          <div className="flex flex-col gap-3 rounded-[1.25rem] border border-black/7 bg-white/95 p-4 shadow-[0_12px_30px_rgba(26,26,26,0.06)]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-[var(--color-neutral-dark)]">处理面板</p>
+                <p className="text-sm text-[var(--color-neutral-dark)]">分析、确认、报错和跳过都在这里完成。</p>
+              </div>
+              {currentUpload ? (
+                <div className="shrink-0 rounded-full bg-[var(--color-secondary)] px-3 py-1 text-xs font-medium text-[var(--color-neutral-dark)]">
+                  第 {currentStep} / {totalCount} 张
+                </div>
+              ) : (
+                <div className="shrink-0 rounded-full bg-[var(--color-secondary)] px-3 py-1 text-xs font-medium text-[var(--color-neutral-dark)]">
+                  等待导入
+                </div>
+              )}
+            </div>
 
-        {currentUpload?.phase === 'analyzing' ? <p className="text-sm">AI 正在分析图片</p> : null}
+            {currentUpload ? (
+              <div className="rounded-[1rem] bg-[var(--color-secondary)] p-3 text-sm text-[var(--color-neutral-dark)]">
+                当前正在处理第 {currentStep} / {totalCount} 张
+                {pendingUploads.length > 0 ? `，后面还有 ${pendingUploads.length} 张排队` : '，这是这一轮的最后一张'}
+              </div>
+            ) : (
+              <div className="rounded-[1rem] border border-dashed border-[var(--color-neutral-mid)] p-4 text-sm text-[var(--color-neutral-dark)]">
+                选一张图片、贴一个链接，或者先从拼图里拆出单品，这里会接住后续确认。
+              </div>
+            )}
 
-        {currentUpload?.phase === 'confirming' && currentUpload.draft ? (
-          <ClosetUploadForm initialDraft={currentUpload.draft} disabled={isSaving} onSubmit={handleSave} />
-        ) : null}
+            {currentUpload?.phase === 'analyzing' && currentUpload.previewUrl ? (
+              <img src={currentUpload.previewUrl} alt="本地预览" className="aspect-square w-full rounded-[1rem] object-cover" />
+            ) : null}
 
-        {currentUpload?.phase === 'error' && currentUpload.errorMessage ? (
-          <div className="flex items-center gap-3">
-            <p className="text-sm text-red-600">{currentUpload.errorMessage}</p>
-            <SecondaryButton type="button" onClick={handleRetry} disabled={isMutating}>
-              重试分析
-            </SecondaryButton>
-            <SecondaryButton type="button" onClick={handleSkipCurrent} disabled={isMutating}>
-              跳过这张
-            </SecondaryButton>
+            {currentUpload?.phase === 'analyzing' ? <p className="text-sm text-[var(--color-neutral-dark)]">AI 正在分析图片</p> : null}
+
+            {currentUpload?.phase === 'confirming' && currentUpload.draft ? (
+              <ClosetUploadForm initialDraft={currentUpload.draft} disabled={isSaving} onSubmit={handleSave} />
+            ) : null}
+
+            {currentUpload?.phase === 'error' && currentUpload.errorMessage ? (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-red-600">{currentUpload.errorMessage}</p>
+                <div className="flex flex-wrap gap-2">
+                  <SecondaryButton type="button" onClick={handleRetry} disabled={isMutating}>
+                    重试分析
+                  </SecondaryButton>
+                  <SecondaryButton type="button" onClick={handleSkipCurrent} disabled={isMutating}>
+                    跳过这张
+                  </SecondaryButton>
+                </div>
+              </div>
+            ) : null}
+
+            {currentUpload?.phase === 'confirming' ? (
+              <div className="flex justify-end">
+                <SecondaryButton type="button" onClick={handleSkipCurrent} disabled={isMutating}>
+                  跳过这张
+                </SecondaryButton>
+              </div>
+            ) : null}
+
+            {currentUpload?.phase !== 'error' && currentUpload?.errorMessage ? <p className="text-sm text-red-600">{currentUpload.errorMessage}</p> : null}
           </div>
-        ) : null}
-
-        {currentUpload?.phase === 'confirming' ? (
-          <div className="flex justify-end">
-            <SecondaryButton type="button" onClick={handleSkipCurrent} disabled={isMutating}>
-              跳过这张
-            </SecondaryButton>
-          </div>
-        ) : null}
-
-        {currentUpload?.phase !== 'error' && currentUpload?.errorMessage ? <p className="text-sm text-red-600">{currentUpload.errorMessage}</p> : null}
+        </div>
       </div>
     </Card>
   )

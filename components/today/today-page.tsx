@@ -43,45 +43,47 @@ export function TodayPage({
 
   return (
     <AppShell title="Today">
-      <TodayStatusCard weatherState={view.weatherState} />
+      <div className="space-y-4">
+        <TodayStatusCard weatherState={view.weatherState} />
 
-      {view.itemCount === 0 ? (
-        <EmptyState
-          title="你的衣橱还是空的"
-          description="先上传几件常穿的单品，Today 才能给出真实推荐。"
-          action={<PrimaryLink href="/closet">去上传衣物</PrimaryLink>}
-        />
-      ) : (
-        <>
-          {!view.city ? <TodayCityPromptCard /> : null}
-
-          {isEditingCity ? (
-            <TodayCityForm
-              initialCity={view.city ?? ''}
-              onSubmit={updateCity}
-              onCancel={() => setIsEditingCity(false)}
-            />
-          ) : null}
-
-          <TodayRecommendationList
-            recommendations={view.recommendations}
-            recommendationError={view.recommendationError}
-            ootdStatus={ootdStatus}
-            submitOotd={submitTodayOotd}
+        {view.itemCount === 0 ? (
+          <EmptyState
+            title="你的衣橱还是空的"
+            description="先上传几件常穿的单品，Today 才能给出真实推荐。"
+            action={<PrimaryLink href="/closet">去上传衣物</PrimaryLink>}
           />
+        ) : (
+          <>
+            {!view.city ? <TodayCityPromptCard /> : null}
 
-          <div className="flex gap-2">
-            <SecondaryButton type="button" onClick={() => void refreshRecommendations()}>
-              换一批推荐
-            </SecondaryButton>
-            <SecondaryButton type="button" onClick={() => setIsEditingCity(true)}>
-              {view.city ? '修改城市' : '设置城市'}
-            </SecondaryButton>
-          </div>
+            {isEditingCity ? (
+              <TodayCityForm
+                initialCity={view.city ?? ''}
+                onSubmit={updateCity}
+                onCancel={() => setIsEditingCity(false)}
+              />
+            ) : null}
 
-          <TodayOotdHistory entries={view.recentOotdHistory} />
-        </>
-      )}
+            <TodayRecommendationList
+              recommendations={view.recommendations}
+              recommendationError={view.recommendationError}
+              ootdStatus={ootdStatus}
+              submitOotd={submitTodayOotd}
+            />
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <SecondaryButton type="button" onClick={() => void refreshRecommendations()}>
+                换一批推荐
+              </SecondaryButton>
+              <SecondaryButton type="button" onClick={() => setIsEditingCity(true)}>
+                {view.city ? '修改城市' : '设置城市'}
+              </SecondaryButton>
+            </div>
+
+            <TodayOotdHistory entries={view.recentOotdHistory} />
+          </>
+        )}
+      </div>
     </AppShell>
   )
 }

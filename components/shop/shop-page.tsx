@@ -173,16 +173,44 @@ export function ShopPage({
   return (
     <AppShell title="Shop">
       <Card>
-        <div className="flex flex-col gap-3">
-          <div>
-            <p className="text-sm font-medium">买前分析</p>
-            <p className="text-sm text-[var(--color-neutral-dark)]">
-              先贴商品链接、商品主图链接，或者直接上传本地图片，我们会结合你现有衣橱判断它值不值得买。
-            </p>
+        <div className="flex flex-col gap-5">
+          <div className="space-y-3">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Buy Before You Buy</p>
+            <div className="space-y-2">
+              <p className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-primary)]">先判断它会不会真的进你常穿轮换</p>
+              <p className="max-w-2xl text-sm leading-6 text-[var(--color-neutral-dark)]">
+                贴商品链接、主图链接，或者直接上传本地图片。我们会先识别这件单品，再结合你现在的衣橱回答三个问题：值不值得买、会不会重复、买回来大概能接上多少套。
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.75)] px-4 py-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Step 1</p>
+                <p className="mt-2 text-sm font-medium text-[var(--color-primary)]">给一个候选商品</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">链接、本地图、桌面拖拽都可以，先把你犹豫的那件丢进来。</p>
+              </div>
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.75)] px-4 py-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Step 2</p>
+                <p className="mt-2 text-sm font-medium text-[var(--color-primary)]">看重复风险和搭配回报</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">不是只看好不好看，而是看它进衣橱后会不会真的被穿起来。</p>
+              </div>
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.75)] px-4 py-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Step 3</p>
+                <p className="mt-2 text-sm font-medium text-[var(--color-primary)]">决定买、缓买或先补缺口</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">把“我好像需要它”改成更明确的衣橱决策。</p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+          <div className="rounded-[1.5rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4 shadow-[0_18px_60px_rgba(39,31,24,0.08)]">
+            <div className="flex flex-col gap-4">
+              <div>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Input</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-neutral-dark)]">
+                  图片入口适合快速判断单品，链接入口适合直接拿商品页做买前分析。
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
               <SecondaryButton type="button" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting}>
                 上传本地图片
               </SecondaryButton>
@@ -201,50 +229,51 @@ export function ShopPage({
                 onChange={handleFileChange}
                 disabled={isSubmitting}
               />
-              <span className="text-sm text-[var(--color-neutral-dark)]">电脑端支持拖拽，iPhone / iPad 可直接从相册或拍照上传。</span>
-            </div>
-
-            <label
-              onDragOver={(event) => {
-                event.preventDefault()
-                setIsDragging(true)
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={(event) => void handleDrop(event)}
-              className={`flex min-h-28 flex-col items-center justify-center rounded-lg border border-dashed px-4 py-5 text-center text-sm transition ${
-                isDragging
-                  ? 'border-[var(--color-primary)] bg-[var(--color-secondary)]'
-                  : 'border-[var(--color-neutral-mid)] text-[var(--color-neutral-dark)]'
-              }`}
-            >
-              <span className="font-medium text-[var(--color-primary)]">拖拽图片到这里</span>
-              <span>{selectedFileName ? `已选择：${selectedFileName}` : '也可以点击上方按钮选择本地图片'}</span>
-            </label>
-
-            {previewUrl ? (
-              <div className="overflow-hidden rounded-lg border border-[var(--color-neutral-mid)]">
-                <Image
-                  src={previewUrl}
-                  alt="待分析商品预览"
-                  width={960}
-                  height={960}
-                  unoptimized
-                  className="h-56 w-full object-cover"
-                />
+                <span className="text-sm text-[var(--color-neutral-dark)]">电脑端支持拖拽，iPhone / iPad 可直接从相册或拍照上传。</span>
               </div>
-            ) : null}
-          </div>
 
-          <label className="flex flex-col gap-1 text-sm">
-            <span>商品链接或图片链接</span>
-            <input
-              aria-label="商品链接或图片链接"
-              value={sourceUrl}
-              onChange={(event) => setSourceUrl(event.target.value)}
-              placeholder="https://..."
-              className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-            />
-          </label>
+              <label
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  setIsDragging(true)
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(event) => void handleDrop(event)}
+                className={`flex min-h-32 flex-col items-center justify-center rounded-[1.25rem] border border-dashed px-4 py-6 text-center text-sm transition ${
+                  isDragging
+                    ? 'border-[var(--color-primary)] bg-[var(--color-secondary)]'
+                    : 'border-[var(--color-neutral-mid)] bg-[rgba(248,244,238,0.8)] text-[var(--color-neutral-dark)]'
+                }`}
+              >
+                <span className="font-medium text-[var(--color-primary)]">拖拽图片到这里</span>
+                <span className="mt-1 max-w-sm leading-6">{selectedFileName ? `已选择：${selectedFileName}` : '也可以点击上方按钮选择本地图片'}</span>
+              </label>
+
+              {previewUrl ? (
+                <div className="overflow-hidden rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-white/70">
+                  <Image
+                    src={previewUrl}
+                    alt="待分析商品预览"
+                    width={960}
+                    height={960}
+                    unoptimized
+                    className="h-56 w-full object-cover"
+                  />
+                </div>
+              ) : null}
+
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-medium">商品链接或图片链接</span>
+                <input
+                  aria-label="商品链接或图片链接"
+                  value={sourceUrl}
+                  onChange={(event) => setSourceUrl(event.target.value)}
+                  placeholder="https://..."
+                  className="rounded-[1rem] border border-[var(--color-neutral-mid)] bg-white/75 px-3 py-3"
+                />
+              </label>
+            </div>
+          </div>
 
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
@@ -267,64 +296,72 @@ export function ShopPage({
 
       {analysis ? (
         <Card>
-          <div className="flex flex-col gap-3">
-            <div>
-              <p className="text-sm text-[var(--color-neutral-dark)]">识别结果</p>
+          <div className="flex flex-col gap-5">
+            <div className="space-y-2">
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Analysis Result</p>
               {analysis.candidate.sourceTitle ? (
                 <p className="text-sm text-[var(--color-neutral-dark)]">{analysis.candidate.sourceTitle}</p>
               ) : null}
-              <p className="text-lg font-medium">
+              <p className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-primary)]">
                 {analysis.candidate.subCategory} · {analysis.candidate.colorCategory}
               </p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">
+              <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">
                 {analysis.candidate.category} · {analysis.candidate.styleTags.join(' / ') || '无明显风格标签'}
               </p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-lg bg-[var(--color-secondary)] p-3">
-                <p className="text-sm text-[var(--color-neutral-dark)]">结论</p>
-                <p className="text-base font-medium">{recommendationLabel(analysis.recommendation)}</p>
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Verdict</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{recommendationLabel(analysis.recommendation)}</p>
               </div>
-              <div className="rounded-lg bg-[var(--color-secondary)] p-3">
-                <p className="text-sm text-[var(--color-neutral-dark)]">重复风险</p>
-                <p className="text-base font-medium">{duplicateRiskLabel(analysis.duplicateRisk)}</p>
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Repeat Risk</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{duplicateRiskLabel(analysis.duplicateRisk)}</p>
               </div>
-              <div className="rounded-lg bg-[var(--color-secondary)] p-3">
-                <p className="text-sm text-[var(--color-neutral-dark)]">预计可搭套数</p>
-                <p className="text-base font-medium">{analysis.estimatedOutfitCount}</p>
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Outfit Yield</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{analysis.estimatedOutfitCount}</p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">建议原因</p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">{analysis.recommendationReason}</p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">衣橱里相近的单品</p>
-              {analysis.duplicateItems.length > 0 ? (
+            <div className="grid gap-3 lg:grid-cols-[1.3fr_0.9fr]">
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4">
                 <div className="flex flex-col gap-2">
-                  {analysis.duplicateItems.map((item) => (
-                    <p key={item.id} className="text-sm text-[var(--color-neutral-dark)]">
-                      {item.subCategory ?? item.category}
-                      {item.colorCategory ? ` · ${item.colorCategory}` : ''}
-                    </p>
-                  ))}
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Why</p>
+                  <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">{analysis.recommendationReason}</p>
                 </div>
-              ) : (
-                <p className="text-sm text-[var(--color-neutral-dark)]">当前没找到明显重复的单品。</p>
-              )}
+              </div>
+
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4">
+                <div className="flex flex-col gap-2">
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">In Closet Already</p>
+                  {analysis.duplicateItems.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {analysis.duplicateItems.map((item) => (
+                        <p key={item.id} className="text-sm leading-6 text-[var(--color-neutral-dark)]">
+                          {item.subCategory ?? item.category}
+                          {item.colorCategory ? ` · ${item.colorCategory}` : ''}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">当前没找到明显重复的单品。</p>
+                  )}
+                </div>
+              </div>
             </div>
 
             {analysis.missingCategoryHints.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium">还缺什么</p>
-                {analysis.missingCategoryHints.map((hint) => (
-                  <p key={hint} className="text-sm text-[var(--color-neutral-dark)]">
-                    {hint}
-                  </p>
-                ))}
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(248,244,238,0.78)] p-4">
+                <div className="flex flex-col gap-2">
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Still Missing</p>
+                  {analysis.missingCategoryHints.map((hint) => (
+                    <p key={hint} className="text-sm leading-6 text-[var(--color-neutral-dark)]">
+                      {hint}
+                    </p>
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>
