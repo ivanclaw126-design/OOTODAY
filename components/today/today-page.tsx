@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { TodayCityForm } from '@/components/today/today-city-form'
 import { TodayCityPromptCard } from '@/components/today/today-city-prompt-card'
+import { TodayOotdHistory } from '@/components/today/today-ootd-history'
 import { TodayRecommendationList } from '@/components/today/today-recommendation-list'
 import { TodayStatusCard } from '@/components/today/today-status-card'
 import { PrimaryLink, SecondaryButton } from '@/components/ui/button'
@@ -77,6 +78,8 @@ export function TodayPage({
               {view.city ? '修改城市' : '设置城市'}
             </SecondaryButton>
           </div>
+
+          <TodayOotdHistory entries={view.recentOotdHistory} />
         </>
       )}
     </AppShell>

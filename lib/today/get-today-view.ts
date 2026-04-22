@@ -1,5 +1,6 @@
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
+import { getRecentOotdHistory } from '@/lib/today/get-recent-ootd-history'
 import { getTodayOotdStatus } from '@/lib/today/get-today-ootd-status'
 import { getWeather } from '@/lib/today/get-weather'
 import type { TodayView } from '@/lib/today/types'
@@ -13,7 +14,11 @@ export async function getTodayView({
   city: string | null
   offset?: number
 }): Promise<TodayView> {
-  const [closet, ootdStatus] = await Promise.all([getClosetView(userId), getTodayOotdStatus(userId)])
+  const [closet, ootdStatus, recentOotdHistory] = await Promise.all([
+    getClosetView(userId),
+    getTodayOotdStatus(userId),
+    getRecentOotdHistory(userId)
+  ])
 
   if (closet.itemCount === 0) {
     return {
@@ -22,7 +27,8 @@ export async function getTodayView({
       weatherState: city ? { status: 'unavailable', city } : { status: 'not-set' },
       recommendations: [],
       recommendationError: false,
-      ootdStatus
+      ootdStatus,
+      recentOotdHistory
     }
   }
 
@@ -33,7 +39,8 @@ export async function getTodayView({
       weatherState: { status: 'not-set' },
       recommendations: generateTodayRecommendations(closet.items, null, offset),
       recommendationError: false,
-      ootdStatus
+      ootdStatus,
+      recentOotdHistory
     }
   }
 
@@ -46,7 +53,8 @@ export async function getTodayView({
       weatherState: { status: 'unavailable', city },
       recommendations: generateTodayRecommendations(closet.items, null, offset),
       recommendationError: false,
-      ootdStatus
+      ootdStatus,
+      recentOotdHistory
     }
   }
 
@@ -56,6 +64,7 @@ export async function getTodayView({
     weatherState: { status: 'ready', weather },
     recommendations: generateTodayRecommendations(closet.items, weather, offset),
     recommendationError: false,
-    ootdStatus
+    ootdStatus,
+    recentOotdHistory
   }
 }

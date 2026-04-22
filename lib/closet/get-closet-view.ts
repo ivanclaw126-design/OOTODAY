@@ -1,8 +1,9 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { ClosetItemCardData } from '@/lib/closet/types'
 
-export async function getClosetView(userId: string) {
+export async function getClosetView(userId: string, options?: { limit?: number }) {
   const supabase = await createSupabaseServerClient()
+  const limit = options?.limit ?? 6
 
   const { count, error: countError } = await supabase
     .from('items')
@@ -13,12 +14,17 @@ export async function getClosetView(userId: string) {
     throw countError
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('items')
-    .select('id, image_url, category, sub_category, color_category, style_tags, created_at')
+    .select('id, image_url, category, sub_category, color_category, style_tags, last_worn_date, wear_count, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
-    .limit(6)
+
+  if (limit > 0) {
+    query = query.limit(limit)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     throw error
@@ -31,6 +37,8 @@ export async function getClosetView(userId: string) {
     subCategory: item.sub_category,
     colorCategory: item.color_category,
     styleTags: item.style_tags,
+    lastWornDate: item.last_worn_date,
+    wearCount: item.wear_count,
     createdAt: item.created_at
   }))
 

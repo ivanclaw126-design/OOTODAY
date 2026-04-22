@@ -31,6 +31,13 @@ export type TodayOotdStatus =
   | { status: 'not-recorded' }
   | { status: 'recorded'; wornAt: string }
 
+export type TodayOotdHistoryEntry = {
+  id: string
+  wornAt: string
+  satisfactionScore: number | null
+  notes: string | null
+}
+
 export type TodayView = {
   itemCount: number
   city: string | null
@@ -38,4 +45,5 @@ export type TodayView = {
   recommendations: TodayRecommendation[]
   recommendationError: boolean
   ootdStatus: TodayOotdStatus
+  recentOotdHistory: TodayOotdHistoryEntry[]
 }

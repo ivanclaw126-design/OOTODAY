@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const getSession = vi.fn()
 const analyzeItemImage = vi.fn()
 const saveClosetItem = vi.fn()
+const deleteClosetItem = vi.fn()
 const revalidatePath = vi.fn()
 
 vi.mock('next/cache', () => ({
@@ -19,6 +20,10 @@ vi.mock('@/lib/closet/analyze-item-image', () => ({
 
 vi.mock('@/lib/closet/save-closet-item', () => ({
   saveClosetItem
+}))
+
+vi.mock('@/lib/closet/delete-closet-item', () => ({
+  deleteClosetItem
 }))
 
 const validImageUrl = 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/fixed-id.jpg'
@@ -40,6 +45,7 @@ afterEach(() => {
   getSession.mockReset()
   analyzeItemImage.mockReset()
   saveClosetItem.mockReset()
+  deleteClosetItem.mockReset()
   revalidatePath.mockReset()
   vi.unstubAllEnvs()
   vi.resetModules()
@@ -134,6 +140,20 @@ describe('saveClosetItemAction', () => {
     expect(saveClosetItem).toHaveBeenCalledWith({
       ...validDraft,
       userId: 'user-1'
+    })
+    expect(revalidatePath).toHaveBeenCalledWith('/closet')
+  })
+
+  it('deletes a saved closet item for the current user and revalidates closet', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    deleteClosetItem.mockResolvedValue(undefined)
+
+    const { deleteClosetItemAction } = await import('@/app/closet/actions')
+
+    await expect(deleteClosetItemAction({ itemId: 'item-1' })).resolves.toBeUndefined()
+    expect(deleteClosetItem).toHaveBeenCalledWith({
+      userId: 'user-1',
+      itemId: 'item-1'
     })
     expect(revalidatePath).toHaveBeenCalledWith('/closet')
   })
