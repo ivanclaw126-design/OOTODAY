@@ -11,6 +11,7 @@ const getPublicUrl = vi.fn(() => ({
 const refresh = vi.fn()
 const createObjectURL = vi.fn()
 const revokeObjectURL = vi.fn()
+const analyzeImportUrl = vi.fn()
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
@@ -33,8 +34,9 @@ describe('ClosetUploadCard', () => {
     upload.mockResolvedValue({ error: null })
     getPublicUrl.mockClear()
     refresh.mockClear()
+    analyzeImportUrl.mockReset()
     createObjectURL.mockReset()
-    createObjectURL.mockReturnValue('blob:preview-1')
+    createObjectURL.mockImplementation((file: File) => `blob:${file.name}`)
     revokeObjectURL.mockReset()
 
     vi.stubGlobal('URL', {
@@ -61,6 +63,7 @@ describe('ClosetUploadCard', () => {
         userId="user-1"
         storageBucket="ootd-images"
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={vi.fn()}
       />
     )
@@ -75,6 +78,7 @@ describe('ClosetUploadCard', () => {
     expect(analyzeUpload).toHaveBeenCalledWith({
       imageUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/shirt.jpg'
     })
+    expect(screen.getByText('当前正在处理第 1 / 1 张，这是这一轮的最后一张')).toBeInTheDocument()
   })
 
   it('prevents repeated file selections from starting parallel uploads', async () => {
@@ -98,6 +102,7 @@ describe('ClosetUploadCard', () => {
         userId="user-1"
         storageBucket="ootd-images"
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={vi.fn()}
       />
     )
@@ -134,6 +139,7 @@ describe('ClosetUploadCard', () => {
         userId="user-1"
         storageBucket="ootd-images"
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
       />
     )
@@ -155,7 +161,7 @@ describe('ClosetUploadCard', () => {
       })
     })
     expect(refresh).toHaveBeenCalledTimes(1)
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview-1')
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:shirt.jpg')
   })
 
   it('shows an error when saving fails', async () => {
@@ -172,6 +178,7 @@ describe('ClosetUploadCard', () => {
         userId="user-1"
         storageBucket="ootd-images"
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
       />
     )
@@ -207,6 +214,7 @@ describe('ClosetUploadCard', () => {
         userId="user-1"
         storageBucket="ootd-images"
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={vi.fn()}
       />
     )
@@ -217,8 +225,159 @@ describe('ClosetUploadCard', () => {
     await screen.findByText('AI 正在分析图片')
     unmount()
 
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview-1')
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:shirt.jpg')
 
     resolveUpload?.({ error: null })
+  })
+
+  it('supports selecting multiple files and advances through the queue after each save', async () => {
+    const analyzeUpload = vi
+      .fn()
+      .mockResolvedValueOnce({
+        category: '上衣',
+        subCategory: '衬衫',
+        colorCategory: '蓝色',
+        styleTags: ['通勤']
+      })
+      .mockResolvedValueOnce({
+        category: '裤装',
+        subCategory: '牛仔裤',
+        colorCategory: '黑色',
+        styleTags: ['日常']
+      })
+    const saveItem = vi.fn().mockResolvedValue(undefined)
+
+    render(
+      <ClosetUploadCard
+        userId="user-1"
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+      />
+    )
+
+    const firstFile = new File(['fake-image-1'], 'shirt.jpg', { type: 'image/jpeg' })
+    const secondFile = new File(['fake-image-2'], 'pants.jpg', { type: 'image/jpeg' })
+
+    fireEvent.change(screen.getByLabelText('选择衣物图片'), {
+      target: { files: [firstFile, secondFile] }
+    })
+
+    expect(await screen.findByDisplayValue('上衣')).toBeInTheDocument()
+    expect(screen.getByText('当前正在处理第 1 / 2 张，后面还有 1 张排队')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
+
+    await waitFor(() => {
+      expect(saveItem).toHaveBeenCalledTimes(1)
+    })
+
+    expect(await screen.findByDisplayValue('裤装')).toBeInTheDocument()
+    expect(screen.getByText('当前正在处理第 2 / 2 张，这是这一轮的最后一张')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
+
+    await waitFor(() => {
+      expect(saveItem).toHaveBeenCalledTimes(2)
+    })
+
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(analyzeUpload).toHaveBeenCalledTimes(2)
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:shirt.jpg')
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:pants.jpg')
+    expect(screen.queryByText(/当前正在处理第/)).not.toBeInTheDocument()
+  })
+
+  it('refreshes once when earlier items were saved and the last queued item is skipped', async () => {
+    const analyzeUpload = vi
+      .fn()
+      .mockResolvedValueOnce({
+        category: '上衣',
+        subCategory: '衬衫',
+        colorCategory: '蓝色',
+        styleTags: ['通勤']
+      })
+      .mockResolvedValueOnce({
+        category: '裙装',
+        subCategory: '半裙',
+        colorCategory: '灰色',
+        styleTags: ['通勤']
+      })
+    const saveItem = vi.fn().mockResolvedValue(undefined)
+
+    render(
+      <ClosetUploadCard
+        userId="user-1"
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+      />
+    )
+
+    const firstFile = new File(['fake-image-1'], 'shirt.jpg', { type: 'image/jpeg' })
+    const secondFile = new File(['fake-image-2'], 'skirt.jpg', { type: 'image/jpeg' })
+
+    fireEvent.change(screen.getByLabelText('选择衣物图片'), {
+      target: { files: [firstFile, secondFile] }
+    })
+
+    await screen.findByDisplayValue('上衣')
+    fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
+
+    await screen.findByDisplayValue('裙装')
+    fireEvent.click(screen.getByRole('button', { name: '跳过这张' }))
+
+    await waitFor(() => {
+      expect(refresh).toHaveBeenCalledTimes(1)
+    })
+    expect(saveItem).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText(/当前正在处理第/)).not.toBeInTheDocument()
+  })
+
+  it('imports one item from a product link and enters the shared confirmation flow', async () => {
+    analyzeImportUrl.mockResolvedValue({
+      error: null,
+      draft: {
+        imageUrl: 'https://cdn.example.com/item.jpg',
+        category: '外套',
+        subCategory: '西装外套',
+        colorCategory: '米色',
+        styleTags: ['通勤']
+      }
+    })
+    const saveItem = vi.fn().mockResolvedValue(undefined)
+
+    render(
+      <ClosetUploadCard
+        userId="user-1"
+        storageBucket="ootd-images"
+        analyzeUpload={vi.fn()}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText('衣物商品链接或图片链接'), {
+      target: { value: 'https://shop.example.com/item/1' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: '通过链接导入' }))
+
+    expect(await screen.findByDisplayValue('外套')).toBeInTheDocument()
+    expect(analyzeImportUrl).toHaveBeenCalledWith({ sourceUrl: 'https://shop.example.com/item/1' })
+
+    fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
+
+    await waitFor(() => {
+      expect(saveItem).toHaveBeenCalledWith({
+        imageUrl: 'https://cdn.example.com/item.jpg',
+        category: '外套',
+        subCategory: '西装外套',
+        colorCategory: '米色',
+        styleTags: ['通勤']
+      })
+    })
+    expect(refresh).toHaveBeenCalledTimes(1)
   })
 })

@@ -17,11 +17,12 @@ type ClosetPageProps = {
   insights: ClosetInsights
   storageBucket: string
   analyzeUpload: (input: { imageUrl: string }) => Promise<ClosetAnalysisResult>
+  analyzeImportUrl: (input: { sourceUrl: string }) => Promise<{ error: string | null; draft: ClosetAnalysisDraft | null }>
   saveItem: (draft: ClosetAnalysisDraft) => Promise<void>
   deleteItem: (input: { itemId: string }) => Promise<void>
 }
 
-export function ClosetPage({ userId, itemCount, items, insights, storageBucket, analyzeUpload, saveItem, deleteItem }: ClosetPageProps) {
+export function ClosetPage({ userId, itemCount, items, insights, storageBucket, analyzeUpload, analyzeImportUrl, saveItem, deleteItem }: ClosetPageProps) {
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
   const router = useRouter()
@@ -89,6 +90,7 @@ export function ClosetPage({ userId, itemCount, items, insights, storageBucket, 
         userId={userId}
         storageBucket={storageBucket}
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
       />
 

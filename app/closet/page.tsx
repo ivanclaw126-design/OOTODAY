@@ -5,7 +5,7 @@ import { getClosetInsights } from '@/lib/closet/get-closet-insights'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { getEnv } from '@/lib/env'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
-import { analyzeClosetUploadAction, deleteClosetItemAction, saveClosetItemAction } from '@/app/closet/actions'
+import { analyzeClosetImportUrlAction, analyzeClosetUploadAction, deleteClosetItemAction, saveClosetItemAction } from '@/app/closet/actions'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
 
 export default async function ClosetRoute() {
@@ -21,6 +21,12 @@ export default async function ClosetRoute() {
     'use server'
 
     return analyzeClosetUploadAction(input)
+  }
+
+  async function analyzeImportUrl(input: { sourceUrl: string }): Promise<{ error: string | null; draft: ClosetAnalysisDraft | null }> {
+    'use server'
+
+    return analyzeClosetImportUrlAction(input)
   }
 
   async function saveItem(draft: ClosetAnalysisDraft): Promise<void> {
@@ -48,6 +54,7 @@ export default async function ClosetRoute() {
       insights={insights}
       storageBucket={storageBucket}
       analyzeUpload={analyzeUpload}
+      analyzeImportUrl={analyzeImportUrl}
       saveItem={saveItem}
       deleteItem={deleteItem}
     />

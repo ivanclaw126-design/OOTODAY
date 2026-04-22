@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ClosetPage } from '@/components/closet/closet-page'
 
 const analyzeUpload = vi.fn()
+const analyzeImportUrl = vi.fn()
 const saveItem = vi.fn()
 const deleteItem = vi.fn()
 
@@ -35,6 +36,7 @@ describe('ClosetPage', () => {
         insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
         storageBucket="ootd-images"
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
         deleteItem={deleteItem}
       />
@@ -113,6 +115,7 @@ describe('ClosetPage', () => {
         }}
         storageBucket="ootd-images"
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
         deleteItem={deleteItem}
       />
@@ -200,6 +203,7 @@ describe('ClosetPage', () => {
         }}
         storageBucket="ootd-images"
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
         deleteItem={deleteItem}
       />
@@ -247,6 +251,7 @@ describe('ClosetPage', () => {
         insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
         storageBucket="ootd-images"
         analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
         deleteItem={deleteItem}
       />
