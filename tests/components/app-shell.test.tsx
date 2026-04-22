@@ -1,6 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { AppShell } from '@/components/app-shell'
+import { vi } from 'vitest'
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/today'
+}))
 
 describe('AppShell', () => {
   it('renders the page title and all primary navigation links', () => {

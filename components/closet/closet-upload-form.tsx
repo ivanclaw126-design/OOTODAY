@@ -44,7 +44,7 @@ export function ClosetUploadForm({ initialDraft, disabled = false, onSubmit }: C
 
   return (
     <form
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault()
         void onSubmit({
@@ -53,47 +53,54 @@ export function ClosetUploadForm({ initialDraft, disabled = false, onSubmit }: C
         })
       }}
     >
-      <img src={draft.imageUrl} alt="衣物预览" className="aspect-square w-full rounded-lg object-cover" />
+      <div className="rounded-[1rem] border border-black/7 bg-[var(--color-secondary)]/35 p-3">
+        <img src={draft.imageUrl} alt="衣物预览" className="aspect-square w-full rounded-[0.85rem] object-cover" />
+        <p className="mt-2 text-xs text-[var(--color-neutral-dark)]">确认图片和识别结果无误后再保存，后面还能继续在衣橱里整理和筛选。</p>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span>分类</span>
-        <input
-          aria-label="分类"
-          value={draft.category}
-          onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))}
-          className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-        />
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-sm">
+          <span>分类</span>
+          <input
+            aria-label="分类"
+            value={draft.category}
+            onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))}
+            className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
+          />
+        </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span>子分类</span>
-        <input
-          aria-label="子分类"
-          value={draft.subCategory}
-          onChange={(event) => setDraft((current) => ({ ...current, subCategory: event.target.value }))}
-          className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-        />
-      </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span>子分类</span>
+          <input
+            aria-label="子分类"
+            value={draft.subCategory}
+            onChange={(event) => setDraft((current) => ({ ...current, subCategory: event.target.value }))}
+            className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
+          />
+        </label>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span>颜色</span>
-        <input
-          aria-label="颜色"
-          value={draft.colorCategory}
-          onChange={(event) => setDraft((current) => ({ ...current, colorCategory: event.target.value }))}
-          className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-        />
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-sm">
+          <span>颜色</span>
+          <input
+            aria-label="颜色"
+            value={draft.colorCategory}
+            onChange={(event) => setDraft((current) => ({ ...current, colorCategory: event.target.value }))}
+            className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
+          />
+        </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span>风格标签</span>
-        <input
-          aria-label="风格标签"
-          value={styleTagsText}
-          onChange={(event) => setStyleTagsText(event.target.value)}
-          className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-        />
-      </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span>风格标签</span>
+          <input
+            aria-label="风格标签"
+            value={styleTagsText}
+            onChange={(event) => setStyleTagsText(event.target.value)}
+            className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
+          />
+        </label>
+      </div>
 
       <PrimaryButton type="submit" disabled={disabled}>
         保存到衣橱

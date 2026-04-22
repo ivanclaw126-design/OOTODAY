@@ -70,7 +70,7 @@ Native tool persistence comes before repo-local mirrors.
 ## Latest Sync Snapshot
 
 - Date: 2026-04-22
-- Product state: Today recommendation + OOTD feedback MVP is stable, `/shop` now supports links + local uploads + desktop drag-drop with an apparel-only guardrail, Inspiration has advanced into a first recreate-my-version MVP, Closet now shows a first organizing-insights layer with clickable filters plus an ordered action plan and has expanded its low-friction import flow to album batch import, remote link import with Storage rehosting, and a first collage-splitting import, and `/travel` now supports planning, day-by-day rotation, saving, listing, reopening, deleting, and editing/updating saved travel plans with fallback snapshot preservation
+- Product state: Today recommendation + OOTD feedback MVP is stable, and the Today surface has now received a clearer visual decision layout with stronger status rhythm, more distinct recommendation cards, and lighter history presentation; `/shop` now supports links + local uploads + desktop drag-drop with an apparel-only guardrail and has just been visually tightened into a clearer buy-decision flow; Inspiration has advanced into a first recreate-my-version MVP; Closet now shows a first organizing-insights layer with clickable filters plus an ordered action plan, has expanded its low-friction import flow to album batch import, remote link import with Storage rehosting, and a first collage-splitting import, and now also has a cleaner mobile IA with explicit import / insight / grid sections and a more intentional top import area; `/travel` now supports planning, day-by-day rotation, saving, listing, reopening, deleting, and editing/updating saved travel plans with fallback snapshot preservation, and its page hierarchy has now been polished into a more explicit trip-planning flow
 - Superpowers state:
   - Active plans in repo still cover app shell, closet upload, today recommendation, and OOTD feedback MVP
   - Native Superpowers persistence in this repo remains the spec/plan artifact set plus execution checkbox state
@@ -83,6 +83,9 @@ Native tool persistence comes before repo-local mirrors.
   - Travel edit mode no longer depends on a stale hidden snapshot when saving: the update action now rebuilds the plan from the current city / days / scenes inputs on the server, so users can change fields and click “更新这份方案” directly without manually re-running generation first
   - Closet saved items now also support deletion with a confirmation step before the server action runs, and the image cleanup step is now best-effort so successful deletes are not misreported as failures
   - QA evidence now includes real browser validation for `/today` weather success, real browser validation for `/shop` local upload, user-confirmed real desktop drag-drop success on `/shop`, real browser validation for Inspiration URL/local-upload analysis plus remix output, real browser validation for Closet organizing cards, real browser validation for Closet batch-import / link-import / collage-splitting import flows, and real browser validation for `/travel` generate -> save -> recent-list rendering
+  - Today UX polish now also includes the stronger status header, card ranking labels, clearer outfit breakdown blocks, and lighter history rows described in this session
+  - Shop now also matches the beta visual direction better: the upload/link input area reads as one clear decision surface, and the result card is grouped into verdict / repeat-risk / outfit-yield plus explanation panels
+  - Travel now also matches the beta visual direction better: the setup form, trip summary, save/update action, packing list, daily rotation, and saved plans each read as clearer sequential sections
   - Closet import browser QA evidence is now concrete: multi-select in the native macOS file picker really enters a `1/3 -> 2/3 -> 3/3` queue, link import really saves, and collage splitting with the default 2 crop boxes really hands off into a `1/2` queue and successfully saves at least one crop
   - The fresh QA pass also surfaced two remaining polish issues in Closet import UX: the preview area can temporarily show two stacked large images during queue transitions, and some AI-recognized category/color/tag values still land in English instead of the otherwise Chinese UI vocabulary
   - Fresh automated verification now also covers Closet batch-import queue progression, Closet remote-link import rehosting, Closet collage splitting, Travel snapshot reopening, Travel saved-plan updating in both `travel_plans` and fallback `outfits`, and the post-review fixes for delete/save semantics
@@ -92,6 +95,7 @@ Native tool persistence comes before repo-local mirrors.
 - Gstack state:
   - Native Gstack progress flow for this repo continues to use `/context-save` and `/context-restore`
   - Latest saved checkpoint before this round was `~/.gstack/projects/OOTODAY/checkpoints/20260422-150452-travel-daily-plan.md`
+  - Intended checkpoint summary for this session: Closet page mobile IA was tightened with explicit import / insight / grid sections, a more intentional top import area, and a denser-to-airier mobile item grid
   - The new repo-local command `npm run travel:db:check` now distinguishes “migration missing” from “current environment cannot reach Supabase Postgres”; in this environment it fails on remote connectivity timeout rather than local migration state
   - Useful operational note from earlier checkpoints remains valid: importing local Chrome `localhost` cookies is enough to quickly recover an authenticated QA session
 - Pending sync work:
@@ -104,6 +108,7 @@ Native tool persistence comes before repo-local mirrors.
   - Keep Shop scoped to core apparel for now; no shoes / bags / accessories expansion in the current phase
   - Optionally capture direct duplicate-submission UI or network evidence if stronger proof is needed
   - The broader wardrobe-import roadmap still has meaningful room left, but collage splitting and imported-image rehosting to Supabase Storage are no longer future iterations; the next likely step is polishing mobile UX and finishing a full manual browser pass
+  - Today page visual polish from this session is complete; the next likely follow-up is checking the same treatment against Closet, Shop, and Travel surfaces for consistency
 
 ## Update Template
 

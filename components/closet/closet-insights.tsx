@@ -43,9 +43,9 @@ function InsightList({
   onSelect: (id: string) => void
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg bg-[var(--color-secondary)] p-4">
-      <div>
-        <p className="text-sm font-medium">{title}</p>
+    <div className="flex flex-col gap-3 rounded-[1.25rem] border border-black/7 bg-white p-4 shadow-[0_12px_28px_rgba(26,26,26,0.05)]">
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-[var(--color-neutral-dark)]">{title}</p>
         <p className="text-sm text-[var(--color-neutral-dark)]">{description}</p>
       </div>
 
@@ -56,7 +56,7 @@ function InsightList({
               key={item.id}
               type="button"
               onClick={() => onSelect(item.id)}
-              className={`rounded-md px-3 py-2 text-left ${
+              className={`rounded-[0.9rem] border border-[var(--color-neutral-mid)] px-3 py-2 text-left transition-colors ${
                 activeId === item.id ? 'bg-[var(--color-primary)] text-white' : 'bg-white'
               }`}
             >
@@ -126,9 +126,9 @@ export function ClosetInsightsPanel({
         </div>
 
         {insights.actionPlan.length > 0 ? (
-          <div className="rounded-lg bg-[var(--color-secondary)] p-4">
-            <div className="mb-3">
-              <p className="text-sm font-medium">下一步先做这些</p>
+          <div className="rounded-[1.25rem] border border-black/7 bg-[var(--color-secondary)]/35 p-4">
+            <div className="mb-3 space-y-1">
+              <p className="text-sm font-medium text-[var(--color-neutral-dark)]">下一步先做这些</p>
               <p className="text-sm text-[var(--color-neutral-dark)]">先处理最影响搭配效率的 3 件事，比继续盲目加衣服更有用。</p>
             </div>
 

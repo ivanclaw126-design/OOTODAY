@@ -7,8 +7,42 @@ import { ClosetUploadCard } from '@/components/closet/closet-upload-card'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult, ClosetInsights, ClosetItemCardData } from '@/lib/closet/types'
+import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+
+function ClosetSection({
+  eyebrow,
+  title,
+  description,
+  meta,
+  children
+}: {
+  eyebrow: string
+  title: string
+  description: string
+  meta?: string
+  children: ReactNode
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">{eyebrow}</p>
+          <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">{title}</h2>
+          <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">{description}</p>
+        </div>
+        {meta ? (
+          <div className="shrink-0 rounded-full border border-black/7 bg-white px-3 py-1 text-xs font-medium text-[var(--color-neutral-dark)] shadow-sm">
+            {meta}
+          </div>
+        ) : null}
+      </div>
+
+      {children}
+    </section>
+  )
+}
 
 type ClosetPageProps = {
   userId: string
@@ -64,6 +98,62 @@ export function ClosetPage({ userId, itemCount, items, insights, storageBucket, 
     return items
   }, [activeFilterId, insights.duplicateGroups, insights.idleItems, items])
 
+  const activeFilterSummary = useMemo(() => {
+    if (!activeFilterId) {
+      return null
+    }
+
+    const duplicateGroup = insights.duplicateGroups.find((group) => group.id === activeFilterId)
+
+    if (duplicateGroup) {
+      return {
+        label: `重复款：${duplicateGroup.label}`,
+        detail: `先看这组里最常穿的版本，剩下的可以暂时降级观察。`
+      }
+    }
+
+    const idleItem = insights.idleItems.find((item) => item.id === activeFilterId)
+
+    if (idleItem) {
+      return {
+        label: `闲置提醒：${idleItem.label}`,
+        detail: `优先判断它是版型不合适，还是搭配场景还没建立起来。`
+      }
+    }
+
+    const missingBasic = insights.missingBasics.find((item) => item.id === activeFilterId)
+
+    if (missingBasic) {
+      return {
+        label: `基础缺口：${missingBasic.label}`,
+        detail: missingBasic.reason
+      }
+    }
+
+    if (activeFilterId === 'dark-bottom') {
+      return {
+        label: '基础缺口：深色下装',
+        detail: '深色下装通常最容易把搭配和出门效率先稳住。'
+      }
+    }
+
+    if (activeFilterId === 'outerwear') {
+      return {
+        label: '基础缺口：外套',
+        detail: '先补一件好叠穿的外套，通勤和天气变化都会更省心。'
+      }
+    }
+
+    if (activeFilterId === 'basic-top') {
+      return {
+        label: '基础缺口：上衣',
+        detail: '先把最常穿的上衣打稳，后面整个衣橱都会更好搭。'
+      }
+    }
+
+    return null
+  }, [activeFilterId, insights.duplicateGroups, insights.idleItems, insights.missingBasics])
+
   const gridEmptyTitle = activeMissingBasic ? `${activeMissingBasic.label} 当前还没补进衣橱` : '当前没有符合条件的单品'
   const gridEmptyDescription = activeMissingBasic
     ? activeMissingBasic.reason
@@ -86,41 +176,81 @@ export function ClosetPage({ userId, itemCount, items, insights, storageBucket, 
 
   return (
     <AppShell title="Closet">
-      <ClosetUploadCard
-        userId={userId}
-        storageBucket={storageBucket}
-        analyzeUpload={analyzeUpload}
-        analyzeImportUrl={analyzeImportUrl}
-        saveItem={saveItem}
-      />
-
       <Card>
-        <p className="text-sm text-[var(--color-neutral-dark)]">已收录 {itemCount} 件单品</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">衣橱管理</p>
+            <h1 className="text-xl font-semibold text-[var(--color-neutral-dark)]">先导入，再整理，再回看</h1>
+            <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">
+              相册多选、商品链接和拼图拆分都走同一条入橱链路，下面的建议会直接把清理重点挑出来。
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--color-neutral-dark)]">
+            <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">已收录 {itemCount} 件单品</span>
+            <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">支持多入口导入</span>
+          </div>
+        </div>
       </Card>
 
-      {itemCount > 0 ? (
-        <ClosetInsightsPanel
-          insights={insights}
-          activeFilterId={activeFilterId}
-          onSelectFilter={(id) => setActiveFilterId((current) => (current === id ? null : id))}
-          onClearFilter={() => setActiveFilterId(null)}
+      <ClosetSection
+        eyebrow="Step 1"
+        title="导入衣物"
+        description="相册多选、商品链接和拼图拆分都在这里进入同一条识别与确认流程。"
+        meta="先从这里开始"
+      >
+        <ClosetUploadCard
+          userId={userId}
+          storageBucket={storageBucket}
+          analyzeUpload={analyzeUpload}
+          analyzeImportUrl={analyzeImportUrl}
+          saveItem={saveItem}
         />
-      ) : null}
+      </ClosetSection>
 
-      {itemCount === 0 ? (
+      {itemCount > 0 ? (
+        <ClosetSection
+          eyebrow="Step 2"
+          title="整理建议"
+          description="先把重复、闲置和基础缺口看清楚，衣橱才会越用越顺手。"
+          meta={activeFilterSummary ? '已选中筛选' : '按优先级查看'}
+        >
+          <ClosetInsightsPanel
+            insights={insights}
+            activeFilterId={activeFilterId}
+            onSelectFilter={(id) => setActiveFilterId((current) => (current === id ? null : id))}
+            onClearFilter={() => setActiveFilterId(null)}
+          />
+        </ClosetSection>
+      ) : (
         <EmptyState
           title="先把第一件衣物放进来"
           description="上传一张单件衣物图片，AI 会先给你分类建议，再保存进衣橱。"
         />
-      ) : (
-        <ClosetItemGrid
-          items={filteredItems}
-          onDeleteItem={handleDeleteItem}
-          deletingItemId={deletingItemId}
-          emptyTitle={gridEmptyTitle}
-          emptyDescription={gridEmptyDescription}
-        />
       )}
+
+      {itemCount > 0 ? (
+        <ClosetSection
+          eyebrow="Step 3"
+          title="衣橱清单"
+          description={
+            activeFilterSummary
+              ? `当前筛选：${activeFilterSummary.label}。${activeFilterSummary.detail}`
+              : '按卡片建议查看重复、闲置和基础缺口对应的单品。'
+          }
+          meta={activeFilterId ? `${filteredItems.length} 件已筛选` : `${itemCount} 件全部单品`}
+        >
+          <div className="rounded-[1.5rem] border border-black/7 bg-white/92 p-4 shadow-[0_14px_34px_rgba(26,26,26,0.06)] backdrop-blur sm:p-5">
+            <ClosetItemGrid
+              items={filteredItems}
+              onDeleteItem={handleDeleteItem}
+              deletingItemId={deletingItemId}
+              emptyTitle={gridEmptyTitle}
+              emptyDescription={gridEmptyDescription}
+            />
+          </div>
+        </ClosetSection>
+      ) : null}
     </AppShell>
   )
 }

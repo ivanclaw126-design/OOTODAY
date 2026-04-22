@@ -100,7 +100,7 @@ describe('ShopPage', () => {
 
     expect(screen.getByText('建议买')).toBeInTheDocument()
     expect(screen.getByText('Soft Knit Cardigan')).toBeInTheDocument()
-    expect(screen.getByText('预计可搭套数')).toBeInTheDocument()
+    expect(screen.getByText('Outfit Yield')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
   })
 
