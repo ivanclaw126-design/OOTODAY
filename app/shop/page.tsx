@@ -18,7 +18,7 @@ export default async function ShopRoute() {
   const closet = await getClosetView(session.user.id)
   const { storageBucket } = getEnv()
 
-  async function analyzeCandidate(input: { sourceUrl: string }) {
+  async function analyzeCandidate(input: { sourceUrl: string; preferredImageUrl?: string }) {
     'use server'
 
     return analyzeShopCandidateAction(input)

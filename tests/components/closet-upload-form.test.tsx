@@ -73,4 +73,23 @@ describe('ClosetUploadForm', () => {
       styleTags: ['通勤', '极简', '法式']
     })
   })
+
+  it('supports icon quick-picks for category and color', () => {
+    const onSubmit = vi.fn()
+    const { getByRole, getByText, getByLabelText } = render(<ClosetUploadForm initialDraft={baseDraft} onSubmit={onSubmit} />)
+
+    fireEvent.click(getByRole('button', { name: '外套' }))
+    fireEvent.click(getByRole('button', { name: '卡其色' }))
+    fireEvent.submit(getByText('保存到衣橱').closest('form')!)
+
+    expect(getByLabelText('分类')).toHaveValue('外套')
+    expect(getByLabelText('颜色')).toHaveValue('卡其色')
+    expect(onSubmit).toHaveBeenCalledWith({
+      imageUrl: 'https://example.com/shirt.jpg',
+      category: '外套',
+      subCategory: '未知类型请手动选择',
+      colorCategory: '卡其色',
+      styleTags: ['通勤', '简约']
+    })
+  })
 })

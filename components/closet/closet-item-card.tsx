@@ -1,4 +1,5 @@
 import { SecondaryButton } from '@/components/ui/button'
+import { ClosetCategoryBadge, ClosetColorBadge } from '@/components/closet/closet-taxonomy-icons'
 import type { ClosetItemCardData } from '@/lib/closet/types'
 
 export function ClosetItemCard({
@@ -30,9 +31,11 @@ export function ClosetItemCard({
         )}
       </div>
       <div className="flex flex-col gap-1 p-3">
-        <p className="text-sm font-medium">{item.category}</p>
+        <div className="flex flex-wrap gap-2">
+          <ClosetCategoryBadge category={item.category} />
+          {item.colorCategory ? <ClosetColorBadge color={item.colorCategory} /> : null}
+        </div>
         {item.subCategory ? <p className="text-xs text-[var(--color-neutral-dark)]">{item.subCategory}</p> : null}
-        {item.colorCategory ? <p className="text-xs text-[var(--color-neutral-dark)]">{item.colorCategory}</p> : null}
         {onEdit || onReanalyze || onDelete ? (
           <div className="mt-2 flex flex-col gap-2">
             {onEdit ? (

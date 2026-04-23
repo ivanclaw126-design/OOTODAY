@@ -66,6 +66,27 @@ describe('AppChrome', () => {
     expect(push).toHaveBeenCalledWith('/travel')
   })
 
+  it('allows swipe navigation when the gesture starts inside the bottom nav', () => {
+    usePathnameMock.mockReturnValue('/closet')
+
+    render(
+      <AppChrome>
+        <div>page body</div>
+      </AppChrome>
+    )
+
+    const navLink = screen.getByRole('link', { name: 'Travel' })
+
+    fireEvent.touchStart(navLink, {
+      touches: [{ clientX: 240, clientY: 740 }]
+    })
+    fireEvent.touchEnd(navLink, {
+      changedTouches: [{ clientX: 120, clientY: 744 }]
+    })
+
+    expect(push).toHaveBeenCalledWith('/travel')
+  })
+
   it('ignores swipe navigation from interactive targets', () => {
     usePathnameMock.mockReturnValue('/closet')
 

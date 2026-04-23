@@ -4,6 +4,7 @@ import { AppShell } from '@/components/app-shell'
 import { buildClosetBrowseGroups, ClosetGroupBrowser, type ClosetBrowseMode } from '@/components/closet/closet-group-browser'
 import { ClosetInsightsPanel } from '@/components/closet/closet-insights'
 import { ClosetItemGrid } from '@/components/closet/closet-item-grid'
+import { ClosetCategoryBadge, ClosetColorBadge } from '@/components/closet/closet-taxonomy-icons'
 import { ClosetUploadCard } from '@/components/closet/closet-upload-card'
 import { ClosetUploadForm } from '@/components/closet/closet-upload-form'
 import { Card } from '@/components/ui/card'
@@ -462,55 +463,66 @@ export function ClosetPage({
       {editingItemId && editingDraft ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-4 sm:items-center">
           <div className="absolute inset-0" onClick={closeEditor} aria-hidden="true" />
-          <div role="dialog" aria-modal="true" aria-label="编辑识别结果" className="relative z-10 w-full max-w-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="编辑识别结果"
+            className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden"
+          >
             <Card>
-              <div className="flex flex-col gap-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">编辑面板</p>
-                    <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">编辑识别结果</h2>
-                    <p className="text-sm text-[var(--color-neutral-dark)]">
-                      这里会立刻显示当前草稿。点“一键重新识别”后，新结果也会直接回到这个面板里。
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="shrink-0 text-sm text-[var(--color-neutral-dark)] underline underline-offset-2"
-                    onClick={closeEditor}
-                  >
-                    关闭
-                  </button>
-                </div>
-
-                {currentEditingItem ? (
-                  <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--color-neutral-dark)]">
-                    <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">
-                      当前衣物：{currentEditingItem.category}
-                      {currentEditingItem.subCategory ? ` / ${currentEditingItem.subCategory}` : ''}
-                    </span>
-                    {reanalyzingItemId === currentEditingItem.id ? (
-                      <span className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-white">重新识别中…</span>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                <ClosetUploadForm initialDraft={editingDraft} disabled={isSavingEdit} submitLabel="保存修改" onSubmit={handleSaveEdit} />
-
-                {editingError ? <p className="text-sm text-red-600">{editingError}</p> : null}
-
-                {currentEditingItem ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex max-h-[calc(100vh-2rem)] flex-col overflow-y-auto pr-1">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">编辑面板</p>
+                      <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">编辑识别结果</h2>
+                      <p className="text-sm text-[var(--color-neutral-dark)]">
+                        这里会立刻显示当前草稿。点“一键重新识别”后，新结果也会直接回到这个面板里。
+                      </p>
+                    </div>
                     <button
                       type="button"
-                      className="text-sm font-medium text-[var(--color-primary)] underline underline-offset-2"
-                      onClick={() => void handleReanalyzeItem(currentEditingItem)}
-                      disabled={reanalyzingItemId === currentEditingItem.id}
+                      className="shrink-0 text-sm text-[var(--color-neutral-dark)] underline underline-offset-2"
+                      onClick={closeEditor}
                     >
-                      {reanalyzingItemId === currentEditingItem.id ? '重新识别中…' : '再次识别当前图片'}
+                      关闭
                     </button>
-                    <p className="text-xs text-[var(--color-neutral-dark)]">保存后会立刻刷新衣橱卡片和 Today 相关数据。</p>
                   </div>
-                ) : null}
+
+                  {currentEditingItem ? (
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--color-neutral-dark)]">
+                      <span className="text-xs font-medium text-[var(--color-neutral-dark)]">当前衣物</span>
+                      <ClosetCategoryBadge category={currentEditingItem.category} />
+                      {currentEditingItem.colorCategory ? <ClosetColorBadge color={currentEditingItem.colorCategory} /> : null}
+                      {currentEditingItem.subCategory ? (
+                        <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">
+                          {currentEditingItem.subCategory}
+                        </span>
+                      ) : null}
+                      {reanalyzingItemId === currentEditingItem.id ? (
+                        <span className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-white">重新识别中…</span>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <ClosetUploadForm initialDraft={editingDraft} disabled={isSavingEdit} submitLabel="保存修改" onSubmit={handleSaveEdit} />
+
+                  {editingError ? <p className="text-sm text-red-600">{editingError}</p> : null}
+
+                  {currentEditingItem ? (
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        className="text-sm font-medium text-[var(--color-primary)] underline underline-offset-2"
+                        onClick={() => void handleReanalyzeItem(currentEditingItem)}
+                        disabled={reanalyzingItemId === currentEditingItem.id}
+                      >
+                        {reanalyzingItemId === currentEditingItem.id ? '重新识别中…' : '再次识别当前图片'}
+                      </button>
+                      <p className="text-xs text-[var(--color-neutral-dark)]">保存后会立刻刷新衣橱卡片和 Today 相关数据。</p>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </Card>
           </div>

@@ -130,10 +130,10 @@ describe('ClosetPage', () => {
     )
 
     expect(screen.getByText('已收录 2 件单品')).toBeInTheDocument()
-    expect(screen.getByText('上衣')).toBeInTheDocument()
+    expect(screen.getByText('上装')).toBeInTheDocument()
     expect(screen.getByText('衬衫')).toBeInTheDocument()
     expect(screen.getByText('蓝色')).toBeInTheDocument()
-    expect(screen.getByText('裤装')).toBeInTheDocument()
+    expect(screen.getByText('下装')).toBeInTheDocument()
     expect(screen.getByText('西裤')).toBeInTheDocument()
     expect(screen.getByText('黑色')).toBeInTheDocument()
     expect(screen.getByText('暂无图片')).toBeInTheDocument()
@@ -305,7 +305,10 @@ describe('ClosetPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '编辑识别结果' }))
 
-    expect(screen.getByRole('dialog', { name: '编辑识别结果' })).toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { name: '编辑识别结果' })
+
+    expect(dialog).toBeInTheDocument()
+    expect(dialog.className).toContain('overflow-hidden')
     expect(screen.getByLabelText('分类')).toHaveValue('上装')
     expect(screen.getByLabelText('子分类')).toHaveValue('衬衫')
   })

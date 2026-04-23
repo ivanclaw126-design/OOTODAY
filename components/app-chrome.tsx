@@ -16,6 +16,10 @@ function isInteractiveTarget(target: EventTarget | null) {
     return false
   }
 
+  if (target.closest('[data-app-swipe-zone]')) {
+    return false
+  }
+
   return Boolean(
     target.closest(
       'a, button, input, textarea, select, label, summary, [role="button"], [contenteditable="true"], [data-no-app-swipe]'

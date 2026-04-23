@@ -2,6 +2,7 @@ import type { ClosetAnalysisResult, ClosetItemCardData } from '@/lib/closet/type
 
 export type ShopCandidateItem = ClosetAnalysisResult & {
   imageUrl: string
+  imageCandidates: string[]
   sourceUrl: string
   sourceTitle: string | null
 }

@@ -6,14 +6,22 @@ import { getClosetView } from '@/lib/closet/get-closet-view'
 import { analyzePurchaseCandidate, getUnsupportedShopCategoryMessage } from '@/lib/shop/analyze-purchase-candidate'
 import { resolveShopInput } from '@/lib/shop/resolve-shop-input'
 
-export async function analyzeShopCandidateAction({ sourceUrl }: { sourceUrl: string }) {
+export async function analyzeShopCandidateAction({
+  sourceUrl,
+  preferredImageUrl
+}: {
+  sourceUrl: string
+  preferredImageUrl?: string
+}) {
   const session = await getSession()
 
   if (!session) {
     throw new Error('Unauthorized')
   }
 
-  const resolved = await resolveShopInput(sourceUrl.trim())
+  const resolved = await resolveShopInput(sourceUrl.trim(), {
+    preferredImageUrl: preferredImageUrl?.trim() || undefined
+  })
 
   if (resolved.error || !resolved.imageUrl || !resolved.sourceUrl) {
     return {
@@ -42,6 +50,7 @@ export async function analyzeShopCandidateAction({ sourceUrl }: { sourceUrl: str
       {
         ...candidate,
         imageUrl: resolved.imageUrl,
+        imageCandidates: resolved.imageCandidates,
         sourceUrl: resolved.sourceUrl,
         sourceTitle: resolved.sourceTitle
       },
