@@ -4,6 +4,7 @@ import type { ReactNode, TouchEvent as ReactTouchEvent } from 'react'
 import { useEffect, useMemo, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { BottomNav } from '@/components/bottom-nav'
+import { ThemeProvider } from '@/components/theme/theme-provider'
 
 const appRoutes = ['/closet', '/travel', '/today', '/inspiration', '/shop'] as const
 
@@ -91,16 +92,18 @@ export function AppChrome({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div
-      className="min-h-screen"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={() => {
-        swipeStateRef.current = null
-      }}
-    >
-      {children}
-      {shouldShowBottomNav ? <BottomNav /> : null}
-    </div>
+    <ThemeProvider>
+      <div
+        className="min-h-screen"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={() => {
+          swipeStateRef.current = null
+        }}
+      >
+        {children}
+        {shouldShowBottomNav ? <BottomNav /> : null}
+      </div>
+    </ThemeProvider>
   )
 }

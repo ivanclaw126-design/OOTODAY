@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OOTODAY Color Theme Toggle Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f5f0e7;
+        --ink: #090909;
+        --ink-soft: #5c554a;
+        --line: rgba(9, 9, 9, 0.12);
+        --shadow-soft: 0 22px 46px rgba(18, 16, 12, 0.08);
+        --shadow-strong: 0 34px 80px rgba(0, 0, 0, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.35), transparent 20%),
+          linear-gradient(180deg, #f5f0e7 0%, #f7f3eb 40%, #eee6d8 100%);
+        color: var(--ink);
+        font-family: "Manrope", sans-serif;
+      }
+
+      body {
+        padding: 28px 16px 60px;
+      }
+
+      .page {
+        max-width: 1500px;
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        padding: 8px 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.66);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        box-shadow: var(--shadow-soft);
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #d7ff33;
+      }
+
+      h1 {
+        margin: 16px 0 10px;
+        max-width: 1000px;
+        font-family: "Archivo", sans-serif;
+        font-size: clamp(40px, 6vw, 86px);
+        line-height: 0.95;
+        letter-spacing: -0.08em;
+        text-transform: uppercase;
+      }
+
+      .intro {
+        max-width: 860px;
+        color: var(--ink-soft);
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      .intro p {
+        margin: 0 0 14px;
+      }
+
+      .reference-note {
+        margin-top: 14px;
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.58);
+        color: var(--ink-soft);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .reference-note a {
+        color: inherit;
+      }
+
+      .palette-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(280px, 1fr));
+        gap: 18px;
+        margin-top: 28px;
+      }
+
+      .palette-card {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.64);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .palette-card h2 {
+        margin: 0;
+        font-family: "Archivo", sans-serif;
+        font-size: 28px;
+        line-height: 0.96;
+        letter-spacing: -0.06em;
+        text-transform: uppercase;
+      }
+
+      .palette-card p {
+        margin: 10px 0 0;
+        color: var(--ink-soft);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .swatch {
+        display: grid;
+        gap: 8px;
+      }
+
+      .swatch-chip {
+        height: 52px;
+        border-radius: 18px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      .swatch code {
+        color: var(--ink-soft);
+        font-size: 10px;
+      }
+
+      .screen-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(280px, 1fr));
+        gap: 18px;
+        margin-top: 28px;
+      }
+
+      .theme {
+        --paper: #f7f3eb;
+        --paper-strong: #ebe4d8;
+        --ink-theme: #090909;
+        --ink-soft-theme: #5c554a;
+        --panel: #0a0a0a;
+        --panel-soft: #171717;
+        --line-theme: rgba(9, 9, 9, 0.12);
+        --accent: #e7ff37;
+      }
+
+      .theme.blue {
+        --paper: #f4efe7;
+        --paper-strong: #e5ddcf;
+        --ink-theme: #10131b;
+        --ink-soft-theme: #5a6270;
+        --panel: #0e1220;
+        --panel-soft: #171d2e;
+        --line-theme: rgba(16, 19, 27, 0.14);
+        --accent: #7da8ff;
+      }
+
+      .theme.bordeaux {
+        --paper: #f6efe8;
+        --paper-strong: #ead6d0;
+        --ink-theme: #180f12;
+        --ink-soft-theme: #6d565d;
+        --panel: #14090d;
+        --panel-soft: #26131a;
+        --line-theme: rgba(24, 15, 18, 0.14);
+        --accent: #d98a82;
+      }
+
+      .theme.sage {
+        --paper: #f1f0e8;
+        --paper-strong: #dde2d4;
+        --ink-theme: #101411;
+        --ink-soft-theme: #5b655f;
+        --panel: #0d1110;
+        --panel-soft: #1a211d;
+        --line-theme: rgba(16, 20, 17, 0.14);
+        --accent: #8fb79b;
+      }
+
+      .phone {
+        position: relative;
+        padding: 12px;
+        border-radius: 38px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05));
+        box-shadow: var(--shadow-strong);
+      }
+
+      .screen {
+        position: relative;
+        min-height: 820px;
+        overflow: hidden;
+        border-radius: 30px;
+        background:
+          radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 16%, transparent), transparent 26%),
+          linear-gradient(180deg, rgba(255,255,255,0.2), transparent 16%),
+          linear-gradient(180deg, var(--paper) 0%, color-mix(in srgb, var(--paper) 84%, white) 40%, var(--paper-strong) 100%);
+      }
+
+      .shell {
+        padding: 22px 18px 106px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .brand {
+        color: var(--ink-soft-theme);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .toggle-preview {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border: 1px solid var(--line-theme);
+        border-radius: 999px;
+        background: rgba(255,255,255,0.7);
+        color: var(--ink-theme);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .toggle-preview i {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .section-tag {
+        margin-top: 22px;
+        color: var(--ink-soft-theme);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .title {
+        margin: 10px 0 8px;
+        color: var(--ink-theme);
+        font-family: "Archivo", sans-serif;
+        font-size: 34px;
+        line-height: 0.95;
+        letter-spacing: -0.08em;
+        text-transform: uppercase;
+      }
+
+      .sub {
+        margin: 0;
+        color: var(--ink-soft-theme);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .hero {
+        margin-top: 18px;
+        border-radius: 28px;
+        overflow: hidden;
+        background: var(--panel);
+        color: white;
+        box-shadow: 0 26px 58px rgba(0, 0, 0, 0.18);
+      }
+
+      .hero-body {
+        padding: 22px;
+      }
+
+      .mini {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .hero-copy {
+        margin-top: 12px;
+        font-family: "Archivo", sans-serif;
+        font-size: 30px;
+        line-height: 0.96;
+        letter-spacing: -0.07em;
+      }
+
+      .hero p {
+        margin: 12px 0 0;
+        color: rgba(255,255,255,0.72);
+        font-size: 14px;
+        line-height: 1.72;
+      }
+
+      .metric-row {
+        display: grid;
+        gap: 1px;
+        grid-template-columns: 1fr 1fr;
+        background: rgba(255,255,255,0.08);
+      }
+
+      .metric-row > div {
+        padding: 18px 22px;
+        background: rgba(255,255,255,0.03);
+      }
+
+      .metric {
+        margin-top: 10px;
+        color: var(--accent);
+        font-family: "Archivo", sans-serif;
+        font-size: 46px;
+        line-height: 0.92;
+        letter-spacing: -0.08em;
+      }
+
+      .stack {
+        display: grid;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .card {
+        padding: 18px;
+        border: 1px solid var(--line-theme);
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.78), color-mix(in srgb, var(--paper) 90%, white));
+        box-shadow: var(--shadow-soft);
+      }
+
+      .card h3 {
+        margin: 10px 0 0;
+        color: var(--ink-theme);
+        font-size: 20px;
+        line-height: 1.02;
+        letter-spacing: -0.05em;
+      }
+
+      .card p {
+        margin: 10px 0 0;
+        color: var(--ink-soft-theme);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .card.dark {
+        border-color: rgba(255,255,255,0.12);
+        background: var(--panel);
+      }
+
+      .card.dark h3 {
+        color: white;
+      }
+
+      .card.dark p,
+      .card.dark .mini {
+        color: rgba(255,255,255,0.68);
+      }
+
+      .card.acid {
+        background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 18%, white), color-mix(in srgb, var(--accent) 10%, var(--paper)));
+      }
+
+      .toggle-bar {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .toggle-chip {
+        display: grid;
+        place-items: center;
+        min-height: 42px;
+        border-radius: 16px;
+        border: 1px solid var(--line-theme);
+        background: rgba(255,255,255,0.7);
+        color: var(--ink-soft-theme);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .toggle-chip.active {
+        background: var(--ink-theme);
+        color: white;
+      }
+
+      .nav {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 18px;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        padding: 10px;
+        border-radius: 28px;
+        border: 1px solid rgba(255,255,255,0.72);
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), color-mix(in srgb, var(--paper) 88%, white));
+        box-shadow: 0 20px 44px rgba(17,14,9,0.18);
+      }
+
+      .nav span {
+        display: grid;
+        place-items: center;
+        min-height: 44px;
+        border-radius: 20px;
+        color: color-mix(in srgb, var(--ink-soft-theme) 88%, white);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .nav span.active {
+        background: var(--ink-theme);
+        color: white;
+      }
+
+      .theme-caption {
+        margin-top: 14px;
+        color: var(--ink-soft);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .theme-caption strong {
+        color: var(--ink);
+      }
+
+      .footer {
+        margin-top: 28px;
+        color: var(--ink-soft);
+        font-size: 13px;
+        text-align: center;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 1320px) {
+        .palette-grid,
+        .screen-grid {
+          grid-template-columns: repeat(2, minmax(280px, 1fr));
+        }
+      }
+
+      @media (max-width: 760px) {
+        .palette-grid,
+        .screen-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .legend {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <span class="eyebrow">Pinterest Palette Study</span>
+      <h1>One-tap color themes for OOTODAY, same structure, different mood.</h1>
+      <div class="intro">
+        <p>
+          这页先只看“配色切换按钮”的主题方向，不改结构，不改排版，不改信息架构。
+          目标是让你现在这套 editorial 界面能一键换 mood，但仍然保持同一个产品系统。
+        </p>
+        <p>
+          我这次参考的是 Pinterest 上能访问到的配色 pin / board 标题，以及 Pinterest 官方创意指南里强调的
+          “从一开始就考虑 palette”和“用 contrast 建立移动端效果”。
+        </p>
+        <div class="reference-note">
+          参考来源：
+          <a href="https://www.pinterest.com/pin/color-palettes--32228953577253567/">Black and Chartreuse Color Palette</a>、
+          <a href="https://www.pinterest.com/pin/brand-app-mobile-ui-design-hex-colors-palette--614178467970816112/">Brand App Mobile UI Design Hex Colors Palette</a>、
+          <a href="https://www.pinterest.com/ideas/mobile-app-color-palette/937556751643/">Mobile App Color Palette</a>、
+          <a href="https://business.pinterest.com/pdf/pinterest-presents/path-to-performance/">Pinterest Path to Performance Guide</a>。
+          Pinterest 对页面抓取限制很强，所以这里是基于可访问 pin 标题和官方指南做的风格提案，不是逐像素复刻。
+        </div>
+      </div>
+
+      <section class="palette-grid">
+        <article class="palette-card">
+          <h2>Acid Paper</h2>
+          <p>当前主方向。黑白纸感最稳，酸性黄绿最像时尚 AI 工具，也最能保住你现在这版 editorial 气质。</p>
+          <div class="swatches">
+            <div class="swatch"><div class="swatch-chip" style="background:#f7f3eb;"></div><code>#F7F3EB</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#ebe4d8;"></div><code>#EBE4D8</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#090909;"></div><code>#090909</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#171717;"></div><code>#171717</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#e7ff37;"></div><code>#E7FF37</code></div>
+          </div>
+        </article>
+
+        <article class="palette-card">
+          <h2>Gallery Blue</h2>
+          <p>来自 Pinterest 上那组可访问的品牌 UI hex 颜色思路，更理性、更科技，适合把产品往冷静 fashion-tech 推一点。</p>
+          <div class="swatches">
+            <div class="swatch"><div class="swatch-chip" style="background:#f4efe7;"></div><code>#F4EFE7</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#e5ddcf;"></div><code>#E5DDCF</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#10131b;"></div><code>#10131B</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#171d2e;"></div><code>#171D2E</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#7da8ff;"></div><code>#7DA8FF</code></div>
+          </div>
+        </article>
+
+        <article class="palette-card">
+          <h2>Bordeaux Night</h2>
+          <p>更像精品时装编辑部的夜间 mood。适合把产品从“AI 工具”往“风格判断系统”推得更成熟一点。</p>
+          <div class="swatches">
+            <div class="swatch"><div class="swatch-chip" style="background:#f6efe8;"></div><code>#F6EFE8</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#ead6d0;"></div><code>#EAD6D0</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#180f12;"></div><code>#180F12</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#26131a;"></div><code>#26131A</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#d98a82;"></div><code>#D98A82</code></div>
+          </div>
+        </article>
+
+        <article class="palette-card">
+          <h2>Sage Archive</h2>
+          <p>更柔和、自然、衣橱管理感更强。适合 Closet 比重很高的产品叙事，但冲击力会比 Acid Paper 弱一点。</p>
+          <div class="swatches">
+            <div class="swatch"><div class="swatch-chip" style="background:#f1f0e8;"></div><code>#F1F0E8</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#dde2d4;"></div><code>#DDE2D4</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#101411;"></div><code>#101411</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#1a211d;"></div><code>#1A211D</code></div>
+            <div class="swatch"><div class="swatch-chip" style="background:#8fb79b;"></div><code>#8FB79B</code></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="screen-grid">
+        <article class="theme phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe system</div>
+                <div class="toggle-preview"><i></i> Theme toggle</div>
+              </div>
+              <div class="section-tag">Palette A / Acid Paper</div>
+              <h2 class="title">: // Daily aesthetic engine</h2>
+              <p class="sub">最像你现在已经确认的方向，判断感最强，辨识度也最高。</p>
+
+              <section class="hero">
+                <div class="hero-body">
+                  <div class="mini" style="color:rgba(255,255,255,0.56);">Today / status</div>
+                  <div class="hero-copy">今天穿什么，先用一眼能做决定的方式告诉你。</div>
+                  <p>黑白纸感够克制，酸性 accent 只负责 signal，不负责主叙事。</p>
+                </div>
+                <div class="metric-row">
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Signal</div>
+                    <div class="metric">94%</div>
+                  </div>
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Toggle idea</div>
+                    <p>按钮可以放在 app shell 右上角或底栏上方。</p>
+                  </div>
+                </div>
+              </section>
+
+              <div class="stack">
+                <section class="card">
+                  <div class="mini" style="color:var(--ink-soft-theme);">Outfit decision</div>
+                  <h3>Soft Boxy Tee + Wide Trousers</h3>
+                  <p>这套是最稳的默认主题。完成度高，品牌辨识也强。</p>
+                </section>
+                <section class="card acid">
+                  <div class="mini" style="color:var(--ink-soft-theme);">Recommendation</div>
+                  <h3>Acid green 只做关键提示</h3>
+                  <p>它应该只点亮状态、按钮、数字和少量重点标签。</p>
+                </section>
+                <section class="card dark">
+                  <div class="mini">Theme switch preview</div>
+                  <div class="toggle-bar">
+                    <span class="toggle-chip active">A</span>
+                    <span class="toggle-chip">B</span>
+                    <span class="toggle-chip">C</span>
+                    <span class="toggle-chip">D</span>
+                  </div>
+                </section>
+              </div>
+              <div class="theme-caption"><strong>推荐等级：</strong>最推荐。很适合先做成默认主题。</div>
+            </div>
+            <nav class="nav">
+              <span class="active">Today</span>
+              <span>Closet</span>
+              <span>Travel</span>
+              <span>Inspo</span>
+              <span>Shop</span>
+            </nav>
+          </div>
+        </article>
+
+        <article class="theme blue phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe system</div>
+                <div class="toggle-preview"><i></i> Theme toggle</div>
+              </div>
+              <div class="section-tag">Palette B / Gallery Blue</div>
+              <h2 class="title">: // Daily aesthetic engine</h2>
+              <p class="sub">更冷静，更偏 fashion-tech，也更像设计工具。</p>
+
+              <section class="hero">
+                <div class="hero-body">
+                  <div class="mini" style="color:rgba(255,255,255,0.56);">Today / status</div>
+                  <div class="hero-copy">把穿搭判断做得像一个高级编辑工具。</div>
+                  <p>这组蓝色更强调 precision 和 digital 感，少一点杂志感，多一点系统感。</p>
+                </div>
+                <div class="metric-row">
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Signal</div>
+                    <div class="metric">88%</div>
+                  </div>
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Mood</div>
+                    <p>理性、冷静、轻科技。</p>
+                  </div>
+                </div>
+              </section>
+
+              <div class="stack">
+                <section class="card">
+                  <div class="mini" style="color:var(--ink-soft-theme);">Best for</div>
+                  <h3>Shop / Travel / AI lab</h3>
+                  <p>它会让分析型页面很高级，但对时尚感的攻击性会比酸性黄更弱。</p>
+                </section>
+                <section class="card acid">
+                  <div class="mini" style="color:var(--ink-soft-theme);">Accent role</div>
+                  <h3>蓝色更适合数字和结构信息</h3>
+                  <p>如果你希望产品更偏“工具理性”，这组很强。</p>
+                </section>
+              </div>
+              <div class="theme-caption"><strong>推荐等级：</strong>第二推荐。适合做一个更科技的备用主题。</div>
+            </div>
+            <nav class="nav">
+              <span class="active">Today</span>
+              <span>Closet</span>
+              <span>Travel</span>
+              <span>Inspo</span>
+              <span>Shop</span>
+            </nav>
+          </div>
+        </article>
+
+        <article class="theme bordeaux phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe system</div>
+                <div class="toggle-preview"><i></i> Theme toggle</div>
+              </div>
+              <div class="section-tag">Palette C / Bordeaux Night</div>
+              <h2 class="title">: // Daily aesthetic engine</h2>
+              <p class="sub">更成熟、更精品，也更像时尚杂志的夜间特刊。</p>
+
+              <section class="hero">
+                <div class="hero-body">
+                  <div class="mini" style="color:rgba(255,255,255,0.56);">Today / status</div>
+                  <div class="hero-copy">让整个产品更像一套 personal taste system。</div>
+                  <p>这组会把“AI 工具”的锐度收一点，把“风格品味”的成熟度提上来。</p>
+                </div>
+                <div class="metric-row">
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Signal</div>
+                    <div class="metric">91%</div>
+                  </div>
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Mood</div>
+                    <p>luxury, mature, editorial.</p>
+                  </div>
+                </div>
+              </section>
+
+              <div class="stack">
+                <section class="card">
+                  <div class="mini" style="color:var(--ink-soft-theme);">Best for</div>
+                  <h3>Landing / Inspiration / Profile</h3>
+                  <p>如果你后面更想强调风格品味、收藏和审美，这组非常对。</p>
+                </section>
+                <section class="card acid">
+                  <div class="mini" style="color:var(--ink-soft-theme);">Risk</div>
+                  <h3>更高级，但没那么“新”</h3>
+                  <p>它的情绪成熟很多，但产品辨识可能不如 acid 那么立刻。</p>
+                </section>
+              </div>
+              <div class="theme-caption"><strong>推荐等级：</strong>第三推荐。可以做成更高级的夜间主题。</div>
+            </div>
+            <nav class="nav">
+              <span class="active">Today</span>
+              <span>Closet</span>
+              <span>Travel</span>
+              <span>Inspo</span>
+              <span>Shop</span>
+            </nav>
+          </div>
+        </article>
+
+        <article class="theme sage phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe system</div>
+                <div class="toggle-preview"><i></i> Theme toggle</div>
+              </div>
+              <div class="section-tag">Palette D / Sage Archive</div>
+              <h2 class="title">: // Daily aesthetic engine</h2>
+              <p class="sub">更柔和，也更像真实衣橱管理工具。</p>
+
+              <section class="hero">
+                <div class="hero-body">
+                  <div class="mini" style="color:rgba(255,255,255,0.56);">Today / status</div>
+                  <div class="hero-copy">让产品更温和，更接近 daily wardrobe archive。</div>
+                  <p>这组很适合强调衣橱整理、习惯建立和长期使用，但冲击力会弱一些。</p>
+                </div>
+                <div class="metric-row">
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Signal</div>
+                    <div class="metric">86%</div>
+                  </div>
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Mood</div>
+                    <p>soft, archival, calm.</p>
+                  </div>
+                </div>
+              </section>
+
+              <div class="stack">
+                <section class="card">
+                  <div class="mini" style="color:var(--ink-soft-theme);">Best for</div>
+                  <h3>Closet / History / Long-term habit</h3>
+                  <p>它会让产品更亲和，但如果你想要更强品牌感，就不如前两组。</p>
+                </section>
+                <section class="card acid">
+                  <div class="mini" style="color:var(--ink-soft-theme);">Risk</div>
+                  <h3>太安全</h3>
+                  <p>容易变得很舒服，但也可能少一点你现在这版的“高级编辑感”。</p>
+                </section>
+              </div>
+              <div class="theme-caption"><strong>推荐等级：</strong>第四推荐。适合作为更柔和的辅助主题。</div>
+            </div>
+            <nav class="nav">
+              <span class="active">Today</span>
+              <span>Closet</span>
+              <span>Travel</span>
+              <span>Inspo</span>
+              <span>Shop</span>
+            </nav>
+          </div>
+        </article>
+      </section>
+
+      <div class="footer">Theme study only · next step is wiring the actual one-tap theme switcher</div>
+    </main>
+  </body>
+</html>
