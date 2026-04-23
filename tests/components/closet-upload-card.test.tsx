@@ -92,7 +92,7 @@ describe('ClosetUploadCard', () => {
     await waitFor(() => {
       expect(upload).toHaveBeenCalledTimes(1)
     })
-    expect(await screen.findByDisplayValue('上衣')).toBeInTheDocument()
+    expect(await screen.findByRole('combobox', { name: '分类' })).toHaveValue('上装')
     expect(analyzeUpload).toHaveBeenCalledWith({
       imageUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/shirt.jpg'
     })
@@ -165,7 +165,7 @@ describe('ClosetUploadCard', () => {
     const file = new File(['fake-image'], 'shirt.jpg', { type: 'image/jpeg' })
     fireEvent.change(screen.getByLabelText('选择衣物图片'), { target: { files: [file] } })
 
-    await screen.findByDisplayValue('上衣')
+    await screen.findByRole('combobox', { name: '分类' })
     fireEvent.change(screen.getByLabelText('分类'), { target: { value: '外套' } })
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
@@ -173,7 +173,7 @@ describe('ClosetUploadCard', () => {
       expect(saveItem).toHaveBeenCalledWith({
         imageUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/shirt.jpg',
         category: '外套',
-        subCategory: '衬衫',
+        subCategory: '未知类型请手动选择',
         colorCategory: '蓝色',
         styleTags: ['通勤']
       })
@@ -204,7 +204,7 @@ describe('ClosetUploadCard', () => {
     const file = new File(['fake-image'], 'shirt.jpg', { type: 'image/jpeg' })
     fireEvent.change(screen.getByLabelText('选择衣物图片'), { target: { files: [file] } })
 
-    await screen.findByDisplayValue('上衣')
+    await screen.findByRole('combobox', { name: '分类' })
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
     expect(await screen.findByText('保存失败，请稍后再试')).toBeInTheDocument()
@@ -282,7 +282,7 @@ describe('ClosetUploadCard', () => {
       target: { files: [firstFile, secondFile] }
     })
 
-    expect(await screen.findByDisplayValue('上衣')).toBeInTheDocument()
+    expect(await screen.findByRole('combobox', { name: '分类' })).toHaveValue('上装')
     expect(screen.getByText('当前正在处理第 1 / 2 张，后面还有 1 张排队')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
@@ -291,7 +291,9 @@ describe('ClosetUploadCard', () => {
       expect(saveItem).toHaveBeenCalledTimes(1)
     })
 
-    expect(await screen.findByDisplayValue('裤装')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('下装')
+    })
     expect(screen.getByText('当前正在处理第 2 / 2 张，这是这一轮的最后一张')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
@@ -341,10 +343,10 @@ describe('ClosetUploadCard', () => {
       target: { files: [firstFile, secondFile] }
     })
 
-    await screen.findByDisplayValue('上衣')
+    await screen.findByRole('combobox', { name: '分类' })
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
-    await screen.findByDisplayValue('裙装')
+    await screen.findByRole('combobox', { name: '分类' })
     fireEvent.click(screen.getByRole('button', { name: '跳过这张' }))
 
     await waitFor(() => {
@@ -382,7 +384,9 @@ describe('ClosetUploadCard', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: '通过链接导入' }))
 
-    expect(await screen.findByDisplayValue('外套')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('外套')
+    })
     expect(analyzeImportUrl).toHaveBeenCalledWith({ sourceUrl: 'https://shop.example.com/item/1' })
 
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
@@ -428,12 +432,14 @@ describe('ClosetUploadCard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '模拟拼图拆分' }))
 
-    expect(await screen.findByDisplayValue('上衣')).toBeInTheDocument()
+    expect(await screen.findByRole('combobox', { name: '分类' })).toHaveValue('上装')
     expect(screen.getByText('当前正在处理第 1 / 2 张，后面还有 1 张排队')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
-    expect(await screen.findByDisplayValue('外套')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('外套')
+    })
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
     await waitFor(() => {

@@ -3,13 +3,19 @@ import { ClosetItemCard } from '@/components/closet/closet-item-card'
 
 export function ClosetItemGrid({
   items,
+  onEditItem,
+  onReanalyzeItem,
   onDeleteItem,
+  reanalyzingItemId,
   deletingItemId,
   emptyTitle = '当前没有符合条件的单品',
   emptyDescription = '换个筛选看看，或者继续往衣橱里补新的单品。'
 }: {
   items: ClosetItemCardData[]
+  onEditItem?: (item: ClosetItemCardData) => void
+  onReanalyzeItem?: (item: ClosetItemCardData) => void
   onDeleteItem?: (item: ClosetItemCardData) => void
+  reanalyzingItemId?: string | null
   deletingItemId?: string | null
   emptyTitle?: string
   emptyDescription?: string
@@ -26,7 +32,15 @@ export function ClosetItemGrid({
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
-        <ClosetItemCard key={item.id} item={item} onDelete={onDeleteItem} isDeleting={deletingItemId === item.id} />
+        <ClosetItemCard
+          key={item.id}
+          item={item}
+          onEdit={onEditItem}
+          onReanalyze={onReanalyzeItem}
+          onDelete={onDeleteItem}
+          isReanalyzing={reanalyzingItemId === item.id}
+          isDeleting={deletingItemId === item.id}
+        />
       ))}
     </div>
   )

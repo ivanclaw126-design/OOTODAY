@@ -26,7 +26,7 @@ describe('ClosetUploadForm', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       imageUrl: 'https://example.com/shirt.jpg',
       category: '外套',
-      subCategory: '衬衫',
+      subCategory: '未知类型请手动选择',
       colorCategory: '蓝色',
       styleTags: ['通勤', '极简']
     })
@@ -67,7 +67,7 @@ describe('ClosetUploadForm', () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       imageUrl: 'https://example.com/shirt.jpg',
-      category: '上衣',
+      category: '上装',
       subCategory: '衬衫',
       colorCategory: '蓝色',
       styleTags: ['通勤', '极简', '法式']

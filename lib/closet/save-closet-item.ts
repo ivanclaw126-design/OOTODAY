@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { normalizeClosetFields } from '@/lib/closet/taxonomy'
 import type { ClosetAnalysisDraft } from '@/lib/closet/types'
 
 type SaveClosetItemInput = ClosetAnalysisDraft & {
@@ -7,16 +8,17 @@ type SaveClosetItemInput = ClosetAnalysisDraft & {
 
 export async function saveClosetItem(input: SaveClosetItemInput) {
   const supabase = await createSupabaseServerClient()
-  const { userId, imageUrl, category, subCategory, colorCategory, styleTags } = input
+  const { userId, imageUrl, styleTags } = input
+  const normalized = normalizeClosetFields(input)
 
   const { data, error } = await supabase
     .from('items')
     .insert({
       user_id: userId,
       image_url: imageUrl,
-      category,
-      sub_category: subCategory,
-      color_category: colorCategory,
+      category: normalized.category,
+      sub_category: normalized.subCategory,
+      color_category: normalized.colorCategory,
       style_tags: styleTags
     })
     .select('id')

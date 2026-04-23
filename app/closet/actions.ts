@@ -4,8 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { getSession } from '@/lib/auth/get-session'
 import { analyzeItemImage } from '@/lib/closet/analyze-item-image'
 import { deleteClosetItem } from '@/lib/closet/delete-closet-item'
+import { getClosetItem } from '@/lib/closet/get-closet-item'
 import { importRemoteImageToStorage } from '@/lib/closet/import-remote-image-to-storage'
 import { saveClosetItem } from '@/lib/closet/save-closet-item'
+import { normalizeClosetFields } from '@/lib/closet/taxonomy'
+import { updateClosetItem } from '@/lib/closet/update-closet-item'
 import { getEnv } from '@/lib/env'
 import { resolveShopInput } from '@/lib/shop/resolve-shop-input'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
@@ -87,12 +90,60 @@ export async function saveClosetItemAction(draft: ClosetAnalysisDraft) {
 
   const data = await saveClosetItem({
     ...draft,
+    ...normalizeClosetFields(draft),
     userId: session.user.id
   })
 
   revalidatePath('/closet')
 
   return data
+}
+
+export async function updateClosetItemAction(input: { itemId: string; draft: ClosetAnalysisDraft }) {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  if (input.draft.imageUrl) {
+    validateClosetImageUrlForSave(input.draft.imageUrl, session.user.id)
+  }
+
+  const data = await updateClosetItem({
+    itemId: input.itemId,
+    userId: session.user.id,
+    ...input.draft,
+    ...normalizeClosetFields(input.draft)
+  })
+
+  revalidatePath('/closet')
+  revalidatePath('/today')
+
+  return data
+}
+
+export async function reanalyzeClosetItemAction(input: { itemId: string }): Promise<ClosetAnalysisDraft> {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  const item = await getClosetItem(session.user.id, input.itemId)
+
+  if (!item.image_url) {
+    throw new Error('这件衣物没有可重新识别的图片')
+  }
+
+  validateClosetImageUrlForSave(item.image_url, session.user.id)
+
+  const analysis = await analyzeItemImage(item.image_url)
+
+  return {
+    imageUrl: item.image_url,
+    ...analysis
+  }
 }
 
 export async function deleteClosetItemAction(input: { itemId: string }) {

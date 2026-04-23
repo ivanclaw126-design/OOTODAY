@@ -1,13 +1,9 @@
 import type { ClosetInsights, ClosetItemCardData, ClosetMissingBasic } from '@/lib/closet/types'
+import { isBottomCategory, isNeutralColor, isOuterwearCategory, isTopCategory, normalizeCategoryValue, normalizeInput } from '@/lib/closet/taxonomy'
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000
-const NEUTRAL_COLORS = ['白', '黑', '灰', '米', '藏青', '深蓝', '海军蓝']
 const BASIC_STYLE_TAGS = ['基础', '简约', '百搭']
 const BASIC_TOP_KEYWORDS = ['t恤', 'tee', '衬衫', '针织', '毛衣', '打底']
-
-function normalizeText(value: string | null | undefined) {
-  return (value ?? '').trim().toLowerCase()
-}
 
 function describeItem(item: ClosetItemCardData) {
   return [item.colorCategory, item.subCategory ?? item.category].filter(Boolean).join(' ')
@@ -34,18 +30,16 @@ function isOlderThan(dateLike: string, days: number, now: Date) {
 }
 
 function hasNeutralColor(item: ClosetItemCardData) {
-  const color = normalizeText(item.colorCategory)
-
-  return NEUTRAL_COLORS.some((keyword) => color.includes(keyword))
+  return isNeutralColor(item.colorCategory)
 }
 
 function hasBasicTop(items: ClosetItemCardData[]) {
   return items.some((item) => {
-    if (item.category !== '上衣') {
+    if (!isTopCategory(item.category)) {
       return false
     }
 
-    const subCategory = normalizeText(item.subCategory)
+    const subCategory = normalizeInput(item.subCategory)
     const hasKeyword = BASIC_TOP_KEYWORDS.some((keyword) => subCategory.includes(keyword))
     const hasBasicTag = item.styleTags.some((tag) => BASIC_STYLE_TAGS.some((keyword) => tag.includes(keyword)))
 
@@ -54,11 +48,11 @@ function hasBasicTop(items: ClosetItemCardData[]) {
 }
 
 function hasDarkBottom(items: ClosetItemCardData[]) {
-  return items.some((item) => ['裤装', '下装'].includes(item.category) && hasNeutralColor(item))
+  return items.some((item) => isBottomCategory(item.category) && hasNeutralColor(item))
 }
 
 function hasLightOuterwear(items: ClosetItemCardData[]) {
-  return items.some((item) => item.category === '外套')
+  return items.some((item) => isOuterwearCategory(item.category))
 }
 
 export function buildClosetInsights(items: ClosetItemCardData[], now = new Date()): ClosetInsights {
@@ -69,7 +63,7 @@ export function buildClosetInsights(items: ClosetItemCardData[], now = new Date(
 
   for (const item of items) {
     const label = describeItem(item) || item.category
-    const key = [item.category, normalizeText(item.subCategory), normalizeText(item.colorCategory)].join('::')
+    const key = [normalizeCategoryValue(item.category), normalizeInput(item.subCategory), normalizeInput(item.colorCategory)].join('::')
     const existing = duplicateMap.get(key)
 
     if (existing) {
