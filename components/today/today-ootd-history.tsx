@@ -85,14 +85,12 @@ export function TodayOotdHistory({
   }
 
   return (
-    <Card>
+    <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.74)_0%,rgba(238,231,220,0.94)_100%)]">
       <div className="space-y-4">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">
-              OOTD history
-            </p>
-            <p className="text-lg font-semibold tracking-[-0.03em]">最近穿搭记录</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-neutral-dark)]">OOTD history</p>
+            <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">最近穿搭记录</p>
           </div>
           <p className="text-sm text-[var(--color-neutral-dark)]">
             记录会慢慢校准你对舒适度、搭配和重复穿着的偏好
@@ -103,14 +101,14 @@ export function TodayOotdHistory({
           {entries.map((entry) => (
             <div
               key={entry.id}
-              className="rounded-[1.25rem] border border-black/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.86)_0%,rgba(248,245,238,0.86)_100%)] p-4"
+              className="rounded-[1.5rem] border border-[var(--color-line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.86)_0%,rgba(248,245,238,0.9)_100%)] p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
                   <p className="text-sm font-medium tracking-[-0.02em]">{formatDate(entry.wornAt)}</p>
                   <p className="text-xs text-[var(--color-neutral-dark)]">这条记录会被拿去优化后续推荐</p>
                 </div>
-                <p className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
+                <p className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-semibold text-white">
                   {formatScore(entry.satisfactionScore)}
                 </p>
               </div>

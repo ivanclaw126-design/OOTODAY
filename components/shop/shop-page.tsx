@@ -173,23 +173,21 @@ export function ShopPage({
 
   return (
     <AppShell title="Shop">
-      <Card>
+      <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
         <div className="flex flex-col gap-5">
           <div className="space-y-2">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Buy Before You Buy</p>
             <div className="space-y-2">
               <p className="text-xl font-semibold tracking-[-0.03em] text-[var(--color-primary)]">先判断它值不值得进衣橱</p>
-              <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">
-                给我链接或图片，我会直接判断值不值、会不会重复、能接上多少套。
-              </p>
+              <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">给我链接或图片，我会直接判断值不值、会不会重复、能接上多少套。</p>
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4 shadow-[0_18px_60px_rgba(39,31,24,0.08)]">
+          <div className="rounded-[1.8rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Input</p>
-                <p className="mt-2 text-sm text-[var(--color-neutral-dark)]">图片适合快速判断，链接适合直接分析商品页。</p>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/58">Input</p>
+                <p className="mt-2 text-sm text-white/68">图片适合快速判断，链接适合直接分析商品页。</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -210,7 +208,7 @@ export function ShopPage({
                 onChange={handleFileChange}
                 disabled={isSubmitting}
               />
-                <span className="text-sm text-[var(--color-neutral-dark)]">电脑端支持拖拽，iPhone / iPad 可直接从相册或拍照上传。</span>
+                <span className="text-sm text-white/68">电脑端支持拖拽，iPhone / iPad 可直接从相册或拍照上传。</span>
               </div>
 
               <label
@@ -222,11 +220,11 @@ export function ShopPage({
                 onDrop={(event) => void handleDrop(event)}
                 className={`flex min-h-32 flex-col items-center justify-center rounded-[1.25rem] border border-dashed px-4 py-6 text-center text-sm transition ${
                   isDragging
-                    ? 'border-[var(--color-primary)] bg-[var(--color-secondary)]'
-                    : 'border-[var(--color-neutral-mid)] bg-[rgba(248,244,238,0.8)] text-[var(--color-neutral-dark)]'
+                    ? 'border-[var(--color-primary)] bg-[var(--color-secondary)] text-[var(--color-primary)]'
+                    : 'border-white/12 bg-white/6 text-white/68'
                 }`}
               >
-                <span className="font-medium text-[var(--color-primary)]">拖拽图片到这里</span>
+                <span className={`font-medium ${isDragging ? 'text-[var(--color-primary)]' : 'text-white'}`}>拖拽图片到这里</span>
                 <span className="mt-1 max-w-sm leading-6">{selectedFileName ? `已选择：${selectedFileName}` : '也可以点击上方按钮选择本地图片'}</span>
               </label>
 
@@ -244,13 +242,13 @@ export function ShopPage({
               ) : null}
 
               <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-medium">商品链接或图片链接</span>
+                <span className="font-medium text-white/74">商品链接或图片链接</span>
                 <input
                   aria-label="商品链接或图片链接"
                   value={sourceUrl}
                   onChange={(event) => setSourceUrl(event.target.value)}
                   placeholder="https://..."
-                  className="rounded-[1rem] border border-[var(--color-neutral-mid)] bg-white/75 px-3 py-3"
+                  className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-3 text-white placeholder:text-white/32"
                 />
               </label>
             </div>
@@ -276,7 +274,7 @@ export function ShopPage({
       ) : null}
 
       {analysis ? (
-        <Card>
+        <Card className="overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.74)_0%,rgba(240,233,223,0.94)_100%)]">
           <div className="flex flex-col gap-5">
             <div className="space-y-2">
               <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Analysis Result</p>
@@ -342,29 +340,29 @@ export function ShopPage({
             ) : null}
 
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Verdict</p>
-                <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{recommendationLabel(analysis.recommendation)}</p>
+              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/56">Verdict</p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{recommendationLabel(analysis.recommendation)}</p>
               </div>
-              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
+              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Repeat Risk</p>
                 <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{duplicateRiskLabel(analysis.duplicateRisk)}</p>
               </div>
-              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
+              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(231,255,55,0.18)] p-4">
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Outfit Yield</p>
                 <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{analysis.estimatedOutfitCount}</p>
               </div>
             </div>
 
             <div className="grid gap-3 lg:grid-cols-[1.3fr_0.9fr]">
-              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4">
+              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">
                 <div className="flex flex-col gap-2">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Why</p>
-                  <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">{analysis.recommendationReason}</p>
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/58">Why</p>
+                  <p className="text-sm leading-6 text-white/72">{analysis.recommendationReason}</p>
                 </div>
               </div>
 
-              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4">
+              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
                 <div className="flex flex-col gap-2">
                   <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">In Closet Already</p>
                   {analysis.duplicateItems.length > 0 ? (
@@ -384,7 +382,7 @@ export function ShopPage({
             </div>
 
             {analysis.missingCategoryHints.length > 0 ? (
-              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(248,244,238,0.78)] p-4">
+              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
                 <div className="flex flex-col gap-2">
                   <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Still Missing</p>
                   {analysis.missingCategoryHints.map((hint) => (
@@ -397,7 +395,7 @@ export function ShopPage({
             ) : null}
 
             {analysis.colorStrategyHints.length > 0 ? (
-              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4">
+              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
                 <div className="flex flex-col gap-2">
                   <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Color Strategy</p>
                   {analysis.colorStrategyHints.map((hint) => (
