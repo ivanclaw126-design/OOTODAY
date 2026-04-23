@@ -26,6 +26,9 @@ type ColorDefinition = {
   depth: 'light' | 'mid' | 'dark'
 }
 
+export type ColorIntensity = 'muted' | 'balanced' | 'vivid'
+export type OutfitColorRole = 'base' | 'support' | 'accent'
+
 export const UNKNOWN_CATEGORY = '未知类型请手动选择'
 export const UNKNOWN_SUBCATEGORY = '未知类型请手动选择'
 export const UNKNOWN_COLOR = '未知颜色请手动选择'
@@ -402,6 +405,66 @@ export function getColorDefinition(color: string | null | undefined) {
 export function isNeutralColor(color: string | null | undefined) {
   const definition = getColorDefinition(color)
   return definition?.family === 'neutral'
+}
+
+export function getColorIntensity(color: string | null | undefined): ColorIntensity {
+  const definition = getColorDefinition(color)
+
+  if (!definition || definition.value === UNKNOWN_COLOR) {
+    return 'balanced'
+  }
+
+  if (definition.family === 'neutral') {
+    return 'muted'
+  }
+
+  if (definition.family === 'metallic') {
+    return 'vivid'
+  }
+
+  const vividColors = new Set(['红色', '黄色', '橙色', '蓝色'])
+  const mutedColors = new Set(['酒红色', '浅蓝色', '粉色', '紫色', '橄榄绿'])
+
+  if (vividColors.has(definition.value)) {
+    return 'vivid'
+  }
+
+  if (mutedColors.has(definition.value)) {
+    return 'muted'
+  }
+
+  return 'balanced'
+}
+
+export function isVividColor(color: string | null | undefined) {
+  return getColorIntensity(color) === 'vivid'
+}
+
+export function hasSameColorFamily(left: string | null | undefined, right: string | null | undefined) {
+  const leftDefinition = getColorDefinition(left)
+  const rightDefinition = getColorDefinition(right)
+
+  if (!leftDefinition || !rightDefinition) {
+    return false
+  }
+
+  return leftDefinition.family === rightDefinition.family
+}
+
+export function getOutfitColorRole(color: string | null | undefined): OutfitColorRole {
+  const normalizedColor = normalizeColorValue(color)
+
+  if (isNeutralColor(normalizedColor)) {
+    return 'base'
+  }
+
+  const intensity = getColorIntensity(normalizedColor)
+
+  if (intensity === 'vivid') {
+    return 'accent'
+  }
+
+  return 'support'
 }
 
 function isNearFamily(leftFamily: ColorDefinition['family'], rightFamily: ColorDefinition['family']) {

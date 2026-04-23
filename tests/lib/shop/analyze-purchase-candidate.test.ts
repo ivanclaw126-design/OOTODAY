@@ -58,6 +58,7 @@ describe('analyzePurchaseCandidate', () => {
     expect(analysis.recommendation).toBe('consider')
     expect(analysis.estimatedOutfitCount).toBe(2)
     expect(analysis.duplicateRisk).toBe('low')
+    expect(analysis.colorStrategyHints[0]).toContain('过渡层')
   })
 
   it('marks clearly overlapping items as skip', () => {
@@ -92,5 +93,24 @@ describe('analyzePurchaseCandidate', () => {
     expect(analysis.estimatedOutfitCount).toBe(0)
     expect(analysis.recommendation).toBe('skip')
     expect(analysis.missingCategoryHints[0]).toContain('下装')
+  })
+
+  it('uses shared color-role language when the closet can anchor a vivid item', () => {
+    const analysis = analyzePurchaseCandidate(
+      {
+        imageUrl: 'https://example.com/candidate.jpg',
+        sourceUrl: 'https://example.com/item',
+        sourceTitle: '红色针织衫',
+        category: '上衣',
+        subCategory: '针织衫',
+        colorCategory: '红色',
+        styleTags: ['通勤']
+      },
+      closetItems
+    )
+
+    expect(analysis.colorStrategyHints.some((hint) => hint.includes('颜色存在感更强'))).toBe(true)
+    expect(analysis.colorStrategyHints.some((hint) => hint.includes('基础色够用'))).toBe(true)
+    expect(analysis.recommendationReason).toContain('颜色存在感更强')
   })
 })

@@ -4,6 +4,11 @@ function getAuthErrorMessage(authError: string | null) {
   }
 
   const messages: Record<string, string> = {
+    magic_link_missing_email: '请先输入邮箱地址，再发送登录链接。',
+    magic_link_invalid_email: '这个邮箱格式看起来不对，请检查后再试。',
+    magic_link_rate_limited: '刚刚发得有点频繁，稍等一会儿再试。',
+    magic_link_email_provider_failed: '登录邮件没有成功发出去，像是邮件服务端出了问题。',
+    magic_link_failed: '登录链接发送失败，请稍后再试。',
     missing_credentials: '请输入邮箱和密码后再登录。',
     invalid_credentials: '邮箱或密码不正确。如果这是第一次登录，请先用邮箱链接激活账号。',
     password_bootstrap_failed: '邮箱登录成功了，但默认密码初始化失败。请再用 magic link 进一次，或联系我处理。'

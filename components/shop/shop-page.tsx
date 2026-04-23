@@ -363,6 +363,19 @@ export function ShopPage({
                 </div>
               </div>
             ) : null}
+
+            {analysis.colorStrategyHints.length > 0 ? (
+              <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4">
+                <div className="flex flex-col gap-2">
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Color Strategy</p>
+                  {analysis.colorStrategyHints.map((hint) => (
+                    <p key={hint} className="text-sm leading-6 text-[var(--color-neutral-dark)]">
+                      {hint}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </Card>
       ) : null}
