@@ -172,7 +172,6 @@ export function InspirationPage({
                 aria-label="上传灵感图片"
                 type="file"
                 accept="image/*"
-                capture="environment"
                 className="sr-only"
                 onChange={handleFileChange}
                 disabled={isSubmitting}

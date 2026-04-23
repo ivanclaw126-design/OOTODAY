@@ -393,15 +393,15 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-          <div className="flex flex-col gap-4">
+          <div className="min-w-0 flex flex-col gap-4">
             <div className="rounded-[1.25rem] border border-black/7 bg-[var(--color-secondary)]/45 p-4">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="space-y-1">
+              <div className="mb-3 flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+                <div className="min-w-0 space-y-1">
                   <p className="text-sm font-medium text-[var(--color-neutral-dark)]">相册 / 拍照</p>
                   <p className="text-sm text-[var(--color-neutral-dark)]">一次多选后会自动排队逐张分析，方便把整批衣物顺着同一条流程入橱。</p>
                 </div>
                 <label
-                  className={`inline-flex rounded-md border border-[var(--color-neutral-mid)] px-4 py-2.5 text-sm font-medium text-[var(--color-primary)] ${
+                  className={`inline-flex shrink-0 rounded-md border border-[var(--color-neutral-mid)] px-4 py-2.5 text-sm font-medium text-[var(--color-primary)] ${
                     isFlowActive ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
                   }`}
                 >
@@ -410,7 +410,6 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
                     aria-label="选择衣物图片"
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     multiple
                     className="sr-only"
                     onChange={handleFileChange}
@@ -433,12 +432,17 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
                   value={importSourceUrl}
                   onChange={(event) => setImportSourceUrl(event.target.value)}
                   placeholder="https://..."
-                  className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
+                  className="w-full min-w-0 rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
                   disabled={isFlowActive}
                 />
               </label>
               <div className="mt-3 flex justify-end">
-                <SecondaryButton type="button" onClick={() => void handleImportFromUrl()} disabled={isFlowActive || !importSourceUrl.trim()}>
+                <SecondaryButton
+                  type="button"
+                  className="w-full sm:w-auto"
+                  onClick={() => void handleImportFromUrl()}
+                  disabled={isFlowActive || !importSourceUrl.trim()}
+                >
                   通过链接导入
                 </SecondaryButton>
               </div>
@@ -453,9 +457,9 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-[1.25rem] border border-black/7 bg-white/95 p-4 shadow-[0_12px_30px_rgba(26,26,26,0.06)]">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
+          <div className="min-w-0 flex flex-col gap-3 rounded-[1.25rem] border border-black/7 bg-white/95 p-4 shadow-[0_12px_30px_rgba(26,26,26,0.06)]">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+              <div className="min-w-0 space-y-1">
                 <p className="text-sm font-medium text-[var(--color-neutral-dark)]">处理面板</p>
                 <p className="text-sm text-[var(--color-neutral-dark)]">分析、确认、报错和跳过都在这里完成。</p>
               </div>
@@ -507,7 +511,7 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
 
             {currentUpload?.phase === 'confirming' ? (
               <div className="flex justify-end">
-                <SecondaryButton type="button" onClick={handleSkipCurrent} disabled={isMutating}>
+                <SecondaryButton type="button" className="w-full sm:w-auto" onClick={handleSkipCurrent} disabled={isMutating}>
                   跳过这张
                 </SecondaryButton>
               </div>

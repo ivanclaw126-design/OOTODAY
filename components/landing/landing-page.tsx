@@ -3,7 +3,7 @@ export function LandingPage({ magicLinkSent }: { magicLinkSent: boolean }) {
     <main className="min-h-screen bg-[linear-gradient(180deg,#f7f4ee_0%,#fafafa_45%,#f3efe7_100%)] px-4 py-6 text-[var(--color-primary)] sm:px-6 sm:py-8">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col justify-between overflow-hidden rounded-[2rem] border border-black/8 bg-white/75 shadow-[0_24px_80px_rgba(26,26,26,0.08)] backdrop-blur md:min-h-[calc(100vh-4rem)]">
         <div className="grid flex-1 gap-0 md:grid-cols-[1.1fr_0.9fr]">
-          <section className="order-2 flex flex-col justify-between border-b border-black/8 p-6 sm:p-8 md:order-1 md:border-b-0 md:border-r md:p-12">
+          <section className="order-2 min-w-0 flex flex-col justify-between border-b border-black/8 p-6 sm:p-8 md:order-1 md:border-b-0 md:border-r md:p-12">
             <div className="space-y-8">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-3">
@@ -55,23 +55,23 @@ export function LandingPage({ magicLinkSent }: { magicLinkSent: boolean }) {
             </div>
           </section>
 
-          <section className="order-1 relative flex items-center bg-[linear-gradient(180deg,rgba(59,130,246,0.06)_0%,rgba(255,255,255,0)_55%),linear-gradient(140deg,#fdfcf8_0%,#f4efe5_100%)] p-6 sm:p-8 md:order-2 md:p-12">
+          <section className="order-1 relative min-w-0 flex items-center bg-[linear-gradient(180deg,rgba(59,130,246,0.06)_0%,rgba(255,255,255,0)_55%),linear-gradient(140deg,#fdfcf8_0%,#f4efe5_100%)] p-6 sm:p-8 md:order-2 md:p-12">
             <div className="absolute inset-x-6 top-6 h-px bg-[linear-gradient(90deg,rgba(26,26,26,0.04),rgba(26,26,26,0.16),rgba(26,26,26,0.04))] md:inset-x-12 md:top-12" />
-            <div className="relative w-full rounded-[2rem] border border-black/8 bg-white p-5 shadow-[0_24px_60px_rgba(26,26,26,0.10)] sm:p-6">
+            <div className="relative min-w-0 w-full rounded-[2rem] border border-black/8 bg-white p-5 shadow-[0_24px_60px_rgba(26,26,26,0.10)] sm:p-6">
               <div className="space-y-3">
                 <p className="text-sm uppercase tracking-[0.2em] text-[var(--color-accent)]">Start here</p>
                 <h2 className="text-3xl leading-tight font-semibold tracking-[-0.03em]">先拿到登录链接</h2>
-                <p className="text-sm leading-7 text-[var(--color-neutral-dark)] sm:text-base">
+                <p className="break-words text-sm leading-7 text-[var(--color-neutral-dark)] sm:text-base">
                   现在是小范围内测。登录后先去导入衣物，导完第一批就能看到 Today 的真实推荐。
                 </p>
               </div>
 
-              <form action="/auth/login" className="mt-8 flex flex-col gap-4">
-                <label className="flex flex-col gap-2 text-sm font-medium">
+              <form action="/auth/login" className="mt-8 flex min-w-0 flex-col gap-4">
+                <label className="flex min-w-0 w-full flex-col gap-2 text-sm font-medium">
                   <span>邮箱地址</span>
                   <input
                     aria-label="邮箱地址"
-                    className="min-h-12 rounded-2xl border border-[var(--color-neutral-mid)] bg-[#fcfcfb] px-4 py-3 text-base outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
+                    className="min-h-12 w-full min-w-0 rounded-2xl border border-[var(--color-neutral-mid)] bg-[#fcfcfb] px-4 py-3 text-base outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
                     name="email"
                     placeholder="you@example.com"
                     type="email"
@@ -86,9 +86,9 @@ export function LandingPage({ magicLinkSent }: { magicLinkSent: boolean }) {
                 </button>
               </form>
 
-              <div className="mt-6 rounded-[1.5rem] bg-[#f6f3eb] p-4 text-sm leading-6 text-[var(--color-neutral-dark)]">
+              <div className="mt-6 w-full min-w-0 rounded-[1.5rem] bg-[#f6f3eb] p-4 text-sm leading-6 text-[var(--color-neutral-dark)]">
                 <p className="font-medium text-[var(--color-primary)]">你进来之后会先做什么</p>
-                <p className="mt-2">先把几件常穿衣服导进 Closet，再去 Today 看推荐。如果最近要出门，也可以顺手试 Travel。</p>
+                <p className="mt-2 break-words">先把几件常穿衣服导进 Closet，再去 Today 看推荐。如果最近要出门，也可以顺手试 Travel。</p>
               </div>
 
               {magicLinkSent ? (

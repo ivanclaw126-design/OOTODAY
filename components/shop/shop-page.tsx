@@ -224,7 +224,6 @@ export function ShopPage({
                 aria-label="上传商品图片"
                 type="file"
                 accept="image/*"
-                capture="environment"
                 className="sr-only"
                 onChange={handleFileChange}
                 disabled={isSubmitting}

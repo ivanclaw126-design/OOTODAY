@@ -7,7 +7,7 @@ describe('LandingPage', () => {
     render(<LandingPage magicLinkSent={false} />)
 
     expect(screen.getByRole('heading', { name: 'OOTODAY' })).toBeInTheDocument()
-    expect(screen.getByText('最低成本导入你的真实衣橱')).toBeInTheDocument()
+    expect(screen.getByText('把衣橱先导进来，今天穿什么才会开始变简单。')).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: '邮箱地址' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '发送登录链接' })).toBeInTheDocument()
   })
