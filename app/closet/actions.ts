@@ -166,7 +166,10 @@ export async function deleteClosetItemAction(input: { itemId: string }) {
   revalidatePath('/closet')
 }
 
-export async function toggleClosetItemImageFlipAction(input: { itemId: string; imageFlipped: boolean }) {
+export async function updateClosetItemImageRotationAction(input: {
+  itemId: string
+  operation: 'rotate-right-90' | 'restore-original'
+}) {
   const session = await getSession()
 
   if (!session) {
@@ -176,7 +179,7 @@ export async function toggleClosetItemImageFlipAction(input: { itemId: string; i
   const data = await setClosetItemImageFlip({
     userId: session.user.id,
     itemId: input.itemId,
-    imageFlipped: input.imageFlipped
+    operation: input.operation
   })
 
   revalidatePath('/closet')

@@ -11,7 +11,7 @@ import {
   deleteClosetItemAction,
   reanalyzeClosetItemAction,
   saveClosetItemAction,
-  toggleClosetItemImageFlipAction,
+  updateClosetItemImageRotationAction,
   updateClosetItemAction
 } from '@/app/closet/actions'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
@@ -61,10 +61,13 @@ export default async function ClosetRoute() {
     return reanalyzeClosetItemAction(input)
   }
 
-  async function toggleImageFlip(input: { itemId: string; imageFlipped: boolean }): Promise<{ persisted: boolean }> {
+  async function updateImageRotation(input: {
+    itemId: string
+    operation: 'rotate-right-90' | 'restore-original'
+  }): Promise<{ persisted: boolean }> {
     'use server'
 
-    return toggleClosetItemImageFlipAction(input)
+    return updateClosetItemImageRotationAction(input)
   }
 
   await ensureProfile(userId)
@@ -86,7 +89,7 @@ export default async function ClosetRoute() {
       updateItem={updateItem}
       reanalyzeItem={reanalyzeItem}
       deleteItem={deleteItem}
-      toggleImageFlip={toggleImageFlip}
+      updateImageRotation={updateImageRotation}
     />
   )
 }

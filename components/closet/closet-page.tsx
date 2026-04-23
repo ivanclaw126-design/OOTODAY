@@ -9,6 +9,7 @@ import { ClosetUploadCard } from '@/components/closet/closet-upload-card'
 import { ClosetUploadForm } from '@/components/closet/closet-upload-form'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
+import { isRestoreWindowActive, normalizeQuarterTurns } from '@/lib/closet/image-rotation'
 import { isBottomCategory, isOuterwearCategory, isTopCategory } from '@/lib/closet/taxonomy'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult, ClosetInsights, ClosetItemCardData } from '@/lib/closet/types'
 import type { ReactNode } from 'react'
@@ -113,10 +114,17 @@ type ClosetPageProps = {
   updateItem: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<void>
   reanalyzeItem: (input: { itemId: string }) => Promise<ClosetAnalysisDraft>
   deleteItem: (input: { itemId: string }) => Promise<void>
-  toggleImageFlip: (input: { itemId: string; imageFlipped: boolean }) => Promise<{
+  updateImageRotation: (input: {
+    itemId: string
+    operation: 'rotate-right-90' | 'restore-original'
+  }) => Promise<{
     persisted: boolean
     imageUrl?: string | null
     imageFlipped?: boolean
+    imageOriginalUrl?: string | null
+    imageRotationQuarterTurns?: number
+    imageRestoreExpiresAt?: string | null
+    canRestoreOriginal?: boolean
   }>
 }
 
@@ -132,7 +140,7 @@ export function ClosetPage({
   updateItem,
   reanalyzeItem,
   deleteItem,
-  toggleImageFlip
+  updateImageRotation
 }: ClosetPageProps) {
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
@@ -146,17 +154,51 @@ export function ClosetPage({
   const [isImportCollapsed, setIsImportCollapsed] = useState(itemCount > 0)
   const [isInsightsCollapsed, setIsInsightsCollapsed] = useState(itemCount > 0)
   const [flippingItemId, setFlippingItemId] = useState<string | null>(null)
-  const [imageOverrides, setImageOverrides] = useState<Record<string, { imageFlipped?: boolean; imageUrl?: string | null }>>({})
+  const [now, setNow] = useState(() => new Date())
+  const [imageOverrides, setImageOverrides] = useState<
+    Record<
+      string,
+      {
+        imageFlipped?: boolean
+        imageUrl?: string | null
+        imageOriginalUrl?: string | null
+        imageRotationQuarterTurns?: number
+        imageRestoreExpiresAt?: string | null
+        canRestoreOriginal?: boolean
+      }
+    >
+  >({})
   const router = useRouter()
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(new Date()), 30 * 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
 
   const displayItems = useMemo(
     () =>
-      items.map((item) => ({
-        ...item,
-        imageFlipped: imageOverrides[item.id]?.imageFlipped ?? item.imageFlipped,
-        imageUrl: imageOverrides[item.id]?.imageUrl ?? item.imageUrl
-      })),
-    [imageOverrides, items]
+      items.map((item) => {
+        const override = imageOverrides[item.id]
+        const imageRestoreExpiresAt = override?.imageRestoreExpiresAt ?? item.imageRestoreExpiresAt ?? null
+        const imageRotationQuarterTurns = normalizeQuarterTurns(
+          override?.imageRotationQuarterTurns ?? item.imageRotationQuarterTurns ?? 0
+        )
+        const imageOriginalUrl = override?.imageOriginalUrl ?? item.imageOriginalUrl ?? null
+        const canRestoreOriginal =
+          Boolean(imageOriginalUrl) && imageRotationQuarterTurns > 0 && isRestoreWindowActive(imageRestoreExpiresAt, now)
+
+        return {
+          ...item,
+          imageFlipped: canRestoreOriginal,
+          imageUrl: override?.imageUrl ?? item.imageUrl,
+          imageOriginalUrl,
+          imageRotationQuarterTurns,
+          imageRestoreExpiresAt,
+          canRestoreOriginal
+        }
+      }),
+    [imageOverrides, items, now]
   )
 
   const activeMissingBasic = useMemo(
@@ -340,19 +382,51 @@ export function ClosetPage({
     }
   }
 
-  async function handleToggleImageFlip(item: ClosetItemCardData) {
+  async function handleRotateImage(item: ClosetItemCardData) {
     setFlippingItemId(item.id)
 
     try {
-      const result = await toggleImageFlip({
+      const result = await updateImageRotation({
         itemId: item.id,
-        imageFlipped: !item.imageFlipped
+        operation: 'rotate-right-90'
       })
       setImageOverrides((current) => ({
         ...current,
         [item.id]: {
-          imageFlipped: result.imageFlipped ?? !item.imageFlipped,
-          imageUrl: result.imageUrl ?? item.imageUrl
+          imageFlipped: result.imageFlipped ?? false,
+          imageUrl: result.imageUrl ?? item.imageUrl,
+          imageOriginalUrl: result.imageOriginalUrl ?? item.imageOriginalUrl ?? item.imageUrl,
+          imageRotationQuarterTurns: result.imageRotationQuarterTurns ?? normalizeQuarterTurns((item.imageRotationQuarterTurns ?? 0) + 1),
+          imageRestoreExpiresAt: result.imageRestoreExpiresAt ?? item.imageRestoreExpiresAt ?? null,
+          canRestoreOriginal: result.canRestoreOriginal ?? true
+        }
+      }))
+
+      if (result.persisted) {
+        router.refresh()
+      }
+    } finally {
+      setFlippingItemId(null)
+    }
+  }
+
+  async function handleRestoreOriginalImage(item: ClosetItemCardData) {
+    setFlippingItemId(item.id)
+
+    try {
+      const result = await updateImageRotation({
+        itemId: item.id,
+        operation: 'restore-original'
+      })
+      setImageOverrides((current) => ({
+        ...current,
+        [item.id]: {
+          imageFlipped: false,
+          imageUrl: result.imageUrl ?? item.imageOriginalUrl ?? item.imageUrl,
+          imageOriginalUrl: result.imageOriginalUrl ?? null,
+          imageRotationQuarterTurns: result.imageRotationQuarterTurns ?? 0,
+          imageRestoreExpiresAt: result.imageRestoreExpiresAt ?? null,
+          canRestoreOriginal: false
         }
       }))
 
@@ -533,7 +607,8 @@ export function ClosetPage({
                   onEditItem={handleEditItem}
                   onReanalyzeItem={handleReanalyzeItem}
                   onDeleteItem={handleDeleteItem}
-                  onToggleImageFlipItem={handleToggleImageFlip}
+                  onRotateImageItem={handleRotateImage}
+                  onRestoreOriginalImageItem={handleRestoreOriginalImage}
                   reanalyzingItemId={reanalyzingItemId}
                   deletingItemId={deletingItemId}
                   flippingItemId={flippingItemId}
@@ -574,7 +649,8 @@ export function ClosetPage({
                       onEditItem={handleEditItem}
                       onReanalyzeItem={handleReanalyzeItem}
                       onDeleteItem={handleDeleteItem}
-                      onToggleImageFlipItem={handleToggleImageFlip}
+                      onRotateImageItem={handleRotateImage}
+                      onRestoreOriginalImageItem={handleRestoreOriginalImage}
                       reanalyzingItemId={reanalyzingItemId}
                       deletingItemId={deletingItemId}
                       flippingItemId={flippingItemId}

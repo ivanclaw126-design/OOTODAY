@@ -271,28 +271,36 @@ describe('analyzeClosetImportUrlAction', () => {
   })
 })
 
-describe('toggleClosetItemImageFlipAction', () => {
-  it('rotates the image for the current user and revalidates dependent pages', async () => {
+describe('updateClosetItemImageRotationAction', () => {
+  it('rotates the image clockwise for the current user and revalidates dependent pages', async () => {
     getSession.mockResolvedValue({ user: { id: 'user-1' } })
     setClosetItemImageFlip.mockResolvedValue({
       id: 'item-1',
       imageUrl: validImageUrl,
       imageFlipped: true,
+      imageOriginalUrl: 'https://example.com/original.jpg',
+      imageRotationQuarterTurns: 1,
+      imageRestoreExpiresAt: '2099-04-24T12:30:00Z',
+      canRestoreOriginal: true,
       persisted: true
     })
 
-    const { toggleClosetItemImageFlipAction } = await import('@/app/closet/actions')
+    const { updateClosetItemImageRotationAction } = await import('@/app/closet/actions')
 
-    await expect(toggleClosetItemImageFlipAction({ itemId: 'item-1', imageFlipped: true })).resolves.toEqual({
+    await expect(updateClosetItemImageRotationAction({ itemId: 'item-1', operation: 'rotate-right-90' })).resolves.toEqual({
       id: 'item-1',
       imageUrl: validImageUrl,
       imageFlipped: true,
+      imageOriginalUrl: 'https://example.com/original.jpg',
+      imageRotationQuarterTurns: 1,
+      imageRestoreExpiresAt: '2099-04-24T12:30:00Z',
+      canRestoreOriginal: true,
       persisted: true
     })
     expect(setClosetItemImageFlip).toHaveBeenCalledWith({
       userId: 'user-1',
       itemId: 'item-1',
-      imageFlipped: true
+      operation: 'rotate-right-90'
     })
     expect(revalidatePath).toHaveBeenCalledWith('/closet')
     expect(revalidatePath).toHaveBeenCalledWith('/today')

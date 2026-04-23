@@ -1,11 +1,15 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import { normalizeClosetFields } from '@/lib/closet/taxonomy'
+import { isRestoreWindowActive, normalizeQuarterTurns } from '@/lib/closet/image-rotation'
 
 type ClosetItemRow = {
   id: string
   image_url: string | null
   image_flipped?: boolean
+  image_original_url?: string | null
+  image_rotation_quarter_turns?: number | null
+  image_restore_expires_at?: string | null
   category: string
   sub_category: string | null
   color_category: string | null
@@ -23,10 +27,18 @@ function mapClosetItems(data: ClosetItemRow[] | null | undefined): ClosetItemCar
       colorCategory: item.color_category
     })
 
+    const imageRotationQuarterTurns = normalizeQuarterTurns(item.image_rotation_quarter_turns)
+    const canRestoreOriginal =
+      Boolean(item.image_original_url) && imageRotationQuarterTurns > 0 && isRestoreWindowActive(item.image_restore_expires_at)
+
     return {
       id: item.id,
       imageUrl: item.image_url,
-      imageFlipped: Boolean(item.image_flipped),
+      imageFlipped: canRestoreOriginal,
+      imageOriginalUrl: item.image_original_url ?? null,
+      imageRotationQuarterTurns,
+      imageRestoreExpiresAt: item.image_restore_expires_at ?? null,
+      canRestoreOriginal,
       category: normalized.category,
       subCategory: normalized.subCategory,
       colorCategory: normalized.colorCategory,
@@ -44,7 +56,9 @@ export async function getClosetView(userId: string, options?: { limit?: number }
 
   const baseQueryWithFlip = supabase
     .from('items')
-    .select('id, image_url, image_flipped, category, sub_category, color_category, style_tags, last_worn_date, wear_count, created_at')
+    .select(
+      'id, image_url, image_flipped, image_original_url, image_rotation_quarter_turns, image_restore_expires_at, category, sub_category, color_category, style_tags, last_worn_date, wear_count, created_at'
+    )
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
@@ -52,7 +66,7 @@ export async function getClosetView(userId: string, options?: { limit?: number }
   let rows = initialResult.data as ClosetItemRow[] | null | undefined
   let error = initialResult.error
 
-  if (error && /image_flipped/i.test(error.message)) {
+  if (error && /(image_flipped|image_original_url|image_rotation_quarter_turns|image_restore_expires_at)/i.test(error.message)) {
     const fallbackQuery = supabase
       .from('items')
       .select('id, image_url, category, sub_category, color_category, style_tags, last_worn_date, wear_count, created_at')
