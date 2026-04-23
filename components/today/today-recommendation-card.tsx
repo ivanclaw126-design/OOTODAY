@@ -27,11 +27,13 @@ export function TodayRecommendationCard({
   recommendation,
   index,
   ootdStatus,
+  recordedRecommendationId,
   submitOotd
 }: {
   recommendation: TodayRecommendation
   index: number
   ootdStatus: TodayOotdStatus
+  recordedRecommendationId: string | null
   submitOotd: (input: {
     recommendation: TodayRecommendation
     satisfactionScore: number
@@ -42,7 +44,8 @@ export function TodayRecommendationCard({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const isRecorded = ootdStatus.status === 'recorded'
+  const isRecorded = ootdStatus.status === 'recorded' && recordedRecommendationId === recommendation.id
+  const isLocked = ootdStatus.status === 'recorded' && !isRecorded
   const rankLabel = String(index).padStart(2, '0')
   const outfitItems = [
     toShowcaseItem(recommendation.dress),
@@ -60,26 +63,26 @@ export function TodayRecommendationCard({
               {rankLabel}
             </div>
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-neutral-dark)]">Outfit decision</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">搭配方案</p>
               <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">第 {index} 套</p>
             </div>
           </div>
           {isRecorded ? (
-            <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+            <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">
               已完成
             </span>
           ) : null}
         </div>
 
         <div className="rounded-[1.6rem] bg-[var(--color-panel)] p-5 text-white shadow-[var(--shadow-strong)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/52">Why this works</p>
-          <p className="mt-3 text-sm leading-7 text-white/78">{recommendation.reason}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/52">为什么推荐这套</p>
+          <p className="mt-3 text-base leading-8 text-white/82 sm:text-sm sm:leading-7">{recommendation.reason}</p>
         </div>
 
         {outfitItems.length > 0 ? (
           <ItemShowcase
             items={outfitItems}
-            title="整套预览 Outfit Window"
+            title="整套预览"
             subtitle={outfitItems.map((item) => item.label).join(' / ')}
           />
         ) : null}
@@ -109,7 +112,7 @@ export function TodayRecommendationCard({
               <span className="rounded-full bg-[var(--color-secondary)] px-2.5 py-1 text-[var(--color-primary)]">
                 上下装
               </span>
-              <span>上下装 / 外层</span>
+              <span>主件 / 外层</span>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <ItemShowcase
@@ -120,7 +123,7 @@ export function TodayRecommendationCard({
                     label: '待补充上装'
                   }
                 ]}
-                title="上装 Top"
+                title="上装"
                 subtitle={itemLabel('颜色', recommendation.top?.colorCategory ?? null)}
               />
 
@@ -132,7 +135,7 @@ export function TodayRecommendationCard({
                     label: '待补充下装'
                   }
                 ]}
-                title="下装 Bottom"
+                title="下装"
                 subtitle={itemLabel('颜色', recommendation.bottom?.colorCategory ?? null)}
               />
             </div>
@@ -143,7 +146,7 @@ export function TodayRecommendationCard({
           <div className="rounded-[1.4rem] bg-[linear-gradient(180deg,rgba(231,255,55,0.18),rgba(231,255,55,0.1))] p-1">
             <ItemShowcase
               items={[toShowcaseItem(recommendation.outerLayer)].filter((item): item is ItemShowcaseEntry => item !== null)}
-              title="外层建议 Layer"
+              title="外层建议"
               subtitle={itemLabel('颜色', recommendation.outerLayer.colorCategory)}
             />
           </div>
@@ -152,6 +155,10 @@ export function TodayRecommendationCard({
         {isRecorded ? (
           <div className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/64 px-4 py-3 text-sm font-medium text-[var(--color-primary)]">
             今日已记录
+          </div>
+        ) : isLocked ? (
+          <div className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/64 px-4 py-3 text-sm font-medium text-[var(--color-neutral-dark)]">
+            今天已记录，其他方案暂时锁定
           </div>
         ) : isConfirming ? (
           <div className="space-y-3 rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">

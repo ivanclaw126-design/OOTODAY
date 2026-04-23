@@ -11,10 +11,33 @@ import { TodayRecommendationList } from '@/components/today/today-recommendation
 import { TodayStatusCard } from '@/components/today/today-status-card'
 import { PrimaryButton, PrimaryLink, SecondaryButton } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
+import { buildOotdNotes } from '@/lib/today/build-ootd-notes'
 import type { TodayHistoryUpdateInput, TodayOotdHistoryEntry, TodayOotdStatus, TodayRecommendation, TodayView } from '@/lib/today/types'
 
 function isSameCalendarDay(left: string, right: string) {
   return new Date(left).toDateString() === new Date(right).toDateString()
+}
+
+function getRecordedRecommendationId({
+  recommendations,
+  ootdStatus,
+  historyEntries
+}: {
+  recommendations: TodayRecommendation[]
+  ootdStatus: TodayOotdStatus
+  historyEntries: TodayOotdHistoryEntry[]
+}) {
+  if (ootdStatus.status !== 'recorded') {
+    return null
+  }
+
+  const todayEntry = historyEntries.find((entry) => isSameCalendarDay(entry.wornAt, ootdStatus.wornAt))
+
+  if (!todayEntry?.notes) {
+    return null
+  }
+
+  return recommendations.find((recommendation) => buildOotdNotes(recommendation) === todayEntry.notes)?.id ?? null
 }
 
 export function TodayPage({
@@ -44,6 +67,13 @@ export function TodayPage({
   const [isRefreshingRecommendations, setIsRefreshingRecommendations] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [historyEntries, setHistoryEntries] = useState(view.recentOotdHistory)
+  const [recordedRecommendationId, setRecordedRecommendationId] = useState<string | null>(() =>
+    getRecordedRecommendationId({
+      recommendations: view.recommendations,
+      ootdStatus: view.ootdStatus,
+      historyEntries: view.recentOotdHistory
+    })
+  )
 
   async function submitTodayOotd(input: {
     recommendation: TodayRecommendation
@@ -53,6 +83,7 @@ export function TodayPage({
 
     if (!result.error && result.wornAt) {
       setOotdStatus({ status: 'recorded', wornAt: result.wornAt })
+      setRecordedRecommendationId(input.recommendation.id)
     }
 
     return result
@@ -67,6 +98,9 @@ export function TodayPage({
       startTransition(() => {
         setRecommendations(result.recommendations)
         setRecommendationOffset(nextOffset)
+        setRecordedRecommendationId((current) =>
+          current && result.recommendations.some((recommendation) => recommendation.id === current) ? current : null
+        )
       })
     } finally {
       setIsRefreshingRecommendations(false)
@@ -92,6 +126,7 @@ export function TodayPage({
 
       if (deletedEntry && ootdStatus.status === 'recorded' && isSameCalendarDay(deletedEntry.wornAt, ootdStatus.wornAt)) {
         setOotdStatus({ status: 'not-recorded' })
+        setRecordedRecommendationId(null)
       }
     }
 
@@ -125,6 +160,7 @@ export function TodayPage({
               recommendations={recommendations}
               recommendationError={view.recommendationError}
               ootdStatus={ootdStatus}
+              recordedRecommendationId={recordedRecommendationId}
               submitOotd={submitTodayOotd}
             />
 

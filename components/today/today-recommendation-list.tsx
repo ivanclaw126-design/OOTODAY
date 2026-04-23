@@ -6,11 +6,13 @@ export function TodayRecommendationList({
   recommendations,
   recommendationError,
   ootdStatus,
+  recordedRecommendationId,
   submitOotd
 }: {
   recommendations: TodayRecommendation[]
   recommendationError: boolean
   ootdStatus: TodayOotdStatus
+  recordedRecommendationId: string | null
   submitOotd: (input: {
     recommendation: TodayRecommendation
     satisfactionScore: number
@@ -38,10 +40,10 @@ export function TodayRecommendationList({
     <section className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-neutral-dark)]">今日推荐</p>
-          <p className="text-2xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">3 套可直接做决定的搭配</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">今日推荐</p>
+          <p className="text-[1.85rem] font-semibold tracking-[-0.05em] text-[var(--color-primary)] sm:text-2xl">3 套可直接做决定的搭配</p>
         </div>
-        <p className="text-sm text-[var(--color-neutral-dark)]">按今天的场景、天气和最近穿着整理</p>
+        <p className="max-w-xs text-sm leading-6 text-[var(--color-neutral-dark)]">按今天的场景、天气和最近穿着整理</p>
       </div>
 
       <div className="grid gap-3">
@@ -51,6 +53,7 @@ export function TodayRecommendationList({
             recommendation={recommendation}
             index={index + 1}
             ootdStatus={ootdStatus}
+            recordedRecommendationId={recordedRecommendationId}
             submitOotd={submitOotd}
           />
         ))}
