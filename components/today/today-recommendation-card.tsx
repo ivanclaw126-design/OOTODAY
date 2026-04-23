@@ -1,12 +1,26 @@
 'use client'
 
 import { useState } from 'react'
+import { ItemShowcase, type ItemShowcaseEntry } from '@/components/ui/item-showcase'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import type { TodayOotdStatus, TodayRecommendation } from '@/lib/today/types'
 
 function itemLabel(label: string, value: string | null) {
   return value ? `${label}：${value}` : `${label}：待补充`
+}
+
+function toShowcaseItem(item: TodayRecommendation['top']): ItemShowcaseEntry | null {
+  if (!item) {
+    return null
+  }
+
+  return {
+    id: item.id,
+    imageUrl: item.imageUrl,
+    label: item.subCategory ?? item.category,
+    meta: [item.colorCategory, item.styleTags[0]].filter(Boolean).join(' · ')
+  }
 }
 
 export function TodayRecommendationCard({
@@ -30,6 +44,12 @@ export function TodayRecommendationCard({
 
   const isRecorded = ootdStatus.status === 'recorded'
   const rankLabel = String(index).padStart(2, '0')
+  const outfitItems = [
+    toShowcaseItem(recommendation.dress),
+    toShowcaseItem(recommendation.top),
+    toShowcaseItem(recommendation.bottom),
+    toShowcaseItem(recommendation.outerLayer)
+  ].filter((item): item is ItemShowcaseEntry => item !== null)
 
   return (
     <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.76)_0%,rgba(241,234,224,0.94)_100%)]">
@@ -56,6 +76,14 @@ export function TodayRecommendationCard({
           <p className="mt-3 text-sm leading-7 text-white/78">{recommendation.reason}</p>
         </div>
 
+        {outfitItems.length > 0 ? (
+          <ItemShowcase
+            items={outfitItems}
+            title="整套预览 Outfit Window"
+            subtitle={outfitItems.map((item) => item.label).join(' / ')}
+          />
+        ) : null}
+
         {recommendation.dress ? (
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-neutral-dark)]">
@@ -64,21 +92,16 @@ export function TodayRecommendationCard({
               </span>
               <span>主件 / 颜色 / 风格</span>
             </div>
-            <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">
-              <p className="text-xl leading-tight font-semibold tracking-[-0.05em] text-[var(--color-primary)]">
-                {recommendation.dress.subCategory ?? recommendation.dress.category}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-[var(--color-primary)]">
-                <span className="rounded-full bg-[var(--color-paper-strong)] px-2.5 py-1">
-                  {itemLabel('颜色', recommendation.dress.colorCategory)}
-                </span>
-                {recommendation.dress.styleTags.slice(0, 2).map((tag) => (
-                  <span key={tag} className="rounded-full border border-[var(--color-line)] bg-white/88 px-2.5 py-1 text-[var(--color-neutral-dark)]">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <ItemShowcase
+              items={[toShowcaseItem(recommendation.dress)].filter((item): item is ItemShowcaseEntry => item !== null)}
+              title={recommendation.dress.subCategory ?? recommendation.dress.category}
+              subtitle={[
+                itemLabel('颜色', recommendation.dress.colorCategory),
+                recommendation.dress.styleTags.slice(0, 2).join(' / ')
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            />
           </div>
         ) : (
           <div className="space-y-3">
@@ -88,40 +111,41 @@ export function TodayRecommendationCard({
               </span>
               <span>上下装 / 外层</span>
             </div>
-
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">上装</p>
-                <p className="mt-2 text-xl leading-tight font-semibold tracking-[-0.05em] text-[var(--color-primary)]">
-                  {recommendation.top?.subCategory ?? recommendation.top?.category ?? '待补充上装'}
-                </p>
-                <p className="mt-2 text-sm text-[var(--color-neutral-dark)]">
-                  {itemLabel('颜色', recommendation.top?.colorCategory ?? null)}
-                </p>
-              </div>
+              <ItemShowcase
+                items={[
+                  toShowcaseItem(recommendation.top) ?? {
+                    id: 'missing-top',
+                    imageUrl: null,
+                    label: '待补充上装'
+                  }
+                ]}
+                title="上装 Top"
+                subtitle={itemLabel('颜色', recommendation.top?.colorCategory ?? null)}
+              />
 
-              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">下装</p>
-                <p className="mt-2 text-xl leading-tight font-semibold tracking-[-0.05em] text-[var(--color-primary)]">
-                  {recommendation.bottom?.subCategory ?? recommendation.bottom?.category ?? '待补充下装'}
-                </p>
-                <p className="mt-2 text-sm text-[var(--color-neutral-dark)]">
-                  {itemLabel('颜色', recommendation.bottom?.colorCategory ?? null)}
-                </p>
-              </div>
+              <ItemShowcase
+                items={[
+                  toShowcaseItem(recommendation.bottom) ?? {
+                    id: 'missing-bottom',
+                    imageUrl: null,
+                    label: '待补充下装'
+                  }
+                ]}
+                title="下装 Bottom"
+                subtitle={itemLabel('颜色', recommendation.bottom?.colorCategory ?? null)}
+              />
             </div>
           </div>
         )}
 
         {recommendation.outerLayer ? (
-          <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[linear-gradient(180deg,rgba(231,255,55,0.18),rgba(231,255,55,0.1))] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">外层建议</p>
-            <p className="mt-2 text-base font-medium tracking-[-0.03em] text-[var(--color-primary)]">
-              {recommendation.outerLayer.subCategory ?? recommendation.outerLayer.category}
-            </p>
-            <p className="mt-1 text-sm text-[var(--color-neutral-dark)]">
-              {itemLabel('颜色', recommendation.outerLayer.colorCategory)}
-            </p>
+          <div className="rounded-[1.4rem] bg-[linear-gradient(180deg,rgba(231,255,55,0.18),rgba(231,255,55,0.1))] p-1">
+            <ItemShowcase
+              items={[toShowcaseItem(recommendation.outerLayer)].filter((item): item is ItemShowcaseEntry => item !== null)}
+              title="外层建议 Layer"
+              subtitle={itemLabel('颜色', recommendation.outerLayer.colorCategory)}
+            />
           </div>
         ) : null}
 

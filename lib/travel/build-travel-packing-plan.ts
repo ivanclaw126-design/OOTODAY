@@ -45,6 +45,7 @@ function buildEntry(id: string, categoryLabel: string, quantity: number, items: 
     categoryLabel,
     quantity: Math.min(quantity, selected.length),
     itemLabels: selected.map((item) => describeItem(item) || item.category),
+    selectedItems: selected,
     reason
   }
 }
@@ -90,7 +91,8 @@ function buildDailyPlan({
     return {
       dayLabel: `第 ${index + 1} 天`,
       outfitSummary,
-      focus
+      focus,
+      selectedItems: [dress, top, bottom, layer].filter((item): item is ClosetItemCardData => item !== null)
     }
   })
 }
