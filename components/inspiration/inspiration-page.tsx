@@ -147,16 +147,16 @@ export function InspirationPage({
   }
 
   return (
-    <AppShell title="Inspiration">
+    <AppShell title="Looks">
       <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Inspiration Breakdown</p>
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Looks Breakdown</p>
             <p className="mt-2 text-xl font-semibold tracking-[-0.04em] text-[var(--color-primary)]">先拆掉这套灵感的骨架，再看你衣橱里能借什么。</p>
             <p className="text-sm text-[var(--color-neutral-dark)]">贴一张图，我会拆出核心搭配，再对照你衣橱里能借用的单品。</p>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-[1.8rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">
+          <div className="flex flex-col gap-3 rounded-[1.8rem] border border-[var(--color-line)] bg-[#111111] p-4 text-white shadow-[var(--shadow-strong)]">
             <div className="flex items-center gap-2">
               <SecondaryButton type="button" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting}>
                 上传灵感图
@@ -175,7 +175,7 @@ export function InspirationPage({
                 onChange={handleFileChange}
                 disabled={isSubmitting}
               />
-              <span className="text-sm text-white/68">支持电脑端拖拽，也支持 iPhone / iPad 相册或拍照上传。</span>
+              <span className="text-sm text-white/82">支持电脑端拖拽，也支持 iPhone / iPad 相册或拍照上传。</span>
             </div>
 
             <label
@@ -188,7 +188,7 @@ export function InspirationPage({
               className={`flex min-h-28 flex-col items-center justify-center rounded-lg border border-dashed px-4 py-5 text-center text-sm transition ${
                 isDragging
                   ? 'border-[var(--color-primary)] bg-[var(--color-secondary)] text-[var(--color-primary)]'
-                  : 'border-white/12 bg-white/6 text-white/68'
+                  : 'border-white/18 bg-white/8 text-white/82'
               }`}
             >
               <span className={`font-medium ${isDragging ? 'text-[var(--color-primary)]' : 'text-white'}`}>拖拽灵感图到这里</span>
@@ -237,15 +237,15 @@ export function InspirationPage({
 
       {analysis ? (
         <>
-          <Card className="overflow-hidden bg-[var(--color-panel)] text-white shadow-[var(--shadow-strong)]">
+          <Card className="overflow-hidden bg-[#111111] text-white shadow-[var(--shadow-strong)]">
             <div className="flex flex-col gap-3">
               <div>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/58">整体判断</p>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/70">整体判断</p>
                 {analysis.sourceTitle ? (
-                  <p className="mt-2 text-sm text-white/66">{analysis.sourceTitle}</p>
+                  <p className="mt-2 text-sm text-white/82">{analysis.sourceTitle}</p>
                 ) : null}
                 <p className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-white">{analysis.breakdown.summary}</p>
-                <p className="text-sm text-white/66">
+                <p className="text-sm text-white/82">
                   {analysis.breakdown.scene} · {analysis.breakdown.vibe}
                 </p>
               </div>
@@ -255,7 +255,7 @@ export function InspirationPage({
                 {analysis.breakdown.keyItems.map((item) => (
                   <div key={item.id} className="rounded-[1.2rem] border border-white/10 bg-white/4 p-3">
                     <p className="text-sm font-medium">{item.label}</p>
-                    <p className="text-sm text-white/66">
+                    <p className="text-sm text-white/82">
                       {item.category}
                       {item.colorHint ? ` · ${item.colorHint}` : ''}
                       {item.styleTags.length > 0 ? ` · ${item.styleTags.join(' / ')}` : ''}
@@ -267,7 +267,7 @@ export function InspirationPage({
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-white">搭配逻辑</p>
                 {analysis.breakdown.stylingTips.map((tip) => (
-                  <p key={tip} className="text-sm text-white/68">
+                  <p key={tip} className="text-sm text-white/82">
                     {tip}
                   </p>
                 ))}
@@ -277,7 +277,7 @@ export function InspirationPage({
                 <div className="flex flex-col gap-2">
                   <p className="text-sm font-medium text-[var(--color-accent)]">颜色为什么成立</p>
                   {(analysis.breakdown.colorStrategyNotes ?? []).map((note) => (
-                    <p key={note} className="text-sm text-white/72">
+                    <p key={note} className="text-sm text-white/86">
                       {note}
                     </p>
                   ))}
@@ -321,11 +321,11 @@ export function InspirationPage({
                 <p className="text-sm text-[var(--color-neutral-dark)]">{analysis.remixPlan.summary}</p>
               </div>
 
-              <div className="rounded-[1.3rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white">
+              <div className="rounded-[1.3rem] border border-[var(--color-line)] bg-[#111111] p-4 text-white">
                 <p className="text-sm font-medium">
                   完成度：{analysis.remixPlan.matchedCount}/{analysis.remixPlan.totalCount}
                 </p>
-                <p className="text-sm text-white/68">{analysis.remixPlan.coverageLabel}</p>
+                <p className="text-sm text-white/82">{analysis.remixPlan.coverageLabel}</p>
               </div>
 
               <div className="flex flex-col gap-2">

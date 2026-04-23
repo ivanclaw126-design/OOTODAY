@@ -69,13 +69,13 @@ export function ClosetGroupBrowser({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-[var(--color-neutral-dark)]">先按{modeLabel}扫一眼全局，再点进组里继续编辑和整理。</p>
+        <p className="text-xs text-[var(--color-neutral-dark)]">先按{modeLabel}扫一眼全局，再点进组里继续编辑和整理。</p>
         {activeGroupValue ? (
           <button
             type="button"
-            className="text-sm font-medium text-[var(--color-primary)] underline underline-offset-2"
+            className="text-xs font-medium text-[var(--color-primary)] underline underline-offset-2"
             onClick={onClearGroup}
           >
             清除分组筛选
@@ -83,7 +83,7 @@ export function ClosetGroupBrowser({
         ) : null}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
         {groups.map((group) => {
           const isActive = activeGroupValue === group.value
 
@@ -92,7 +92,7 @@ export function ClosetGroupBrowser({
               key={group.value}
               type="button"
               onClick={() => onSelectGroup(group.value)}
-              className={`rounded-[1.25rem] border p-3 text-left transition ${
+              className={`rounded-[1.1rem] border p-2.5 text-left transition ${
                 isActive
                   ? 'border-[var(--color-primary)] bg-[var(--color-secondary)]/60 shadow-[0_12px_28px_rgba(26,26,26,0.08)]'
                   : 'border-black/7 bg-white hover:border-[var(--color-primary)]/35 hover:bg-[var(--color-secondary)]/30'
@@ -100,23 +100,23 @@ export function ClosetGroupBrowser({
               aria-pressed={isActive}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
+                <div className="flex min-w-0 items-start gap-2.5">
                   {mode === 'category' ? <ClosetCategoryIcon category={group.label} /> : <ClosetColorIcon color={group.label} />}
                   <div className="min-w-0">
-                    <p className="text-base font-semibold text-[var(--color-neutral-dark)]">{group.label}</p>
-                    <p className="text-xs text-[var(--color-neutral-dark)]">
+                    <p className="text-sm font-semibold text-[var(--color-neutral-dark)]">{group.label}</p>
+                    <p className="text-[11px] text-[var(--color-neutral-dark)]">
                       {group.count} 件{mode === 'category' ? '同类单品' : '同色单品'}
                     </p>
                   </div>
                 </div>
-                <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-[var(--color-neutral-dark)] shadow-sm">
+                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-neutral-dark)] shadow-sm">
                   {modeLabel}
                 </span>
               </div>
 
-              <div className="mt-3 grid grid-cols-4 gap-2">
+              <div className="mt-2.5 grid grid-cols-4 gap-1.5">
                 {group.items.slice(0, 8).map((item) => (
-                  <div key={item.id} className="aspect-square overflow-hidden rounded-[0.9rem] bg-[var(--color-secondary)]">
+                  <div key={item.id} className="aspect-square overflow-hidden rounded-[0.75rem] bg-[var(--color-secondary)]">
                     {item.imageUrl ? (
                       <img src={item.imageUrl} alt={`${group.label} 缩略图`} className="h-full w-full object-cover" />
                     ) : (

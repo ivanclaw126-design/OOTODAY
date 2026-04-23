@@ -79,21 +79,21 @@ export function TravelPage({
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[1.8rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">
+          <div className="overflow-hidden rounded-[1.8rem] border border-[var(--color-line)] bg-[#111111] p-4 text-white shadow-[var(--shadow-strong)]">
             <div className="grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.6fr)]">
               <label className="flex min-w-0 w-full flex-col gap-2 text-sm">
-                <span className="font-medium text-white/74">目的地城市</span>
+                <span className="font-medium text-white/82">目的地城市</span>
                 <input
                   name="city"
                   value={draftCity}
                   onChange={(event) => setDraftCity(event.target.value)}
                   placeholder="例如：东京"
-                  className="w-full min-w-0 rounded-[1rem] border border-white/10 bg-white/8 px-3 py-3 text-white placeholder:text-white/32"
+                  className="w-full min-w-0 rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white placeholder:text-white/45"
                 />
               </label>
 
               <label className="flex min-w-0 w-full flex-col gap-2 text-sm">
-                <span className="font-medium text-white/74">出行天数</span>
+                <span className="font-medium text-white/82">出行天数</span>
                 <input
                   name="days"
                   type="number"
@@ -101,13 +101,13 @@ export function TravelPage({
                   max={14}
                   value={draftDays}
                   onChange={(event) => setDraftDays(event.target.value)}
-                  className="w-full min-w-0 rounded-[1rem] border border-white/10 bg-white/8 px-3 py-3 text-white"
+                  className="w-full min-w-0 rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white"
                 />
               </label>
             </div>
 
             <fieldset className="mt-4 flex flex-col gap-3">
-              <legend className="text-sm font-medium text-white/74">行程场景</legend>
+              <legend className="text-sm font-medium text-white/82">行程场景</legend>
               <div className="flex flex-wrap gap-2">
                 {sceneOptions.map((scene) => (
                   <label
@@ -115,7 +115,7 @@ export function TravelPage({
                     className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition ${
                       draftScenes.includes(scene)
                         ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-primary)]'
-                        : 'border-white/12 bg-white/8 text-white/82'
+                        : 'border-white/18 bg-white/10 text-white'
                     }`}
                   >
                     <input
@@ -183,24 +183,24 @@ export function TravelPage({
             </Card>
           ) : null}
 
-          <Card className="overflow-hidden bg-[var(--color-panel)] text-white shadow-[var(--shadow-strong)]">
+          <Card className="overflow-hidden bg-[#111111] text-white shadow-[var(--shadow-strong)]">
             <div className="flex flex-col gap-4">
               <div className="space-y-2">
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/58">Trip Summary</p>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/70">Trip Summary</p>
                 <p className="text-3xl font-semibold tracking-[-0.06em] text-white">
                   {view.plan.destinationCity} · {view.plan.days} 天
                 </p>
-                <p className="text-sm leading-6 text-white/68">{view.plan.scenes.join(' / ') || '默认日常场景'}</p>
+                <p className="text-sm leading-6 text-white/82">{view.plan.scenes.join(' / ') || '默认日常场景'}</p>
               </div>
 
               <div className="grid gap-3 md:grid-cols-3">
-                <div className="rounded-[1.4rem] border border-white/10 bg-white/4 p-4">
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/56">Core Looks</p>
+                <div className="rounded-[1.4rem] border border-white/18 bg-white/6 p-4">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/70">Core Looks</p>
                   <p className="mt-2 text-4xl font-semibold tracking-[-0.08em] text-[var(--color-accent)]">{view.plan.suggestedOutfitCount}</p>
                 </div>
-                <div className="rounded-[1.4rem] border border-white/10 bg-white/4 p-4 md:col-span-2">
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/56">Weather Read</p>
-                  <p className="mt-2 text-sm leading-6 text-white/72">
+                <div className="rounded-[1.4rem] border border-white/18 bg-white/6 p-4 md:col-span-2">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/70">Weather Read</p>
+                  <p className="mt-2 text-sm leading-6 text-white/84">
                     {view.plan.weather
                       ? `${view.plan.weather.city} · ${view.plan.weather.temperatureC}°C · ${view.plan.weather.conditionLabel}`
                       : '当前天气暂时不可用，已按场景和衣橱稳定度降级生成'}

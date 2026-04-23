@@ -61,10 +61,10 @@ export default async function ClosetRoute() {
     return reanalyzeClosetItemAction(input)
   }
 
-  async function toggleImageFlip(input: { itemId: string; imageFlipped: boolean }): Promise<void> {
+  async function toggleImageFlip(input: { itemId: string; imageFlipped: boolean }): Promise<{ persisted: boolean }> {
     'use server'
 
-    await toggleClosetItemImageFlipAction(input)
+    return toggleClosetItemImageFlipAction(input)
   }
 
   await ensureProfile(userId)

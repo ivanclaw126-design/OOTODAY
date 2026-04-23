@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { BottomNav } from '@/components/bottom-nav'
 
-const appRoutes = ['/today', '/closet', '/travel', '/inspiration', '/shop'] as const
+const appRoutes = ['/closet', '/travel', '/today', '/inspiration', '/shop'] as const
 
 function isAppRoute(pathname: string) {
   return appRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))

@@ -175,7 +175,9 @@ export async function toggleClosetItemImageFlipAction(input: { itemId: string; i
     imageFlipped: input.imageFlipped
   })
 
-  revalidatePath('/closet')
+  if (data.persisted !== false) {
+    revalidatePath('/closet')
+  }
 
   return data
 }

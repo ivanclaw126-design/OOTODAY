@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OOTODAY Editorial Style Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: #f4f1eb;
+        --paper-strong: #ebe7df;
+        --ink: #0a0a0a;
+        --ink-soft: #1d1d1d;
+        --panel: #121212;
+        --panel-soft: #1d1d1d;
+        --line: rgba(10, 10, 10, 0.14);
+        --line-soft: rgba(255, 255, 255, 0.12);
+        --acid: #e7ff37;
+        --acid-soft: rgba(231, 255, 55, 0.18);
+        --muted: rgba(10, 10, 10, 0.48);
+        --shadow: 0 28px 90px rgba(0, 0, 0, 0.28);
+        --radius-phone: 34px;
+        --radius-card: 28px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top left, rgba(231, 255, 55, 0.14), transparent 28%),
+          radial-gradient(circle at bottom right, rgba(123, 160, 255, 0.12), transparent 34%),
+          #0c0d0b;
+        color: var(--paper);
+        font-family: "Manrope", "Helvetica Neue", sans-serif;
+      }
+
+      body {
+        padding: 40px 18px 72px;
+      }
+
+      .page {
+        max-width: 1500px;
+        margin: 0 auto;
+      }
+
+      .intro {
+        display: grid;
+        gap: 18px;
+        margin: 0 auto 36px;
+        max-width: 980px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        width: fit-content;
+        padding: 8px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 960px;
+        color: #faf7f1;
+        font-family: "Archivo", "Helvetica Neue", sans-serif;
+        font-size: clamp(40px, 6vw, 92px);
+        font-weight: 900;
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+        text-transform: uppercase;
+      }
+
+      .intro p {
+        margin: 0;
+        max-width: 760px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 17px;
+        line-height: 1.75;
+      }
+
+      .notes {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 8px;
+      }
+
+      .note {
+        padding: 18px 18px 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.035);
+        backdrop-filter: blur(14px);
+      }
+
+      .note strong {
+        display: block;
+        margin-bottom: 8px;
+        color: #fbfaf7;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .note span {
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(260px, 1fr));
+        gap: 22px;
+      }
+
+      .phone {
+        position: relative;
+        min-height: 860px;
+        padding: 14px;
+        border-radius: 40px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04));
+        box-shadow: var(--shadow);
+      }
+
+      .phone-shell {
+        position: relative;
+        height: 100%;
+        overflow: hidden;
+        border-radius: var(--radius-phone);
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.08), transparent 22%),
+          var(--paper);
+      }
+
+      .screen {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        color: var(--ink);
+      }
+
+      .top {
+        padding: 20px 20px 18px;
+      }
+
+      .topbar,
+      .row-between {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .topbar {
+        margin-bottom: 20px;
+      }
+
+      .tiny {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .icon-button,
+      .icon-left {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        font-size: 14px;
+      }
+
+      .icon-left {
+        border: none;
+        font-size: 26px;
+      }
+
+      .headline {
+        margin: 0 0 18px;
+        font-family: "Archivo", "Helvetica Neue", sans-serif;
+        font-size: 26px;
+        font-weight: 900;
+        line-height: 0.96;
+        letter-spacing: -0.06em;
+        text-transform: uppercase;
+      }
+
+      .chip-row {
+        display: flex;
+        gap: 10px;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      .chip {
+        padding: 10px 16px;
+        border: 1px solid rgba(10, 10, 10, 0.16);
+        border-radius: 999px;
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: transparent;
+      }
+
+      .chip.active {
+        border-color: #000;
+        color: #fff;
+        background: #000;
+      }
+
+      .hero {
+        position: relative;
+        min-height: 280px;
+        margin-top: 18px;
+        border-radius: 38px;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.08), transparent),
+          linear-gradient(140deg, #b1d8da, #e7d8a5 62%, #f6c838);
+      }
+
+      .hero::before {
+        content: "";
+        position: absolute;
+        left: -12%;
+        bottom: -6%;
+        width: 54%;
+        height: 72%;
+        border-radius: 45% 55% 18% 18%;
+        border: 10px solid rgba(31, 55, 55, 0.58);
+        border-top-width: 8px;
+        border-right-color: transparent;
+        border-bottom-color: rgba(31, 55, 55, 0.64);
+        transform: rotate(24deg);
+        opacity: 0.7;
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        right: 18%;
+        top: 10%;
+        width: 34%;
+        height: 76%;
+        border-radius: 36% 36% 28% 28%;
+        background:
+          radial-gradient(circle at 52% 14%, #d8a56f 0 10%, transparent 10.4%),
+          radial-gradient(circle at 48% 5%, #efc568 0 14%, transparent 14.5%),
+          radial-gradient(circle at 50% 18%, #f0bf23 0 21%, transparent 21.4%),
+          linear-gradient(180deg, #e6bc22 0 38%, #d8b025 38% 100%);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.14);
+      }
+
+      .hero-copy {
+        position: absolute;
+        left: 20px;
+        bottom: 18px;
+        z-index: 2;
+      }
+
+      .hero-copy strong,
+      .section-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+      }
+
+      .hero-copy h2,
+      .panel h2 {
+        margin: 0;
+        font-family: "Archivo", "Helvetica Neue", sans-serif;
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+      }
+
+      .dark-panel {
+        flex: 1;
+        margin-top: -6px;
+        padding: 28px 20px 102px;
+        border-radius: 36px 36px 0 0;
+        background: #070707;
+        color: #f7f4ef;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .score {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .score strong {
+        font-family: "Archivo", "Helvetica Neue", sans-serif;
+        font-size: 58px;
+        line-height: 0.9;
+        letter-spacing: -0.07em;
+      }
+
+      .subcopy {
+        color: rgba(255, 255, 255, 0.62);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .accent-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 8px;
+        border-radius: 50%;
+        background: var(--acid);
+        box-shadow: 0 0 18px rgba(231, 255, 55, 0.62);
+      }
+
+      .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .mini-card,
+      .wide-card,
+      .metrics-card,
+      .story-card {
+        border-radius: 24px;
+        background: #1a1a1a;
+        border: 1px solid var(--line-soft);
+      }
+
+      .mini-card {
+        padding: 14px;
+      }
+
+      .mini-thumb,
+      .square-thumb {
+        height: 138px;
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)),
+          #272727;
+      }
+
+      .mini-meta {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .mini-meta h3,
+      .wide-copy h3,
+      .profile-name,
+      .story-card h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.1;
+      }
+
+      .mini-meta span,
+      .wide-copy span,
+      .story-card span,
+      .metrics-card span,
+      .preference-chip {
+        color: rgba(255, 255, 255, 0.64);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .round-arrow {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+      }
+
+      .wide-card {
+        display: grid;
+        grid-template-columns: 80px 1fr 40px;
+        align-items: center;
+        gap: 14px;
+        margin-top: 12px;
+        padding: 16px;
+      }
+
+      .wide-thumb {
+        width: 80px;
+        height: 80px;
+        border-radius: 18px;
+        background: #292929;
+      }
+
+      .nav {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+        bottom: 18px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        padding: 10px;
+        border-radius: 999px;
+        background: rgba(245, 243, 236, 0.96);
+        box-shadow: 0 16px 35px rgba(0, 0, 0, 0.16);
+      }
+
+      .nav span {
+        display: grid;
+        place-items: center;
+        min-height: 44px;
+        border-radius: 999px;
+        color: #111;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .nav .current {
+        color: #fff;
+        background: #050505;
+      }
+
+      .identity {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+
+      .avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 50% 32%, #d8b698 0 18%, transparent 18.5%),
+          radial-gradient(circle at 48% 22%, #4b3428 0 22%, transparent 22.4%),
+          linear-gradient(180deg, #d1d0cb, #8e8e8e);
+        border: 2px solid #0f0f0f;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #080808;
+        color: var(--acid);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .metrics-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: 16px 0 20px;
+      }
+
+      .metrics-card {
+        padding: 16px 12px;
+        text-align: center;
+      }
+
+      .metrics-card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--acid);
+        font-family: "Archivo", "Helvetica Neue", sans-serif;
+        font-size: 30px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.05em;
+      }
+
+      .section-block {
+        margin-top: 18px;
+      }
+
+      .preference-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .preference-chip {
+        padding: 10px 14px;
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 999px;
+        color: #fff;
+      }
+
+      .preference-chip.active {
+        border-color: transparent;
+        color: #111;
+        background: var(--acid);
+      }
+
+      .story-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .story-card {
+        overflow: hidden;
+      }
+
+      .story-image {
+        position: relative;
+        height: 140px;
+        background:
+          radial-gradient(circle at 50% 22%, rgba(235,220,197,0.85) 0 10%, transparent 10.4%),
+          radial-gradient(circle at 48% 12%, rgba(92,61,41,0.9) 0 14%, transparent 14.4%),
+          linear-gradient(180deg, #d8cfbe, #9c8e7a);
+      }
+
+      .story-image.sky {
+        background:
+          radial-gradient(circle at 50% 32%, rgba(222,193,162,0.88) 0 10%, transparent 10.4%),
+          radial-gradient(circle at 48% 22%, rgba(76,67,53,0.9) 0 13%, transparent 13.4%),
+          radial-gradient(circle at 50% 52%, rgba(50, 50, 50, 0.22) 0 24%, transparent 24.4%),
+          linear-gradient(180deg, #90cbe6, #dcc6a3);
+      }
+
+      .story-image.rose {
+        background:
+          radial-gradient(circle at 50% 24%, rgba(238, 214, 201, 0.86) 0 10%, transparent 10.4%),
+          radial-gradient(circle at 48% 15%, rgba(88, 76, 74, 0.9) 0 13%, transparent 13.4%),
+          linear-gradient(180deg, #e8c9c8, #b48d8d);
+      }
+
+      .story-tag {
+        position: absolute;
+        left: 8px;
+        bottom: 8px;
+        padding: 5px 8px;
+        border-radius: 999px;
+        background: rgba(8, 8, 8, 0.78);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .story-body {
+        padding: 10px 10px 12px;
+      }
+
+      .banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 18px;
+        border-radius: 28px;
+        background: var(--acid);
+        color: #111;
+      }
+
+      .banner strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .banner h3 {
+        margin: 0;
+        font-family: "Archivo", "Helvetica Neue", sans-serif;
+        font-size: 26px;
+        font-weight: 800;
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+      }
+
+      .circle-button {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1px solid rgba(10,10,10,0.2);
+      }
+
+      .post-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .post {
+        overflow: hidden;
+        border-radius: 26px;
+        border: 1px solid var(--line-soft);
+        background: #141414;
+      }
+
+      .post-media {
+        position: relative;
+        height: 212px;
+      }
+
+      .post-media.warm {
+        background:
+          radial-gradient(circle at 54% 22%, rgba(233, 214, 194, 0.86) 0 9%, transparent 9.4%),
+          radial-gradient(circle at 52% 12%, rgba(96, 69, 52, 0.92) 0 14%, transparent 14.4%),
+          linear-gradient(180deg, #d8bf9d, #a87a52);
+      }
+
+      .post-media.pink {
+        background:
+          radial-gradient(circle at 54% 22%, rgba(239, 219, 214, 0.9) 0 9%, transparent 9.4%),
+          radial-gradient(circle at 52% 12%, rgba(84, 63, 62, 0.92) 0 13%, transparent 13.4%),
+          linear-gradient(180deg, #ebcfdf, #c08aa0);
+      }
+
+      .fit-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 8px;
+        border-radius: 999px;
+        background: rgba(8,8,8,0.82);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .post-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 10px;
+        color: rgba(255,255,255,0.82);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .post-user {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .mini-avatar {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: linear-gradient(180deg, #f3d7c1, #97654c);
+      }
+
+      .spec-strip {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .spec-card {
+        padding: 18px;
+        border-radius: 26px;
+        background: #161616;
+        border: 1px solid var(--line-soft);
+      }
+
+      .spec-card h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .spec-card p {
+        margin: 0;
+        color: rgba(255,255,255,0.6);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .accent-card {
+        display: grid;
+        place-items: center;
+        border-radius: 26px;
+        background: var(--acid);
+        color: #111;
+        font-family: "Archivo", "Helvetica Neue", sans-serif;
+        font-size: 42px;
+        font-weight: 800;
+        letter-spacing: -0.08em;
+      }
+
+      .footer-note {
+        margin-top: 28px;
+        text-align: center;
+        color: rgba(255,255,255,0.58);
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 1200px) {
+        .gallery {
+          grid-template-columns: repeat(2, minmax(280px, 1fr));
+        }
+
+        .notes {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 22px 14px 54px;
+        }
+
+        .gallery {
+          grid-template-columns: 1fr;
+        }
+
+        .phone {
+          min-height: 812px;
+        }
+
+        .headline {
+          font-size: 24px;
+        }
+
+        .story-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="intro">
+        <span class="eyebrow">OOTODAY / Editorial Preview</span>
+        <h1>Future wardrobe OS, reframed like a fashion editorial app.</h1>
+        <p>
+          这版不是在复刻你给的图，而是把它的视觉语言翻译成 OOTODAY 自己的前端风格：
+          更像一本会动的时尚决策杂志，顶部留白克制，内容区大块黑底收口，用酸性黄绿色做 AI 判断和状态强调。
+        </p>
+        <div class="notes">
+          <div class="note">
+            <strong>Visual Thesis</strong>
+            <span>杂志排版感 + AI lab 冷感 + 衣橱工具的秩序感，整体更像高端 fashion utility，而不是普通效率应用。</span>
+          </div>
+          <div class="note">
+            <strong>Content Plan</strong>
+            <span>Today 负责造情绪，Closet 负责工具入口，Discover 负责灵感社区，Profile 负责个人风格资产沉淀。</span>
+          </div>
+          <div class="note">
+            <strong>Motion Thesis</strong>
+            <span>后续如果你确认这条方向，真实产品里建议加首屏分层 reveal、底栏滑块位移、黑白区块之间的轻微 parallax。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="gallery">
+        <article class="phone">
+          <div class="phone-shell">
+            <div class="screen">
+              <div class="top">
+                <div class="topbar">
+                  <div class="icon-left">☆</div>
+                  <div class="tiny">V1.0 / Daily Engine</div>
+                  <div class="icon-button">⌕</div>
+                </div>
+                <h2 class="headline">: // Select Your Daily Aesthetic</h2>
+                <div class="chip-row">
+                  <span class="chip active">All Looks</span>
+                  <span class="chip">Minimal</span>
+                  <span class="chip">City Soft</span>
+                  <span class="chip">Sharp Casual</span>
+                </div>
+                <div class="hero">
+                  <div class="hero-copy">
+                    <strong>Analysis Tool</strong>
+                    <h2>Scan Your Closet</h2>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dark-panel">
+                <div class="metrics">
+                  <div class="score">
+                    <strong>94%</strong>
+                    <div class="subcopy"><span class="accent-dot"></span>Match confidence</div>
+                  </div>
+                  <div class="score" style="align-items:flex-end; justify-content:flex-end;">
+                    <div class="section-label">Suggestions</div>
+                    <div class="subcopy">based on weather / mood / scene</div>
+                  </div>
+                </div>
+
+                <div class="mini-grid">
+                  <div class="mini-card">
+                    <div class="mini-thumb"></div>
+                    <div class="mini-meta">
+                      <div>
+                        <h3>Soft Boxy Tee</h3>
+                        <span>Essential</span>
+                      </div>
+                      <div class="round-arrow">→</div>
+                    </div>
+                  </div>
+                  <div class="mini-card">
+                    <div class="mini-thumb"></div>
+                    <div class="mini-meta">
+                      <div>
+                        <h3>Wide Trousers</h3>
+                        <span>Archive</span>
+                      </div>
+                      <div class="round-arrow">→</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="wide-card">
+                  <div class="wide-thumb"></div>
+                  <div class="wide-copy">
+                    <h3>Light Shell Outerwear</h3>
+                    <span>Rainy day balance</span>
+                  </div>
+                  <div class="circle-button">↗</div>
+                </div>
+              </div>
+
+              <nav class="nav">
+                <span class="current">Home</span>
+                <span>Closet</span>
+                <span>AI Lab</span>
+                <span>Profile</span>
+              </nav>
+            </div>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="phone-shell">
+            <div class="screen">
+              <div class="top">
+                <div class="topbar">
+                  <div class="icon-left">☆</div>
+                  <div class="tiny">V1.0 / Closet Archive</div>
+                  <div class="icon-button">＋</div>
+                </div>
+                <h2 class="headline">: // Scan, Sort, Track Your Core Pieces</h2>
+                <div class="hero" style="background: linear-gradient(145deg, #b7d3d7, #d2d1c6 56%, #f0ebd6);">
+                  <div class="hero-copy">
+                    <strong>Wardrobe Index</strong>
+                    <h2>Build Your Personal Archive</h2>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dark-panel">
+                <div class="banner">
+                  <div>
+                    <strong>Scan Queue</strong>
+                    <h3>27 Clean Pieces</h3>
+                  </div>
+                  <div class="circle-button">→</div>
+                </div>
+
+                <div class="spec-strip">
+                  <div class="spec-card">
+                    <div class="section-label">Color System</div>
+                    <h3>Neutrals are carrying 68% of the wardrobe.</h3>
+                    <p>当前最适合先强化一件浅灰外层和一条结构更利落的深色裤装。</p>
+                  </div>
+                  <div class="accent-card">68%</div>
+                </div>
+
+                <div class="mini-grid" style="margin-top: 16px;">
+                  <div class="mini-card">
+                    <div class="mini-thumb"></div>
+                    <div class="mini-meta">
+                      <div>
+                        <h3>Cropped Shirt</h3>
+                        <span>Top / White</span>
+                      </div>
+                      <div class="round-arrow">→</div>
+                    </div>
+                  </div>
+                  <div class="mini-card">
+                    <div class="mini-thumb"></div>
+                    <div class="mini-meta">
+                      <div>
+                        <h3>Loose Denim</h3>
+                        <span>Bottom / Blue</span>
+                      </div>
+                      <div class="round-arrow">→</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <nav class="nav">
+                <span>Home</span>
+                <span class="current">Closet</span>
+                <span>AI Lab</span>
+                <span>Profile</span>
+              </nav>
+            </div>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="phone-shell">
+            <div class="screen">
+              <div class="top">
+                <div class="topbar">
+                  <div class="icon-left">☆</div>
+                  <div class="tiny">Global Feed / Discover</div>
+                  <div class="icon-button">＋</div>
+                </div>
+                <h2 class="headline">: // Trending Community Flow</h2>
+                <div class="chip-row">
+                  <span class="chip active">Featured</span>
+                  <span class="chip">Following</span>
+                  <span class="chip">Streetwear</span>
+                  <span class="chip">Quiet Luxury</span>
+                </div>
+              </div>
+
+              <div class="dark-panel" style="margin-top: 6px;">
+                <div class="banner">
+                  <div>
+                    <strong>Weekly Trend</strong>
+                    <h3># City_Core</h3>
+                  </div>
+                  <div class="circle-button">↗</div>
+                </div>
+
+                <div class="post-grid">
+                  <div class="post">
+                    <div class="post-media warm">
+                      <div class="fit-badge">89% fit</div>
+                    </div>
+                    <div class="post-meta">
+                      <span class="post-user"><i class="mini-avatar"></i>@elena_v</span>
+                      <span>♥ 1.2k</span>
+                    </div>
+                  </div>
+                  <div class="post">
+                    <div class="post-media pink"></div>
+                    <div class="post-meta">
+                      <span class="post-user"><i class="mini-avatar"></i>@lina.style</span>
+                      <span>♥ 842</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="spec-strip">
+                  <div class="spec-card">
+                    <div class="section-label">Recreate</div>
+                    <h3>OOTODAY can break the look into pieces you already own.</h3>
+                    <p>这里后续适合接你现在 Inspiration 的“我的版本怎么穿”和借用匹配能力。</p>
+                  </div>
+                  <div class="accent-card">AI</div>
+                </div>
+              </div>
+
+              <nav class="nav">
+                <span>Home</span>
+                <span>Closet</span>
+                <span class="current">AI Lab</span>
+                <span>Profile</span>
+              </nav>
+            </div>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="phone-shell">
+            <div class="screen">
+              <div class="top">
+                <div class="topbar">
+                  <div class="icon-left">☆</div>
+                  <div class="tiny">V1.0 / User Account</div>
+                  <div class="icon-button">⚙</div>
+                </div>
+                <h2 class="headline">: // Personal Archive</h2>
+              </div>
+
+              <div class="dark-panel" style="margin-top: 26px;">
+                <div class="identity">
+                  <div class="avatar"></div>
+                  <div>
+                    <div class="profile-name" style="font-size: 20px; color: #fff;">Alex Rivers</div>
+                    <div class="badge"><span class="accent-dot" style="margin-right:0; width:8px; height:8px;"></span>Pro member</div>
+                  </div>
+                </div>
+
+                <div class="section-block">
+                  <div class="row-between">
+                    <div class="section-label">Body Metrics</div>
+                    <div class="subcopy">Edit</div>
+                  </div>
+                  <div class="metrics-row">
+                    <div class="metrics-card">
+                      <strong>182</strong>
+                      <span>Height (cm)</span>
+                    </div>
+                    <div class="metrics-card">
+                      <strong>74</strong>
+                      <span>Weight (kg)</span>
+                    </div>
+                    <div class="metrics-card">
+                      <strong>L</strong>
+                      <span>Top size</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="section-block">
+                  <div class="section-label">Style Preferences</div>
+                  <div class="preference-list">
+                    <span class="preference-chip">Minimalist</span>
+                    <span class="preference-chip active">Cyberpunk</span>
+                    <span class="preference-chip">Techwear</span>
+                    <span class="preference-chip">Archive</span>
+                    <span class="preference-chip">Monochrome</span>
+                  </div>
+                </div>
+
+                <div class="section-block">
+                  <div class="row-between">
+                    <div class="section-label">Fit History</div>
+                    <div class="subcopy">View all</div>
+                  </div>
+                  <div class="story-grid">
+                    <div class="story-card">
+                      <div class="story-image">
+                        <div class="story-tag">Oct 24</div>
+                      </div>
+                      <div class="story-body">
+                        <h3>Clean Tailoring</h3>
+                        <span>liked fit</span>
+                      </div>
+                    </div>
+                    <div class="story-card">
+                      <div class="story-image sky">
+                        <div class="story-tag">Oct 22</div>
+                      </div>
+                      <div class="story-body">
+                        <h3>Airy Layers</h3>
+                        <span>saved look</span>
+                      </div>
+                    </div>
+                    <div class="story-card">
+                      <div class="story-image rose">
+                        <div class="story-tag">Oct 18</div>
+                      </div>
+                      <div class="story-body">
+                        <h3>Graphic Mood</h3>
+                        <span>archived</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <nav class="nav">
+                <span>Home</span>
+                <span>Closet</span>
+                <span>AI Lab</span>
+                <span class="current">Profile</span>
+              </nav>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <div class="footer-note">Preview only · local editorial direction study for OOTODAY</div>
+    </main>
+  </body>
+</html>
