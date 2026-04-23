@@ -1,10 +1,13 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import {
+  getColorIntensity,
+  hasSameColorFamily,
   isBottomCategory,
   isNeutralColor,
   isOnePieceCategory,
   isOuterwearCategory,
   isTopCategory,
+  isVividColor,
   scoreColorCompatibility
 } from '@/lib/closet/taxonomy'
 import type { TodayRecommendation, TodayRecommendationItem, TodayWeather } from '@/lib/today/types'
@@ -108,6 +111,9 @@ function buildPairReason(top: ClosetItemCardData, bottom: ClosetItemCardData, we
   const parts: string[] = []
   const colorScore = scoreColorCompatibility(top.colorCategory, bottom.colorCategory)
   const sharedTag = top.styleTags.find((tag) => bottom.styleTags.includes(tag))
+  const topIntensity = getColorIntensity(top.colorCategory)
+  const bottomIntensity = getColorIntensity(bottom.colorCategory)
+  const vividCount = [top, bottom].filter((item) => isVividColor(item.colorCategory)).length
 
   if (weather?.isWarm) {
     parts.push('天气偏暖，优先轻量组合')
@@ -117,14 +123,24 @@ function buildPairReason(top: ClosetItemCardData, bottom: ClosetItemCardData, we
     parts.push('天气偏冷，建议加一层外套')
   }
 
-  if (colorScore >= 3) {
-    parts.push('颜色关系稳定，适合直接出门')
+  if (hasSameColorFamily(top.colorCategory, bottom.colorCategory) && top.colorCategory !== bottom.colorCategory) {
+    parts.push('同色系深浅搭配，层次更自然')
+  } else if (colorScore >= 3 && (isNeutralColor(top.colorCategory) || isNeutralColor(bottom.colorCategory))) {
+    parts.push('用基础色做主轴，整套更稳')
   } else if (colorScore >= 2) {
-    parts.push('颜色有层次，整套不会太平')
+    parts.push('颜色有呼应，日常直接穿也不容易出错')
   } else if (colorScore === 1) {
     parts.push('配色更有存在感，适合想要一点变化')
   } else {
     parts.push('先靠基础轮廓稳住，再用配饰补完成度')
+  }
+
+  if (vividCount === 1) {
+    parts.push('把亮色控制在一处，重点更清楚')
+  } else if (vividCount > 1) {
+    parts.push('整套颜色存在感更强，适合想穿得更有变化')
+  } else if (topIntensity === 'muted' && bottomIntensity === 'muted') {
+    parts.push('低饱和组合更显轻松和高级')
   }
 
   if (sharedTag) {
@@ -137,9 +153,12 @@ function buildPairReason(top: ClosetItemCardData, bottom: ClosetItemCardData, we
 }
 
 function buildDressReason(dress: ClosetItemCardData, outerLayer: ClosetItemCardData | null, weather: TodayWeather | null) {
+  const dressIntensity = getColorIntensity(dress.colorCategory)
   const parts = [
     weather?.isCold ? '天气偏冷，建议叠加外套' : '一件完成主造型，省决策成本',
     outerLayer && scoreColorCompatibility(dress.colorCategory, outerLayer.colorCategory) >= 2 ? '外层和主件颜色衔接自然' : '',
+    dressIntensity === 'vivid' ? '主件颜色已经足够有重点，其他部分可以收一收' : '',
+    dressIntensity === 'muted' ? '低饱和主件更适合直接做整套核心' : '',
     dress.styleTags[0] ? `风格偏${dress.styleTags[0]}` : ''
   ]
 
@@ -197,6 +216,7 @@ export function generateTodayRecommendations(
         reason: buildReason([
           weather?.isWarm ? '天气偏暖，先从轻便上装开始' : '',
           weather?.isCold ? '天气偏冷，建议先补下装或外套再完善整套' : '',
+          isVividColor(top.colorCategory) ? '这件颜色存在感更强，后续更适合配基础下装' : '先用基础单品起一套思路',
           '先用已有单品起一套思路'
         ]),
         top: toRecommendationItem(top),

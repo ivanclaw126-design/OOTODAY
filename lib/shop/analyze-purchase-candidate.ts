@@ -1,5 +1,16 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
-import { isBottomCategory, isOnePieceCategory, isOuterwearCategory, isTopCategory, normalizeCategoryValue } from '@/lib/closet/taxonomy'
+import {
+  getOutfitColorRole,
+  hasSameColorFamily,
+  isBottomCategory,
+  isNeutralColor,
+  isOnePieceCategory,
+  isOuterwearCategory,
+  isTopCategory,
+  isVividColor,
+  normalizeCategoryValue,
+  scoreColorCompatibility
+} from '@/lib/closet/taxonomy'
 import type { ShopCandidateItem, ShopPurchaseAnalysis } from '@/lib/shop/types'
 
 const supportedFashionCategories = ['上装', '下装', '全身装', '外套'] as const
@@ -102,6 +113,38 @@ function getMissingCategoryHints(candidate: ShopCandidateItem, closetItems: Clos
   return hints
 }
 
+function buildColorStrategyHints(candidate: ShopCandidateItem, closetItems: ClosetItemCardData[]) {
+  const hints: string[] = []
+  const candidateRole = getOutfitColorRole(candidate.colorCategory)
+  const compatibleClosetItems = closetItems.filter(
+    (item) => scoreColorCompatibility(candidate.colorCategory, item.colorCategory) >= 2
+  )
+  const sameFamilyCount = compatibleClosetItems.filter((item) =>
+    hasSameColorFamily(candidate.colorCategory, item.colorCategory)
+  ).length
+  const neutralCount = closetItems.filter((item) => isNeutralColor(item.colorCategory)).length
+
+  if (candidateRole === 'base') {
+    hints.push('这件属于基础色角色，更容易接入现有衣橱做主轴')
+  } else if (candidateRole === 'accent') {
+    hints.push('这件颜色存在感更强，更适合做一套里的重点')
+  } else {
+    hints.push('这件颜色适合作为过渡层，能帮基础色穿得不那么平')
+  }
+
+  if (sameFamilyCount >= 2) {
+    hints.push('你衣橱里已经有同色系可呼应的单品，买回来自然更容易成套')
+  } else if (neutralCount >= 2 && candidateRole !== 'base') {
+    hints.push('你衣橱里的基础色够用，能把这件单品稳稳托住')
+  }
+
+  if (isVividColor(candidate.colorCategory)) {
+    hints.push('如果入手它，建议整套只保留这一处亮点')
+  }
+
+  return hints
+}
+
 function getDuplicateRisk(candidate: ShopCandidateItem, duplicateItems: ClosetItemCardData[]) {
   const exactCount = duplicateItems.filter((item) => item.subCategory === candidate.subCategory).length
 
@@ -119,7 +162,8 @@ function getDuplicateRisk(candidate: ShopCandidateItem, duplicateItems: ClosetIt
 function buildRecommendation(
   duplicateRisk: 'low' | 'medium' | 'high',
   estimatedOutfitCount: number,
-  missingCategoryHints: string[]
+  missingCategoryHints: string[],
+  colorStrategyHints: string[]
 ) {
   if (duplicateRisk === 'high') {
     return {
@@ -131,7 +175,9 @@ function buildRecommendation(
   if (estimatedOutfitCount >= 3 && duplicateRisk === 'low') {
     return {
       recommendation: 'buy' as const,
-      recommendationReason: '它和现有衣橱能快速接上，新增后大概率能立刻穿起来。'
+      recommendationReason: colorStrategyHints[0]
+        ? `它和现有衣橱能快速接上，新增后大概率能立刻穿起来。${colorStrategyHints[0]}。`
+        : '它和现有衣橱能快速接上，新增后大概率能立刻穿起来。'
     }
   }
 
@@ -144,7 +190,14 @@ function buildRecommendation(
 
   return {
     recommendation: 'consider' as const,
-    recommendationReason: duplicateRisk === 'medium' ? '它能补充搭配，但和现有单品有一定重叠，适合再想一下。' : '它可以补充现有衣橱，但收益还没有高到闭眼入。'
+    recommendationReason:
+      duplicateRisk === 'medium'
+        ? colorStrategyHints[0]
+          ? `它能补充搭配，但和现有单品有一定重叠，适合再想一下。${colorStrategyHints[0]}。`
+          : '它能补充搭配，但和现有单品有一定重叠，适合再想一下。'
+        : colorStrategyHints[0]
+          ? `它可以补充现有衣橱，但收益还没有高到闭眼入。${colorStrategyHints[0]}。`
+          : '它可以补充现有衣橱，但收益还没有高到闭眼入。'
   }
 }
 
@@ -156,10 +209,12 @@ export function analyzePurchaseCandidate(
   const duplicateRisk = getDuplicateRisk(candidate, duplicateItems)
   const estimatedOutfitCount = getEstimatedOutfitCount(candidate, closetItems)
   const missingCategoryHints = getMissingCategoryHints(candidate, closetItems)
+  const colorStrategyHints = buildColorStrategyHints(candidate, closetItems)
   const { recommendation, recommendationReason } = buildRecommendation(
     duplicateRisk,
     estimatedOutfitCount,
-    missingCategoryHints
+    missingCategoryHints,
+    colorStrategyHints
   )
 
   return {
@@ -168,6 +223,7 @@ export function analyzePurchaseCandidate(
     duplicateRisk,
     estimatedOutfitCount,
     missingCategoryHints,
+    colorStrategyHints,
     recommendation,
     recommendationReason
   }

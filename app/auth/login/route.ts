@@ -1,20 +1,47 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
+function getMagicLinkErrorCode(message: string | null | undefined) {
+  const normalizedMessage = (message ?? '').toLowerCase()
+
+  if (normalizedMessage.includes('rate limit') || normalizedMessage.includes('security purposes')) {
+    return 'magic_link_rate_limited'
+  }
+
+  if (normalizedMessage.includes('email') && normalizedMessage.includes('invalid')) {
+    return 'magic_link_invalid_email'
+  }
+
+  if (
+    normalizedMessage.includes('smtp') ||
+    normalizedMessage.includes('email provider') ||
+    normalizedMessage.includes('send email') ||
+    normalizedMessage.includes('confirmation email')
+  ) {
+    return 'magic_link_email_provider_failed'
+  }
+
+  return 'magic_link_failed'
+}
+
 async function requestMagicLink(request: Request, email: string | null) {
   const url = new URL(request.url)
 
   if (!email) {
-    return NextResponse.redirect(new URL('/', url.origin))
+    return NextResponse.redirect(new URL('/?auth_error=magic_link_missing_email', url.origin))
   }
 
   const supabase = await createSupabaseServerClient()
-  await supabase.auth.signInWithOtp({
-    email,
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim(),
     options: {
       emailRedirectTo: new URL('/auth/callback', url.origin).toString()
     }
   })
+
+  if (error) {
+    return NextResponse.redirect(new URL(`/?auth_error=${getMagicLinkErrorCode(error.message)}`, url.origin))
+  }
 
   return NextResponse.redirect(new URL('/?magic_link=sent', url.origin))
 }

@@ -81,6 +81,90 @@ describe('generateTodayRecommendations', () => {
     ).toBe(true)
   })
 
+  it('explains same-family and neutral-anchor color logic in more product-like language', () => {
+    const sameFamilyRecommendations = generateTodayRecommendations(
+      [
+        {
+          id: 'top-blue',
+          imageUrl: 'https://example.com/top-blue.jpg',
+          category: '上装',
+          subCategory: '衬衫',
+          colorCategory: '浅蓝色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'bottom-navy',
+          imageUrl: 'https://example.com/bottom-navy.jpg',
+          category: '下装',
+          subCategory: '西裤',
+          colorCategory: '藏蓝色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:01:00Z'
+        },
+        {
+          id: 'top-white',
+          imageUrl: 'https://example.com/top-white.jpg',
+          category: '上装',
+          subCategory: 'T恤',
+          colorCategory: '白色',
+          styleTags: ['基础'],
+          lastWornDate: '2026-04-21',
+          wearCount: 2,
+          createdAt: '2026-04-19T10:02:00Z'
+        },
+        {
+          id: 'bottom-black',
+          imageUrl: 'https://example.com/bottom-black.jpg',
+          category: '下装',
+          subCategory: '西裤',
+          colorCategory: '黑色',
+          styleTags: ['基础'],
+          lastWornDate: '2026-04-20',
+          wearCount: 1,
+          createdAt: '2026-04-19T10:03:00Z'
+        }
+      ],
+      null
+    )
+
+    const neutralAnchorRecommendations = generateTodayRecommendations(
+      [
+        {
+          id: 'top-red',
+          imageUrl: 'https://example.com/top-red.jpg',
+          category: '上装',
+          subCategory: '针织衫',
+          colorCategory: '红色',
+          styleTags: ['通勤'],
+          lastWornDate: '2026-04-21',
+          wearCount: 3,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'bottom-black',
+          imageUrl: 'https://example.com/bottom-black.jpg',
+          category: '下装',
+          subCategory: '西裤',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-19T10:01:00Z'
+        }
+      ],
+      null
+    )
+
+    expect(sameFamilyRecommendations.some((recommendation) => recommendation.reason.includes('同色系深浅搭配'))).toBe(true)
+    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('用基础色做主轴'))).toBe(true)
+    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('把亮色控制在一处'))).toBe(true)
+  })
+
   it('adds outer layers in cold weather when available', () => {
     const recommendations = generateTodayRecommendations(items, {
       city: 'Shanghai',

@@ -14,6 +14,7 @@ export type ShopPurchaseAnalysis = {
   duplicateRisk: 'low' | 'medium' | 'high'
   estimatedOutfitCount: number
   missingCategoryHints: string[]
+  colorStrategyHints: string[]
   recommendation: ShopPurchaseRecommendation
   recommendationReason: string
 }
