@@ -38,7 +38,11 @@ export function TravelPage({
   const [draftCity, setDraftCity] = useState(view.destinationCity ?? '')
   const [draftDays, setDraftDays] = useState(view.days ? String(view.days) : '3')
   const [draftScenes, setDraftScenes] = useState<TravelScene[]>(view.scenes)
+  const [formError, setFormError] = useState<string | null>(null)
   const router = useRouter()
+  const parsedDraftDays = Number.parseInt(draftDays, 10)
+  const isDaysValid = Number.isInteger(parsedDraftDays) && parsedDraftDays >= 1 && parsedDraftDays <= 14
+  const canGeneratePlan = draftCity.trim().length > 0 && isDaysValid
 
   async function handleDeleteSavedPlan(plan: TravelSavedPlan) {
     if (!window.confirm(`确定要删除“${plan.title}”吗？删除后这份旅行方案不会再出现在列表里。`)) {
@@ -71,7 +75,25 @@ export function TravelPage({
   return (
     <AppShell title="Travel">
       <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
-        <form action="/travel" className="flex min-w-0 flex-col gap-5">
+        <form
+          action="/travel"
+          className="flex min-w-0 flex-col gap-5"
+          onSubmit={(event) => {
+            if (!draftCity.trim()) {
+              event.preventDefault()
+              setFormError('先填目的地城市，再生成这次打包清单。')
+              return
+            }
+
+            if (!isDaysValid) {
+              event.preventDefault()
+              setFormError('出行天数需要在 1 到 14 天之间。')
+              return
+            }
+
+            setFormError(null)
+          }}
+        >
           <div className="space-y-2">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Trip Setup</p>
             <div className="space-y-2">
@@ -93,9 +115,17 @@ export function TravelPage({
                   <input
                     name="city"
                     value={draftCity}
-                    onChange={(event) => setDraftCity(event.target.value)}
+                    onChange={(event) => {
+                      setDraftCity(event.target.value)
+                      if (formError) {
+                        setFormError(null)
+                      }
+                    }}
                     placeholder="例如：东京"
-                    className="w-full min-w-0 rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white placeholder:text-white/45"
+                    aria-invalid={Boolean(formError) && !draftCity.trim()}
+                    className={`w-full min-w-0 rounded-[1rem] border bg-white/10 px-3 py-3 text-white placeholder:text-white/45 ${
+                      formError && !draftCity.trim() ? 'border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]/55' : 'border-white/18'
+                    }`}
                   />
                 </label>
 
@@ -107,8 +137,16 @@ export function TravelPage({
                     min={1}
                     max={14}
                     value={draftDays}
-                    onChange={(event) => setDraftDays(event.target.value)}
-                    className="w-full min-w-0 rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white"
+                    onChange={(event) => {
+                      setDraftDays(event.target.value)
+                      if (formError) {
+                        setFormError(null)
+                      }
+                    }}
+                    aria-invalid={Boolean(formError) && !isDaysValid}
+                    className={`w-full min-w-0 rounded-[1rem] border bg-white/10 px-3 py-3 text-white ${
+                      formError && !isDaysValid ? 'border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]/55' : 'border-white/18'
+                    }`}
                   />
                 </label>
               </div>
@@ -140,10 +178,19 @@ export function TravelPage({
             </div>
           </div>
 
+          {formError ? (
+            <p
+              role="alert"
+              className="rounded-[1rem] border border-[rgba(231,255,55,0.28)] bg-[rgba(17,17,17,0.86)] px-4 py-3 text-sm font-medium text-white"
+            >
+              {formError}
+            </p>
+          ) : null}
+
           {view.savedPlanId ? <input type="hidden" name="savedPlanId" value={view.savedPlanId} /> : null}
 
           <div className="min-w-0">
-            <PrimaryButton type="submit" className="w-full sm:w-auto">
+            <PrimaryButton type="submit" disabled={!canGeneratePlan} className="w-full sm:w-auto">
               生成打包清单
             </PrimaryButton>
           </div>

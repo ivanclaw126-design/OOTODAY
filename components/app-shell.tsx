@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="min-h-screen pb-32 md:pb-20">
+    <div className="min-h-screen pb-44 md:pb-28">
       <header className="mx-auto flex max-w-4xl flex-col gap-1 px-4 pb-1.5 pt-3 sm:px-6 sm:pb-2 sm:pt-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">OOTODAY</p>
         <h1
