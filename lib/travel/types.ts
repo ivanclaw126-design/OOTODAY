@@ -8,6 +8,7 @@ export type TravelPackingEntry = {
   categoryLabel: string
   quantity: number
   itemLabels: string[]
+  selectedItems: ClosetItemCardData[]
   reason: string
 }
 
@@ -27,6 +28,7 @@ export type TravelDailyPlanEntry = {
   dayLabel: string
   outfitSummary: string
   focus: string
+  selectedItems: ClosetItemCardData[]
 }
 
 export type TravelSavedPlan = {

@@ -6,9 +6,13 @@ import { AppShell } from '@/components/app-shell'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ItemShowcase } from '@/components/ui/item-showcase'
 import { buildClosetUploadPath } from '@/lib/closet/build-upload-path'
+import { useSessionState } from '@/lib/hooks/use-session-state'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { ShopPurchaseAnalysis } from '@/lib/shop/types'
+
+const SHOP_STORAGE_KEY = 'ootoday:shop-page'
 
 function recommendationLabel(recommendation: ShopPurchaseAnalysis['recommendation']) {
   if (recommendation === 'buy') {
@@ -49,15 +53,21 @@ export function ShopPage({
   }) => Promise<{ error: string | null; analysis: ShopPurchaseAnalysis | null }>
 }) {
   const supabase = createSupabaseBrowserClient()
-  const [sourceUrl, setSourceUrl] = useState('')
-  const [analysis, setAnalysis] = useState<ShopPurchaseAnalysis | null>(null)
+  const [sourceUrl, setSourceUrl] = useSessionState(`${SHOP_STORAGE_KEY}:sourceUrl`, '')
+  const [analysis, setAnalysis] = useSessionState<ShopPurchaseAnalysis | null>(`${SHOP_STORAGE_KEY}:analysis`, null)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [selectedFileName, setSelectedFileName] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useSessionState<string | null>(`${SHOP_STORAGE_KEY}:previewUrl`, null)
+  const [selectedFileName, setSelectedFileName] = useSessionState<string | null>(`${SHOP_STORAGE_KEY}:selectedFileName`, null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const previewUrlRef = useRef<string | null>(null)
+
+  function revokePreviewUrl(url: string | null) {
+    if (url?.startsWith('blob:')) {
+      URL.revokeObjectURL(url)
+    }
+  }
 
   useEffect(() => {
     previewUrlRef.current = previewUrl
@@ -65,17 +75,13 @@ export function ShopPage({
 
   useEffect(() => {
     return () => {
-      if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current)
-      }
+      revokePreviewUrl(previewUrlRef.current)
     }
   }, [])
 
   const resetLocalPreview = () => {
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current)
-      previewUrlRef.current = null
-    }
+    revokePreviewUrl(previewUrlRef.current)
+    previewUrlRef.current = null
 
     setPreviewUrl(null)
     setSelectedFileName(null)
@@ -136,6 +142,8 @@ export function ShopPage({
 
       const { data } = supabase.storage.from(storageBucket).getPublicUrl(path)
       setSourceUrl(data.publicUrl)
+      previewUrlRef.current = data.publicUrl
+      setPreviewUrl(data.publicUrl)
       await runAnalysis(data.publicUrl, false)
     } catch {
       setIsSubmitting(false)
@@ -190,24 +198,26 @@ export function ShopPage({
                 <p className="mt-2 text-sm text-white/82">图片适合快速判断，链接适合直接分析商品页。</p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-              <SecondaryButton type="button" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting}>
-                上传本地图片
-              </SecondaryButton>
-              {selectedFileName ? (
-                <SecondaryButton type="button" onClick={clearSelectedImage} disabled={isSubmitting}>
-                  删除当前图片
-                </SecondaryButton>
-              ) : null}
-              <input
-                ref={fileInputRef}
-                aria-label="上传商品图片"
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={handleFileChange}
-                disabled={isSubmitting}
-              />
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="flex flex-wrap gap-2">
+                  <SecondaryButton type="button" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting} className="shrink-0 whitespace-nowrap">
+                    上传本地图片
+                  </SecondaryButton>
+                  {selectedFileName ? (
+                    <SecondaryButton type="button" onClick={clearSelectedImage} disabled={isSubmitting} className="shrink-0 whitespace-nowrap">
+                      删除当前图片
+                    </SecondaryButton>
+                  ) : null}
+                  <input
+                    ref={fileInputRef}
+                    aria-label="上传商品图片"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleFileChange}
+                    disabled={isSubmitting}
+                  />
+                </div>
                 <span className="text-sm text-white/82">电脑端支持拖拽，iPhone / iPad 可直接从相册或拍照上传。</span>
               </div>
 
@@ -341,15 +351,24 @@ export function ShopPage({
 
             <div className="grid gap-3 md:grid-cols-3">
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/56">Verdict</p>
+                <p className="text-[0.68rem] font-semibold text-white/56">
+                  <span className="block uppercase tracking-[0.2em]">购买结论</span>
+                  <span className="mt-1 block text-[0.72rem] tracking-[0.16em]">Buy Call</span>
+                </p>
                 <p className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{recommendationLabel(analysis.recommendation)}</p>
               </div>
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Repeat Risk</p>
+                <p className="text-[0.68rem] font-semibold text-[var(--color-neutral-dark)]">
+                  <span className="block uppercase tracking-[0.2em]">撞款概率</span>
+                  <span className="mt-1 block text-[0.72rem] tracking-[0.16em]">Repeat Overlap</span>
+                </p>
                 <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{duplicateRiskLabel(analysis.duplicateRisk)}</p>
               </div>
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(231,255,55,0.18)] p-4">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Outfit Yield</p>
+                <p className="text-[0.68rem] font-semibold text-[var(--color-neutral-dark)]">
+                  <span className="block uppercase tracking-[0.2em]">可搭套数</span>
+                  <span className="mt-1 block text-[0.72rem] tracking-[0.16em]">Outfit Yield</span>
+                </p>
                 <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{analysis.estimatedOutfitCount}</p>
               </div>
             </div>
@@ -357,21 +376,31 @@ export function ShopPage({
             <div className="grid gap-3 lg:grid-cols-[1.3fr_0.9fr]">
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">
                 <div className="flex flex-col gap-2">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/58">Why</p>
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/58">为什么 Why</p>
                   <p className="text-sm leading-6 text-white/72">{analysis.recommendationReason}</p>
                 </div>
               </div>
 
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
                 <div className="flex flex-col gap-2">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">In Closet Already</p>
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">衣橱里已有 Already In Closet</p>
                   {analysis.duplicateItems.length > 0 ? (
                     <div className="flex flex-col gap-2">
                       {analysis.duplicateItems.map((item) => (
-                        <p key={item.id} className="text-sm leading-6 text-[var(--color-neutral-dark)]">
-                          {item.subCategory ?? item.category}
-                          {item.colorCategory ? ` · ${item.colorCategory}` : ''}
-                        </p>
+                        <ItemShowcase
+                          key={item.id}
+                          compact
+                          items={[
+                            {
+                              id: item.id,
+                              imageUrl: item.imageUrl,
+                              label: item.subCategory ?? item.category,
+                              meta: [item.colorCategory, item.styleTags[0]].filter(Boolean).join(' · ')
+                            }
+                          ]}
+                          title={item.subCategory ?? item.category}
+                          subtitle={[item.colorCategory, item.styleTags.join(' / ')].filter(Boolean).join(' · ')}
+                        />
                       ))}
                     </div>
                   ) : (
@@ -384,7 +413,7 @@ export function ShopPage({
             {analysis.missingCategoryHints.length > 0 ? (
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
                 <div className="flex flex-col gap-2">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Still Missing</p>
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">还缺什么 Missing Pieces</p>
                   {analysis.missingCategoryHints.map((hint) => (
                     <p key={hint} className="text-sm leading-6 text-[var(--color-neutral-dark)]">
                       {hint}
@@ -397,7 +426,7 @@ export function ShopPage({
             {analysis.colorStrategyHints.length > 0 ? (
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
                 <div className="flex flex-col gap-2">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Color Strategy</p>
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">配色思路 Color Strategy</p>
                   {analysis.colorStrategyHints.map((hint) => (
                     <p key={hint} className="text-sm leading-6 text-[var(--color-neutral-dark)]">
                       {hint}

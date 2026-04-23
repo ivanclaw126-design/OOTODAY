@@ -1,6 +1,7 @@
 'use client'
 
 import { AppShell } from '@/components/app-shell'
+import { ItemShowcase } from '@/components/ui/item-showcase'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PrimaryButton, PrimaryLink, SecondaryButton } from '@/components/ui/button'
@@ -247,7 +248,18 @@ export function TravelPage({
                       {entry.categoryLabel} · 建议带 {entry.quantity} 件
                     </p>
                     <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">{entry.reason}</p>
-                    <p className="mt-3 text-sm">{entry.itemLabels.join(' / ')}</p>
+                    <div className="mt-3">
+                      <ItemShowcase
+                        items={(entry.selectedItems ?? []).map((item) => ({
+                          id: item.id,
+                          imageUrl: item.imageUrl,
+                          label: item.subCategory ?? item.category,
+                          meta: [item.colorCategory, item.styleTags[0]].filter(Boolean).join(' · ')
+                        }))}
+                        title={`${entry.categoryLabel} 橱窗`}
+                        subtitle={entry.itemLabels.join(' / ')}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -268,6 +280,20 @@ export function TravelPage({
                     <p className="text-sm font-medium">{entry.dayLabel}</p>
                     <p className="mt-1 text-sm">{entry.outfitSummary}</p>
                     <p className="mt-2 text-sm leading-6 text-[var(--color-neutral-dark)]">{entry.focus}</p>
+                    {(entry.selectedItems ?? []).length > 0 ? (
+                      <div className="mt-3">
+                        <ItemShowcase
+                          items={(entry.selectedItems ?? []).map((item) => ({
+                            id: item.id,
+                            imageUrl: item.imageUrl,
+                            label: item.subCategory ?? item.category,
+                            meta: [item.colorCategory, item.styleTags[0]].filter(Boolean).join(' · ')
+                          }))}
+                          title="当天组合 Outfit"
+                          subtitle={entry.outfitSummary}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
