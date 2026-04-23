@@ -1,19 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #1a1a1a;
-  --color-secondary: #f5f5f5;
-  --color-accent: #3b82f6;
+  --color-primary: #090909;
+  --color-secondary: #f3efe7;
+  --color-accent: #e7ff37;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
-  --color-neutral-light: #fafafa;
-  --color-neutral-mid: #d4d4d4;
-  --color-neutral-dark: #525252;
+  --color-neutral-light: #f7f3eb;
+  --color-neutral-mid: #c7c0b4;
+  --color-neutral-dark: #5c554a;
+  --color-paper-strong: #ebe4d8;
+  --color-panel: #0a0a0a;
+  --color-panel-soft: #171717;
+  --color-line: rgba(9, 9, 9, 0.12);
+  --color-line-inverse: rgba(255, 255, 255, 0.12);
+  --shadow-soft: 0 22px 46px rgba(18, 16, 12, 0.08);
+  --shadow-strong: 0 36px 80px rgba(0, 0, 0, 0.2);
 }
 
 html {
-  background: var(--color-neutral-light);
+  background:
+    radial-gradient(circle at top left, rgba(231, 255, 55, 0.12), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(16, 16, 16, 0.08), transparent 40%),
+    var(--color-neutral-light);
   color: var(--color-primary);
   max-width: 100%;
   overflow-x: hidden;
@@ -26,6 +36,9 @@ body {
   font-family: var(--font-body), sans-serif;
   max-width: 100%;
   overflow-x: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 18%),
+    linear-gradient(180deg, #f5f0e7 0%, #f7f3eb 32%, #efe8dd 100%);
 }
 
 h1,
@@ -37,7 +50,20 @@ h6 {
   font-family: var(--font-display), serif;
 }
 
+a,
+button,
+input,
+textarea,
+select {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
 ::selection {
-  background: color-mix(in srgb, var(--color-accent) 18%, white);
+  background: color-mix(in srgb, var(--color-accent) 28%, white);
   color: var(--color-primary);
 }
