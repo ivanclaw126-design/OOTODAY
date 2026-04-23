@@ -27,11 +27,13 @@ export function TodayRecommendationCard({
   recommendation,
   index,
   ootdStatus,
+  recordedRecommendationId,
   submitOotd
 }: {
   recommendation: TodayRecommendation
   index: number
   ootdStatus: TodayOotdStatus
+  recordedRecommendationId: string | null
   submitOotd: (input: {
     recommendation: TodayRecommendation
     satisfactionScore: number
@@ -42,7 +44,8 @@ export function TodayRecommendationCard({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const isRecorded = ootdStatus.status === 'recorded'
+  const isRecorded = ootdStatus.status === 'recorded' && recordedRecommendationId === recommendation.id
+  const isLocked = ootdStatus.status === 'recorded' && !isRecorded
   const rankLabel = String(index).padStart(2, '0')
   const outfitItems = [
     toShowcaseItem(recommendation.dress),
@@ -152,6 +155,10 @@ export function TodayRecommendationCard({
         {isRecorded ? (
           <div className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/64 px-4 py-3 text-sm font-medium text-[var(--color-primary)]">
             今日已记录
+          </div>
+        ) : isLocked ? (
+          <div className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/64 px-4 py-3 text-sm font-medium text-[var(--color-neutral-dark)]">
+            今天已记录，其他方案暂时锁定
           </div>
         ) : isConfirming ? (
           <div className="space-y-3 rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">

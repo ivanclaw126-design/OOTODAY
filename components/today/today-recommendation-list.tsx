@@ -6,11 +6,13 @@ export function TodayRecommendationList({
   recommendations,
   recommendationError,
   ootdStatus,
+  recordedRecommendationId,
   submitOotd
 }: {
   recommendations: TodayRecommendation[]
   recommendationError: boolean
   ootdStatus: TodayOotdStatus
+  recordedRecommendationId: string | null
   submitOotd: (input: {
     recommendation: TodayRecommendation
     satisfactionScore: number
@@ -51,6 +53,7 @@ export function TodayRecommendationList({
             recommendation={recommendation}
             index={index + 1}
             ootdStatus={ootdStatus}
+            recordedRecommendationId={recordedRecommendationId}
             submitOotd={submitOotd}
           />
         ))}

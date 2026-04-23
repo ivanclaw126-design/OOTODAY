@@ -176,7 +176,8 @@ describe('TodayPage', () => {
       expect(submitOotd).toHaveBeenCalledWith({ recommendation, satisfactionScore: 4 })
     })
 
-    expect(screen.getAllByText('今日已记录')).toHaveLength(2)
+    expect(screen.getByText('今日已记录')).toBeInTheDocument()
+    expect(screen.getByText('今天已记录，其他方案暂时锁定')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '记为今日已穿' })).not.toBeInTheDocument()
   })
 
@@ -244,7 +245,7 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByText('今日已记录')).toBeInTheDocument()
+    expect(screen.getByText('今天已记录，其他方案暂时锁定')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '记为今日已穿' })).not.toBeInTheDocument()
   })
 
