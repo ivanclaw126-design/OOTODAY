@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
 const links = [
@@ -16,7 +16,13 @@ export function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const navRef = useRef<HTMLUListElement | null>(null)
+  const itemRefs = useRef<Array<HTMLAnchorElement | null>>([])
   const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number; opacity: number }>({
+    left: 0,
+    width: 0,
+    opacity: 0
+  })
   const activeIndex = useMemo(() => links.findIndex((link) => pathname === link.href), [pathname])
   const displayIndex = dragIndex ?? Math.max(activeIndex, 0)
 
@@ -34,16 +40,70 @@ export function BottomNav() {
       return indexValue ? Number.parseInt(indexValue, 10) : activeIndex
     }
 
-    const relativeX = Math.min(Math.max(clientX - rect.left, 0), rect.width - 1)
-    return Math.max(0, Math.min(links.length - 1, Math.floor((relativeX / rect.width) * links.length)))
+    const measuredItems = itemRefs.current
+      .map((item, index) => {
+        if (!item) {
+          return null
+        }
+
+        const itemRect = item.getBoundingClientRect()
+
+        if (itemRect.width <= 0) {
+          return null
+        }
+
+        return {
+          index,
+          center: itemRect.left + itemRect.width / 2
+        }
+      })
+      .filter((item): item is { index: number; center: number } => item !== null)
+
+    if (measuredItems.length === 0) {
+      const relativeX = Math.min(Math.max(clientX - rect.left, 0), rect.width - 1)
+      return Math.max(0, Math.min(links.length - 1, Math.floor((relativeX / rect.width) * links.length)))
+    }
+
+    return measuredItems.reduce((closestIndex, item) => {
+      const currentDistance = Math.abs(item.center - clientX)
+      const closestItem = measuredItems.find((candidate) => candidate.index === closestIndex)
+      const closestDistance = closestItem ? Math.abs(closestItem.center - clientX) : Number.POSITIVE_INFINITY
+
+      return currentDistance < closestDistance ? item.index : closestIndex
+    }, activeIndex >= 0 ? activeIndex : 0)
   }
 
-  function getIndicatorStyle(index: number) {
-    return {
-      width: 'calc((100% - 2rem) / 5)',
-      transform: `translateX(calc(0.5rem + ${index} * (((100% - 2rem) / 5) + 0.25rem)))`
+  useEffect(() => {
+    function updateIndicator() {
+      const nav = navRef.current
+      const activeItem = itemRefs.current[displayIndex]
+
+      if (!nav || !activeItem) {
+        return
+      }
+
+      const navRect = nav.getBoundingClientRect()
+      const itemRect = activeItem.getBoundingClientRect()
+
+      if (navRect.width <= 0 || itemRect.width <= 0) {
+        return
+      }
+
+      setIndicatorStyle({
+        left: itemRect.left - navRect.left,
+        width: itemRect.width,
+        opacity: 1
+      })
     }
-  }
+
+    const frame = window.requestAnimationFrame(updateIndicator)
+    window.addEventListener('resize', updateIndicator)
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('resize', updateIndicator)
+    }
+  }, [displayIndex, pathname])
 
   return (
     <nav
@@ -91,12 +151,19 @@ export function BottomNav() {
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-1.5 top-1.5 rounded-[1.2rem] bg-[var(--color-primary)] shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition-transform duration-200 ease-out"
-          style={getIndicatorStyle(displayIndex)}
+          className="pointer-events-none absolute bottom-1.5 top-1.5 rounded-[1.2rem] bg-[var(--color-primary)] shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition-[left,width,opacity] duration-200 ease-out"
+          style={{
+            left: `${indicatorStyle.left}px`,
+            width: `${indicatorStyle.width}px`,
+            opacity: indicatorStyle.opacity
+          }}
         />
         {links.map((link) => (
           <li key={link.href} className="min-w-0 flex-1">
             <Link
+              ref={(node) => {
+                itemRefs.current[links.findIndex((candidate) => candidate.href === link.href)] = node
+              }}
               data-nav-index={links.findIndex((candidate) => candidate.href === link.href)}
               aria-current={pathname === link.href ? 'page' : undefined}
               className={`group relative flex min-h-[3.2rem] w-full flex-col items-center justify-center rounded-[1.2rem] px-2 py-2 text-[0.76rem] font-semibold uppercase tracking-[0.08em] transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] ${

@@ -152,10 +152,8 @@ export function InspirationPage({
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Inspiration Breakdown</p>
-            <p className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-[var(--color-primary)]">先拆掉这套灵感的骨架，再看你衣橱里能借什么。</p>
-            <p className="text-sm text-[var(--color-neutral-dark)]">
-              贴一张灵感图，我们会先拆解它的穿搭逻辑，再告诉你衣橱里有哪些单品可以借用。
-            </p>
+            <p className="mt-2 text-xl font-semibold tracking-[-0.04em] text-[var(--color-primary)]">先拆掉这套灵感的骨架，再看你衣橱里能借什么。</p>
+            <p className="text-sm text-[var(--color-neutral-dark)]">贴一张图，我会拆出核心搭配，再对照你衣橱里能借用的单品。</p>
           </div>
 
           <div className="flex flex-col gap-3 rounded-[1.8rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">

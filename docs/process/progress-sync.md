@@ -70,6 +70,10 @@ Native tool persistence comes before repo-local mirrors.
 ## Latest Sync Snapshot
 
 - Date: 2026-04-23
+- Product state: Closet 这一轮修掉了已保存单品“向右翻转”只写状态不真实镜像的问题，卡片图片现在直接按前端 transform 实际翻转；翻转入口缩成更小的按钮，并增加显式确认按钮来降低误触
+- Product state: Closet 的“导入衣物”和“整理建议”现在会在宽屏下左右并排，且两块继续维持默认收起，让用户进页后更快把注意力落在衣橱浏览区
+- Product state: 整个 App 又做了一轮信息减重：`AppShell` 头部高度缩小，Today 状态头和城市提示更短，Shop / Inspiration / Travel / Closet 页首说明被压缩，首屏更快露出真正的操作区和结果区
+- Product state: 底部导航高亮不再用固定宽度公式估位，而是按真实导航按钮 DOM 尺寸测量；拖动高亮块时会更准确落到对应页面名称上
 - Product state: Today 这轮补上了关键日常交互修复：`换一批推荐` 现在真的会轮换 offset 而不是重复同一批建议；账号密码相关操作被收进底部设置抽屉；最近穿搭记录支持编辑和删除；底部导航除整页左右滑动外，也支持直接拖动高亮块在导航栏里横向滑到目标页切换
 - Product state: Closet 这轮把“导入衣物”和“整理建议”改成默认收起的可伸缩板块，让已导入衣物浏览成为进入页时的默认焦点；衣橱浏览默认从“按类型”开始；已保存衣物新增可持久化的图片右翻 / 恢复原图能力，并新增 migration `20260423_add_items_image_flipped.sql`
 - Product state: Landing 的邮箱密码登录现在改成默认免输密码，用户只填邮箱即可直接尝试用 `123456` 登录；对于较早通过 magic link 进入、但默认密码未稳定落上的测试账号，后端会尝试自动补齐默认密码并重试一次，从而修复 `ivanwuyh@163.com` 这类旧账号无法直接密码登录的问题
@@ -117,7 +121,7 @@ Native tool persistence comes before repo-local mirrors.
   - Travel save-plan persistence now prefers the new `travel_plans` table, but gracefully falls back to storing lightweight travel metadata in `outfits` when the remote schema has not yet been migrated
 - Gstack state:
   - Native Gstack progress flow for this repo continues to use `/context-save` and `/context-restore`
-  - Latest saved checkpoint for this round is `~/.gstack/projects/OOTODAY/checkpoints/20260423-122640-auth-password-login-bootstrap.md`
+  - Latest saved checkpoint for this round is `~/.gstack/projects/OOTODAY/checkpoints/20260423-154114-closet-flip-and-nav-polish.md`
   - The new repo-local command `npm run travel:db:check` now distinguishes “migration missing” from “current environment cannot reach Supabase Postgres”; in this environment it fails on remote connectivity timeout rather than local migration state
   - Useful operational note from earlier checkpoints remains valid: importing local Chrome `localhost` cookies is enough to quickly recover an authenticated QA session
 - Pending sync work:

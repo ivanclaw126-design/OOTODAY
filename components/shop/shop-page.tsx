@@ -175,30 +175,11 @@ export function ShopPage({
     <AppShell title="Shop">
       <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
         <div className="flex flex-col gap-5">
-          <div className="space-y-3">
+          <div className="space-y-2">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Buy Before You Buy</p>
             <div className="space-y-2">
-              <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--color-primary)]">先判断它会不会真的进你常穿轮换</p>
-              <p className="max-w-2xl text-sm leading-6 text-[var(--color-neutral-dark)]">
-                贴商品链接、主图链接，或者直接上传本地图片。我们会先识别这件单品，再结合你现在的衣橱回答三个问题：值不值得买、会不会重复、买回来大概能接上多少套。
-              </p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-[1.5rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.75)] px-4 py-4 shadow-[var(--shadow-soft)]">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Step 1</p>
-                <p className="mt-2 text-sm font-medium text-[var(--color-primary)]">给一个候选商品</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">链接、本地图、桌面拖拽都可以，先把你犹豫的那件丢进来。</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.75)] px-4 py-4 shadow-[var(--shadow-soft)]">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Step 2</p>
-                <p className="mt-2 text-sm font-medium text-[var(--color-primary)]">看重复风险和搭配回报</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">不是只看好不好看，而是看它进衣橱后会不会真的被穿起来。</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.75)] px-4 py-4 shadow-[var(--shadow-soft)]">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Step 3</p>
-                <p className="mt-2 text-sm font-medium text-[var(--color-primary)]">决定买、缓买或先补缺口</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-dark)]">把“我好像需要它”改成更明确的衣橱决策。</p>
-              </div>
+              <p className="text-xl font-semibold tracking-[-0.03em] text-[var(--color-primary)]">先判断它值不值得进衣橱</p>
+              <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">给我链接或图片，我会直接判断值不值、会不会重复、能接上多少套。</p>
             </div>
           </div>
 
@@ -206,9 +187,7 @@ export function ShopPage({
             <div className="flex flex-col gap-4">
               <div>
                 <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/58">Input</p>
-                <p className="mt-2 text-sm leading-6 text-white/68">
-                  图片入口适合快速判断单品，链接入口适合直接拿商品页做买前分析。
-                </p>
+                <p className="mt-2 text-sm text-white/68">图片适合快速判断，链接适合直接分析商品页。</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
