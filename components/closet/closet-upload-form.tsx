@@ -14,6 +14,9 @@ import {
   getCategoryOptions,
   getColorOptions,
   getSubCategoryOptions,
+  UNKNOWN_CATEGORY,
+  UNKNOWN_COLOR,
+  UNKNOWN_SUBCATEGORY,
   normalizeCategoryValue,
   normalizeClosetFields,
   normalizeSubCategoryValue
@@ -50,9 +53,9 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
   const [draft, setDraft] = useState(normalizedInitialDraft)
   const [styleTagsText, setStyleTagsText] = useState(joinStyleTags(normalizedInitialDraft.styleTags))
   const initialDraftSignatureRef = useRef(getDraftSignature(initialDraft))
-  const categoryOptions = getCategoryOptions()
-  const colorOptions = getColorOptions()
-  const subCategoryOptions = getSubCategoryOptions(draft.category)
+  const categoryOptions = getCategoryOptions().filter((option) => option.value !== UNKNOWN_CATEGORY)
+  const colorOptions = getColorOptions().filter((option) => option.value !== UNKNOWN_COLOR)
+  const subCategoryOptions = getSubCategoryOptions(draft.category).filter((option) => option.value !== UNKNOWN_SUBCATEGORY)
 
   useEffect(() => {
     const nextSignature = getDraftSignature(initialDraft)
@@ -110,18 +113,7 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
           <div className="flex flex-wrap gap-2">
             <ClosetCategoryBadge category={draft.category} />
           </div>
-          <select
-            aria-label="分类"
-            value={draft.category}
-            onChange={(event) => handleCategoryChange(event.target.value)}
-            className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-          >
-            {categoryOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <input aria-label="分类" value={draft.category} readOnly className="sr-only" />
           <div className="mt-2 flex flex-wrap gap-2">
             {categoryOptions.map((option) => {
               const isActive = draft.category === option.value
@@ -133,8 +125,8 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
                   onClick={() => handleCategoryChange(option.value)}
                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                     isActive
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-                      : 'border-[var(--color-neutral-mid)] bg-white text-[var(--color-neutral-dark)]'
+                      ? 'border-[var(--color-primary)] bg-white text-[var(--color-primary)] shadow-[0_10px_20px_rgba(17,14,9,0.08)]'
+                      : 'border-[var(--color-neutral-mid)] bg-white/88 text-[var(--color-neutral-dark)]'
                   }`}
                 >
                   <ClosetCategoryIcon category={option.value} size="sm" />
@@ -143,6 +135,7 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
               )
             })}
           </div>
+          {draft.category === UNKNOWN_CATEGORY ? <p className="text-xs text-[var(--color-neutral-dark)]">AI 还没认准，点一个最接近的分类。</p> : null}
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
@@ -150,18 +143,7 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
           <div className="flex flex-wrap gap-2">
             <ClosetSubCategoryBadge subCategory={draft.subCategory} />
           </div>
-          <select
-            aria-label="子分类"
-            value={draft.subCategory}
-            onChange={(event) => setDraft((current) => ({ ...current, subCategory: event.target.value }))}
-            className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-          >
-            {subCategoryOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <input aria-label="子分类" value={draft.subCategory} readOnly className="sr-only" />
           <div className="mt-2 flex flex-wrap gap-2">
             {subCategoryOptions.map((option) => {
               const isActive = draft.subCategory === option.value
@@ -173,8 +155,8 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
                   onClick={() => setDraft((current) => ({ ...current, subCategory: option.value }))}
                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                     isActive
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-                      : 'border-[var(--color-neutral-mid)] bg-white text-[var(--color-neutral-dark)]'
+                      ? 'border-[var(--color-primary)] bg-white text-[var(--color-primary)] shadow-[0_10px_20px_rgba(17,14,9,0.08)]'
+                      : 'border-[var(--color-neutral-mid)] bg-white/88 text-[var(--color-neutral-dark)]'
                   }`}
                 >
                   <ClosetSubCategoryIcon subCategory={option.value} size="sm" />
@@ -183,6 +165,11 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
               )
             })}
           </div>
+          {subCategoryOptions.length === 0 ? (
+            <p className="text-xs text-[var(--color-neutral-dark)]">先选分类，子分类就会缩到对应范围。</p>
+          ) : draft.subCategory === UNKNOWN_SUBCATEGORY ? (
+            <p className="text-xs text-[var(--color-neutral-dark)]">AI 暂时没认准，点一个更准确的子分类。</p>
+          ) : null}
         </label>
       </div>
 
@@ -192,18 +179,7 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
           <div className="flex flex-wrap gap-2">
             <ClosetColorBadge color={draft.colorCategory} />
           </div>
-          <select
-            aria-label="颜色"
-            value={draft.colorCategory}
-            onChange={(event) => setDraft((current) => ({ ...current, colorCategory: event.target.value }))}
-            className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
-          >
-            {colorOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <input aria-label="颜色" value={draft.colorCategory} readOnly className="sr-only" />
           <div className="mt-2 flex flex-wrap gap-2">
             {colorOptions.map((option) => {
               const isActive = draft.colorCategory === option.value
@@ -215,8 +191,8 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
                   onClick={() => setDraft((current) => ({ ...current, colorCategory: option.value }))}
                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                     isActive
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-                      : 'border-[var(--color-neutral-mid)] bg-white text-[var(--color-neutral-dark)]'
+                      ? 'border-[var(--color-primary)] bg-white text-[var(--color-primary)] shadow-[0_10px_20px_rgba(17,14,9,0.08)]'
+                      : 'border-[var(--color-neutral-mid)] bg-white/88 text-[var(--color-neutral-dark)]'
                   }`}
                 >
                   <ClosetColorIcon color={option.value} size="sm" />
@@ -225,6 +201,7 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
               )
             })}
           </div>
+          {draft.colorCategory === UNKNOWN_COLOR ? <p className="text-xs text-[var(--color-neutral-dark)]">AI 暂时没认准，点一个更准确的颜色。</p> : null}
         </label>
 
         <label className="flex flex-col gap-1 text-sm">

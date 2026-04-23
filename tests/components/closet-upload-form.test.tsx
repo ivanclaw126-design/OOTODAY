@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ClosetUploadForm } from '@/components/closet/closet-upload-form'
 
@@ -19,7 +19,7 @@ describe('ClosetUploadForm', () => {
     const onSubmit = vi.fn()
     const { getByLabelText, getByRole } = render(<ClosetUploadForm initialDraft={baseDraft} onSubmit={onSubmit} />)
 
-    fireEvent.change(getByLabelText('分类'), { target: { value: '外层' } })
+    fireEvent.click(getByRole('button', { name: '外层' }))
     fireEvent.change(getByLabelText('风格标签'), { target: { value: '通勤, 极简' } })
     fireEvent.submit(getByRole('button', { name: '保存到衣橱' }).closest('form')!)
 
@@ -36,7 +36,7 @@ describe('ClosetUploadForm', () => {
     const onSubmit = vi.fn()
     const { getByLabelText, rerender } = render(<ClosetUploadForm initialDraft={baseDraft} onSubmit={onSubmit} />)
 
-    fireEvent.change(getByLabelText('分类'), { target: { value: '外层' } })
+    fireEvent.click(screen.getByRole('button', { name: '外层' }))
     fireEvent.change(getByLabelText('风格标签'), { target: { value: '通勤，极简' } })
 
     rerender(
@@ -91,5 +91,21 @@ describe('ClosetUploadForm', () => {
       colorCategory: '卡其色',
       styleTags: ['通勤', '简约']
     })
+  })
+
+  it('does not expose unknown category or subcategory as manual choices', () => {
+    render(
+      <ClosetUploadForm
+        initialDraft={{
+          ...baseDraft,
+          category: '未知类型请手动选择',
+          subCategory: '未知类型请手动选择'
+        }}
+        onSubmit={vi.fn()}
+      />
+    )
+
+    expect(screen.queryByRole('button', { name: '未知类型请手动选择' })).not.toBeInTheDocument()
+    expect(screen.queryByText('AI 还没认准，点一个更准确的子分类。')).not.toBeInTheDocument()
   })
 })

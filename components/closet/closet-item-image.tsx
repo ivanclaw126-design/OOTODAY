@@ -10,10 +10,14 @@ export function ClosetItemImage({
   className?: string
 }) {
   return (
-    <img
-      src={src}
-      alt={alt}
-      className={`h-full w-full object-cover transition-transform duration-200 ${rotated ? 'rotate-90' : ''} ${className ?? ''}`.trim()}
-    />
+    <div className="relative h-full w-full overflow-hidden">
+      <img
+        src={src}
+        alt={alt}
+        className={`absolute inset-0 h-full w-full object-cover transition-transform duration-200 ${
+          rotated ? 'rotate-90' : ''
+        } ${className ?? ''}`.trim()}
+      />
+    </div>
   )
 }

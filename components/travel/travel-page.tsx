@@ -76,61 +76,68 @@ export function TravelPage({
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Trip Setup</p>
             <div className="space-y-2">
               <p className="text-xl font-semibold tracking-[-0.03em] text-[var(--color-primary)]">先把这趟行程压成一份够用方案</p>
-              <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">输入城市、天数和场景后，我会优先从现有衣橱里拼出轻装轮换。</p>
+              <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">输入城市、天数和场景后，我会优先从现有衣橱里拼出轻装轮换，尽量让打包清单像 Shop 一样一眼读懂。</p>
             </div>
           </div>
 
           <div className="overflow-hidden rounded-[1.8rem] border border-[var(--color-line)] bg-[#111111] p-4 text-white shadow-[var(--shadow-strong)]">
-            <div className="grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.6fr)]">
-              <label className="flex min-w-0 w-full flex-col gap-2 text-sm">
-                <span className="font-medium text-white/82">目的地城市</span>
-                <input
-                  name="city"
-                  value={draftCity}
-                  onChange={(event) => setDraftCity(event.target.value)}
-                  placeholder="例如：东京"
-                  className="w-full min-w-0 rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white placeholder:text-white/45"
-                />
-              </label>
-
-              <label className="flex min-w-0 w-full flex-col gap-2 text-sm">
-                <span className="font-medium text-white/82">出行天数</span>
-                <input
-                  name="days"
-                  type="number"
-                  min={1}
-                  max={14}
-                  value={draftDays}
-                  onChange={(event) => setDraftDays(event.target.value)}
-                  className="w-full min-w-0 rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white"
-                />
-              </label>
-            </div>
-
-            <fieldset className="mt-4 flex flex-col gap-3">
-              <legend className="text-sm font-medium text-white/82">行程场景</legend>
-              <div className="flex flex-wrap gap-2">
-                {sceneOptions.map((scene) => (
-                  <label
-                    key={scene}
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition ${
-                      draftScenes.includes(scene)
-                        ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-primary)]'
-                        : 'border-white/18 bg-white/10 text-white'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      name="scene"
-                      value={scene}
-                      checked={draftScenes.includes(scene)}
-                      onChange={(event) => toggleDraftScene(scene, event.target.checked)}
-                    />
-                    {scene}
-                  </label>
-                ))}
+            <div className="flex flex-col gap-4">
+              <div>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/70">Input</p>
+                <p className="mt-2 text-sm text-white/82">先给出目的地和天数，再勾一下这趟最常见的场景，我会按衣橱覆盖度优先生成够用方案。</p>
               </div>
-            </fieldset>
+
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.6fr)]">
+                <label className="flex min-w-0 w-full flex-col gap-2 text-sm">
+                  <span className="font-medium text-white/82">目的地城市</span>
+                  <input
+                    name="city"
+                    value={draftCity}
+                    onChange={(event) => setDraftCity(event.target.value)}
+                    placeholder="例如：东京"
+                    className="w-full min-w-0 rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white placeholder:text-white/45"
+                  />
+                </label>
+
+                <label className="flex min-w-0 w-full flex-col gap-2 text-sm">
+                  <span className="font-medium text-white/82">出行天数</span>
+                  <input
+                    name="days"
+                    type="number"
+                    min={1}
+                    max={14}
+                    value={draftDays}
+                    onChange={(event) => setDraftDays(event.target.value)}
+                    className="w-full min-w-0 rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white"
+                  />
+                </label>
+              </div>
+
+              <fieldset className="flex flex-col gap-3">
+                <legend className="text-sm font-medium text-white/82">行程场景</legend>
+                <div className="flex flex-wrap gap-2">
+                  {sceneOptions.map((scene) => (
+                    <label
+                      key={scene}
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition ${
+                        draftScenes.includes(scene)
+                          ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-primary)]'
+                          : 'border-white/18 bg-white/10 text-white'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        name="scene"
+                        value={scene}
+                        checked={draftScenes.includes(scene)}
+                        onChange={(event) => toggleDraftScene(scene, event.target.checked)}
+                      />
+                      {scene}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
           </div>
 
           {view.savedPlanId ? <input type="hidden" name="savedPlanId" value={view.savedPlanId} /> : null}

@@ -179,9 +179,11 @@ export async function toggleClosetItemImageFlipAction(input: { itemId: string; i
     imageFlipped: input.imageFlipped
   })
 
-  if (data.persisted !== false) {
-    revalidatePath('/closet')
-  }
+  revalidatePath('/closet')
+  revalidatePath('/today')
+  revalidatePath('/travel')
+  revalidatePath('/looks')
+  revalidatePath('/shop')
 
   return data
 }
