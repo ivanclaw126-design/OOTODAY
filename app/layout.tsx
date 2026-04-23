@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import type { Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { Noto_Sans_SC, Noto_Serif_SC } from 'next/font/google'
+import { AppChrome } from '@/components/app-chrome'
 
 const bodyFont = Noto_Sans_SC({
   subsets: ['latin'],
@@ -30,7 +31,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-CN">
-      <body className={`${bodyFont.variable} ${displayFont.variable}`}>{children}</body>
+      <body className={`${bodyFont.variable} ${displayFont.variable}`}>
+        <AppChrome>{children}</AppChrome>
+      </body>
     </html>
   )
 }

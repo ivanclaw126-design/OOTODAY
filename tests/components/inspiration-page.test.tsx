@@ -85,7 +85,8 @@ describe('InspirationPage', () => {
               styleTags: ['通勤']
             }
           ],
-          stylingTips: ['保持线条干净']
+          stylingTips: ['保持线条干净'],
+          colorStrategyNotes: ['这套灵感有基础色托底，所以整体看起来更稳。']
         },
         closetMatches: [
           {
@@ -187,7 +188,8 @@ describe('InspirationPage', () => {
           scene: '通勤',
           vibe: '利落',
           keyItems: [],
-          stylingTips: []
+          stylingTips: [],
+          colorStrategyNotes: []
         },
         closetMatches: [],
         remixPlan: {

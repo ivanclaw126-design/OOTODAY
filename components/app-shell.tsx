@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react'
-import { BottomNav } from '@/components/bottom-nav'
 
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8f5ee_0%,#fafafa_38%,#f4efe6_100%)] pb-40 md:pb-16">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8f5ee_0%,#fafafa_38%,#f4efe6_100%)] pb-36 md:pb-20">
       <header className="mx-auto flex max-w-3xl flex-col gap-3 px-4 pb-5 pt-6 sm:px-6 sm:pt-8">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">OOTODAY</p>
         <div className="space-y-1">
@@ -12,7 +11,6 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
         </div>
       </header>
       <main className="mx-auto flex max-w-3xl flex-col gap-5 px-4 sm:px-6">{children}</main>
-      <BottomNav />
     </div>
   )
 }

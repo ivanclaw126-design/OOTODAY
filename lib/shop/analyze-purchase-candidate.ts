@@ -1,15 +1,11 @@
+import { buildClosetAnchoredColorHints } from '@/lib/closet/color-strategy'
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import {
-  getOutfitColorRole,
-  hasSameColorFamily,
   isBottomCategory,
-  isNeutralColor,
   isOnePieceCategory,
   isOuterwearCategory,
   isTopCategory,
-  isVividColor,
   normalizeCategoryValue,
-  scoreColorCompatibility
 } from '@/lib/closet/taxonomy'
 import type { ShopCandidateItem, ShopPurchaseAnalysis } from '@/lib/shop/types'
 
@@ -113,38 +109,6 @@ function getMissingCategoryHints(candidate: ShopCandidateItem, closetItems: Clos
   return hints
 }
 
-function buildColorStrategyHints(candidate: ShopCandidateItem, closetItems: ClosetItemCardData[]) {
-  const hints: string[] = []
-  const candidateRole = getOutfitColorRole(candidate.colorCategory)
-  const compatibleClosetItems = closetItems.filter(
-    (item) => scoreColorCompatibility(candidate.colorCategory, item.colorCategory) >= 2
-  )
-  const sameFamilyCount = compatibleClosetItems.filter((item) =>
-    hasSameColorFamily(candidate.colorCategory, item.colorCategory)
-  ).length
-  const neutralCount = closetItems.filter((item) => isNeutralColor(item.colorCategory)).length
-
-  if (candidateRole === 'base') {
-    hints.push('这件属于基础色角色，更容易接入现有衣橱做主轴')
-  } else if (candidateRole === 'accent') {
-    hints.push('这件颜色存在感更强，更适合做一套里的重点')
-  } else {
-    hints.push('这件颜色适合作为过渡层，能帮基础色穿得不那么平')
-  }
-
-  if (sameFamilyCount >= 2) {
-    hints.push('你衣橱里已经有同色系可呼应的单品，买回来自然更容易成套')
-  } else if (neutralCount >= 2 && candidateRole !== 'base') {
-    hints.push('你衣橱里的基础色够用，能把这件单品稳稳托住')
-  }
-
-  if (isVividColor(candidate.colorCategory)) {
-    hints.push('如果入手它，建议整套只保留这一处亮点')
-  }
-
-  return hints
-}
-
 function getDuplicateRisk(candidate: ShopCandidateItem, duplicateItems: ClosetItemCardData[]) {
   const exactCount = duplicateItems.filter((item) => item.subCategory === candidate.subCategory).length
 
@@ -209,7 +173,7 @@ export function analyzePurchaseCandidate(
   const duplicateRisk = getDuplicateRisk(candidate, duplicateItems)
   const estimatedOutfitCount = getEstimatedOutfitCount(candidate, closetItems)
   const missingCategoryHints = getMissingCategoryHints(candidate, closetItems)
-  const colorStrategyHints = buildColorStrategyHints(candidate, closetItems)
+  const colorStrategyHints = buildClosetAnchoredColorHints(candidate.colorCategory, closetItems).map((hint) => hint.replace(/。$/u, ''))
   const { recommendation, recommendationReason } = buildRecommendation(
     duplicateRisk,
     estimatedOutfitCount,

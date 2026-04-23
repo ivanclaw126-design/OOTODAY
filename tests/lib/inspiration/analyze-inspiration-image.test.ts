@@ -59,5 +59,6 @@ describe('analyzeInspirationImage', () => {
       styleTags: ['通勤', '极简']
     })
     expect(result.stylingTips).toEqual(['保持上短下长比例', '配色尽量控制在 2-3 个颜色内'])
+    expect(result.colorStrategyNotes.length).toBeGreaterThan(0)
   })
 })

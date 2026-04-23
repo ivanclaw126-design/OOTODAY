@@ -61,17 +61,18 @@
   - neutral + single accent
   - controlled contrast last
 - [x] Add explanation copy that maps directly to these rules
+- [x] Migrate Today explanation generation onto the shared `lib/closet/color-strategy.ts` helper layer
 
 ## Task 4: Reuse the same rule language in Shop, Inspiration, and Travel
 
 - [x] Teach Shop to explain purchases using the same base/support/accent language
-- [ ] Teach Inspiration to explain “why the source look works” using the same harmony rules
-- [ ] Teach Travel to reason about repeatability through shared base colors and low-conflict combinations
+- [x] Teach Inspiration to explain “why the source look works” using the same harmony rules
+- [x] Teach Travel to reason about repeatability through shared base colors and low-conflict combinations
 
 ## Task 5: Verify the product language end-to-end
 
-- [ ] Add focused tests for the new deterministic color logic
-- [ ] Verify user-facing Chinese explanations stay concise and consistent
+- [x] Add focused tests for the new deterministic color logic
+- [x] Verify user-facing Chinese explanations stay concise and consistent across shared-helper integrations
 - [ ] QA at least one representative scenario for:
   - Today daily recommendation
   - Shop buy / no-buy explanation

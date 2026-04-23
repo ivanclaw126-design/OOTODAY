@@ -36,11 +36,21 @@
 
 **Closet 已保存衣物现在支持编辑识别结果和一键重新识别，方便把旧数据逐步迁到新的分类策略。**
 
+**Closet 已保存衣物的编辑识别结果现在改成可见的浮层面板：点击编辑会立刻打开，点击一键重新识别后新草稿也会直接回到同一个面板里，不再像“没反应”。**
+
+**Closet 已导入衣物现在新增按类型 / 按颜色的小缩略图管理视图，可以先按组扫一眼全局，再点进对应分组继续编辑和整理。**
+
 **已新增一份 repo 内穿搭分类与配色策略设计稿，收敛了 YouTube / B 站高热视频里的共识方法，准备作为 Today / Shop / Inspiration / Travel 共用的下一层规则语言。**
 
 **Today 推荐现在已补上第一版颜色强弱与更可解释的文案逻辑：会区分低饱和 / 高存在感颜色，并在理由里表达同色系深浅、基础色托底、亮色只保留一处重点等判断。**
 
 **Shop 购买分析现在也开始复用同一套颜色角色语言：会区分基础色 / 过渡色 / 重点色，并补充“这件是主轴还是亮点、你现有基础色能不能托住它”的分析提示。**
+
+**Inspiration 灵感拆解现在也开始复用同一套颜色解释层：会额外说明这套灵感为什么成立，比如是否依赖同色系深浅、基础色托底、单一亮点色，以及复刻时优先保住哪一处重点。**
+
+**Travel 打包方案现在也开始复用同一套颜色复穿逻辑：会补充说明基础色占比、同色系轮换和重点色控制，帮助用户理解为什么这几件更适合少带多穿。**
+
+**共享颜色规则现在已经下沉成通用 helper：Today / Shop / Inspiration / Travel 都开始复用同一套 palette / candidate color strategy 逻辑。**
 
 **Travel Packing MVP 已正式启动并完成第一版代码落地，当前 `/travel` 已支持根据目的地、天数和场景生成基于真实衣橱的旅行打包清单。**
 
@@ -103,8 +113,13 @@
 - Closet 识图现在会优先落入统一的主分类 / 子分类 / 颜色字典，拿不准时会回落到“未知类型请手动选择”或“未知颜色请手动选择” ✓
 - Closet 上传确认表单现在已改成标准化下拉选择，不再直接暴露自由文本分类输入 ✓
 - Closet 已保存衣物现在支持编辑识别结果，并支持一键重新识别以适配新的分类策略 ✓
+- Closet 已保存衣物的编辑态现在改成浮层面板，点击编辑会立即可见；一键重新识别也会先打开同一个面板并把新草稿直接显示出来 ✓
+- Closet 衣橱浏览现在新增“全部衣物 / 按类型 / 按颜色”三种视图，类型和颜色视图使用小缩略图分组展示，并可继续进入对应分组编辑单品 ✓
 - `lib/closet/taxonomy.ts` 现在已补上第一版 `color_intensity` 推导与 vivid / same-family 辅助函数，Today 推荐文案也会明确说明“同色系深浅”“基础色托底”“亮色控制在一处”等配色理由 ✓
 - Shop 购买分析现在也会基于 `base / support / accent` 输出颜色策略提示，并在结果页展示 `Color Strategy` 区块解释这件单品更适合做主轴、过渡层还是整套重点 ✓
+- Inspiration 现在新增 `colorStrategyNotes` 解释层，并在结果页展示“颜色为什么成立”；复刻完成度文案也会在存在重点色时提醒优先保住对应关键单品 ✓
+- Travel 现在也会补充基于颜色角色的复穿说明：基础色占比够不够高、是否有同色系可轮换、以及是不是只保留了一处重点色 ✓
+- 已新增 `lib/closet/color-strategy.ts`，把 palette 级解释和 candidate 级解释下沉为共享 helper，减少 Today / Shop / Inspiration / Travel 之间的重复条件分支 ✓
 - Travel 页面已上线第一版旅行打包能力：目的地 + 天数 + 场景 -> 打包清单 / 风险缺口 / 复穿策略 ✓
 - Travel 页面已完成一轮 beta 视觉精修：行程设定页头、摘要卡、轮换建议和最近保存方案的层级更清楚 ✓
 - Travel 现在会继续把打包清单拆成按天轮换建议，帮助用户直接看到每天怎么复穿和切换 ✓
@@ -129,8 +144,11 @@
 - 输出对应执行计划 `docs/superpowers/plans/2026-04-23-outfit-taxonomy-color-strategy.md`
 - 已完成第一段代码落地：Today 推荐开始复用 `color_intensity` 与更产品化的配色解释文案
 - 已完成第二段代码落地：Shop 购买分析开始复用 `color_role` 与颜色策略解释
+- 已完成第三段代码落地：Inspiration 开始补上本地规则生成的颜色成立原因与复刻重点提示
+- 已完成第四段代码落地：Travel 开始补上颜色复穿说明，解释为什么这些单品适合少带多穿
+- 已完成第五段代码落地：共享颜色规则已下沉为 `lib/closet/color-strategy.ts`，Today / Shop / Inspiration / Travel 已复用同一套 helper 与测试
 
-下一步不再是继续做泛研究，而是把这套结构逐步接入 `lib/closet/taxonomy.ts` 与 Today / Shop / Inspiration / Travel 的解释逻辑。
+下一步不再是继续做泛研究，而是继续把这套结构下沉成更统一的 score / explanation 层，并补一轮更真实的跨页面 QA。
 
 ### 1. 第一阶段「App Shell + Supabase Foundation」
 
@@ -160,6 +178,7 @@
 核心文件：
 - `components/closet/closet-upload-card.tsx`
 - `components/closet/closet-upload-form.tsx`
+- `components/closet/closet-group-browser.tsx`
 - `app/closet/actions.ts`
 - `lib/closet/analyze-item-image.ts`
 - `lib/closet/taxonomy.ts`

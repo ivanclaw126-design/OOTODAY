@@ -1,4 +1,5 @@
 import { getAiEnv } from '@/lib/env'
+import { buildInspirationColorStrategy } from '@/lib/inspiration/build-inspiration-color-strategy'
 import type { InspirationBreakdown, InspirationKeyItem } from '@/lib/inspiration/types'
 
 function readRequiredString(value: unknown, fieldName: string) {
@@ -128,11 +129,17 @@ export async function analyzeInspirationImage(imageUrl: string): Promise<Inspira
     throw new Error('OpenAI returned invalid JSON')
   }
 
-  return {
+  const breakdown: InspirationBreakdown = {
     summary: readRequiredString(parsed.summary, 'summary'),
     scene: readRequiredString(parsed.scene, 'scene'),
     vibe: readRequiredString(parsed.vibe, 'vibe'),
     keyItems: readKeyItems(parsed.key_items),
-    stylingTips: readStylingTips(parsed.styling_tips)
+    stylingTips: readStylingTips(parsed.styling_tips),
+    colorStrategyNotes: []
+  }
+
+  return {
+    ...breakdown,
+    colorStrategyNotes: buildInspirationColorStrategy(breakdown)
   }
 }

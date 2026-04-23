@@ -14,6 +14,7 @@ export type InspirationBreakdown = {
   vibe: string
   keyItems: InspirationKeyItem[]
   stylingTips: string[]
+  colorStrategyNotes: string[]
 }
 
 export type InspirationClosetMatch = {
