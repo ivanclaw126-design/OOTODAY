@@ -9,7 +9,7 @@ const saveItem = vi.fn()
 const deleteItem = vi.fn()
 const updateItem = vi.fn()
 const reanalyzeItem = vi.fn()
-const toggleImageFlip = vi.fn()
+const updateImageRotation = vi.fn()
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
@@ -46,7 +46,7 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
-        toggleImageFlip={toggleImageFlip}
+        updateImageRotation={updateImageRotation}
       />
     )
 
@@ -128,9 +128,11 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
-        toggleImageFlip={toggleImageFlip}
+        updateImageRotation={updateImageRotation}
       />
     )
+
+    fireEvent.click(screen.getByRole('button', { name: '全部衣物' }))
 
     expect(screen.getAllByText('Closet').length).toBeGreaterThan(0)
     expect(screen.getByText('已收录')).toBeInTheDocument()
@@ -224,12 +226,13 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
-        toggleImageFlip={toggleImageFlip}
+        updateImageRotation={updateImageRotation}
       />
     )
 
     fireEvent.click(screen.getAllByRole('button', { name: '展开' })[1])
     fireEvent.click(screen.getByRole('button', { name: /灰色 短袖T恤/ }))
+    fireEvent.click(screen.getByRole('button', { name: '全部衣物' }))
     expect(screen.getAllByText('短袖T恤')).toHaveLength(1)
     expect(screen.queryByText('西裤')).not.toBeInTheDocument()
 
@@ -276,17 +279,18 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
-        toggleImageFlip={toggleImageFlip}
+        updateImageRotation={updateImageRotation}
       />
     )
 
+    fireEvent.click(screen.getByRole('button', { name: '全部衣物' }))
     fireEvent.click(screen.getByRole('button', { name: '删除这件衣物' }))
     expect(confirm).toHaveBeenCalled()
     expect(deleteItem).toHaveBeenCalledWith({ itemId: 'item-1' })
   })
 
   it('toggles image flip for a saved item', async () => {
-    toggleImageFlip.mockResolvedValue({ persisted: true })
+    updateImageRotation.mockResolvedValue({ persisted: true })
 
     render(
       <ClosetPage
@@ -297,6 +301,10 @@ describe('ClosetPage', () => {
             id: 'item-1',
             imageUrl: 'https://example.com/top.jpg',
             imageFlipped: false,
+            imageOriginalUrl: null,
+            imageRotationQuarterTurns: 0,
+            imageRestoreExpiresAt: null,
+            canRestoreOriginal: false,
             category: '上装',
             subCategory: '衬衫',
             colorCategory: '蓝色',
@@ -314,18 +322,19 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
-        toggleImageFlip={toggleImageFlip}
+        updateImageRotation={updateImageRotation}
       />
     )
 
+    fireEvent.click(screen.getByRole('button', { name: '全部衣物' }))
     fireEvent.click(screen.getByRole('button', { name: '右转 90°' }))
-    expect(toggleImageFlip).not.toHaveBeenCalled()
+    expect(updateImageRotation).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: '确认右转' }))
 
     await waitFor(() => {
-      expect(toggleImageFlip).toHaveBeenCalledWith({
+      expect(updateImageRotation).toHaveBeenCalledWith({
         itemId: 'item-1',
-        imageFlipped: true
+        operation: 'rotate-right-90'
       })
     })
   })
@@ -356,9 +365,11 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
+        updateImageRotation={updateImageRotation}
       />
     )
 
+    fireEvent.click(screen.getByRole('button', { name: '全部衣物' }))
     fireEvent.click(screen.getByRole('button', { name: '编辑识别结果' }))
 
     const dialog = screen.getByRole('dialog', { name: '编辑识别结果' })
@@ -403,9 +414,11 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
+        updateImageRotation={updateImageRotation}
       />
     )
 
+    fireEvent.click(screen.getByRole('button', { name: '全部衣物' }))
     fireEvent.click(screen.getByRole('button', { name: '一键重新识别' }))
 
     expect(screen.getByRole('dialog', { name: '编辑识别结果' })).toBeInTheDocument()
@@ -466,6 +479,7 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
+        updateImageRotation={updateImageRotation}
       />
     )
 

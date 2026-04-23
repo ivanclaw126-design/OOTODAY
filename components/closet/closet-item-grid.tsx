@@ -6,7 +6,8 @@ export function ClosetItemGrid({
   onEditItem,
   onReanalyzeItem,
   onDeleteItem,
-  onToggleImageFlipItem,
+  onRotateImageItem,
+  onRestoreOriginalImageItem,
   reanalyzingItemId,
   deletingItemId,
   flippingItemId,
@@ -17,7 +18,8 @@ export function ClosetItemGrid({
   onEditItem?: (item: ClosetItemCardData) => void
   onReanalyzeItem?: (item: ClosetItemCardData) => void
   onDeleteItem?: (item: ClosetItemCardData) => void
-  onToggleImageFlipItem?: (item: ClosetItemCardData) => void
+  onRotateImageItem?: (item: ClosetItemCardData) => void
+  onRestoreOriginalImageItem?: (item: ClosetItemCardData) => void
   reanalyzingItemId?: string | null
   deletingItemId?: string | null
   flippingItemId?: string | null
@@ -42,7 +44,8 @@ export function ClosetItemGrid({
           onEdit={onEditItem}
           onReanalyze={onReanalyzeItem}
           onDelete={onDeleteItem}
-          onToggleImageFlip={onToggleImageFlipItem}
+          onRotateImage={onRotateImageItem}
+          onRestoreOriginalImage={onRestoreOriginalImageItem}
           isReanalyzing={reanalyzingItemId === item.id}
           isDeleting={deletingItemId === item.id}
           isFlipping={flippingItemId === item.id}

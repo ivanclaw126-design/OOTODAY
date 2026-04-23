@@ -2,6 +2,10 @@ export type ClosetItemCardData = {
   id: string
   imageUrl: string | null
   imageFlipped?: boolean
+  imageOriginalUrl?: string | null
+  imageRotationQuarterTurns?: number
+  imageRestoreExpiresAt?: string | null
+  canRestoreOriginal?: boolean
   category: string
   subCategory: string | null
   colorCategory: string | null

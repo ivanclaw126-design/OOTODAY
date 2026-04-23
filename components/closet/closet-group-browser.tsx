@@ -117,13 +117,12 @@ export function ClosetGroupBrowser({
 
               <div className="mt-2.5 grid grid-cols-4 gap-1.5">
                 {group.items.slice(0, 8).map((item) => (
-                  <div key={item.id} className="aspect-square overflow-hidden rounded-[0.75rem] bg-[var(--color-secondary)]">
+                  <div
+                    key={item.id}
+                    className="aspect-square overflow-hidden rounded-[0.75rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.88)_0%,rgba(240,233,223,0.92)_100%)] p-1"
+                  >
                     {item.imageUrl ? (
-                      <ClosetItemImage
-                        src={item.imageUrl}
-                        alt={`${group.label} 缩略图`}
-                        rotated={Boolean(item.imageFlipped)}
-                      />
+                      <ClosetItemImage src={item.imageUrl} alt={`${group.label} 缩略图`} fit="contain" />
                     ) : (
                       <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-neutral-dark)]">暂无图</div>
                     )}
