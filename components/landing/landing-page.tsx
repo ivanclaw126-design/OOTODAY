@@ -10,7 +10,8 @@ function getAuthErrorMessage(authError: string | null) {
     magic_link_email_provider_failed: '登录邮件没有成功发出去，像是邮件服务端出了问题。',
     magic_link_failed: '登录链接发送失败，请稍后再试。',
     missing_credentials: '请输入邮箱和密码后再登录。',
-    invalid_credentials: '邮箱或密码不正确。如果这是第一次登录，请先用邮箱链接激活账号。',
+    invalid_credentials: '默认密码登录失败。如果你已经改过密码，请展开“使用其他密码”后再登录；如果这是第一次使用，请先用邮箱链接激活账号。',
+    custom_password_required: '这个账号已经改过密码了，请展开“使用其他密码”后输入你自己的密码登录。',
     password_bootstrap_failed: '邮箱登录成功了，但默认密码初始化失败。请再用 magic link 进一次，或联系我处理。'
   }
 
@@ -111,7 +112,7 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-[var(--color-primary)]">邮箱 + 密码登录</p>
                   <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">
-                    第一次先用上面的 magic link 激活。激活后默认密码是 `123456`，你可以先进系统，再自己改掉。
+                    第一次先用上面的 magic link 激活。激活后这里默认会直接使用 `123456` 登录，你不用再手动输入；如果后面改过密码，再展开下面自己填写。
                   </p>
                 </div>
 
@@ -127,17 +128,23 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                       required
                     />
                   </label>
-                  <label className="flex min-w-0 w-full flex-col gap-2 text-sm font-medium">
-                    <span>密码</span>
-                    <input
-                      aria-label="登录密码"
-                      className="min-h-12 w-full min-w-0 rounded-2xl border border-[var(--color-neutral-mid)] bg-white px-4 py-3 text-base outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
-                      name="password"
-                      placeholder="123456"
-                      type="password"
-                      required
-                    />
-                  </label>
+                  <details className="rounded-2xl border border-[var(--color-neutral-mid)]/70 bg-white/70 px-4 py-3 text-sm text-[var(--color-neutral-dark)]">
+                    <summary className="cursor-pointer list-none font-medium text-[var(--color-primary)]">
+                      使用其他密码
+                    </summary>
+                    <div className="mt-3">
+                      <label className="flex min-w-0 w-full flex-col gap-2 text-sm font-medium">
+                        <span>密码</span>
+                        <input
+                          aria-label="登录密码"
+                          className="min-h-12 w-full min-w-0 rounded-2xl border border-[var(--color-neutral-mid)] bg-white px-4 py-3 text-base outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
+                          name="password"
+                          placeholder="如果你已经改过密码，再在这里输入"
+                          type="password"
+                        />
+                      </label>
+                    </div>
+                  </details>
                   <button
                     className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-[var(--color-neutral-mid)] bg-white px-5 py-3 text-base font-medium text-[var(--color-primary)] transition hover:bg-[#faf8f2]"
                     type="submit"
@@ -154,7 +161,7 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
 
               {magicLinkSent ? (
                 <p className="mt-4 rounded-2xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/8 px-4 py-3 text-sm text-[var(--color-accent)]">
-                  登录链接已发送，请检查邮箱。第一次点进去后，系统会同时给这个账号启用默认密码 `123456`。
+                  登录链接已发送，请检查邮箱。第一次点进去后，系统会同时给这个账号启用默认密码 `123456`，之后这里直接点“邮箱密码登录”就行。
                 </p>
               ) : null}
 
