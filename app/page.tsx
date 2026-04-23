@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth/get-session'
 export default async function HomePage({
   searchParams
 }: {
-  searchParams: Promise<{ magic_link?: string }>
+  searchParams: Promise<{ magic_link?: string; auth_error?: string }>
 }) {
   const session = await getSession()
 
@@ -15,5 +15,5 @@ export default async function HomePage({
 
   const params = await searchParams
 
-  return <LandingPage magicLinkSent={params.magic_link === 'sent'} />
+  return <LandingPage magicLinkSent={params.magic_link === 'sent'} authError={params.auth_error ?? null} />
 }

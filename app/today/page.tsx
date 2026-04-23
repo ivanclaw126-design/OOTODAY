@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { TodayPage } from '@/components/today/today-page'
 import {
+  changeTodayPasswordAction,
   refreshTodayRecommendationsAction,
   submitTodayOotdAction,
   updateTodayCityAction
@@ -37,6 +38,9 @@ export default async function TodayRoute({
   const view = await getTodayView({
     userId: session.user.id,
     city: profile?.city ?? null,
+    accountEmail: session.user.email ?? null,
+    passwordBootstrapped: Boolean(session.user.user_metadata?.password_bootstrapped),
+    passwordChangedAt: typeof session.user.user_metadata?.password_changed_at === 'string' ? session.user.user_metadata.password_changed_at : null,
     offset: Number.isNaN(offset) ? 0 : offset
   })
 
@@ -58,12 +62,19 @@ export default async function TodayRoute({
     await refreshTodayRecommendationsAction((Number.isNaN(offset) ? 0 : offset) + 1)
   }
 
+  async function changePassword(input: { password: string; confirmPassword: string }) {
+    'use server'
+
+    return changeTodayPasswordAction(input)
+  }
+
   return (
     <TodayPage
       view={view}
       updateCity={updateCity}
       submitOotd={submitOotd}
       refreshRecommendations={refreshRecommendations}
+      changePassword={changePassword}
     />
   )
 }

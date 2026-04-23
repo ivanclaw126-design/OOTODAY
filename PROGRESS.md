@@ -22,6 +22,8 @@
 
 **Landing 与 Closet 导入卡片现在补上了 iPhone 端横向显示修复：增加显式 viewport、关闭 Safari 自动文字放大，并把几处容易撑宽的输入框、按钮行和底部导航改成可收缩/可换行的移动端布局。**
 
+**登录入口现在已从纯 magic link 扩成 magic link + 邮箱密码双入口。首次用 magic link 登录后，系统会给该账号启用默认密码 `123456`，并允许用户在 Today 页面里自行修改密码。**
+
 **Closet 现在已支持相册批量导入第一版，会按队列逐张分析并确认后入橱。**
 
 **Closet 现在也支持粘贴商品链接或图片链接导入，并复用现有识别与保存链路。**
@@ -85,6 +87,9 @@
 - Closet 整理建议卡片现在可直接驱动列表筛选：支持查看重复单品、单件闲置单品和基础缺口对应视角 ✓
 - Closet 现在会把重复、闲置和缺口整合成最多 3 条优先动作，直接引导“先补 / 先留 / 先复盘” ✓
 - Landing 与 Closet 导入相关卡片已修复一轮 iPhone 横向显示问题：viewport、输入框宽度、按钮换行与底部导航收缩策略已补齐 ✓
+- Landing 现在支持 magic link 和邮箱密码双入口登录 ✓
+- 首次 magic link 登录后会自动启用默认密码 `123456`，后续可直接用邮箱密码登录 ✓
+- Today 页面现在新增账号安全区，支持已登录用户自行修改密码 ✓
 - Closet 现在支持一次多选多张本地图片批量导入，并会逐张进入同一套 AI 分析与确认链路 ✓
 - Closet 现在支持商品链接或图片链接导入，能复用 Shop 的远程图片解析能力进入衣橱保存流 ✓
 - Closet 现在支持拼图拆分导入：手动保留 2-4 个裁剪框后，会把拆出的单品图送回同一套批量导入队列 ✓
@@ -113,6 +118,9 @@
 - Next.js 16 App Router + React 19 + Tailwind CSS 4 基础工程
 - Supabase env / browser client / server client / middleware
 - magic link 登录回调与受保护路由
+- Landing 首页现在也支持邮箱 + 密码登录入口
+- 首次 magic link 登录后会自动为当前账号启用默认密码 `123456`
+- Today 页面现在提供登录后改密入口，密码状态通过 Supabase Auth user metadata 维护，不依赖额外 profile schema 字段
 - `/today`、`/closet` 页面骨架与未登录重定向
 - 初始 schema migration：`profiles`、`items`、`outfits`、`ootd`
 - 基础测试与生产构建验证
@@ -190,9 +198,9 @@ Today + OOTD MVP 行为：
 - `tests/lib/today/save-today-ootd-feedback.test.ts` (4 tests)
 - `tests/lib/today/get-today-view.test.ts` (2 tests)
 - `tests/lib/today/get-recent-ootd-history.test.ts` (1 test)
-- `tests/app/today/actions.test.ts` (4 tests)
+- `tests/app/today/actions.test.ts` (5 tests)
 - `tests/app/shop/actions.test.ts` (4 tests)
-- `tests/components/today-page.test.tsx` (7 tests)
+- `tests/components/today-page.test.tsx` (8 tests)
 - `tests/components/travel-page.test.tsx` (2 tests)
 - `tests/components/travel-page.test.tsx` (3 tests)
 - `tests/components/shop-page.test.tsx` (4 tests)
@@ -212,6 +220,9 @@ Today + OOTD MVP 行为：
 - 其他组件测试
 
 **当前测试状态：118/118 通过**
+
+补充说明：
+- 本轮登录能力变更已额外通过 targeted tests：`tests/components/landing-page.test.tsx`、`tests/components/today-page.test.tsx`、`tests/lib/today/get-today-view.test.ts`、`tests/app/today/actions.test.ts`
 
 ### 5. QA 验证结果
 
