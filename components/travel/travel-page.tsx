@@ -191,27 +191,54 @@ export function TravelPage({
             </Card>
           ) : null}
 
-          <Card className="overflow-hidden bg-[#111111] text-white shadow-[var(--shadow-strong)]">
-            <div className="flex flex-col gap-4">
-              <div className="space-y-2">
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/70">Trip Summary</p>
-                <p className="text-3xl font-semibold tracking-[-0.06em] text-white">
-                  {view.plan.destinationCity} · {view.plan.days} 天
-                </p>
-                <p className="text-sm leading-6 text-white/82">{view.plan.scenes.join(' / ') || '默认日常场景'}</p>
+          <Card className="overflow-hidden border-[rgba(9,9,9,0.04)] bg-[linear-gradient(180deg,var(--color-panel)_0%,var(--color-panel-soft)_100%)] text-white shadow-[var(--shadow-strong)]">
+            <div className="flex flex-col gap-5">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-white/56">Trip Summary</p>
+                    <p className="text-[2.15rem] font-semibold leading-none tracking-[-0.07em] text-white sm:text-[2.35rem]">
+                      {view.plan.destinationCity} · {view.plan.days} 天
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(view.plan.scenes.length > 0 ? view.plan.scenes : ['默认日常场景']).map((scene) => (
+                      <span
+                        key={scene}
+                        className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-medium tracking-[0.04em] text-white/84"
+                      >
+                        {scene}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="h-px w-full bg-white/8" />
               </div>
 
               <div className="grid gap-3 md:grid-cols-3">
-                <div className="rounded-[1.4rem] border border-white/18 bg-white/6 p-4">
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/70">Core Looks</p>
-                  <p className="mt-2 text-4xl font-semibold tracking-[-0.08em] text-[var(--color-accent)]">{view.plan.suggestedOutfitCount}</p>
+                <div className="rounded-[1.45rem] border border-white/10 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-white/54">Core Looks</p>
+                  <div className="mt-3 flex items-end gap-2">
+                    <p className="text-5xl font-semibold leading-none tracking-[-0.1em] text-[var(--color-accent)]">{view.plan.suggestedOutfitCount}</p>
+                    <p className="pb-1 text-sm font-medium text-white/66">套稳定组合</p>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-white/72">先围绕这些最稳的搭配做复穿，行李会更轻。</p>
                 </div>
-                <div className="rounded-[1.4rem] border border-white/18 bg-white/6 p-4 md:col-span-2">
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/70">Weather Read</p>
-                  <p className="mt-2 text-sm leading-6 text-white/84">
-                    {view.plan.weather
-                      ? `${view.plan.weather.city} · ${view.plan.weather.temperatureC}°C · ${view.plan.weather.conditionLabel}`
-                      : '当前天气暂时不可用，已按场景和衣橱稳定度降级生成'}
+                <div className="rounded-[1.45rem] border border-white/10 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:col-span-2">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-white/54">Weather Read</p>
+                  {view.plan.weather ? (
+                    <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                      <div className="space-y-1">
+                        <p className="text-[1.35rem] font-semibold leading-tight tracking-[-0.04em] text-white">{view.plan.weather.city}</p>
+                        <p className="text-sm text-white/64">{view.plan.weather.conditionLabel}</p>
+                      </div>
+                      <p className="text-[2rem] font-semibold leading-none tracking-[-0.08em] text-white">{view.plan.weather.temperatureC}°C</p>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-base font-medium leading-7 text-white/92">当前天气暂时不可用，已按场景和衣橱稳定度降级生成</p>
+                  )}
+                  <p className="mt-3 text-sm leading-6 text-white/72">
+                    {view.plan.weather ? '按这个温度先准备层次，剩下的变化交给上衣切换。' : '先按耐穿和低冲突组合给出基础方案，补天气后再细化。'}
                   </p>
                 </div>
               </div>

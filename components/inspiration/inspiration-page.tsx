@@ -270,17 +270,20 @@ export function InspirationPage({
                   />
                 </div>
 
-                <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/70">一句话总结 At A Glance</p>
+                <div className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-white/56">一句话总结 At A Glance</p>
                   {analysis.sourceTitle ? (
-                    <p className="mt-3 text-sm text-white/72">{analysis.sourceTitle}</p>
+                    <p className="mt-3 text-sm font-medium text-white/76">{analysis.sourceTitle}</p>
                   ) : null}
-                  <p className="mt-3 text-[1.55rem] font-semibold leading-[1.28] tracking-[-0.04em] text-white sm:text-[1.8rem]">
-                    {analysis.breakdown.summary}
-                  </p>
+                  <div className="mt-3 rounded-[1.2rem] border border-white/8 bg-black/26 p-4">
+                    <div className="mb-3 h-1.5 w-14 rounded-full bg-[var(--color-accent)]/90" />
+                    <p className="max-w-[18rem] text-[1.58rem] font-semibold leading-[1.28] tracking-[-0.045em] text-white sm:max-w-none sm:text-[1.84rem]">
+                      {analysis.breakdown.summary}
+                    </p>
+                  </div>
                   <div className="mt-4 flex flex-wrap gap-2 text-sm">
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-white/82">{analysis.breakdown.scene}</span>
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-white/82">{analysis.breakdown.vibe}</span>
+                    <span className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-white/84">场景 · {analysis.breakdown.scene}</span>
+                    <span className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-white/84">气质 · {analysis.breakdown.vibe}</span>
                   </div>
                 </div>
               </div>
