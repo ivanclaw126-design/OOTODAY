@@ -10,14 +10,20 @@ import { TodayRecommendationList } from '@/components/today/today-recommendation
 import { TodayStatusCard } from '@/components/today/today-status-card'
 import { PrimaryLink, SecondaryButton } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
-import type { TodayOotdStatus, TodayRecommendation, TodayView } from '@/lib/today/types'
+import type { TodayHistoryUpdateInput, TodayOotdHistoryEntry, TodayOotdStatus, TodayRecommendation, TodayView } from '@/lib/today/types'
+
+function isSameCalendarDay(left: string, right: string) {
+  return new Date(left).toDateString() === new Date(right).toDateString()
+}
 
 export function TodayPage({
   view,
   updateCity,
   submitOotd,
   refreshRecommendations,
-  changePassword
+  changePassword,
+  updateHistoryEntry,
+  deleteHistoryEntry
 }: {
   view: TodayView
   updateCity: (input: { city: string }) => Promise<{ error: string | null }>
@@ -25,13 +31,18 @@ export function TodayPage({
     recommendation: TodayRecommendation
     satisfactionScore: number
   }) => Promise<{ error: string | null; wornAt: string | null }>
-  refreshRecommendations: () => Promise<{ recommendations: TodayRecommendation[] }>
+  refreshRecommendations: (input: { offset: number }) => Promise<{ recommendations: TodayRecommendation[] }>
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
+  updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>
+  deleteHistoryEntry: (input: { ootdId: string }) => Promise<{ error: string | null }>
 }) {
   const [isEditingCity, setIsEditingCity] = useState(false)
   const [ootdStatus, setOotdStatus] = useState<TodayOotdStatus>(view.ootdStatus)
   const [recommendations, setRecommendations] = useState(view.recommendations)
+  const [recommendationOffset, setRecommendationOffset] = useState(0)
   const [isRefreshingRecommendations, setIsRefreshingRecommendations] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [historyEntries, setHistoryEntries] = useState(view.recentOotdHistory)
 
   async function submitTodayOotd(input: {
     recommendation: TodayRecommendation
@@ -48,15 +59,42 @@ export function TodayPage({
 
   async function handleRefreshRecommendations() {
     setIsRefreshingRecommendations(true)
+    const nextOffset = recommendationOffset + 1
 
     try {
-      const result = await refreshRecommendations()
+      const result = await refreshRecommendations({ offset: nextOffset })
       startTransition(() => {
         setRecommendations(result.recommendations)
+        setRecommendationOffset(nextOffset)
       })
     } finally {
       setIsRefreshingRecommendations(false)
     }
+  }
+
+  async function handleUpdateHistoryEntry(input: TodayHistoryUpdateInput) {
+    const result = await updateHistoryEntry(input)
+
+    if (!result.error && result.entry) {
+      setHistoryEntries((current) => current.map((entry) => (entry.id === result.entry?.id ? result.entry : entry)))
+    }
+
+    return result
+  }
+
+  async function handleDeleteHistoryEntry(input: { ootdId: string }) {
+    const deletedEntry = historyEntries.find((entry) => entry.id === input.ootdId) ?? null
+    const result = await deleteHistoryEntry(input)
+
+    if (!result.error) {
+      setHistoryEntries((current) => current.filter((entry) => entry.id !== input.ootdId))
+
+      if (deletedEntry && ootdStatus.status === 'recorded' && isSameCalendarDay(deletedEntry.wornAt, ootdStatus.wornAt)) {
+        setOotdStatus({ status: 'not-recorded' })
+      }
+    }
+
+    return result
   }
 
   return (
@@ -98,17 +136,56 @@ export function TodayPage({
               </SecondaryButton>
             </div>
 
-            <TodayAccountSecurityCard
-              email={view.accountEmail}
-              passwordBootstrapped={view.passwordBootstrapped}
-              passwordChangedAt={view.passwordChangedAt}
-              changePassword={changePassword}
+            <TodayOotdHistory
+              entries={historyEntries}
+              onUpdateEntry={handleUpdateHistoryEntry}
+              onDeleteEntry={handleDeleteHistoryEntry}
             />
 
-            <TodayOotdHistory entries={view.recentOotdHistory} />
+            <div className="pt-2">
+              <SecondaryButton type="button" className="w-full" onClick={() => setIsSettingsOpen(true)}>
+                打开设置
+              </SecondaryButton>
+            </div>
           </>
         )}
       </div>
+
+      {isSettingsOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-4 sm:items-center">
+          <div className="absolute inset-0" onClick={() => setIsSettingsOpen(false)} aria-hidden="true" />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Today 设置"
+            className="relative z-10 w-full max-w-lg"
+          >
+            <div className="rounded-[1.75rem] border border-black/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,245,240,0.95)_100%)] p-5 shadow-[0_24px_60px_rgba(26,26,26,0.18)]">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-primary)]">Settings</p>
+                  <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">账号与登录设置</h2>
+                  <p className="text-sm text-[var(--color-neutral-dark)]">不把账号相关操作放在 Today 主决策区里，需要时再打开这里处理。</p>
+                </div>
+                <button
+                  type="button"
+                  className="text-sm text-[var(--color-neutral-dark)] underline underline-offset-2"
+                  onClick={() => setIsSettingsOpen(false)}
+                >
+                  关闭
+                </button>
+              </div>
+
+              <TodayAccountSecurityCard
+                email={view.accountEmail}
+                passwordBootstrapped={view.passwordBootstrapped}
+                passwordChangedAt={view.passwordChangedAt}
+                changePassword={changePassword}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   )
 }

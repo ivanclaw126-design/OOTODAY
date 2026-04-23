@@ -38,6 +38,12 @@ export type TodayOotdHistoryEntry = {
   notes: string | null
 }
 
+export type TodayHistoryUpdateInput = {
+  ootdId: string
+  satisfactionScore: number | null
+  notes: string
+}
+
 export type TodayView = {
   itemCount: number
   city: string | null

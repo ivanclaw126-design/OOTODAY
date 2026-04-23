@@ -151,6 +151,7 @@ describe('saveClosetItemAction', () => {
     await expect(saveClosetItemAction(validDraft)).resolves.toEqual({ id: 'item-1' })
     expect(saveClosetItem).toHaveBeenCalledWith({
       ...validDraft,
+      category: '上装',
       userId: 'user-1'
     })
     expect(revalidatePath).toHaveBeenCalledWith('/closet')

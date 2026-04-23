@@ -9,6 +9,7 @@ const saveItem = vi.fn()
 const deleteItem = vi.fn()
 const updateItem = vi.fn()
 const reanalyzeItem = vi.fn()
+const toggleImageFlip = vi.fn()
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
@@ -45,6 +46,7 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
+        toggleImageFlip={toggleImageFlip}
       />
     )
 
@@ -126,10 +128,12 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
+        toggleImageFlip={toggleImageFlip}
       />
     )
 
     expect(screen.getByText('已收录 2 件单品')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: '展开' })).toHaveLength(2)
     expect(screen.getByText('上装')).toBeInTheDocument()
     expect(screen.getByText('衬衫')).toBeInTheDocument()
     expect(screen.getByText('蓝色')).toBeInTheDocument()
@@ -138,6 +142,7 @@ describe('ClosetPage', () => {
     expect(screen.getByText('黑色')).toBeInTheDocument()
     expect(screen.getByText('暂无图片')).toBeInTheDocument()
     expect(screen.getAllByText('整理建议').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getAllByRole('button', { name: '展开' })[1])
     expect(screen.getByText('下一步先做这些')).toBeInTheDocument()
     expect(screen.getByText('1. 先补 可叠穿外套')).toBeInTheDocument()
     expect(screen.getByText('优先保留：灰色 短袖T恤')).toBeInTheDocument()
@@ -216,9 +221,11 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
+        toggleImageFlip={toggleImageFlip}
       />
     )
 
+    fireEvent.click(screen.getAllByRole('button', { name: '展开' })[1])
     fireEvent.click(screen.getByRole('button', { name: /灰色 短袖T恤/ }))
     expect(screen.getAllByText('短袖T恤')).toHaveLength(1)
     expect(screen.queryByText('西裤')).not.toBeInTheDocument()
@@ -266,12 +273,56 @@ describe('ClosetPage', () => {
         updateItem={updateItem}
         reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
+        toggleImageFlip={toggleImageFlip}
       />
     )
 
     fireEvent.click(screen.getByRole('button', { name: '删除这件衣物' }))
     expect(confirm).toHaveBeenCalled()
     expect(deleteItem).toHaveBeenCalledWith({ itemId: 'item-1' })
+  })
+
+  it('toggles image flip for a saved item', async () => {
+    toggleImageFlip.mockResolvedValue(undefined)
+
+    render(
+      <ClosetPage
+        userId="user-1"
+        itemCount={1}
+        items={[
+          {
+            id: 'item-1',
+            imageUrl: 'https://example.com/top.jpg',
+            imageFlipped: false,
+            category: '上装',
+            subCategory: '衬衫',
+            colorCategory: '蓝色',
+            styleTags: ['通勤'],
+            lastWornDate: null,
+            wearCount: 0,
+            createdAt: '2026-04-19T12:00:00Z'
+          }
+        ]}
+        insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
+        deleteItem={deleteItem}
+        toggleImageFlip={toggleImageFlip}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '向右翻转图片' }))
+
+    await waitFor(() => {
+      expect(toggleImageFlip).toHaveBeenCalledWith({
+        itemId: 'item-1',
+        imageFlipped: true
+      })
+    })
   })
 
   it('opens the edit panel immediately when editing a saved item', () => {
