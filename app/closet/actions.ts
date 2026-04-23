@@ -64,12 +64,14 @@ export async function analyzeClosetImportUrlAction({ sourceUrl }: { sourceUrl: s
       userId: session.user.id
     })
     const analysis = await analyzeItemImage(importedImage.imageUrl)
+    const normalized = normalizeClosetFields(analysis)
 
     return {
       error: null,
       draft: {
         imageUrl: importedImage.imageUrl,
-        ...analysis
+        ...normalized,
+        styleTags: analysis.styleTags
       } satisfies ClosetAnalysisDraft
     }
   } catch (error) {
@@ -140,10 +142,12 @@ export async function reanalyzeClosetItemAction(input: { itemId: string }): Prom
   validateClosetImageUrlForSave(item.image_url, session.user.id)
 
   const analysis = await analyzeItemImage(item.image_url)
+  const normalized = normalizeClosetFields(analysis)
 
   return {
     imageUrl: item.image_url,
-    ...analysis
+    ...normalized,
+    styleTags: analysis.styleTags
   }
 }
 

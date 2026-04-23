@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import { normalizeClosetFields } from '@/lib/closet/taxonomy'
 
 type ClosetItemRow = {
   id: string
@@ -15,18 +16,26 @@ type ClosetItemRow = {
 }
 
 function mapClosetItems(data: ClosetItemRow[] | null | undefined): ClosetItemCardData[] {
-  return (data ?? []).map((item) => ({
-    id: item.id,
-    imageUrl: item.image_url,
-    imageFlipped: Boolean(item.image_flipped),
-    category: item.category,
-    subCategory: item.sub_category,
-    colorCategory: item.color_category,
-    styleTags: item.style_tags,
-    lastWornDate: item.last_worn_date,
-    wearCount: item.wear_count,
-    createdAt: item.created_at
-  }))
+  return (data ?? []).map((item) => {
+    const normalized = normalizeClosetFields({
+      category: item.category,
+      subCategory: item.sub_category,
+      colorCategory: item.color_category
+    })
+
+    return {
+      id: item.id,
+      imageUrl: item.image_url,
+      imageFlipped: Boolean(item.image_flipped),
+      category: normalized.category,
+      subCategory: normalized.subCategory,
+      colorCategory: normalized.colorCategory,
+      styleTags: item.style_tags,
+      lastWornDate: item.last_worn_date,
+      wearCount: item.wear_count,
+      createdAt: item.created_at
+    }
+  })
 }
 
 export async function getClosetView(userId: string, options?: { limit?: number }) {

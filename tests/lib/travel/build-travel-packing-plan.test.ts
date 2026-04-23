@@ -40,7 +40,7 @@ describe('buildTravelPackingPlan', () => {
         {
           id: 'bottom-1',
           imageUrl: null,
-          category: '裤装',
+          category: '下装',
           subCategory: '西裤',
           colorCategory: '黑色',
           styleTags: ['通勤'],
@@ -51,7 +51,7 @@ describe('buildTravelPackingPlan', () => {
         {
           id: 'outer-1',
           imageUrl: null,
-          category: '外套',
+          category: '外层',
           subCategory: '西装外套',
           colorCategory: '藏蓝',
           styleTags: ['通勤'],
@@ -64,7 +64,7 @@ describe('buildTravelPackingPlan', () => {
 
     expect(plan.destinationCity).toBe('东京')
     expect(plan.suggestedOutfitCount).toBe(1)
-    expect(plan.entries.map((entry) => entry.categoryLabel)).toEqual(['上衣', '下装', '外套'])
+    expect(plan.entries.map((entry) => entry.categoryLabel)).toEqual(['上衣', '下装', '外层'])
     expect(plan.dailyPlan).toHaveLength(4)
     expect(plan.dailyPlan[0]?.dayLabel).toBe('第 1 天')
     expect(plan.missingHints).toEqual([])
@@ -96,7 +96,7 @@ describe('buildTravelPackingPlan', () => {
     expect(plan.entries.map((entry) => entry.categoryLabel)).toEqual(['上衣'])
     expect(plan.dailyPlan).toHaveLength(5)
     expect(plan.missingHints).toContain('当前衣橱里缺少稳定下装，这会让旅行搭配明显受限。')
-    expect(plan.missingHints).toContain('这趟更适合带一件外套，但当前衣橱里没有可直接打包的外套。')
+    expect(plan.missingHints).toContain('这趟更适合带一件外层，但当前衣橱里没有可直接打包的外层。')
   })
 
   it('uses a mild-weather note when weather exists but is neither hot nor cold', () => {
@@ -126,7 +126,7 @@ describe('buildTravelPackingPlan', () => {
         {
           id: 'bottom-1',
           imageUrl: null,
-          category: '裤装',
+          category: '下装',
           subCategory: '西裤',
           colorCategory: '黑色',
           styleTags: ['通勤'],
@@ -190,7 +190,7 @@ describe('buildTravelPackingPlan', () => {
         {
           id: 'dress-1',
           imageUrl: null,
-          category: '全身装',
+          category: '连体/全身装',
           subCategory: '连衣裙',
           colorCategory: '红色',
           styleTags: ['约会'],

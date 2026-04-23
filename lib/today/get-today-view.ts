@@ -21,7 +21,7 @@ export async function getTodayView({
   offset?: number
 }): Promise<TodayView> {
   const [closet, ootdStatus, recentOotdHistory] = await Promise.all([
-    getClosetView(userId),
+    getClosetView(userId, { limit: 0 }),
     getTodayOotdStatus(userId),
     getRecentOotdHistory(userId)
   ])

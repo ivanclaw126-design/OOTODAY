@@ -1,15 +1,19 @@
 import { buildClosetAnchoredColorHints } from '@/lib/closet/color-strategy'
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import {
+  BOTTOM_CATEGORY,
   isBottomCategory,
   isOnePieceCategory,
   isOuterwearCategory,
   isTopCategory,
+  ONE_PIECE_CATEGORY,
+  OUTER_LAYER_CATEGORY,
   normalizeCategoryValue,
+  TOP_CATEGORY,
 } from '@/lib/closet/taxonomy'
 import type { ShopCandidateItem, ShopPurchaseAnalysis } from '@/lib/shop/types'
 
-const supportedFashionCategories = ['上装', '下装', '全身装', '外套'] as const
+const supportedFashionCategories = [TOP_CATEGORY, BOTTOM_CATEGORY, ONE_PIECE_CATEGORY, OUTER_LAYER_CATEGORY] as const
 
 export function getUnsupportedShopCategoryMessage(category: string) {
   const normalizedCategory = normalizeCategoryValue(category)
@@ -18,7 +22,7 @@ export function getUnsupportedShopCategoryMessage(category: string) {
     return null
   }
 
-  return '当前只支持上装、下装、全身装、外套这类服饰单品分析，请换一个服饰商品链接或图片试试'
+  return '当前只支持上装、下装、连体/全身装、外层这类服饰单品分析，请换一个服饰商品链接或图片试试'
 }
 
 function isTop(category: string) {
@@ -99,7 +103,7 @@ function getMissingCategoryHints(candidate: ShopCandidateItem, closetItems: Clos
   }
 
   if (isDress(candidate.category) && outerLayers.length === 0) {
-    hints.push('如果你想扩大场景覆盖，后续可以补一件外套')
+    hints.push('如果你想扩大场景覆盖，后续可以补一件外层')
   }
 
   if (isOuter(candidate.category) && dresses.length === 0 && (tops.length === 0 || bottoms.length === 0)) {

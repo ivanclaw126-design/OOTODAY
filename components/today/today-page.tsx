@@ -9,7 +9,7 @@ import { TodayCityPromptCard } from '@/components/today/today-city-prompt-card'
 import { TodayOotdHistory } from '@/components/today/today-ootd-history'
 import { TodayRecommendationList } from '@/components/today/today-recommendation-list'
 import { TodayStatusCard } from '@/components/today/today-status-card'
-import { PrimaryLink, SecondaryButton } from '@/components/ui/button'
+import { PrimaryButton, PrimaryLink, SecondaryButton } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import type { TodayHistoryUpdateInput, TodayOotdHistoryEntry, TodayOotdStatus, TodayRecommendation, TodayView } from '@/lib/today/types'
 
@@ -144,9 +144,13 @@ export function TodayPage({
             />
 
             <div className="pt-2">
-              <SecondaryButton type="button" className="w-full" onClick={() => setIsSettingsOpen(true)}>
+              <PrimaryButton
+                type="button"
+                className="w-full bg-[var(--color-accent)] text-[var(--color-primary)] hover:bg-[var(--color-accent)]/90"
+                onClick={() => setIsSettingsOpen(true)}
+              >
                 设置
-              </SecondaryButton>
+              </PrimaryButton>
             </div>
           </>
         )}
@@ -161,23 +165,22 @@ export function TodayPage({
             aria-label="Today 设置"
             className="relative z-10 w-full max-w-3xl"
           >
-            <div className="max-h-[min(88vh,860px)] overflow-hidden rounded-[1.75rem] border border-black/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,245,240,0.95)_100%)] p-5 shadow-[0_24px_60px_rgba(26,26,26,0.18)]">
+            <div className="flex max-h-[92vh] flex-col overflow-hidden rounded-[1.75rem] border border-black/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,245,240,0.95)_100%)] p-4 shadow-[0_24px_60px_rgba(26,26,26,0.18)] sm:p-5">
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-primary)]">Settings</p>
                   <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">主题与账号设置</h2>
-                  <p className="text-sm text-[var(--color-neutral-dark)]">主题切换和账号操作都收在这里，避免打断 Today 主决策区的使用节奏。</p>
                 </div>
-                <button
+                <PrimaryButton
                   type="button"
-                  className="text-sm text-[var(--color-neutral-dark)] underline underline-offset-2"
+                  className="shrink-0 bg-[var(--color-accent)] px-3 py-2 text-[var(--color-primary)] hover:bg-[var(--color-accent)]/90"
                   onClick={() => setIsSettingsOpen(false)}
                 >
                   关闭
-                </button>
+                </PrimaryButton>
               </div>
 
-              <div className="max-h-[calc(min(88vh,860px)-5.75rem)] space-y-4 overflow-y-auto pr-1">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-2 pr-1">
                 <ThemeSettingsCard />
                 <TodayAccountSecurityCard
                   email={view.accountEmail}

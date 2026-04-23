@@ -173,7 +173,7 @@ describe('today actions', () => {
       recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }]
     })
 
-    expect(getClosetView).toHaveBeenCalledWith('user-1')
+    expect(getClosetView).toHaveBeenCalledWith('user-1', { limit: 0 })
     expect(generateTodayRecommendations).toHaveBeenCalledWith([{ id: 'item-1' }, { id: 'item-2' }], expect.any(Object), 3)
     expect(revalidatePath).not.toHaveBeenCalled()
   })

@@ -125,7 +125,7 @@ describe('analyzeShopCandidateAction', () => {
     const { analyzeShopCandidateAction } = await import('@/app/shop/actions')
 
     await expect(analyzeShopCandidateAction({ sourceUrl: 'https://shop.example.com/item' })).resolves.toEqual({
-      error: '当前只支持上装、下装、全身装、外套这类服饰单品分析，请换一个服饰商品链接或图片试试',
+      error: '当前只支持上装、下装、连体/全身装、外层这类服饰单品分析，请换一个服饰商品链接或图片试试',
       analysis: null
     })
   })

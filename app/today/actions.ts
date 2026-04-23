@@ -70,7 +70,7 @@ export async function refreshTodayRecommendationsAction(offset: number) {
   const supabase = await createSupabaseServerClient()
   const [{ data: profile }, closet] = await Promise.all([
     supabase.from('profiles').select('city').eq('id', session.user.id).maybeSingle(),
-    getClosetView(session.user.id)
+    getClosetView(session.user.id, { limit: 0 })
   ])
 
   if (closet.itemCount === 0) {

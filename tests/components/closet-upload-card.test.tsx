@@ -166,13 +166,13 @@ describe('ClosetUploadCard', () => {
     fireEvent.change(screen.getByLabelText('选择衣物图片'), { target: { files: [file] } })
 
     await screen.findByRole('combobox', { name: '分类' })
-    fireEvent.change(screen.getByLabelText('分类'), { target: { value: '外套' } })
+    fireEvent.change(screen.getByLabelText('分类'), { target: { value: '外层' } })
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
     await waitFor(() => {
       expect(saveItem).toHaveBeenCalledWith({
         imageUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/shirt.jpg',
-        category: '外套',
+        category: '外层',
         subCategory: '未知类型请手动选择',
         colorCategory: '蓝色',
         styleTags: ['通勤']
@@ -385,7 +385,7 @@ describe('ClosetUploadCard', () => {
     fireEvent.click(screen.getByRole('button', { name: '通过链接导入' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('外套')
+      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('外层')
     })
     expect(analyzeImportUrl).toHaveBeenCalledWith({ sourceUrl: 'https://shop.example.com/item/1' })
 
@@ -394,7 +394,7 @@ describe('ClosetUploadCard', () => {
     await waitFor(() => {
       expect(saveItem).toHaveBeenCalledWith({
         imageUrl: 'https://cdn.example.com/item.jpg',
-        category: '外套',
+        category: '外层',
         subCategory: '西装外套',
         colorCategory: '米色',
         styleTags: ['通勤']
@@ -438,7 +438,7 @@ describe('ClosetUploadCard', () => {
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('外套')
+      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('外层')
     })
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 

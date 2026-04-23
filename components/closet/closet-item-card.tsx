@@ -1,9 +1,10 @@
 'use client'
 
 import { SecondaryButton } from '@/components/ui/button'
+import { ClosetItemImage } from '@/components/closet/closet-item-image'
 import { ClosetCategoryBadge, ClosetColorBadge } from '@/components/closet/closet-taxonomy-icons'
 import type { ClosetItemCardData } from '@/lib/closet/types'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 export function ClosetItemCard({
   item,
@@ -27,10 +28,6 @@ export function ClosetItemCard({
   const imageAlt = [item.category, item.colorCategory].filter(Boolean).join(' ')
   const [isFlipConfirming, setIsFlipConfirming] = useState(false)
 
-  useEffect(() => {
-    setIsFlipConfirming(false)
-  }, [item.id, item.imageFlipped, isFlipping])
-
   function handleFlipIntent() {
     setIsFlipConfirming((current) => !current)
   }
@@ -45,12 +42,7 @@ export function ClosetItemCard({
       <div className="aspect-square bg-[var(--color-secondary)]">
         {item.imageUrl ? (
           <div className="flex h-full w-full items-center justify-center overflow-hidden">
-            <img
-              src={item.imageUrl}
-              alt={imageAlt}
-              className={`h-full w-full transition-transform duration-200 ${item.imageFlipped ? 'object-contain' : 'object-cover'}`}
-              style={item.imageFlipped ? { transform: 'rotate(90deg)' } : undefined}
-            />
+            <ClosetItemImage src={item.imageUrl} alt={imageAlt} rotated={Boolean(item.imageFlipped)} />
           </div>
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-[var(--color-neutral-dark)]">
