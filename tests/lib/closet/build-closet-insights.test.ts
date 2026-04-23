@@ -44,7 +44,7 @@ describe('buildClosetInsights', () => {
 
     expect(result.duplicateGroups).toEqual([
       {
-        id: '上衣::短袖t恤::灰色',
+        id: '上装::短袖t恤::灰色',
         label: '灰色 短袖T恤',
         count: 2,
         itemIds: ['item-1', 'item-2'],
@@ -81,10 +81,10 @@ describe('buildClosetInsights', () => {
         tone: 'buy'
       },
       {
-        id: 'action:上衣::短袖t恤::灰色',
+        id: 'action:上装::短袖t恤::灰色',
         title: '重复款先保留 灰色 短袖T恤',
         detail: '这件已经穿过 1 次，说明它更像你真的会反复拿出来穿的版本 其余 1 件可以先暂停同类购买，或者后面再决定去留。',
-        filterId: '上衣::短袖t恤::灰色',
+        filterId: '上装::短袖t恤::灰色',
         tone: 'keep'
       },
       {

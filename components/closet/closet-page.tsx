@@ -4,8 +4,10 @@ import { AppShell } from '@/components/app-shell'
 import { ClosetInsightsPanel } from '@/components/closet/closet-insights'
 import { ClosetItemGrid } from '@/components/closet/closet-item-grid'
 import { ClosetUploadCard } from '@/components/closet/closet-upload-card'
+import { ClosetUploadForm } from '@/components/closet/closet-upload-form'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
+import { isBottomCategory, isOuterwearCategory, isTopCategory } from '@/lib/closet/taxonomy'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult, ClosetInsights, ClosetItemCardData } from '@/lib/closet/types'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
@@ -53,12 +55,31 @@ type ClosetPageProps = {
   analyzeUpload: (input: { imageUrl: string }) => Promise<ClosetAnalysisResult>
   analyzeImportUrl: (input: { sourceUrl: string }) => Promise<{ error: string | null; draft: ClosetAnalysisDraft | null }>
   saveItem: (draft: ClosetAnalysisDraft) => Promise<void>
+  updateItem: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<void>
+  reanalyzeItem: (input: { itemId: string }) => Promise<ClosetAnalysisDraft>
   deleteItem: (input: { itemId: string }) => Promise<void>
 }
 
-export function ClosetPage({ userId, itemCount, items, insights, storageBucket, analyzeUpload, analyzeImportUrl, saveItem, deleteItem }: ClosetPageProps) {
+export function ClosetPage({
+  userId,
+  itemCount,
+  items,
+  insights,
+  storageBucket,
+  analyzeUpload,
+  analyzeImportUrl,
+  saveItem,
+  updateItem,
+  reanalyzeItem,
+  deleteItem
+}: ClosetPageProps) {
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
+  const [reanalyzingItemId, setReanalyzingItemId] = useState<string | null>(null)
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editingDraft, setEditingDraft] = useState<ClosetAnalysisDraft | null>(null)
+  const [editingError, setEditingError] = useState<string | null>(null)
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
   const router = useRouter()
 
   const activeMissingBasic = useMemo(
@@ -84,15 +105,15 @@ export function ClosetPage({ userId, itemCount, items, insights, storageBucket, 
     }
 
     if (activeFilterId === 'dark-bottom') {
-      return items.filter((item) => ['裤装', '下装', '裤子'].includes(item.category))
+      return items.filter((item) => isBottomCategory(item.category))
     }
 
     if (activeFilterId === 'outerwear') {
-      return items.filter((item) => item.category === '外套')
+      return items.filter((item) => isOuterwearCategory(item.category))
     }
 
     if (activeFilterId === 'basic-top') {
-      return items.filter((item) => item.category === '上衣')
+      return items.filter((item) => isTopCategory(item.category))
     }
 
     return items
@@ -174,6 +195,54 @@ export function ClosetPage({ userId, itemCount, items, insights, storageBucket, 
     }
   }
 
+  function handleEditItem(item: ClosetItemCardData) {
+    setEditingItemId(item.id)
+    setEditingError(null)
+    setEditingDraft({
+      imageUrl: item.imageUrl ?? '',
+      category: item.category,
+      subCategory: item.subCategory ?? '未知类型请手动选择',
+      colorCategory: item.colorCategory ?? '未知颜色请手动选择',
+      styleTags: item.styleTags
+    })
+  }
+
+  async function handleReanalyzeItem(item: ClosetItemCardData) {
+    setReanalyzingItemId(item.id)
+    setEditingError(null)
+
+    try {
+      const nextDraft = await reanalyzeItem({ itemId: item.id })
+      setEditingItemId(item.id)
+      setEditingDraft(nextDraft)
+      router.refresh()
+    } catch (error) {
+      setEditingError(error instanceof Error ? error.message : '重新识别失败，请稍后再试')
+    } finally {
+      setReanalyzingItemId(null)
+    }
+  }
+
+  async function handleSaveEdit(nextDraft: ClosetAnalysisDraft) {
+    if (!editingItemId) {
+      return
+    }
+
+    setIsSavingEdit(true)
+    setEditingError(null)
+
+    try {
+      await updateItem({ itemId: editingItemId, draft: nextDraft })
+      setEditingItemId(null)
+      setEditingDraft(null)
+      router.refresh()
+    } catch (error) {
+      setEditingError(error instanceof Error ? error.message : '保存失败，请稍后再试')
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
+
   return (
     <AppShell title="Closet">
       <Card>
@@ -243,13 +312,48 @@ export function ClosetPage({ userId, itemCount, items, insights, storageBucket, 
           <div className="rounded-[1.5rem] border border-black/7 bg-white/92 p-4 shadow-[0_14px_34px_rgba(26,26,26,0.06)] backdrop-blur sm:p-5">
             <ClosetItemGrid
               items={filteredItems}
+              onEditItem={handleEditItem}
+              onReanalyzeItem={handleReanalyzeItem}
               onDeleteItem={handleDeleteItem}
+              reanalyzingItemId={reanalyzingItemId}
               deletingItemId={deletingItemId}
               emptyTitle={gridEmptyTitle}
               emptyDescription={gridEmptyDescription}
             />
           </div>
         </ClosetSection>
+      ) : null}
+
+      {editingItemId && editingDraft ? (
+        <Card>
+          <div className="flex flex-col gap-3">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">Step 4</p>
+              <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">编辑识别结果</h2>
+              <p className="text-sm text-[var(--color-neutral-dark)]">
+                你可以直接改分类、子分类和颜色，也可以先点“一键重新识别”再决定是否保存。
+              </p>
+            </div>
+
+            <ClosetUploadForm initialDraft={editingDraft} disabled={isSavingEdit} submitLabel="保存修改" onSubmit={handleSaveEdit} />
+
+            {editingError ? <p className="text-sm text-red-600">{editingError}</p> : null}
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="text-sm text-[var(--color-neutral-dark)] underline underline-offset-2"
+                onClick={() => {
+                  setEditingItemId(null)
+                  setEditingDraft(null)
+                  setEditingError(null)
+                }}
+              >
+                关闭编辑
+              </button>
+            </div>
+          </div>
+        </Card>
       ) : null}
     </AppShell>
   )

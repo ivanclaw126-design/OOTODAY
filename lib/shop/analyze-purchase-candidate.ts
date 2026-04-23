@@ -1,41 +1,33 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import { isBottomCategory, isOnePieceCategory, isOuterwearCategory, isTopCategory, normalizeCategoryValue } from '@/lib/closet/taxonomy'
 import type { ShopCandidateItem, ShopPurchaseAnalysis } from '@/lib/shop/types'
 
-const supportedFashionCategories = ['上衣', '裤装', '裙装', '连衣裙', '外套'] as const
-
-function normalizeCategory(category: string) {
-  if (category === '裤子') {
-    return '裤装'
-  }
-
-  return category
-}
+const supportedFashionCategories = ['上装', '下装', '全身装', '外套'] as const
 
 export function getUnsupportedShopCategoryMessage(category: string) {
-  const normalizedCategory = normalizeCategory(category)
+  const normalizedCategory = normalizeCategoryValue(category)
 
   if (supportedFashionCategories.includes(normalizedCategory as (typeof supportedFashionCategories)[number])) {
     return null
   }
 
-  return '当前只支持上衣、裤装、裙装、连衣裙、外套这类服饰单品分析，请换一个服饰商品链接或图片试试'
+  return '当前只支持上装、下装、全身装、外套这类服饰单品分析，请换一个服饰商品链接或图片试试'
 }
 
 function isTop(category: string) {
-  return normalizeCategory(category) === '上衣'
+  return isTopCategory(category)
 }
 
 function isBottom(category: string) {
-  const normalized = normalizeCategory(category)
-  return normalized === '裤装' || normalized === '裙装'
+  return isBottomCategory(category)
 }
 
 function isDress(category: string) {
-  return normalizeCategory(category) === '连衣裙'
+  return isOnePieceCategory(category)
 }
 
 function isOuter(category: string) {
-  return normalizeCategory(category) === '外套'
+  return isOuterwearCategory(category)
 }
 
 function countSharedStyleTags(a: string[], b: string[]) {
@@ -44,8 +36,8 @@ function countSharedStyleTags(a: string[], b: string[]) {
 
 function findDuplicateItems(candidate: ShopCandidateItem, closetItems: ClosetItemCardData[]) {
   return closetItems.filter((item) => {
-    const normalizedCategory = normalizeCategory(item.category)
-    const candidateCategory = normalizeCategory(candidate.category)
+    const normalizedCategory = normalizeCategoryValue(item.category)
+    const candidateCategory = normalizeCategoryValue(candidate.category)
     const sameCategory = normalizedCategory === candidateCategory
     const sameSubCategory = item.subCategory && item.subCategory === candidate.subCategory
     const sameColor = item.colorCategory && item.colorCategory === candidate.colorCategory

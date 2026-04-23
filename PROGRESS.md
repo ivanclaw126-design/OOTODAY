@@ -30,6 +30,10 @@
 
 **Closet 的链接导入现在会先把远程图片安全转存到 Supabase Storage，再进入识别与保存链路，不再直接把外链图片落库。**
 
+**Closet 识图现在已补上第一版标准化分类与颜色字典：AI 识别结果会先收敛到统一主分类 / 子分类 / 颜色体系，不确定时回落到“未知类型请手动选择”或“未知颜色请手动选择”。**
+
+**Closet 已保存衣物现在支持编辑识别结果和一键重新识别，方便把旧数据逐步迁到新的分类策略。**
+
 **Travel Packing MVP 已正式启动并完成第一版代码落地，当前 `/travel` 已支持根据目的地、天数和场景生成基于真实衣橱的旅行打包清单。**
 
 **Travel 现在还会进一步给出“按天轮换建议”，把每天的大致穿搭节奏排出来。**
@@ -85,6 +89,9 @@
 - Closet 现在支持商品链接或图片链接导入，能复用 Shop 的远程图片解析能力进入衣橱保存流 ✓
 - Closet 现在支持拼图拆分导入：手动保留 2-4 个裁剪框后，会把拆出的单品图送回同一套批量导入队列 ✓
 - Closet 的远程链接导入现在会先转存到当前用户的 Supabase Storage，再进入识别与保存流 ✓
+- Closet 识图现在会优先落入统一的主分类 / 子分类 / 颜色字典，拿不准时会回落到“未知类型请手动选择”或“未知颜色请手动选择” ✓
+- Closet 上传确认表单现在已改成标准化下拉选择，不再直接暴露自由文本分类输入 ✓
+- Closet 已保存衣物现在支持编辑识别结果，并支持一键重新识别以适配新的分类策略 ✓
 - Travel 页面已上线第一版旅行打包能力：目的地 + 天数 + 场景 -> 打包清单 / 风险缺口 / 复穿策略 ✓
 - Travel 页面已完成一轮 beta 视觉精修：行程设定页头、摘要卡、轮换建议和最近保存方案的层级更清楚 ✓
 - Travel 现在会继续把打包清单拆成按天轮换建议，帮助用户直接看到每天怎么复穿和切换 ✓
@@ -127,7 +134,9 @@
 - `components/closet/closet-upload-form.tsx`
 - `app/closet/actions.ts`
 - `lib/closet/analyze-item-image.ts`
+- `lib/closet/taxonomy.ts`
 - `lib/closet/save-closet-item.ts`
+- `lib/closet/update-closet-item.ts`
 - `app/closet/page.tsx`
 
 ### 3. Today 推荐 + OOTD 反馈 MVP
@@ -160,6 +169,8 @@ Today + OOTD MVP 行为：
 - OOTD 反馈直接写入 `ootd.user_id / worn_at / satisfaction_score / notes`
 - OOTD 成功提交后会同步更新本次涉及衣物的 `last_worn_date / wear_count`
 - Today 推荐优先选择未穿过或更久没穿的单品，减少连续重复推荐
+- Today 推荐现在已与新的衣物主分类体系对齐，下装识别不再只依赖旧的 `裤装 / 裙装` 文本
+- Today 推荐现在会额外参考中性色优先、同色系层次、近邻色和叠穿外套兼容度来挑组合
 - Today 页面会展示最近 5 条 OOTD 的时间、满意度和记录摘要
 
 ### 4. 测试覆盖

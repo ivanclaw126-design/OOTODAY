@@ -1,4 +1,5 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import { isBottomCategory, isOnePieceCategory, isOuterwearCategory, isTopCategory } from '@/lib/closet/taxonomy'
 import type { TravelDailyPlanEntry, TravelPackingEntry, TravelPackingPlan, TravelPlannerInput, TravelScene } from '@/lib/travel/types'
 
 function describeItem(item: ClosetItemCardData) {
@@ -103,10 +104,10 @@ export function buildTravelPackingPlan({
   items,
   weather
 }: TravelPlannerInput): TravelPackingPlan {
-  const tops = items.filter((item) => item.category === '上衣')
-  const bottoms = items.filter((item) => ['裤装', '下装', '裤子', '裙装'].includes(item.category))
-  const dresses = items.filter((item) => item.category === '连衣裙')
-  const outerwear = items.filter((item) => item.category === '外套')
+  const tops = items.filter((item) => isTopCategory(item.category))
+  const bottoms = items.filter((item) => isBottomCategory(item.category))
+  const dresses = items.filter((item) => isOnePieceCategory(item.category))
+  const outerwear = items.filter((item) => isOuterwearCategory(item.category))
 
   const topQuantity = Math.max(2, Math.min(tops.length, Math.ceil(days / 2) + (includesFormalScene(scenes) ? 1 : 0)))
   const bottomQuantity = Math.max(1, Math.min(bottoms.length, Math.ceil(days / 3)))
@@ -122,7 +123,7 @@ export function buildTravelPackingPlan({
   const entries = [
     buildEntry('tops', '上衣', topQuantity, tops, '上衣按 2 天左右轮换一次来带，能兼顾体积和变化。'),
     buildEntry('bottoms', '下装', bottomQuantity, bottoms, '下装复穿频率可以更高，优先带最稳的基础款。'),
-    buildEntry('dresses', '连衣裙', dressQuantity, dresses, '如果行程里有休闲或约会场景，带一条连衣裙能快速起完整造型。'),
+    buildEntry('dresses', '全身装', dressQuantity, dresses, '如果行程里有休闲或约会场景，带一件全身装能快速起完整造型。'),
     buildEntry('outerwear', '外套', outerwearQuantity, outerwear, '外套主要承担温差和正式感，带 1 件最稳的就够。')
   ].filter((entry): entry is TravelPackingEntry => entry !== null)
 
