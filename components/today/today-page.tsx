@@ -144,7 +144,7 @@ export function TodayPage({
 
             <div className="pt-2">
               <SecondaryButton type="button" className="w-full" onClick={() => setIsSettingsOpen(true)}>
-                打开设置
+                设置
               </SecondaryButton>
             </div>
           </>
@@ -165,7 +165,7 @@ export function TodayPage({
                 <div className="space-y-1">
                   <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-primary)]">Settings</p>
                   <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">账号与登录设置</h2>
-                  <p className="text-sm text-[var(--color-neutral-dark)]">不把账号相关操作放在 Today 主决策区里，需要时再打开这里处理。</p>
+                  <p className="text-sm text-[var(--color-neutral-dark)]">账号操作收在这里，需要时再处理。</p>
                 </div>
                 <button
                   type="button"

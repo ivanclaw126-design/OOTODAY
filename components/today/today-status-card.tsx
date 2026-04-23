@@ -23,21 +23,21 @@ export function TodayStatusCard({ weatherState }: { weatherState: TodayWeatherSt
       <div className="relative overflow-hidden">
         <div className="absolute inset-y-0 left-0 w-1 rounded-full bg-[var(--color-primary)]/80" />
         <div className="pl-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">
                 Today / status
               </p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">{todayLabel}</p>
+              <p className="text-xs text-[var(--color-neutral-dark)]">{todayLabel}</p>
             </div>
             <div className="inline-flex w-fit items-center rounded-full border border-[var(--color-primary)]/15 bg-[var(--color-secondary)] px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
               穿搭决策中
             </div>
           </div>
 
-          <div className="mt-4 space-y-2">
-            <p className="text-2xl leading-tight font-semibold tracking-[-0.04em] sm:text-3xl">今天穿什么</p>
-            <p className="text-sm leading-6 text-[var(--color-neutral-dark)] sm:text-base">{summary}</p>
+          <div className="mt-3 space-y-1">
+            <p className="text-xl leading-tight font-semibold tracking-[-0.04em] sm:text-2xl">今天穿什么</p>
+            <p className="text-sm text-[var(--color-neutral-dark)]">{summary}</p>
           </div>
         </div>
       </div>

@@ -346,7 +346,7 @@ describe('TodayPage', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '打开设置' }))
+    fireEvent.click(screen.getByRole('button', { name: '设置' }))
     expect(screen.getByText(/默认密码/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '立即修改密码' }))
     fireEvent.change(screen.getByLabelText('新密码'), { target: { value: 'betterpass123' } })

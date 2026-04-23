@@ -315,7 +315,9 @@ describe('ClosetPage', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '向右翻转图片' }))
+    fireEvent.click(screen.getByRole('button', { name: '翻转图片' }))
+    expect(toggleImageFlip).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '确认翻转' }))
 
     await waitFor(() => {
       expect(toggleImageFlip).toHaveBeenCalledWith({

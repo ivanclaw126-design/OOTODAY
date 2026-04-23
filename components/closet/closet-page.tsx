@@ -35,12 +35,12 @@ function ClosetSection({
   children: ReactNode
 }) {
   return (
-    <section className="space-y-3">
+    <section className="space-y-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
           <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">{eyebrow}</p>
-          <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">{title}</h2>
-          <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">{description}</p>
+          <h2 className="text-base font-semibold text-[var(--color-neutral-dark)]">{title}</h2>
+          <p className="max-w-xl text-xs text-[var(--color-neutral-dark)] sm:text-sm">{description}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {meta ? (
@@ -347,13 +347,11 @@ export function ClosetPage({
   return (
     <AppShell title="Closet">
       <Card>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
             <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">衣橱管理</p>
-            <h1 className="text-xl font-semibold text-[var(--color-neutral-dark)]">先导入，再整理，再回看</h1>
-            <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">
-              相册多选、商品链接和拼图拆分都走同一条入橱链路，下面的建议会直接把清理重点挑出来。
-            </p>
+            <h1 className="text-lg font-semibold text-[var(--color-neutral-dark)]">先看衣橱，再决定下一步</h1>
+            <p className="max-w-xl text-sm text-[var(--color-neutral-dark)]">导入和整理入口先收起来，已导入衣物会更容易一眼看到。</p>
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--color-neutral-dark)]">
@@ -363,46 +361,62 @@ export function ClosetPage({
         </div>
       </Card>
 
-      <ClosetSection
-        eyebrow="Step 1"
-        title="导入衣物"
-        description="相册多选、商品链接和拼图拆分都在这里进入同一条识别与确认流程。"
-        meta="先从这里开始"
-        collapsible={itemCount > 0}
-        collapsed={isImportCollapsed}
-        onToggle={() => setIsImportCollapsed((current) => !current)}
-      >
-        <ClosetUploadCard
-          userId={userId}
-          storageBucket={storageBucket}
-          analyzeUpload={analyzeUpload}
-          analyzeImportUrl={analyzeImportUrl}
-          saveItem={saveItem}
-        />
-      </ClosetSection>
-
       {itemCount > 0 ? (
-        <ClosetSection
-          eyebrow="Step 2"
-          title="整理建议"
-          description="先把重复、闲置和基础缺口看清楚，衣橱才会越用越顺手。"
-          meta={activeFilterSummary ? '已选中筛选' : '按优先级查看'}
-          collapsible
-          collapsed={isInsightsCollapsed}
-          onToggle={() => setIsInsightsCollapsed((current) => !current)}
-        >
-          <ClosetInsightsPanel
-            insights={insights}
-            activeFilterId={activeFilterId}
-            onSelectFilter={(id) => setActiveFilterId((current) => (current === id ? null : id))}
-            onClearFilter={() => setActiveFilterId(null)}
-          />
-        </ClosetSection>
+        <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+          <ClosetSection
+            eyebrow="Step 1"
+            title="导入衣物"
+            description="相册、商品链接和拼图拆分都从这里进入。"
+            meta="默认收起"
+            collapsible
+            collapsed={isImportCollapsed}
+            onToggle={() => setIsImportCollapsed((current) => !current)}
+          >
+            <ClosetUploadCard
+              userId={userId}
+              storageBucket={storageBucket}
+              analyzeUpload={analyzeUpload}
+              analyzeImportUrl={analyzeImportUrl}
+              saveItem={saveItem}
+            />
+          </ClosetSection>
+
+          <ClosetSection
+            eyebrow="Step 2"
+            title="整理建议"
+            description="重复、闲置和基础缺口先集中看。"
+            meta={activeFilterSummary ? '已选中筛选' : '默认收起'}
+            collapsible
+            collapsed={isInsightsCollapsed}
+            onToggle={() => setIsInsightsCollapsed((current) => !current)}
+          >
+            <ClosetInsightsPanel
+              insights={insights}
+              activeFilterId={activeFilterId}
+              onSelectFilter={(id) => setActiveFilterId((current) => (current === id ? null : id))}
+              onClearFilter={() => setActiveFilterId(null)}
+            />
+          </ClosetSection>
+        </div>
       ) : (
-        <EmptyState
-          title="先把第一件衣物放进来"
-          description="上传一张单件衣物图片，AI 会先给你分类建议，再保存进衣橱。"
-        />
+        <>
+          <ClosetSection
+            eyebrow="Step 1"
+            title="导入衣物"
+            description="先放进第一件，后面就能开始整理。"
+            meta="先从这里开始"
+          >
+            <ClosetUploadCard
+              userId={userId}
+              storageBucket={storageBucket}
+              analyzeUpload={analyzeUpload}
+              analyzeImportUrl={analyzeImportUrl}
+              saveItem={saveItem}
+            />
+          </ClosetSection>
+
+          <EmptyState title="先把第一件衣物放进来" description="上传一张单件衣物图片，AI 会先给你分类建议，再保存进衣橱。" />
+        </>
       )}
 
       {itemCount > 0 ? (
@@ -412,7 +426,7 @@ export function ClosetPage({
           description={
             activeFilterSummary
               ? `当前筛选：${activeFilterSummary.label}。${activeFilterSummary.detail}`
-              : '全部、按类型、按颜色三种方式都能看，小缩略图视图更适合先做整体管理。'
+              : '先按类型浏览，再决定要不要切到颜色视图。'
           }
           meta={activeFilterId || activeBrowseGroupLabel ? `${visibleItems.length} 件当前结果` : `${itemCount} 件全部单品`}
         >
@@ -476,7 +490,7 @@ export function ClosetPage({
                         <p className="text-xs text-[var(--color-neutral-dark)]">
                           {activeBrowseGroupLabel
                             ? `当前查看：${activeBrowseGroupLabel}`
-                            : `点一个${browseMode === 'category' ? '类型' : '颜色'}卡片，看这一组里的单品。`}
+                            : `点一个${browseMode === 'category' ? '类型' : '颜色'}卡片继续看。`}
                         </p>
                       </div>
                       {activeBrowseGroupLabel ? (

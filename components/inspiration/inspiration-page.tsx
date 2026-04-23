@@ -152,9 +152,7 @@ export function InspirationPage({
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-sm font-medium">灵感拆解</p>
-            <p className="text-sm text-[var(--color-neutral-dark)]">
-              贴一张灵感图，我们会先拆解它的穿搭逻辑，再告诉你衣橱里有哪些单品可以借用。
-            </p>
+            <p className="text-sm text-[var(--color-neutral-dark)]">贴一张图，我会拆出核心搭配，再对照你衣橱里能借用的单品。</p>
           </div>
 
           <div className="flex flex-col gap-2">
