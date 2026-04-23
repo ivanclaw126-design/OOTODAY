@@ -70,6 +70,8 @@ Native tool persistence comes before repo-local mirrors.
 ## Latest Sync Snapshot
 
 - Date: 2026-04-23
+- Product state: Today 这轮补上了关键日常交互修复：`换一批推荐` 现在真的会轮换 offset 而不是重复同一批建议；账号密码相关操作被收进底部设置抽屉；最近穿搭记录支持编辑和删除；底部导航除整页左右滑动外，也支持直接拖动高亮块在导航栏里横向滑到目标页切换
+- Product state: Closet 这轮把“导入衣物”和“整理建议”改成默认收起的可伸缩板块，让已导入衣物浏览成为进入页时的默认焦点；衣橱浏览默认从“按类型”开始；已保存衣物新增可持久化的图片右翻 / 恢复原图能力，并新增 migration `20260423_add_items_image_flipped.sql`
 - Product state: Landing 的邮箱密码登录现在改成默认免输密码，用户只填邮箱即可直接尝试用 `123456` 登录；对于较早通过 magic link 进入、但默认密码未稳定落上的测试账号，后端会尝试自动补齐默认密码并重试一次，从而修复 `ivanwuyh@163.com` 这类旧账号无法直接密码登录的问题
 - Product state: Closet saved-item editing is no longer visually hidden at the bottom of the page; it now opens in a visible overlay panel immediately, and one-click re-recognition pushes the refreshed draft back into that same panel so the user can see and save the new result right away
 - Product state: Closet browsing now has three management modes: all items, grouped by category, and grouped by color; the grouped views use compact thumbnails so the user can scan the wardrobe more like a management board before drilling into a group
@@ -129,6 +131,7 @@ Native tool persistence comes before repo-local mirrors.
   - The English-value normalization issue is no longer pending in the same form: the next QA pass should verify whether the new standardized taxonomy is sufficient in real-world wardrobe photos or whether the dictionary needs another expansion round
   - The next auth QA pass should verify the whole flow on a real mailbox and deployed Supabase project: first magic link login -> default password available -> direct password login -> in-app password change -> password login with the new password
   - The next auth QA pass should specifically verify two branches on a real mailbox: default-password direct login with no second input, and the fallback “使用其他密码” branch after the user has changed away from `123456`
+  - When the remote Supabase project is ready, apply `supabase/migrations/20260423_add_items_image_flipped.sql` so the new Closet image-flip state persists there too; until then `getClosetView` has a compatibility fallback for environments missing the column
   - TODO backlog: continue improving Shop compatibility specifically for Taobao and Dewu if a stable product-image source can be identified
   - Keep Shop scoped to core apparel for now; no shoes / bags / accessories expansion in the current phase
   - Optionally capture direct duplicate-submission UI or network evidence if stronger proof is needed

@@ -1,6 +1,7 @@
 export type ClosetItemCardData = {
   id: string
   imageUrl: string | null
+  imageFlipped?: boolean
   category: string
   subCategory: string | null
   colorCategory: string | null

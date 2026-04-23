@@ -6,8 +6,10 @@ export function ClosetItemGrid({
   onEditItem,
   onReanalyzeItem,
   onDeleteItem,
+  onToggleImageFlipItem,
   reanalyzingItemId,
   deletingItemId,
+  flippingItemId,
   emptyTitle = '当前没有符合条件的单品',
   emptyDescription = '换个筛选看看，或者继续往衣橱里补新的单品。'
 }: {
@@ -15,8 +17,10 @@ export function ClosetItemGrid({
   onEditItem?: (item: ClosetItemCardData) => void
   onReanalyzeItem?: (item: ClosetItemCardData) => void
   onDeleteItem?: (item: ClosetItemCardData) => void
+  onToggleImageFlipItem?: (item: ClosetItemCardData) => void
   reanalyzingItemId?: string | null
   deletingItemId?: string | null
+  flippingItemId?: string | null
   emptyTitle?: string
   emptyDescription?: string
 }) {
@@ -38,8 +42,10 @@ export function ClosetItemGrid({
           onEdit={onEditItem}
           onReanalyze={onReanalyzeItem}
           onDelete={onDeleteItem}
+          onToggleImageFlip={onToggleImageFlipItem}
           isReanalyzing={reanalyzingItemId === item.id}
           isDeleting={deletingItemId === item.id}
+          isFlipping={flippingItemId === item.id}
         />
       ))}
     </div>
