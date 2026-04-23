@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OOTODAY Editorial Refresh System Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: #f7f3eb;
+        --paper-strong: #ebe4d8;
+        --ink: #090909;
+        --ink-soft: #5c554a;
+        --panel: #0a0a0a;
+        --panel-soft: #171717;
+        --line: rgba(9, 9, 9, 0.12);
+        --line-inverse: rgba(255, 255, 255, 0.12);
+        --accent: #e7ff37;
+        --shadow-soft: 0 22px 46px rgba(18, 16, 12, 0.08);
+        --shadow-strong: 0 36px 80px rgba(0, 0, 0, 0.2);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top left, rgba(231, 255, 55, 0.14), transparent 24%),
+          radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.08), transparent 34%),
+          linear-gradient(180deg, #f5f0e7 0%, #f7f3eb 32%, #efe8dd 100%);
+        color: var(--ink);
+        font-family: "Manrope", sans-serif;
+      }
+
+      body {
+        padding: 28px 16px 60px;
+      }
+
+      .page {
+        max-width: 1560px;
+        margin: 0 auto;
+      }
+
+      .intro {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 30px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        width: fit-content;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.66);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        box-shadow: var(--shadow-soft);
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 1100px;
+        font-family: "Archivo", sans-serif;
+        font-size: clamp(38px, 6vw, 88px);
+        line-height: 0.95;
+        letter-spacing: -0.08em;
+        text-transform: uppercase;
+      }
+
+      .intro p {
+        margin: 0;
+        max-width: 840px;
+        color: var(--ink-soft);
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .legend-card {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(255,255,255,0.62);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .legend-card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .legend-card span {
+        color: var(--ink-soft);
+        font-size: 14px;
+        line-height: 1.65;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 28px;
+      }
+
+      .phone {
+        position: relative;
+        padding: 12px;
+        border-radius: 38px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.05));
+        box-shadow: var(--shadow-strong);
+      }
+
+      .screen {
+        position: relative;
+        min-height: 870px;
+        overflow: hidden;
+        border-radius: 30px;
+        background:
+          radial-gradient(circle at top left, rgba(231,255,55,0.1), transparent 24%),
+          linear-gradient(180deg, rgba(255,255,255,0.24), transparent 16%),
+          linear-gradient(180deg, #f6f1e8 0%, #f7f3eb 32%, #efe7db 100%);
+      }
+
+      .shell {
+        padding: 24px 20px 112px;
+      }
+
+      .topbar,
+      .between,
+      .head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .brand {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255,255,255,0.72);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .pill::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .section-tag {
+        margin-top: 22px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+
+      .title {
+        margin: 10px 0 8px;
+        font-family: "Archivo", sans-serif;
+        font-size: 40px;
+        line-height: 0.95;
+        letter-spacing: -0.08em;
+        text-transform: uppercase;
+      }
+
+      .sub {
+        margin: 0;
+        max-width: 520px;
+        color: var(--ink-soft);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .hero,
+      .panel,
+      .surface,
+      .soft-card {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: var(--shadow-soft);
+      }
+
+      .hero,
+      .panel-dark {
+        overflow: hidden;
+      }
+
+      .panel-dark {
+        border-radius: 28px;
+        background: var(--panel);
+        color: white;
+        box-shadow: var(--shadow-strong);
+      }
+
+      .hero-body,
+      .surface,
+      .soft-card {
+        padding: 20px;
+      }
+
+      .panel-dark .hero-body {
+        padding: 22px;
+      }
+
+      .mini {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .metric {
+        font-family: "Archivo", sans-serif;
+        font-size: 54px;
+        line-height: 0.9;
+        letter-spacing: -0.08em;
+        color: var(--accent);
+      }
+
+      .copy {
+        margin-top: 10px;
+        font-size: 14px;
+        line-height: 1.72;
+      }
+
+      .light {
+        color: rgba(255,255,255,0.72);
+      }
+
+      .hero-grid {
+        display: grid;
+        gap: 1px;
+        grid-template-columns: 1.1fr 0.9fr;
+        background: rgba(255,255,255,0.08);
+      }
+
+      .hero-grid > div {
+        padding: 20px 22px;
+        background: rgba(255,255,255,0.03);
+      }
+
+      .stack {
+        display: grid;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .soft-card {
+        background: linear-gradient(180deg, rgba(255,255,255,0.76), rgba(241,234,224,0.94));
+      }
+
+      .soft-plain {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(255,255,255,0.74);
+        padding: 16px;
+      }
+
+      .acid {
+        background: linear-gradient(180deg, rgba(231,255,55,0.18), rgba(231,255,55,0.1));
+      }
+
+      .dark-tile {
+        border: 1px solid var(--line-inverse);
+        border-radius: 22px;
+        background: rgba(255,255,255,0.04);
+        padding: 16px;
+      }
+
+      .pair {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .triple {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .tab {
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.82);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .tab.active {
+        background: var(--ink);
+        color: white;
+        box-shadow: 0 14px 28px rgba(0,0,0,0.16);
+      }
+
+      .outline-input {
+        margin-top: 10px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.08);
+        color: white;
+        font-size: 14px;
+      }
+
+      .light-input {
+        margin-top: 10px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.74);
+        color: var(--ink-soft);
+        font-size: 14px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 18px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .button.black {
+        background: var(--ink);
+        color: white;
+      }
+
+      .button.ghost {
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.74);
+      }
+
+      .nav {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 18px;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        padding: 10px;
+        border-radius: 28px;
+        border: 1px solid rgba(255,255,255,0.72);
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(243,239,231,0.96));
+        box-shadow: 0 20px 44px rgba(17,14,9,0.18);
+      }
+
+      .nav span {
+        display: grid;
+        place-items: center;
+        min-height: 44px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(82,82,82,0.76);
+      }
+
+      .nav span.active {
+        background: var(--ink);
+        color: white;
+      }
+
+      .footer {
+        margin-top: 28px;
+        color: var(--ink-soft);
+        font-size: 13px;
+        text-align: center;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 1180px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(320px, 1fr));
+        }
+
+        .legend {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="intro">
+        <span class="eyebrow">Updated Local System Preview</span>
+        <h1>OOTODAY’s whole product surface is now translated into one editorial fashion system.</h1>
+        <p>
+          这次更新后的 HTML 不再只展示 `Today / Closet`。下面是完整的 6 个 screen：
+          `Landing`、`Today`、`Closet`、`Travel`、`Inspiration`、`Shop`，对应我现在已经在 `codex/editorial-refresh`
+          worktree 里统一过的视觉方向。
+        </p>
+        <div class="legend">
+          <div class="legend-card">
+            <strong>Material</strong>
+            <span>浅色纸感底 + 黑色主判断舞台 + 统一圆角容器，把所有产品页收束成同一套材质秩序。</span>
+          </div>
+          <div class="legend-card">
+            <strong>Hierarchy</strong>
+            <span>大标题更像杂志页标题，重要判断区用深色压住，辅助信息留在浅色纸感层，不再一屏都是平均卡片。</span>
+          </div>
+          <div class="legend-card">
+            <strong>Accent</strong>
+            <span>酸性黄绿色只用来强调状态、计数、判断和关键入口，为后续主题换色按钮留足空间。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe desk</div>
+                <div class="pill">Palette A</div>
+              </div>
+              <div class="section-tag">Landing</div>
+              <h2 class="title">OOTODAY</h2>
+              <p class="sub">把衣橱先导进来，今天穿什么才会开始变简单。</p>
+
+              <div class="stack">
+                <section class="surface">
+                  <div class="mini" style="color:var(--ink-soft);">Start flow</div>
+                  <div style="margin-top:12px;font-family:'Archivo',sans-serif;font-size:32px;line-height:0.95;letter-spacing:-0.07em;">AI wardrobe desk</div>
+                  <p class="copy" style="color:var(--ink-soft);">先导入衣橱，再去 Today 看推荐，再用反馈把系统校准得更像你。</p>
+                  <div class="triple" style="margin-top:14px;">
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">01</div><p class="copy" style="color:var(--ink);margin-top:8px;">导入 3-5 件常穿衣服</p></div>
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">02</div><p class="copy" style="color:var(--ink);margin-top:8px;">去 Today 看推荐</p></div>
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">03</div><p class="copy" style="color:var(--ink);margin-top:8px;">记录反馈</p></div>
+                  </div>
+                </section>
+
+                <section class="panel-dark">
+                  <div class="hero-body">
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Start here</div>
+                    <div style="margin-top:12px;font-family:'Archivo',sans-serif;font-size:30px;line-height:0.96;letter-spacing:-0.07em;">先拿到登录链接</div>
+                    <p class="copy light">右侧登录区现在也被纳入同一套系统，不再是和主应用完全脱节的默认表单界面。</p>
+                    <div class="outline-input">you@example.com</div>
+                    <div class="button black" style="margin-top:12px;">发送登录链接</div>
+                    <div class="soft-card" style="margin-top:14px;background:rgba(255,255,255,0.04);color:white;border-color:rgba(255,255,255,0.1);">
+                      <div class="mini" style="color:rgba(255,255,255,0.56);">Email + password</div>
+                      <p class="copy light">默认密码登录入口也放进黑色舞台里，和产品主应用的气质更统一。</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe system</div>
+                <div class="pill">Palette A</div>
+              </div>
+              <div class="section-tag">V1.0 / Today</div>
+              <h2 class="title">: // Daily aesthetic engine</h2>
+              <p class="sub">Today 负责把推荐做成一个一眼能做决定的判断面板，而不是平铺直叙的信息列表。</p>
+
+              <section class="panel-dark" style="margin-top:18px;">
+                <div class="hero-body">
+                  <div class="between">
+                    <div>
+                      <div class="mini" style="color:rgba(255,255,255,0.56);">Today / status</div>
+                      <p class="copy light" style="margin-top:6px;">4月23日 星期四</p>
+                    </div>
+                    <div class="pill" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:white;">Decision mode</div>
+                  </div>
+                  <div style="margin-top:18px;font-family:'Archivo',sans-serif;font-size:34px;line-height:0.94;letter-spacing:-0.08em;">今天穿什么，先用一眼能做决定的方式告诉你。</div>
+                  <p class="copy light">上海 · 22°C · 多云。下面的推荐会优先保留最容易直接穿出门的组合。</p>
+                </div>
+                <div class="hero-grid">
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Signal</div>
+                    <div class="metric">94%</div>
+                    <p class="copy light">Match confidence based on wardrobe depth and current weather.</p>
+                  </div>
+                  <div>
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Focus</div>
+                    <div style="margin-top:14px;font-size:18px;font-weight:700;letter-spacing:-0.03em;">少一点解释，多一点可执行建议。</div>
+                    <p class="copy light">这里就是现在状态卡的主判断区。</p>
+                  </div>
+                </div>
+              </section>
+
+              <div class="stack">
+                <section class="soft-card">
+                  <div class="head">
+                    <div style="display:flex;gap:12px;align-items:flex-start;">
+                      <div style="display:grid;place-items:center;width:42px;height:42px;border-radius:16px;background:var(--ink);color:white;font-size:14px;font-weight:800;">01</div>
+                      <div>
+                        <div class="mini" style="color:var(--ink-soft);">Outfit decision</div>
+                        <div style="margin-top:8px;font-size:26px;font-weight:700;letter-spacing:-0.05em;">第 1 套</div>
+                      </div>
+                    </div>
+                    <div class="pill" style="background:var(--accent);">Done</div>
+                  </div>
+                  <div class="panel-dark" style="margin-top:14px;border-radius:24px;">
+                    <div class="hero-body" style="padding:18px;">
+                      <div class="mini" style="color:rgba(255,255,255,0.52);">Why this works</div>
+                      <p class="copy light">今天温度舒服但早晚温差明显，建议用轻薄上装 + 深色下装稳住通勤感，再让外层只承担天气风险。</p>
+                    </div>
+                  </div>
+                  <div class="pair" style="margin-top:14px;">
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">上装</div><div style="margin-top:8px;font-size:20px;font-weight:700;letter-spacing:-0.05em;">Soft Boxy Tee</div><p class="copy" style="color:var(--ink-soft);">颜色：白色 / 风格：clean, easy</p></div>
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">下装</div><div style="margin-top:8px;font-size:20px;font-weight:700;letter-spacing:-0.05em;">Wide Trousers</div><p class="copy" style="color:var(--ink-soft);">颜色：炭灰 / 风格：calm, polished</p></div>
+                  </div>
+                  <div class="soft-plain acid" style="margin-top:12px;"><div class="mini" style="color:var(--ink-soft);">外层建议</div><div style="margin-top:8px;font-size:18px;font-weight:700;">Light Shell Outerwear</div><p class="copy" style="color:var(--ink-soft);">酸性强调色只提亮判断，不干扰主体结构。</p></div>
+                </section>
+              </div>
+            </div>
+            <nav class="nav">
+              <span class="active">Today</span>
+              <span>Closet</span>
+              <span>Travel</span>
+              <span>Inspo</span>
+              <span>Shop</span>
+            </nav>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe system</div>
+                <div class="pill">Palette A</div>
+              </div>
+              <div class="section-tag">V1.0 / Closet</div>
+              <h2 class="title">: // Personal archive control</h2>
+              <p class="sub">Closet 会保留导入、整理、浏览流程，但材质和节奏被统一成“个人风格档案库”。</p>
+
+              <div class="stack">
+                <section class="surface">
+                  <div class="head">
+                    <div>
+                      <div class="mini" style="color:var(--ink-soft);">衣橱管理</div>
+                      <div style="margin-top:10px;font-family:'Archivo',sans-serif;font-size:34px;line-height:0.94;letter-spacing:-0.07em;">先导入，再整理，再回看</div>
+                    </div>
+                    <div style="display:grid;gap:8px;">
+                      <div class="pill">27 pieces</div>
+                      <div class="pill" style="background:rgba(231,255,55,0.18);">multi import</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="panel-dark">
+                  <div class="hero-body">
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">整理建议</div>
+                    <div style="margin-top:12px;font-family:'Archivo',sans-serif;font-size:28px;line-height:0.96;letter-spacing:-0.07em;">下一步先做这些</div>
+                    <p class="copy light">高优先级动作被整体压进黑色舞台里，和 Today 的主判断区形成统一语言。</p>
+                    <div class="stack" style="margin-top:12px;">
+                      <div class="dark-tile"><div class="mini" style="color:rgba(255,255,255,0.56);">01</div><p class="copy light">重复款：白色基础 Tee，先保留版型更利落的那件。</p></div>
+                      <div class="dark-tile"><div class="mini" style="color:rgba(255,255,255,0.56);">02</div><p class="copy light">基础缺口：深色下装，补一件会让整体出门效率更稳。</p></div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="surface">
+                  <div class="mini" style="color:var(--ink-soft);">衣橱浏览</div>
+                  <div style="margin-top:10px;font-family:'Archivo',sans-serif;font-size:28px;line-height:0.96;letter-spacing:-0.07em;">Group by category / color</div>
+                  <p class="copy" style="color:var(--ink-soft);">类型 / 颜色分组视图保留，但用更轻的纸感区和更稳的 tab 节奏组织。</p>
+                  <div class="tabs" style="margin-top:12px;">
+                    <span class="tab active">全部衣物</span>
+                    <span class="tab">按类型</span>
+                    <span class="tab">按颜色</span>
+                  </div>
+                  <div class="pair" style="margin-top:12px;">
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">Top / White</div><div style="margin-top:8px;font-size:18px;font-weight:700;">Cropped Shirt</div><p class="copy" style="color:var(--ink-soft);">这里会继续复用 icon 和 color badge。</p></div>
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">Bottom / Blue</div><div style="margin-top:8px;font-size:18px;font-weight:700;">Loose Denim</div><p class="copy" style="color:var(--ink-soft);">缩略图管理视图现在和整体系统一致。</p></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+            <nav class="nav">
+              <span>Today</span>
+              <span class="active">Closet</span>
+              <span>Travel</span>
+              <span>Inspo</span>
+              <span>Shop</span>
+            </nav>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe system</div>
+                <div class="pill">Palette A</div>
+              </div>
+              <div class="section-tag">V1.0 / Travel</div>
+              <h2 class="title">: // Travel</h2>
+              <p class="sub">Travel 现在也被切成“浅色设置层 + 黑色摘要判断层 + 浅色清单层”的统一结构。</p>
+
+              <div class="stack">
+                <section class="surface">
+                  <div class="mini" style="color:var(--ink-soft);">Trip setup</div>
+                  <div style="margin-top:10px;font-family:'Archivo',sans-serif;font-size:30px;line-height:0.96;letter-spacing:-0.07em;">先把这趟行程压缩成一份够用、不臃肿的衣橱方案</div>
+                  <p class="copy" style="color:var(--ink-soft);">首屏仍然解释输入逻辑，但容器节奏已经统一。</p>
+                  <div class="triple" style="margin-top:12px;">
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">Step 1</div><p class="copy" style="color:var(--ink);margin-top:8px;">填目的地和天数</p></div>
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">Step 2</div><p class="copy" style="color:var(--ink);margin-top:8px;">声明场景密度</p></div>
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">Step 3</div><p class="copy" style="color:var(--ink);margin-top:8px;">拿到轮换方案</p></div>
+                  </div>
+                </section>
+
+                <section class="panel-dark">
+                  <div class="hero-body">
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Trip summary</div>
+                    <div style="margin-top:12px;font-family:'Archivo',sans-serif;font-size:32px;line-height:0.95;letter-spacing:-0.08em;">Tokyo · 4 days</div>
+                    <p class="copy light">通勤 / 休闲 / 雨天。黑色摘要区会集中展示这趟旅行最重要的判断。</p>
+                  </div>
+                  <div class="hero-grid">
+                    <div>
+                      <div class="mini" style="color:rgba(255,255,255,0.56);">Core Looks</div>
+                      <div class="metric">6</div>
+                    </div>
+                    <div>
+                      <div class="mini" style="color:rgba(255,255,255,0.56);">Weather Read</div>
+                      <p class="copy light" style="margin-top:10px;">22°C · 多云转小雨。按天气和衣橱稳定度生成。</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="surface">
+                  <div class="mini" style="color:var(--ink-soft);">Packing list</div>
+                  <div style="margin-top:10px;font-size:22px;font-weight:700;letter-spacing:-0.05em;">建议打包</div>
+                  <div class="stack" style="margin-top:12px;">
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">上装</div><p class="copy" style="color:var(--ink);margin-top:8px;">建议带 3 件，优先基础色轮换。</p></div>
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">按天轮换</div><p class="copy" style="color:var(--ink);margin-top:8px;">Day 1：白 Tee + 深灰裤装 + 轻外层。</p></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+            <nav class="nav">
+              <span>Today</span>
+              <span>Closet</span>
+              <span class="active">Travel</span>
+              <span>Inspo</span>
+              <span>Shop</span>
+            </nav>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe system</div>
+                <div class="pill">Palette A</div>
+              </div>
+              <div class="section-tag">V1.0 / Inspiration</div>
+              <h2 class="title">: // Inspiration</h2>
+              <p class="sub">Inspiration 把“上传灵感图”和“拆解结果”也放进了统一的时尚编辑界面语气里。</p>
+
+              <div class="stack">
+                <section class="surface">
+                  <div class="mini" style="color:var(--ink-soft);">Inspiration breakdown</div>
+                  <div style="margin-top:10px;font-family:'Archivo',sans-serif;font-size:30px;line-height:0.96;letter-spacing:-0.07em;">先拆掉这套灵感的骨架，再看你衣橱里能借什么。</div>
+                  <p class="copy" style="color:var(--ink-soft);">页头现在已经和 Today / Travel / Shop 的叙事结构对齐。</p>
+                </section>
+
+                <section class="panel-dark">
+                  <div class="hero-body">
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Upload</div>
+                    <p class="copy light">上传、拖拽、链接都被放进统一的黑色操作舞台里。</p>
+                    <div class="outline-input">拖拽灵感图到这里</div>
+                    <div class="light-input" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:white;">灵感图片链接</div>
+                    <div class="button black" style="margin-top:12px;background:var(--accent);color:var(--ink);">开始拆解</div>
+                  </div>
+                </section>
+
+                <section class="panel-dark">
+                  <div class="hero-body">
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">整体判断</div>
+                    <div style="margin-top:10px;font-family:'Archivo',sans-serif;font-size:30px;line-height:0.96;letter-spacing:-0.07em;">Sharp city minimal with soft contrast</div>
+                    <p class="copy light">黑色判断区专门负责总结这套灵感为什么成立。</p>
+                    <div class="dark-tile" style="margin-top:12px;">
+                      <div class="mini" style="color:var(--accent);">颜色为什么成立</div>
+                      <p class="copy light">基础色托底，亮点只保留在一处，复刻时优先保住对比关系而不是完全复制单品。</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="surface">
+                  <div class="mini" style="color:var(--ink-soft);">Remix plan</div>
+                  <div style="margin-top:10px;font-size:22px;font-weight:700;letter-spacing:-0.05em;">你衣橱里能借什么</div>
+                  <div class="stack" style="margin-top:12px;">
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">关键单品</div><p class="copy" style="color:var(--ink);margin-top:8px;">Boxy shirt / dark bottom / slim bag。</p></div>
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">复刻步骤</div><p class="copy" style="color:var(--ink);margin-top:8px;">先保留轮廓，再微调颜色角色。</p></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+            <nav class="nav">
+              <span>Today</span>
+              <span>Closet</span>
+              <span>Travel</span>
+              <span class="active">Inspo</span>
+              <span>Shop</span>
+            </nav>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="screen">
+            <div class="shell">
+              <div class="topbar">
+                <div class="brand">OOTODAY / AI wardrobe system</div>
+                <div class="pill">Palette A</div>
+              </div>
+              <div class="section-tag">V1.0 / Shop</div>
+              <h2 class="title">: // Shop</h2>
+              <p class="sub">Shop 被改成更像买前分析工作台，先让输入区变强，再让结论区像真正的判断结果。</p>
+
+              <div class="stack">
+                <section class="surface">
+                  <div class="mini" style="color:var(--ink-soft);">Buy before you buy</div>
+                  <div style="margin-top:10px;font-family:'Archivo',sans-serif;font-size:30px;line-height:0.96;letter-spacing:-0.07em;">先判断它会不会真的进你常穿轮换</div>
+                  <p class="copy" style="color:var(--ink-soft);">页头仍然解释流程，但已经换成和其他页面一致的编辑式节奏。</p>
+                </section>
+
+                <section class="panel-dark">
+                  <div class="hero-body">
+                    <div class="mini" style="color:rgba(255,255,255,0.56);">Input</div>
+                    <p class="copy light">上传图片、拖拽图片、商品链接，都统一进黑色分析入口层。</p>
+                    <div class="outline-input">拖拽图片到这里</div>
+                    <div class="outline-input">商品链接或图片链接</div>
+                    <div class="button black" style="margin-top:12px;">开始分析</div>
+                  </div>
+                </section>
+
+                <section class="surface">
+                  <div class="mini" style="color:var(--ink-soft);">Analysis result</div>
+                  <div style="margin-top:10px;font-family:'Archivo',sans-serif;font-size:28px;line-height:0.96;letter-spacing:-0.07em;">Boxy jacket · charcoal</div>
+                  <div class="triple" style="margin-top:12px;">
+                    <div class="panel-dark" style="padding:16px;border-radius:22px;"><div class="mini" style="color:rgba(255,255,255,0.56);">Verdict</div><p class="copy light" style="margin-top:8px;">建议买</p></div>
+                    <div class="soft-plain"><div class="mini" style="color:var(--ink-soft);">Repeat risk</div><p class="copy" style="color:var(--ink);margin-top:8px;">中</p></div>
+                    <div class="soft-plain acid"><div class="mini" style="color:var(--ink-soft);">Outfit yield</div><p class="copy" style="color:var(--ink);margin-top:8px;">8</p></div>
+                  </div>
+                  <div class="panel-dark" style="margin-top:12px;border-radius:24px;">
+                    <div class="hero-body" style="padding:18px;">
+                      <div class="mini" style="color:rgba(255,255,255,0.56);">Why</div>
+                      <p class="copy light">颜色角色稳定，能接你现在的基础色下装，但还要注意不要和现有的黑色轻外套重复。</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+            <nav class="nav">
+              <span>Today</span>
+              <span>Closet</span>
+              <span>Travel</span>
+              <span>Inspo</span>
+              <span class="active">Shop</span>
+            </nav>
+          </div>
+        </article>
+      </section>
+
+      <div class="footer">Updated preview · full editorial refresh system</div>
+    </main>
+  </body>
+</html>

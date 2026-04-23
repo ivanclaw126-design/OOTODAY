@@ -70,6 +70,24 @@ Native tool persistence comes before repo-local mirrors.
 ## Latest Sync Snapshot
 
 - Date: 2026-04-23
+- Product state: `Closet` 顶部这轮继续朝参考图那种叠层卡片感靠拢：`导入衣物` 和 `整理建议` 现在都有更明显的前景卡 + 后层垫片形状，折叠态里原本那排相册 / 链接 / 拼图拆分、重复款 / 闲置提醒 / 基础缺口胶囊摘要已删除，进一步把纵向空间让给底部衣橱主体
+- Product state: `Closet` 的右转 90° 按钮这轮查明根因是写入链路没有像读取链路一样兼容旧库缺少 `image_flipped` 列；现在 server action 已补兜底，不会再因为该列不存在直接抛 node 侧错误，前端也会先给出旋转反馈
+- Product state: `Closet` 这轮继续把首屏往“先看衣橱主体”收：顶部状态块压成单层摘要，导入衣物 / 整理建议折叠块改成更扁的抽屉式摘要，浏览切换按钮和分组卡片也进一步瘦身，因此底部衣橱内容会更早出现在首屏
+- Product state: `Closet` 页面这轮重新收了视觉重心：顶部改成更矮的深色状态框，只突出已收录件数；导入衣物和整理建议被改成更像文件夹的折叠板块，默认收起时只露出不完整的摘要，让用户一进页先看衣橱浏览区
+- Product state: `Closet` 浏览区不再显示“22 件全部单品”这类独立框，全部衣物 / 按类型 / 按颜色切换也压成更低的按钮高度，整体首屏信息密度更轻
+- Product state: `Today` 的“换一批推荐”这轮查明不是前端按钮失效，而是旧生成器只是转了一下单品顺序，结果常常仍落回几乎同一批组合；现在已经改成“先生成候选搭配池，再按 offset 滑动取下一组 3 套”，因此换批次会更明显
+- Product state: 这轮又按设计方向回调了一次，`Today / Travel / Shop / Looks` 顶部与输入区继续保留深色色块，不再改成浅卡；本次只修块内文字、提示文案、输入框和拖拽区的对比度，让深色视觉保住同时内容重新可读
+- Product state: `Looks` 的命名现在已经在 UI 层真正替换完成：底部导航使用 `Looks`，页面顶部标题改成 `Looks`，顶部说明也从 `Inspiration Breakdown` 改成 `Looks Breakdown`
+- Product state: Closet 保存衣物卡片里的“翻转图片”语义已修正成真正的“向右旋转 90°”，不再是镜像；卡片图片改成适配旋转的显示方式后，确认执行后会真实看到方向变化
+- Product state: 底部导航重新排了顺序，把 Today 放到正中间作为默认主入口，并把 `Inspiration` 缩成更短的 `Looks`，解决 iPhone 窄宽度下单词挤出的问题
+- Product state: AppShell 顶部继续简化，`Palette A` 和多余说明已移除；landing 首次 magic link 页面也改回浅底深字表单，修复登录卡文字发白难读的问题
+- Product state: Closet 这一轮修掉了已保存单品“向右翻转”只写状态不真实镜像的问题，卡片图片现在直接按前端 transform 实际翻转；翻转入口缩成更小的按钮，并增加显式确认按钮来降低误触
+- Product state: Closet 的“导入衣物”和“整理建议”现在会在宽屏下左右并排，且两块继续维持默认收起，让用户进页后更快把注意力落在衣橱浏览区
+- Product state: 整个 App 又做了一轮信息减重：`AppShell` 头部高度缩小，Today 状态头和城市提示更短，Shop / Inspiration / Travel / Closet 页首说明被压缩，首屏更快露出真正的操作区和结果区
+- Product state: 底部导航高亮不再用固定宽度公式估位，而是按真实导航按钮 DOM 尺寸测量；拖动高亮块时会更准确落到对应页面名称上
+- Product state: Today 这轮补上了关键日常交互修复：`换一批推荐` 现在真的会轮换 offset 而不是重复同一批建议；账号密码相关操作被收进底部设置抽屉；最近穿搭记录支持编辑和删除；底部导航除整页左右滑动外，也支持直接拖动高亮块在导航栏里横向滑到目标页切换
+- Product state: Closet 这轮把“导入衣物”和“整理建议”改成默认收起的可伸缩板块，让已导入衣物浏览成为进入页时的默认焦点；衣橱浏览默认从“按类型”开始；已保存衣物新增可持久化的图片右翻 / 恢复原图能力，并新增 migration `20260423_add_items_image_flipped.sql`
+- Product state: Landing 的邮箱密码登录现在改成默认免输密码，用户只填邮箱即可直接尝试用 `123456` 登录；对于较早通过 magic link 进入、但默认密码未稳定落上的测试账号，后端会尝试自动补齐默认密码并重试一次，从而修复 `ivanwuyh@163.com` 这类旧账号无法直接密码登录的问题
 - Product state: Closet saved-item editing is no longer visually hidden at the bottom of the page; it now opens in a visible overlay panel immediately, and one-click re-recognition pushes the refreshed draft back into that same panel so the user can see and save the new result right away
 - Product state: Closet browsing now has three management modes: all items, grouped by category, and grouped by color; the grouped views use compact thumbnails so the user can scan the wardrobe more like a management board before drilling into a group
 - Product state: 共享颜色规则现在已经下沉成通用实现，repo 内新增的 `lib/closet/color-strategy.ts` 已同时服务 Today / Shop / Inspiration / Travel；Today 也已从内联配色解释迁到这层 helper，上层只保留天气、场景和语气差异
@@ -114,10 +132,13 @@ Native tool persistence comes before repo-local mirrors.
   - Travel save-plan persistence now prefers the new `travel_plans` table, but gracefully falls back to storing lightweight travel metadata in `outfits` when the remote schema has not yet been migrated
 - Gstack state:
   - Native Gstack progress flow for this repo continues to use `/context-save` and `/context-restore`
-  - Latest saved checkpoint for this round is `~/.gstack/projects/OOTODAY/checkpoints/20260423-122640-auth-password-login-bootstrap.md`
+  - Latest saved checkpoint for this round is `~/.gstack/projects/OOTODAY/checkpoints/20260423-162520-closet-layout-and-today-refresh-batches.md`
   - The new repo-local command `npm run travel:db:check` now distinguishes “migration missing” from “current environment cannot reach Supabase Postgres”; in this environment it fails on remote connectivity timeout rather than local migration state
   - Useful operational note from earlier checkpoints remains valid: importing local Chrome `localhost` cookies is enough to quickly recover an authenticated QA session
 - Pending sync work:
+  - 用真实浏览器点一轮 `Closet` 的右转 90°，确认在线上旧库环境下现在至少不再抛 node 报错，并决定是否要继续补一个真正持久化的 fallback 存储方案
+  - 跑一轮真实浏览器 QA，确认 `Closet` 这次更扁的顶部摘要和分组卡在手机首屏里是否已经能稳定多露出 1 行以上的衣橱内容
+  - 跑一轮真实浏览器 QA，重点确认 `Closet` 新文件夹式折叠布局在移动端是否足够直观，以及 `Today` 的“换一批推荐”在真实衣橱下是否已经有明确变化感
   - Run one real browser pass on `/closet` to confirm the new edit overlay and grouped thumbnail views feel right on mobile and desktop, not just in component tests
   - Today、Shop、Inspiration、Travel 已全部接入第一版共享颜色规则层，且解释文案已下沉到共享 helper；下一步更适合继续下沉成更通用的 score 结构，或补一轮真实页面 QA
   - Travel editable saved plans are now shipped; the next step is deciding whether to add “另存为新方案” or unsaved-change protection on top
@@ -127,6 +148,8 @@ Native tool persistence comes before repo-local mirrors.
   - Closet import three-flow browser QA is no longer pending; the next pass should focus on fixing and rechecking the preview-stacking issue plus the English-value normalization issue
   - The English-value normalization issue is no longer pending in the same form: the next QA pass should verify whether the new standardized taxonomy is sufficient in real-world wardrobe photos or whether the dictionary needs another expansion round
   - The next auth QA pass should verify the whole flow on a real mailbox and deployed Supabase project: first magic link login -> default password available -> direct password login -> in-app password change -> password login with the new password
+  - The next auth QA pass should specifically verify two branches on a real mailbox: default-password direct login with no second input, and the fallback “使用其他密码” branch after the user has changed away from `123456`
+  - When the remote Supabase project is ready, apply `supabase/migrations/20260423_add_items_image_flipped.sql` so the new Closet image-flip state persists there too; until then `getClosetView` has a compatibility fallback for environments missing the column
   - TODO backlog: continue improving Shop compatibility specifically for Taobao and Dewu if a stable product-image source can be identified
   - Keep Shop scoped to core apparel for now; no shoes / bags / accessories expansion in the current phase
   - Optionally capture direct duplicate-submission UI or network evidence if stronger proof is needed

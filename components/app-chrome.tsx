@@ -4,8 +4,9 @@ import type { ReactNode, TouchEvent as ReactTouchEvent } from 'react'
 import { useEffect, useMemo, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { BottomNav } from '@/components/bottom-nav'
+import { ThemeProvider } from '@/components/theme/theme-provider'
 
-const appRoutes = ['/today', '/closet', '/travel', '/inspiration', '/shop'] as const
+const appRoutes = ['/closet', '/travel', '/today', '/inspiration', '/shop'] as const
 
 function isAppRoute(pathname: string) {
   return appRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))
@@ -13,6 +14,10 @@ function isAppRoute(pathname: string) {
 
 function isInteractiveTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  if (target.closest('[data-app-swipe-zone]')) {
     return false
   }
 
@@ -87,16 +92,18 @@ export function AppChrome({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div
-      className="min-h-screen"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={() => {
-        swipeStateRef.current = null
-      }}
-    >
-      {children}
-      {shouldShowBottomNav ? <BottomNav /> : null}
-    </div>
+    <ThemeProvider>
+      <div
+        className="min-h-screen"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={() => {
+          swipeStateRef.current = null
+        }}
+      >
+        {children}
+        {shouldShowBottomNav ? <BottomNav /> : null}
+      </div>
+    </ThemeProvider>
   )
 }

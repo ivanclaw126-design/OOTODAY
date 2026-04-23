@@ -241,10 +241,92 @@ function isTaobaoLoginWall(html: string) {
   return html.includes('login.taobao.com/member/login.jhtml') || html.includes('login.m.taobao.com/login.htm')
 }
 
+async function followImageProbeRedirect(url: URL, redirectCount: number): Promise<boolean> {
+  if (redirectCount > 2) {
+    return false
+  }
+
+  if ((url.protocol !== 'https:' && url.protocol !== 'http:') || isPrivateHostname(url.hostname)) {
+    return false
+  }
+
+  const response = await fetch(url.toString(), {
+    method: 'HEAD',
+    headers: {
+      Accept: 'image/*',
+      'User-Agent': 'OOTODAY Shop Analyzer'
+    },
+    cache: 'no-store',
+    redirect: 'manual'
+  }).catch(() => null)
+
+  if (!response) {
+    return false
+  }
+
+  if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get('location')
+
+    if (!location) {
+      return false
+    }
+
+    try {
+      return followImageProbeRedirect(new URL(location, url), redirectCount + 1)
+    } catch {
+      return false
+    }
+  }
+
+  if (!response.ok) {
+    return false
+  }
+
+  return (response.headers.get('content-type')?.toLowerCase() ?? '').startsWith('image/')
+}
+
+async function isUsableImageCandidate(candidateUrl: string) {
+  let parsed: URL
+
+  try {
+    parsed = new URL(candidateUrl)
+  } catch {
+    return false
+  }
+
+  if ((parsed.protocol !== 'https:' && parsed.protocol !== 'http:') || isPrivateHostname(parsed.hostname)) {
+    return false
+  }
+
+  if (looksLikeImageUrl(parsed)) {
+    return true
+  }
+
+  return followImageProbeRedirect(parsed, 0)
+}
+
+async function filterImageCandidates(candidates: string[], baseUrl: string) {
+  const normalizedCandidates = Array.from(
+    new Set(
+      candidates
+        .map((candidate) => normalizeAbsoluteUrl(candidate, baseUrl))
+        .filter((candidate): candidate is string => Boolean(candidate))
+    )
+  )
+
+  const vettedCandidates: string[] = []
+
+  for (const candidate of normalizedCandidates) {
+    if (await isUsableImageCandidate(candidate)) {
+      vettedCandidates.push(candidate)
+    }
+  }
+
+  return vettedCandidates
+}
+
 async function selectBestProductImage(candidates: string[], baseUrl: string, preferredImageUrl?: string) {
-  const normalizedCandidates = candidates
-    .map((candidate) => normalizeAbsoluteUrl(candidate, baseUrl))
-    .filter((candidate): candidate is string => Boolean(candidate))
+  const normalizedCandidates = await filterImageCandidates(candidates, baseUrl)
 
   if (normalizedCandidates.length === 0) {
     return {

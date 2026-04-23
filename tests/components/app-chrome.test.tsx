@@ -16,6 +16,8 @@ describe('AppChrome', () => {
     push.mockReset()
     prefetch.mockReset()
     usePathnameMock.mockReset()
+    document.documentElement.removeAttribute('data-theme')
+    window.localStorage.clear()
   })
 
   afterEach(() => {
@@ -33,7 +35,8 @@ describe('AppChrome', () => {
 
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute('aria-current', 'page')
-    expect(prefetch).toHaveBeenCalledWith('/closet')
+    expect(prefetch).toHaveBeenCalledWith('/travel')
+    expect(prefetch).toHaveBeenCalledWith('/inspiration')
 
     usePathnameMock.mockReturnValue('/')
     rerender(
@@ -66,6 +69,40 @@ describe('AppChrome', () => {
     expect(push).toHaveBeenCalledWith('/travel')
   })
 
+  it('allows swipe navigation when the gesture starts inside the bottom nav', () => {
+    usePathnameMock.mockReturnValue('/closet')
+
+    render(
+      <AppChrome>
+        <div>page body</div>
+      </AppChrome>
+    )
+
+    const navLink = screen.getByRole('link', { name: 'Travel' })
+
+    fireEvent.touchStart(navLink, {
+      touches: [{ clientX: 240, clientY: 740 }]
+    })
+    fireEvent.touchEnd(navLink, {
+      changedTouches: [{ clientX: 120, clientY: 744 }]
+    })
+
+    expect(push).toHaveBeenCalledWith('/travel')
+  })
+
+  it('renders the shorter Looks nav label', () => {
+    usePathnameMock.mockReturnValue('/inspiration')
+
+    render(
+      <AppChrome>
+        <div>page body</div>
+      </AppChrome>
+    )
+
+    expect(screen.getByRole('link', { name: 'Looks' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByRole('link', { name: 'Inspiration' })).not.toBeInTheDocument()
+  })
+
   it('ignores swipe navigation from interactive targets', () => {
     usePathnameMock.mockReturnValue('/closet')
 
@@ -85,5 +122,18 @@ describe('AppChrome', () => {
     })
 
     expect(push).not.toHaveBeenCalled()
+  })
+
+  it('hydrates the stored theme onto the document root', () => {
+    usePathnameMock.mockReturnValue('/today')
+    window.localStorage.setItem('ootoday-theme', 'gallery-blue')
+
+    render(
+      <AppChrome>
+        <div>page body</div>
+      </AppChrome>
+    )
+
+    expect(document.documentElement.dataset.theme).toBe('gallery-blue')
   })
 })

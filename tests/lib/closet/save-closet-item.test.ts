@@ -33,7 +33,7 @@ describe('saveClosetItem', () => {
     expect(insert).toHaveBeenCalledWith({
       user_id: 'user-1',
       image_url: 'https://example.com/shirt.jpg',
-      category: '上衣',
+      category: '上装',
       sub_category: '衬衫',
       color_category: '蓝色',
       style_tags: ['通勤']

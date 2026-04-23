@@ -1,28 +1,57 @@
+'use client'
+
 import { SecondaryButton } from '@/components/ui/button'
+import { ClosetCategoryBadge, ClosetColorBadge } from '@/components/closet/closet-taxonomy-icons'
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import { useEffect, useState } from 'react'
 
 export function ClosetItemCard({
   item,
   onEdit,
   onReanalyze,
   onDelete,
+  onToggleImageFlip,
   isReanalyzing,
-  isDeleting
+  isDeleting,
+  isFlipping
 }: {
   item: ClosetItemCardData
   onEdit?: (item: ClosetItemCardData) => void
   onReanalyze?: (item: ClosetItemCardData) => void
   onDelete?: (item: ClosetItemCardData) => void
+  onToggleImageFlip?: (item: ClosetItemCardData) => void
   isReanalyzing?: boolean
   isDeleting?: boolean
+  isFlipping?: boolean
 }) {
   const imageAlt = [item.category, item.colorCategory].filter(Boolean).join(' ')
+  const [isFlipConfirming, setIsFlipConfirming] = useState(false)
+
+  useEffect(() => {
+    setIsFlipConfirming(false)
+  }, [item.id, item.imageFlipped, isFlipping])
+
+  function handleFlipIntent() {
+    setIsFlipConfirming((current) => !current)
+  }
+
+  function handleConfirmFlip() {
+    setIsFlipConfirming(false)
+    onToggleImageFlip?.(item)
+  }
 
   return (
     <article className="overflow-hidden rounded-lg bg-white shadow-sm">
       <div className="aspect-square bg-[var(--color-secondary)]">
         {item.imageUrl ? (
-          <img src={item.imageUrl} alt={imageAlt} className="h-full w-full object-cover" />
+          <div className="flex h-full w-full items-center justify-center overflow-hidden">
+            <img
+              src={item.imageUrl}
+              alt={imageAlt}
+              className={`h-full w-full transition-transform duration-200 ${item.imageFlipped ? 'object-contain' : 'object-cover'}`}
+              style={item.imageFlipped ? { transform: 'rotate(90deg)' } : undefined}
+            />
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-[var(--color-neutral-dark)]">
             暂无图片
@@ -30,11 +59,35 @@ export function ClosetItemCard({
         )}
       </div>
       <div className="flex flex-col gap-1 p-3">
-        <p className="text-sm font-medium">{item.category}</p>
+        <div className="flex flex-wrap gap-2">
+          <ClosetCategoryBadge category={item.category} />
+          {item.colorCategory ? <ClosetColorBadge color={item.colorCategory} /> : null}
+        </div>
         {item.subCategory ? <p className="text-xs text-[var(--color-neutral-dark)]">{item.subCategory}</p> : null}
-        {item.colorCategory ? <p className="text-xs text-[var(--color-neutral-dark)]">{item.colorCategory}</p> : null}
-        {onEdit || onReanalyze || onDelete ? (
+        {onEdit || onReanalyze || onDelete || onToggleImageFlip ? (
           <div className="mt-2 flex flex-col gap-2">
+            {onToggleImageFlip ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-full border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] px-2.5 py-1 text-xs font-medium text-[var(--color-primary)]"
+                  onClick={handleFlipIntent}
+                  disabled={isFlipping}
+                >
+                  {isFlipping ? '处理中…' : item.imageFlipped ? '恢复原图' : '右转 90°'}
+                </button>
+                {isFlipConfirming ? (
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-xs font-medium text-white"
+                    onClick={handleConfirmFlip}
+                    disabled={isFlipping}
+                  >
+                    {item.imageFlipped ? '确认恢复' : '确认右转'}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
             {onEdit ? (
               <SecondaryButton type="button" onClick={() => onEdit(item)}>
                 编辑识别结果

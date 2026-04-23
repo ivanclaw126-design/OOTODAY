@@ -10,7 +10,7 @@ describe('LandingPage', () => {
     expect(screen.getByText('把衣橱先导进来，今天穿什么才会开始变简单。')).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: '邮箱地址' })).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: '登录邮箱地址' })).toBeInTheDocument()
-    expect(screen.getByLabelText('登录密码')).toBeInTheDocument()
+    expect(screen.getByText('使用其他密码')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '发送登录链接' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '邮箱密码登录' })).toBeInTheDocument()
   })

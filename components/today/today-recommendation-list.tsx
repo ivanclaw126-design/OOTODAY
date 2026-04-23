@@ -29,10 +29,8 @@ export function TodayRecommendationList({
     <section className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">
-            今日推荐
-          </p>
-          <p className="text-lg font-semibold tracking-[-0.03em]">3 套可直接做决定的搭配</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-neutral-dark)]">今日推荐</p>
+          <p className="text-2xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">3 套可直接做决定的搭配</p>
         </div>
         <p className="text-sm text-[var(--color-neutral-dark)]">按今天的场景、天气和最近穿着整理</p>
       </div>

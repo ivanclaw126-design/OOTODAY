@@ -32,29 +32,28 @@ export function TodayRecommendationCard({
   const rankLabel = String(index).padStart(2, '0')
 
   return (
-    <Card>
+    <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.76)_0%,rgba(241,234,224,0.94)_100%)]">
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--color-primary)]/15 bg-[var(--color-secondary)] text-sm font-semibold text-[var(--color-primary)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.1rem] border border-[var(--color-line)] bg-[var(--color-primary)] text-sm font-semibold text-white shadow-[0_14px_24px_rgba(0,0,0,0.16)]">
               {rankLabel}
             </div>
             <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">
-                Outfit decision
-              </p>
-              <p className="text-lg font-semibold tracking-[-0.03em]">第 {index} 套</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-neutral-dark)]">Outfit decision</p>
+              <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">第 {index} 套</p>
             </div>
           </div>
           {isRecorded ? (
-            <span className="rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
+            <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
               已完成
             </span>
           ) : null}
         </div>
 
-        <div className="rounded-[1.25rem] border border-black/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(248,245,238,0.9)_100%)] p-4">
-          <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">{recommendation.reason}</p>
+        <div className="rounded-[1.6rem] bg-[var(--color-panel)] p-5 text-white shadow-[var(--shadow-strong)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/52">Why this works</p>
+          <p className="mt-3 text-sm leading-7 text-white/78">{recommendation.reason}</p>
         </div>
 
         {recommendation.dress ? (
@@ -65,16 +64,16 @@ export function TodayRecommendationCard({
               </span>
               <span>主件 / 颜色 / 风格</span>
             </div>
-            <div className="rounded-[1.25rem] border border-black/5 bg-white/80 p-4">
-              <p className="text-xl leading-tight font-semibold tracking-[-0.04em]">
+            <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">
+              <p className="text-xl leading-tight font-semibold tracking-[-0.05em] text-[var(--color-primary)]">
                 {recommendation.dress.subCategory ?? recommendation.dress.category}
               </p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-[var(--color-primary)]">
-                <span className="rounded-full bg-[var(--color-secondary)] px-2.5 py-1">
+                <span className="rounded-full bg-[var(--color-paper-strong)] px-2.5 py-1">
                   {itemLabel('颜色', recommendation.dress.colorCategory)}
                 </span>
                 {recommendation.dress.styleTags.slice(0, 2).map((tag) => (
-                  <span key={tag} className="rounded-full border border-black/5 bg-white px-2.5 py-1 text-[var(--color-neutral-dark)]">
+                  <span key={tag} className="rounded-full border border-[var(--color-line)] bg-white/88 px-2.5 py-1 text-[var(--color-neutral-dark)]">
                     {tag}
                   </span>
                 ))}
@@ -91,9 +90,9 @@ export function TodayRecommendationCard({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[1.25rem] border border-black/5 bg-white/80 p-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-neutral-dark)]">上装</p>
-                <p className="mt-2 text-xl leading-tight font-semibold tracking-[-0.04em]">
+              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">上装</p>
+                <p className="mt-2 text-xl leading-tight font-semibold tracking-[-0.05em] text-[var(--color-primary)]">
                   {recommendation.top?.subCategory ?? recommendation.top?.category ?? '待补充上装'}
                 </p>
                 <p className="mt-2 text-sm text-[var(--color-neutral-dark)]">
@@ -101,9 +100,9 @@ export function TodayRecommendationCard({
                 </p>
               </div>
 
-              <div className="rounded-[1.25rem] border border-black/5 bg-white/80 p-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-neutral-dark)]">下装</p>
-                <p className="mt-2 text-xl leading-tight font-semibold tracking-[-0.04em]">
+              <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">下装</p>
+                <p className="mt-2 text-xl leading-tight font-semibold tracking-[-0.05em] text-[var(--color-primary)]">
                   {recommendation.bottom?.subCategory ?? recommendation.bottom?.category ?? '待补充下装'}
                 </p>
                 <p className="mt-2 text-sm text-[var(--color-neutral-dark)]">
@@ -115,9 +114,9 @@ export function TodayRecommendationCard({
         )}
 
         {recommendation.outerLayer ? (
-          <div className="rounded-[1.25rem] border border-[var(--color-primary)]/10 bg-[var(--color-secondary)]/65 p-4">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-neutral-dark)]">外层建议</p>
-            <p className="mt-2 text-base font-medium tracking-[-0.02em]">
+          <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[linear-gradient(180deg,rgba(231,255,55,0.18),rgba(231,255,55,0.1))] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">外层建议</p>
+            <p className="mt-2 text-base font-medium tracking-[-0.03em] text-[var(--color-primary)]">
               {recommendation.outerLayer.subCategory ?? recommendation.outerLayer.category}
             </p>
             <p className="mt-1 text-sm text-[var(--color-neutral-dark)]">
@@ -127,11 +126,11 @@ export function TodayRecommendationCard({
         ) : null}
 
         {isRecorded ? (
-          <div className="rounded-[1rem] border border-[var(--color-primary)]/10 bg-[var(--color-secondary)] px-4 py-3 text-sm font-medium text-[var(--color-primary)]">
+          <div className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/64 px-4 py-3 text-sm font-medium text-[var(--color-primary)]">
             今日已记录
           </div>
         ) : isConfirming ? (
-          <div className="space-y-3 rounded-[1.25rem] border border-black/5 bg-white/80 p-4">
+          <div className="space-y-3 rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">
             <div className="space-y-1">
               <p className="text-sm font-medium">给这套一个满意度</p>
               <p className="text-sm text-[var(--color-neutral-dark)]">选 1-5 分后提交，系统会把它记成今天的记录。</p>

@@ -7,6 +7,7 @@ import { deleteClosetItem } from '@/lib/closet/delete-closet-item'
 import { getClosetItem } from '@/lib/closet/get-closet-item'
 import { importRemoteImageToStorage } from '@/lib/closet/import-remote-image-to-storage'
 import { saveClosetItem } from '@/lib/closet/save-closet-item'
+import { setClosetItemImageFlip } from '@/lib/closet/set-closet-item-image-flip'
 import { normalizeClosetFields } from '@/lib/closet/taxonomy'
 import { updateClosetItem } from '@/lib/closet/update-closet-item'
 import { getEnv } from '@/lib/env'
@@ -159,4 +160,24 @@ export async function deleteClosetItemAction(input: { itemId: string }) {
   })
 
   revalidatePath('/closet')
+}
+
+export async function toggleClosetItemImageFlipAction(input: { itemId: string; imageFlipped: boolean }) {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  const data = await setClosetItemImageFlip({
+    userId: session.user.id,
+    itemId: input.itemId,
+    imageFlipped: input.imageFlipped
+  })
+
+  if (data.persisted !== false) {
+    revalidatePath('/closet')
+  }
+
+  return data
 }

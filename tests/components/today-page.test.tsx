@@ -1,11 +1,14 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ThemeProvider } from '@/components/theme/theme-provider'
 import { TodayPage } from '@/components/today/today-page'
 
 const updateCity = vi.fn().mockResolvedValue({ error: null })
-const refreshRecommendations = vi.fn().mockResolvedValue(undefined)
+const refreshRecommendations = vi.fn().mockResolvedValue({ recommendations: [] })
 const submitOotd = vi.fn()
 const changePassword = vi.fn().mockResolvedValue({ error: null })
+const updateHistoryEntry = vi.fn()
+const deleteHistoryEntry = vi.fn()
 
 const recommendation = {
   id: 'rec-1',
@@ -33,6 +36,17 @@ const recommendation = {
 describe('TodayPage', () => {
   beforeEach(() => {
     submitOotd.mockReset()
+    refreshRecommendations.mockReset()
+    refreshRecommendations.mockResolvedValue({ recommendations: [] })
+    changePassword.mockReset()
+    changePassword.mockResolvedValue({ error: null })
+    updateHistoryEntry.mockReset()
+    updateHistoryEntry.mockResolvedValue({ error: null, entry: null })
+    deleteHistoryEntry.mockReset()
+    deleteHistoryEntry.mockResolvedValue({ error: null })
+    document.documentElement.removeAttribute('data-theme')
+    document.documentElement.removeAttribute('data-theme-switching')
+    window.localStorage.clear()
   })
 
   afterEach(() => {
@@ -59,6 +73,8 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
       />
     )
 
@@ -85,6 +101,8 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
       />
     )
 
@@ -110,6 +128,8 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
       />
     )
 
@@ -143,6 +163,8 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
       />
     )
 
@@ -182,6 +204,8 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
       />
     )
 
@@ -215,6 +239,8 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
       />
     )
 
@@ -251,12 +277,50 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
       />
     )
 
     expect(screen.getByText('最近穿搭记录')).toBeInTheDocument()
     expect(screen.getByText('4 / 5 分')).toBeInTheDocument()
     expect(screen.getByText('OOTD: 衬衫 + 西裤；理由：基础组合稳定不出错')).toBeInTheDocument()
+  })
+
+  it('requests the next recommendation offset when refreshing', async () => {
+    refreshRecommendations.mockResolvedValueOnce({
+      recommendations: [{ ...recommendation, id: 'rec-next', reason: '新的轮换建议' }]
+    })
+
+    render(
+      <TodayPage
+        view={{
+          itemCount: 2,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '换一批推荐' }))
+
+    await waitFor(() => {
+      expect(refreshRecommendations).toHaveBeenCalledWith({ offset: 1 })
+    })
+    expect(await screen.findByText('新的轮换建议')).toBeInTheDocument()
   })
 
   it('shows default password guidance and lets the user submit a new password', async () => {
@@ -281,9 +345,12 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
       />
     )
 
+    fireEvent.click(screen.getByRole('button', { name: '设置' }))
     expect(screen.getByText(/默认密码/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '立即修改密码' }))
     fireEvent.change(screen.getByLabelText('新密码'), { target: { value: 'betterpass123' } })
@@ -296,5 +363,46 @@ describe('TodayPage', () => {
         confirmPassword: 'betterpass123'
       })
     })
+  })
+
+  it('shows theme cards in settings and applies the selected theme', async () => {
+    render(
+      <ThemeProvider>
+        <TodayPage
+          view={{
+            itemCount: 2,
+            city: 'Shanghai',
+            accountEmail: 'user@example.com',
+            passwordBootstrapped: true,
+            passwordChangedAt: null,
+            weatherState: { status: 'unavailable', city: 'Shanghai' },
+            recommendations: [recommendation],
+            recommendationError: false,
+            ootdStatus: { status: 'not-recorded' },
+            recentOotdHistory: []
+          }}
+          updateCity={updateCity}
+          submitOotd={submitOotd}
+          refreshRecommendations={refreshRecommendations}
+          changePassword={changePassword}
+          updateHistoryEntry={updateHistoryEntry}
+          deleteHistoryEntry={deleteHistoryEntry}
+        />
+      </ThemeProvider>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }))
+
+    expect(screen.getByText('界面配色主题')).toBeInTheDocument()
+    expect(screen.getByText('Gallery Blue')).toBeInTheDocument()
+    expect(screen.getByText('Luxury editorial tone')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到 Gallery Blue' }))
+
+    await waitFor(() => {
+      expect(document.documentElement.dataset.theme).toBe('gallery-blue')
+    })
+
+    expect(window.localStorage.getItem('ootoday-theme')).toBe('gallery-blue')
   })
 })

@@ -4,18 +4,18 @@ import type { ClosetInsights } from '@/lib/closet/types'
 
 function toneClass(tone: 'keep' | 'review' | 'buy', isActive: boolean) {
   if (isActive) {
-    return 'bg-[var(--color-primary)] text-white'
+    return 'bg-[var(--color-primary)] text-white shadow-[0_16px_32px_rgba(0,0,0,0.18)]'
   }
 
   if (tone === 'buy') {
-    return 'bg-[#FFF4E8]'
+    return 'bg-[rgba(231,255,55,0.16)]'
   }
 
   if (tone === 'keep') {
-    return 'bg-[#EEF6F1]'
+    return 'bg-[rgba(255,255,255,0.72)]'
   }
 
-  return 'bg-white'
+  return 'bg-[rgba(255,255,255,0.7)]'
 }
 
 function InsightList({
@@ -43,9 +43,9 @@ function InsightList({
   onSelect: (id: string) => void
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[1.25rem] border border-black/7 bg-white p-4 shadow-[0_12px_28px_rgba(26,26,26,0.05)]">
+    <div className="flex flex-col gap-3 rounded-[1.5rem] border border-[var(--color-line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.68),rgba(242,236,226,0.92))] p-4 shadow-[var(--shadow-soft)]">
       <div className="space-y-1">
-        <p className="text-sm font-medium text-[var(--color-neutral-dark)]">{title}</p>
+        <p className="text-sm font-semibold tracking-[-0.02em] text-[var(--color-primary)]">{title}</p>
         <p className="text-sm text-[var(--color-neutral-dark)]">{description}</p>
       </div>
 
@@ -56,8 +56,8 @@ function InsightList({
               key={item.id}
               type="button"
               onClick={() => onSelect(item.id)}
-              className={`rounded-[0.9rem] border border-[var(--color-neutral-mid)] px-3 py-2 text-left transition-colors ${
-                activeId === item.id ? 'bg-[var(--color-primary)] text-white' : 'bg-white'
+              className={`rounded-[1rem] border border-[var(--color-line)] px-3 py-2 text-left transition-colors ${
+                activeId === item.id ? 'bg-[var(--color-primary)] text-white' : 'bg-white/82'
               }`}
             >
               <p className="text-sm font-medium">
@@ -111,11 +111,11 @@ export function ClosetInsightsPanel({
   onClearFilter: () => void
 }) {
   return (
-    <Card>
+    <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.74)_0%,rgba(240,233,223,0.94)_100%)]">
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-medium">整理建议</p>
+            <p className="text-sm font-semibold tracking-[-0.02em] text-[var(--color-primary)]">整理建议</p>
             <p className="text-sm text-[var(--color-neutral-dark)]">先把重复、闲置和基础缺口看清楚，衣橱才会越用越顺手。</p>
           </div>
           {activeFilterId ? (
@@ -126,10 +126,10 @@ export function ClosetInsightsPanel({
         </div>
 
         {insights.actionPlan.length > 0 ? (
-          <div className="rounded-[1.25rem] border border-black/7 bg-[var(--color-secondary)]/35 p-4">
+          <div className="rounded-[1.6rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">
             <div className="mb-3 space-y-1">
-              <p className="text-sm font-medium text-[var(--color-neutral-dark)]">下一步先做这些</p>
-              <p className="text-sm text-[var(--color-neutral-dark)]">先处理最影响搭配效率的 3 件事，比继续盲目加衣服更有用。</p>
+              <p className="text-sm font-semibold text-white">下一步先做这些</p>
+              <p className="text-sm text-white/66">先处理最影响搭配效率的 3 件事，比继续盲目加衣服更有用。</p>
             </div>
 
             <div className="flex flex-col gap-2">

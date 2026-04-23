@@ -3,6 +3,7 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { DEFAULT_ACCOUNT_PASSWORD } from '@/lib/auth/password'
 
 export function TodayAccountSecurityCard({
@@ -47,22 +48,22 @@ export function TodayAccountSecurityCard({
   }
 
   return (
-    <section className="rounded-[1.5rem] border border-black/7 bg-white/92 p-4 shadow-[0_14px_34px_rgba(26,26,26,0.06)] backdrop-blur sm:p-5">
+    <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(239,232,221,0.94)_100%)] sm:p-5">
       <div className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">Account</p>
-        <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">邮箱密码登录</h2>
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-primary)]">Account</p>
+        <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-primary)]">邮箱密码登录</h2>
         <p className="text-sm text-[var(--color-neutral-dark)]">
           当前账号：{email ?? '未读取到邮箱'}。以后除了 magic link，也可以直接用邮箱和密码登录。
         </p>
       </div>
 
-      <div className="mt-4 rounded-[1.25rem] bg-[var(--color-secondary)]/45 p-4 text-sm text-[var(--color-neutral-dark)]">
+      <div className="mt-4 rounded-[1.4rem] bg-[var(--color-panel)] p-4 text-sm text-white/78">
         {passwordBootstrapped ? (
           passwordChangedAt ? (
             <p>这个账号已经改过密码了。你仍然可以随时再换一次。</p>
           ) : (
             <p>
-              这个账号当前可用默认密码 <span className="font-medium text-[var(--color-primary)]">{DEFAULT_ACCOUNT_PASSWORD}</span> 登录，建议你尽快改掉。
+              这个账号当前可用默认密码 <span className="font-medium text-[var(--color-accent)]">{DEFAULT_ACCOUNT_PASSWORD}</span> 登录，建议你尽快改掉。
             </p>
           )
         ) : (
@@ -121,6 +122,6 @@ export function TodayAccountSecurityCard({
 
       {errorMessage ? <p className="mt-3 text-sm text-red-600">{errorMessage}</p> : null}
       {successMessage ? <p className="mt-3 text-sm text-[var(--color-accent)]">{successMessage}</p> : null}
-    </section>
+    </Card>
   )
 }

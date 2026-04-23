@@ -11,6 +11,7 @@ import {
   deleteClosetItemAction,
   reanalyzeClosetItemAction,
   saveClosetItemAction,
+  toggleClosetItemImageFlipAction,
   updateClosetItemAction
 } from '@/app/closet/actions'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
@@ -60,6 +61,12 @@ export default async function ClosetRoute() {
     return reanalyzeClosetItemAction(input)
   }
 
+  async function toggleImageFlip(input: { itemId: string; imageFlipped: boolean }): Promise<{ persisted: boolean }> {
+    'use server'
+
+    return toggleClosetItemImageFlipAction(input)
+  }
+
   await ensureProfile(userId)
 
   const { storageBucket } = getEnv()
@@ -79,6 +86,7 @@ export default async function ClosetRoute() {
       updateItem={updateItem}
       reanalyzeItem={reanalyzeItem}
       deleteItem={deleteItem}
+      toggleImageFlip={toggleImageFlip}
     />
   )
 }

@@ -256,6 +256,95 @@ describe('resolveShopInput', () => {
     })
   })
 
+  it('filters out non-image embedded urls before choosing candidates', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          headers: {
+            get: () => 'text/html; charset=utf-8'
+          },
+          text: async () => `
+            <html>
+              <body>
+                <script>
+                  window.__NUXT__ = {
+                    data: [{
+                      detail: {
+                        title: "测试商品",
+                        galleryList: [{
+                          url: "https://api.example.com/product/123"
+                        }, {
+                          url: "https://img.alicdn.com/imgextra/i1/demo/clean-product.jpg"
+                        }]
+                      }
+                    }]
+                  }
+                </script>
+              </body>
+            </html>
+          `
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name: string) => (name.toLowerCase() === 'content-type' ? 'application/json' : null)
+          }
+        }) as unknown as typeof fetch
+    )
+
+    const { resolveShopInput } = await import('@/lib/shop/resolve-shop-input')
+
+    await expect(resolveShopInput('https://m.dewu.com/product-demo-3.html')).resolves.toEqual({
+      error: null,
+      imageUrl: 'https://img.alicdn.com/imgextra/i1/demo/clean-product.jpg',
+      imageCandidates: ['https://img.alicdn.com/imgextra/i1/demo/clean-product.jpg'],
+      sourceTitle: '测试商品',
+      sourceUrl: 'https://m.dewu.com/product-demo-3.html'
+    })
+  })
+
+  it('filters out embedded private-network image candidates', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: () => 'text/html; charset=utf-8'
+        },
+        text: async () => `
+          <html>
+            <body>
+              <script>
+                window.__INITIAL_STATE__ = {
+                  itemDO: {
+                    title: "安全测试商品",
+                    auctionImages: [
+                      "http://127.0.0.1/internal.jpg",
+                      "https://img.alicdn.com/imgextra/i1/demo/safe-main.jpg"
+                    ]
+                  }
+                }
+              </script>
+            </body>
+          </html>
+        `
+      }) as unknown as typeof fetch
+    )
+
+    const { resolveShopInput } = await import('@/lib/shop/resolve-shop-input')
+
+    await expect(resolveShopInput('https://item.taobao.com/item.htm?id=3')).resolves.toEqual({
+      error: null,
+      imageUrl: 'https://img.alicdn.com/imgextra/i1/demo/safe-main.jpg',
+      imageCandidates: ['https://img.alicdn.com/imgextra/i1/demo/safe-main.jpg'],
+      sourceTitle: '安全测试商品',
+      sourceUrl: 'https://item.taobao.com/item.htm?id=3'
+    })
+  })
   it('rejects generic pinduoduo share images', async () => {
     vi.stubGlobal(
       'fetch',
