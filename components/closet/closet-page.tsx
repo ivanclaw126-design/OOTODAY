@@ -29,15 +29,15 @@ function ClosetSection({
   children: ReactNode
 }) {
   return (
-    <section className="space-y-3">
+    <section className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">{eyebrow}</p>
-          <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">{title}</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">{eyebrow}</p>
+          <h2 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">{title}</h2>
           <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">{description}</p>
         </div>
         {meta ? (
-          <div className="shrink-0 rounded-full border border-black/7 bg-white px-3 py-1 text-xs font-medium text-[var(--color-neutral-dark)] shadow-sm">
+          <div className="shrink-0 rounded-full border border-[var(--color-line)] bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-neutral-dark)] shadow-sm">
             {meta}
           </div>
         ) : null}
@@ -310,19 +310,19 @@ export function ClosetPage({
 
   return (
     <AppShell title="Closet">
-      <Card>
+      <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">衣橱管理</p>
-            <h1 className="text-xl font-semibold text-[var(--color-neutral-dark)]">先导入，再整理，再回看</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-neutral-dark)]">衣橱管理</p>
+            <h1 className="text-3xl font-semibold tracking-[-0.06em] text-[var(--color-primary)]">先导入，再整理，再回看</h1>
             <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">
               相册多选、商品链接和拼图拆分都走同一条入橱链路，下面的建议会直接把清理重点挑出来。
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--color-neutral-dark)]">
-            <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">已收录 {itemCount} 件单品</span>
-            <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">支持多入口导入</span>
+          <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-neutral-dark)]">
+            <span className="rounded-full border border-[var(--color-line)] bg-white/72 px-3 py-1">已收录 {itemCount} 件单品</span>
+            <span className="rounded-full border border-[var(--color-line)] bg-[rgba(231,255,55,0.18)] px-3 py-1 text-[var(--color-primary)]">支持多入口导入</span>
           </div>
         </div>
       </Card>
@@ -374,7 +374,7 @@ export function ClosetPage({
           }
           meta={activeFilterId || activeBrowseGroupLabel ? `${visibleItems.length} 件当前结果` : `${itemCount} 件全部单品`}
         >
-          <div className="rounded-[1.5rem] border border-black/7 bg-white/92 p-4 shadow-[0_14px_34px_rgba(26,26,26,0.06)] backdrop-blur sm:p-5">
+          <div className="rounded-[1.9rem] border border-[var(--color-line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.74)_0%,rgba(240,233,223,0.94)_100%)] p-4 shadow-[var(--shadow-soft)] backdrop-blur sm:p-5">
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {[
@@ -390,8 +390,8 @@ export function ClosetPage({
                       type="button"
                       className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                         isActive
-                          ? 'bg-[var(--color-primary)] text-white'
-                          : 'border border-[var(--color-neutral-mid)] bg-white text-[var(--color-neutral-dark)]'
+                          ? 'bg-[var(--color-primary)] text-white shadow-[0_14px_28px_rgba(0,0,0,0.16)]'
+                          : 'border border-[var(--color-line)] bg-white/80 text-[var(--color-neutral-dark)]'
                       }`}
                       onClick={() => handleBrowseModeChange(option.value as 'all' | ClosetBrowseMode)}
                       aria-pressed={isActive}
@@ -423,10 +423,10 @@ export function ClosetPage({
                     onClearGroup={() => setActiveBrowseGroupValue(null)}
                   />
 
-                  <div className="rounded-[1.25rem] border border-black/7 bg-[var(--color-secondary)]/25 p-4">
+                  <div className="rounded-[1.5rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.56)] p-4">
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <p className="text-sm font-semibold text-[var(--color-neutral-dark)]">
+                        <p className="text-sm font-semibold tracking-[-0.02em] text-[var(--color-primary)]">
                           {browseMode === 'category' ? '类型分组详情' : '颜色分组详情'}
                         </p>
                         <p className="text-xs text-[var(--color-neutral-dark)]">
@@ -436,7 +436,7 @@ export function ClosetPage({
                         </p>
                       </div>
                       {activeBrowseGroupLabel ? (
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--color-neutral-dark)]">
+                        <span className="rounded-full border border-[var(--color-line)] bg-white/82 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-neutral-dark)]">
                           {visibleItems.length} 件
                         </span>
                       ) : null}
@@ -469,13 +469,13 @@ export function ClosetPage({
             aria-label="编辑识别结果"
             className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden"
           >
-            <Card>
+            <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.84)_0%,rgba(243,238,230,0.98)_100%)]">
               <div className="flex max-h-[calc(100vh-2rem)] flex-col overflow-y-auto pr-1">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">
-                      <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">编辑面板</p>
-                      <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">编辑识别结果</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-neutral-dark)]">编辑面板</p>
+                      <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-primary)]">编辑识别结果</h2>
                       <p className="text-sm text-[var(--color-neutral-dark)]">
                         这里会立刻显示当前草稿。点“一键重新识别”后，新结果也会直接回到这个面板里。
                       </p>
