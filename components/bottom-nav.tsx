@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { useMemo, useRef, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 
 const links = [
   { href: '/today', label: 'Today' },
@@ -13,6 +14,36 @@ const links = [
 
 export function BottomNav() {
   const pathname = usePathname()
+  const router = useRouter()
+  const navRef = useRef<HTMLUListElement | null>(null)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const activeIndex = useMemo(() => links.findIndex((link) => pathname === link.href), [pathname])
+  const displayIndex = dragIndex ?? Math.max(activeIndex, 0)
+
+  function getIndexFromClientX(clientX: number, target?: EventTarget | null) {
+    const nav = navRef.current
+
+    if (!nav) {
+      return activeIndex
+    }
+
+    const rect = nav.getBoundingClientRect()
+
+    if (rect.width <= 0 && target instanceof HTMLElement) {
+      const indexValue = target.closest<HTMLElement>('[data-nav-index]')?.dataset.navIndex
+      return indexValue ? Number.parseInt(indexValue, 10) : activeIndex
+    }
+
+    const relativeX = Math.min(Math.max(clientX - rect.left, 0), rect.width - 1)
+    return Math.max(0, Math.min(links.length - 1, Math.floor((relativeX / rect.width) * links.length)))
+  }
+
+  function getIndicatorStyle(index: number) {
+    return {
+      width: 'calc((100% - 2rem) / 5)',
+      transform: `translateX(calc(0.5rem + ${index} * (((100% - 2rem) / 5) + 0.25rem)))`
+    }
+  }
 
   return (
     <nav
@@ -20,14 +51,57 @@ export function BottomNav() {
       data-app-swipe-zone
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-3 sm:px-4"
     >
-      <ul className="pointer-events-auto relative mx-auto grid max-w-[26rem] min-w-0 grid-cols-5 items-center gap-1 rounded-[1.55rem] border border-[rgba(255,255,255,0.78)] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(248,245,240,0.92)_100%)] px-2 py-1.5 shadow-[0_14px_34px_rgba(33,27,20,0.12),0_1px_0_rgba(255,255,255,0.88)_inset] backdrop-blur-md before:pointer-events-none before:absolute before:inset-x-3 before:top-1 before:h-px before:rounded-full before:bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.92)_20%,rgba(255,255,255,0.92)_80%,rgba(255,255,255,0)_100%)] before:content-['']">
+      <ul
+        ref={navRef}
+        className="pointer-events-auto relative mx-auto grid max-w-[26rem] min-w-0 grid-cols-5 items-center gap-1 rounded-[1.55rem] border border-[rgba(255,255,255,0.78)] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(248,245,240,0.92)_100%)] px-2 py-1.5 shadow-[0_14px_34px_rgba(33,27,20,0.12),0_1px_0_rgba(255,255,255,0.88)_inset] backdrop-blur-md before:pointer-events-none before:absolute before:inset-x-3 before:top-1 before:h-px before:rounded-full before:bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.92)_20%,rgba(255,255,255,0.92)_80%,rgba(255,255,255,0)_100%)] before:content-['']"
+        onTouchStart={(event) => {
+          event.stopPropagation()
+          const touch = event.touches[0]
+
+          if (!touch) {
+            return
+          }
+
+          setDragIndex(getIndexFromClientX(touch.clientX, event.target))
+        }}
+        onTouchMove={(event) => {
+          event.stopPropagation()
+          const touch = event.touches[0]
+
+          if (!touch) {
+            return
+          }
+
+          setDragIndex(getIndexFromClientX(touch.clientX, event.target))
+        }}
+        onTouchEnd={(event) => {
+          event.stopPropagation()
+          const touch = event.changedTouches[0]
+          const targetIndex = touch ? getIndexFromClientX(touch.clientX, event.target) : dragIndex
+          setDragIndex(null)
+
+          if (targetIndex !== null && targetIndex !== activeIndex && links[targetIndex]) {
+            router.push(links[targetIndex].href)
+          }
+        }}
+        onTouchCancel={(event) => {
+          event.stopPropagation()
+          setDragIndex(null)
+        }}
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-1.5 top-1.5 rounded-[1.12rem] bg-[linear-gradient(180deg,rgba(26,26,26,0.1)_0%,rgba(26,26,26,0.05)_100%)] shadow-[0_1px_0_rgba(255,255,255,0.76)_inset,0_8px_18px_rgba(26,26,26,0.06)] transition-transform duration-200 ease-out"
+          style={getIndicatorStyle(displayIndex)}
+        />
         {links.map((link) => (
           <li key={link.href} className="min-w-0 flex-1">
             <Link
+              data-nav-index={links.findIndex((candidate) => candidate.href === link.href)}
               aria-current={pathname === link.href ? 'page' : undefined}
               className={`group relative flex min-h-[3.2rem] w-full flex-col items-center justify-center rounded-[1.12rem] px-2 py-2 text-[0.8rem] font-semibold tracking-[-0.01em] transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] ${
                 pathname === link.href
-                  ? 'translate-y-[-1px] bg-[linear-gradient(180deg,rgba(26,26,26,0.08)_0%,rgba(26,26,26,0.05)_100%)] text-[var(--color-primary)] shadow-[0_1px_0_rgba(255,255,255,0.76)_inset,0_8px_18px_rgba(26,26,26,0.06)]'
+                  ? 'translate-y-[-1px] text-[var(--color-primary)]'
                   : 'text-[rgba(82,82,82,0.72)] hover:bg-black/4 hover:text-[var(--color-primary)]'
               }`}
               href={link.href}

@@ -25,6 +25,7 @@ export type Database = {
           id: string
           user_id: string
           image_url: string | null
+          image_flipped: boolean
           category: string
           sub_category: string | null
           color_category: string | null
@@ -40,6 +41,7 @@ export type Database = {
           user_id: string
           category: string
           image_url?: string | null
+          image_flipped?: boolean
           sub_category?: string | null
           color_category?: string | null
           style_tags?: string[]

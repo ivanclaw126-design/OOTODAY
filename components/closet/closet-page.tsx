@@ -20,12 +20,18 @@ function ClosetSection({
   title,
   description,
   meta,
+  collapsible = false,
+  collapsed = false,
+  onToggle,
   children
 }: {
   eyebrow: string
   title: string
   description: string
   meta?: string
+  collapsible?: boolean
+  collapsed?: boolean
+  onToggle?: () => void
   children: ReactNode
 }) {
   return (
@@ -36,14 +42,25 @@ function ClosetSection({
           <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">{title}</h2>
           <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">{description}</p>
         </div>
-        {meta ? (
-          <div className="shrink-0 rounded-full border border-black/7 bg-white px-3 py-1 text-xs font-medium text-[var(--color-neutral-dark)] shadow-sm">
-            {meta}
-          </div>
-        ) : null}
+        <div className="flex flex-wrap gap-2">
+          {meta ? (
+            <div className="shrink-0 rounded-full border border-black/7 bg-white px-3 py-1 text-xs font-medium text-[var(--color-neutral-dark)] shadow-sm">
+              {meta}
+            </div>
+          ) : null}
+          {collapsible ? (
+            <button
+              type="button"
+              className="shrink-0 rounded-full border border-black/7 bg-white px-3 py-1 text-xs font-medium text-[var(--color-neutral-dark)] shadow-sm"
+              onClick={onToggle}
+            >
+              {collapsed ? '展开' : '收起'}
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      {children}
+      {!collapsed ? children : null}
     </section>
   )
 }
@@ -60,6 +77,7 @@ type ClosetPageProps = {
   updateItem: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<void>
   reanalyzeItem: (input: { itemId: string }) => Promise<ClosetAnalysisDraft>
   deleteItem: (input: { itemId: string }) => Promise<void>
+  toggleImageFlip: (input: { itemId: string; imageFlipped: boolean }) => Promise<void>
 }
 
 export function ClosetPage({
@@ -73,7 +91,8 @@ export function ClosetPage({
   saveItem,
   updateItem,
   reanalyzeItem,
-  deleteItem
+  deleteItem,
+  toggleImageFlip
 }: ClosetPageProps) {
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
@@ -82,8 +101,11 @@ export function ClosetPage({
   const [editingDraft, setEditingDraft] = useState<ClosetAnalysisDraft | null>(null)
   const [editingError, setEditingError] = useState<string | null>(null)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
-  const [browseMode, setBrowseMode] = useState<'all' | ClosetBrowseMode>('all')
+  const [browseMode, setBrowseMode] = useState<'all' | ClosetBrowseMode>('category')
   const [activeBrowseGroupValue, setActiveBrowseGroupValue] = useState<string | null>(null)
+  const [isImportCollapsed, setIsImportCollapsed] = useState(itemCount > 0)
+  const [isInsightsCollapsed, setIsInsightsCollapsed] = useState(itemCount > 0)
+  const [flippingItemId, setFlippingItemId] = useState<string | null>(null)
   const router = useRouter()
 
   const activeMissingBasic = useMemo(
@@ -255,6 +277,20 @@ export function ClosetPage({
     }
   }
 
+  async function handleToggleImageFlip(item: ClosetItemCardData) {
+    setFlippingItemId(item.id)
+
+    try {
+      await toggleImageFlip({
+        itemId: item.id,
+        imageFlipped: !item.imageFlipped
+      })
+      router.refresh()
+    } finally {
+      setFlippingItemId(null)
+    }
+  }
+
   function handleEditItem(item: ClosetItemCardData) {
     setEditingItemId(item.id)
     setEditingError(null)
@@ -332,6 +368,9 @@ export function ClosetPage({
         title="导入衣物"
         description="相册多选、商品链接和拼图拆分都在这里进入同一条识别与确认流程。"
         meta="先从这里开始"
+        collapsible={itemCount > 0}
+        collapsed={isImportCollapsed}
+        onToggle={() => setIsImportCollapsed((current) => !current)}
       >
         <ClosetUploadCard
           userId={userId}
@@ -348,6 +387,9 @@ export function ClosetPage({
           title="整理建议"
           description="先把重复、闲置和基础缺口看清楚，衣橱才会越用越顺手。"
           meta={activeFilterSummary ? '已选中筛选' : '按优先级查看'}
+          collapsible
+          collapsed={isInsightsCollapsed}
+          onToggle={() => setIsInsightsCollapsed((current) => !current)}
         >
           <ClosetInsightsPanel
             insights={insights}
@@ -408,8 +450,10 @@ export function ClosetPage({
                   onEditItem={handleEditItem}
                   onReanalyzeItem={handleReanalyzeItem}
                   onDeleteItem={handleDeleteItem}
+                  onToggleImageFlipItem={handleToggleImageFlip}
                   reanalyzingItemId={reanalyzingItemId}
                   deletingItemId={deletingItemId}
+                  flippingItemId={flippingItemId}
                   emptyTitle={gridEmptyTitle}
                   emptyDescription={gridEmptyDescription}
                 />
@@ -447,8 +491,10 @@ export function ClosetPage({
                       onEditItem={handleEditItem}
                       onReanalyzeItem={handleReanalyzeItem}
                       onDeleteItem={handleDeleteItem}
+                      onToggleImageFlipItem={handleToggleImageFlip}
                       reanalyzingItemId={reanalyzingItemId}
                       deletingItemId={deletingItemId}
+                      flippingItemId={flippingItemId}
                       emptyTitle={gridEmptyTitle}
                       emptyDescription={gridEmptyDescription}
                     />

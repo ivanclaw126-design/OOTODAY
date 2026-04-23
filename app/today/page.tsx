@@ -2,14 +2,16 @@ import { redirect } from 'next/navigation'
 import { TodayPage } from '@/components/today/today-page'
 import {
   changeTodayPasswordAction,
+  deleteTodayHistoryEntryAction,
   refreshTodayRecommendationsAction,
   submitTodayOotdAction,
+  updateTodayHistoryEntryAction,
   updateTodayCityAction
 } from '@/app/today/actions'
 import { getSession } from '@/lib/auth/get-session'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getTodayView } from '@/lib/today/get-today-view'
-import type { TodayRecommendation } from '@/lib/today/types'
+import type { TodayHistoryUpdateInput, TodayRecommendation } from '@/lib/today/types'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 
 export default async function TodayRoute({
@@ -56,16 +58,28 @@ export default async function TodayRoute({
     return submitTodayOotdAction(input)
   }
 
-  async function refreshRecommendations() {
+  async function refreshRecommendations(input: { offset: number }) {
     'use server'
 
-    return refreshTodayRecommendationsAction((Number.isNaN(offset) ? 0 : offset) + 1)
+    return refreshTodayRecommendationsAction(input.offset)
   }
 
   async function changePassword(input: { password: string; confirmPassword: string }) {
     'use server'
 
     return changeTodayPasswordAction(input)
+  }
+
+  async function updateHistoryEntry(input: TodayHistoryUpdateInput) {
+    'use server'
+
+    return updateTodayHistoryEntryAction(input)
+  }
+
+  async function deleteHistoryEntry(input: { ootdId: string }) {
+    'use server'
+
+    return deleteTodayHistoryEntryAction(input)
   }
 
   return (
@@ -75,6 +89,8 @@ export default async function TodayRoute({
       submitOotd={submitOotd}
       refreshRecommendations={refreshRecommendations}
       changePassword={changePassword}
+      updateHistoryEntry={updateHistoryEntry}
+      deleteHistoryEntry={deleteHistoryEntry}
     />
   )
 }
