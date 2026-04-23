@@ -1,5 +1,11 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
-import { isBottomCategory, isOnePieceCategory, isOuterwearCategory, isTopCategory } from '@/lib/closet/taxonomy'
+import { buildPaletteColorStrategyNotes } from '@/lib/closet/color-strategy'
+import {
+  isBottomCategory,
+  isOnePieceCategory,
+  isOuterwearCategory,
+  isTopCategory
+} from '@/lib/closet/taxonomy'
 import type { TravelDailyPlanEntry, TravelPackingEntry, TravelPackingPlan, TravelPlannerInput, TravelScene } from '@/lib/travel/types'
 
 function describeItem(item: ClosetItemCardData) {
@@ -97,6 +103,20 @@ function includesLeisureScene(scenes: TravelScene[]) {
   return scenes.includes('休闲') || scenes.includes('约会') || scenes.includes('户外')
 }
 
+function buildColorStrategyNotes(items: ClosetItemCardData[]) {
+  return buildPaletteColorStrategyNotes(items.map((item) => item.colorCategory))
+    .map((note) =>
+      note
+        .replace('这套有基础色托底，所以整体看起来更稳、更容易穿进日常。', '这次打包有基础色托底，所以整体更适合少带多穿。')
+        .replace('这套主要靠同色系深浅变化成立，不是靠大撞色取胜。', '这次打包里有同色系深浅单品可轮换，旅行时更容易少带几件也保持层次。')
+        .replace('亮点色基本只保留在一处，所以视觉重点会更清楚。', '只带一处重点色最省心，其他单品用基础色托住就够了。')
+        .replace('重点色不止一处，使用时记得别让多个亮点同时抢戏。', '这次行程里的重点色不止一处，打包时记得别把所有亮色同时带上。')
+        .replace('基础色占比够高，更容易把少量单品反复穿出稳定组合。', '这次打包的基础色占比够高，更容易把少量单品反复穿出稳定组合。')
+        .replace('同色系单品之间能形成自然轮换，少带几件也不容易显乱。', '衣橱里有同色系深浅单品可轮换，旅行时更容易少带几件也保持层次。')
+    )
+    .slice(0, 4)
+}
+
 export function buildTravelPackingPlan({
   destinationCity,
   days,
@@ -158,6 +178,8 @@ export function buildTravelPackingPlan({
           : '目的地温度比较温和，优先带最稳定的基础组合，再用上衣和场景做变化。'
       : '天气数据暂时不可用，这份清单先按衣橱稳定度和场景覆盖来排。'
   ]
+
+  notes.push(...buildColorStrategyNotes([...tops, ...bottoms, ...dresses, ...outerwear]))
 
   if (includesFormalScene(scenes)) {
     notes.push('正式或通勤场景优先靠深色下装和一件外套稳住，不需要每一天都完全换新。')

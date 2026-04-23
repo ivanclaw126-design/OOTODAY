@@ -273,6 +273,17 @@ export function InspirationPage({
                   </p>
                 ))}
               </div>
+
+              {(analysis.breakdown.colorStrategyNotes ?? []).length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium">颜色为什么成立</p>
+                  {(analysis.breakdown.colorStrategyNotes ?? []).map((note) => (
+                    <p key={note} className="text-sm text-[var(--color-neutral-dark)]">
+                      {note}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </Card>
 

@@ -1,3 +1,4 @@
+import { getOutfitColorRole, normalizeColorValue } from '@/lib/closet/taxonomy'
 import type { InspirationBreakdown, InspirationClosetMatch, InspirationRemixPlan } from '@/lib/inspiration/types'
 
 function describeItem(match: InspirationClosetMatch['matchedItems'][number]) {
@@ -56,7 +57,15 @@ export function buildInspirationRemixPlan(
             : `你已经能借到 ${matchedCount} 件核心单品，先穿出轮廓，剩下缺口再补。`,
     matchedCount,
     totalCount,
-    coverageLabel: buildCoverageLabel(matchedCount, totalCount),
+    coverageLabel: (() => {
+      const accentItem = breakdown.keyItems.find((item) => item.colorHint && getOutfitColorRole(normalizeColorValue(item.colorHint)) === 'accent')
+
+      if (matchedCount > 0 && accentItem) {
+        return `${buildCoverageLabel(matchedCount, totalCount)} · 记得保住 ${accentItem.label} 这处重点`
+      }
+
+      return buildCoverageLabel(matchedCount, totalCount)
+    })(),
     steps,
     missingItems
   }

@@ -1,6 +1,7 @@
 'use client'
 
 import { AppShell } from '@/components/app-shell'
+import { buildClosetBrowseGroups, ClosetGroupBrowser, type ClosetBrowseMode } from '@/components/closet/closet-group-browser'
 import { ClosetInsightsPanel } from '@/components/closet/closet-insights'
 import { ClosetItemGrid } from '@/components/closet/closet-item-grid'
 import { ClosetUploadCard } from '@/components/closet/closet-upload-card'
@@ -10,7 +11,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { isBottomCategory, isOuterwearCategory, isTopCategory } from '@/lib/closet/taxonomy'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult, ClosetInsights, ClosetItemCardData } from '@/lib/closet/types'
 import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 function ClosetSection({
@@ -80,6 +81,8 @@ export function ClosetPage({
   const [editingDraft, setEditingDraft] = useState<ClosetAnalysisDraft | null>(null)
   const [editingError, setEditingError] = useState<string | null>(null)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [browseMode, setBrowseMode] = useState<'all' | ClosetBrowseMode>('all')
+  const [activeBrowseGroupValue, setActiveBrowseGroupValue] = useState<string | null>(null)
   const router = useRouter()
 
   const activeMissingBasic = useMemo(
@@ -87,7 +90,7 @@ export function ClosetPage({
     [activeFilterId, insights.missingBasics]
   )
 
-  const filteredItems = useMemo(() => {
+  const insightFilteredItems = useMemo(() => {
     if (!activeFilterId) {
       return items
     }
@@ -118,6 +121,28 @@ export function ClosetPage({
 
     return items
   }, [activeFilterId, insights.duplicateGroups, insights.idleItems, items])
+
+  const browseGroups = useMemo(() => {
+    if (browseMode === 'all') {
+      return []
+    }
+
+    return buildClosetBrowseGroups(insightFilteredItems, browseMode)
+  }, [browseMode, insightFilteredItems])
+
+  const visibleItems = useMemo(() => {
+    if (browseMode === 'all' || !activeBrowseGroupValue) {
+      return insightFilteredItems
+    }
+
+    return insightFilteredItems.filter((item) => {
+      if (browseMode === 'category') {
+        return item.category === activeBrowseGroupValue
+      }
+
+      return (item.colorCategory ?? '未标颜色') === activeBrowseGroupValue
+    })
+  }, [activeBrowseGroupValue, browseMode, insightFilteredItems])
 
   const activeFilterSummary = useMemo(() => {
     if (!activeFilterId) {
@@ -175,10 +200,44 @@ export function ClosetPage({
     return null
   }, [activeFilterId, insights.duplicateGroups, insights.idleItems, insights.missingBasics])
 
+  const activeBrowseGroupLabel =
+    browseMode === 'all'
+      ? null
+      : browseGroups.find((group) => group.value === activeBrowseGroupValue)?.label ?? activeBrowseGroupValue
+
   const gridEmptyTitle = activeMissingBasic ? `${activeMissingBasic.label} 当前还没补进衣橱` : '当前没有符合条件的单品'
   const gridEmptyDescription = activeMissingBasic
     ? activeMissingBasic.reason
     : '换个筛选看看，或者继续往衣橱里补新的单品。'
+
+  const currentEditingItem = useMemo(
+    () => items.find((item) => item.id === editingItemId) ?? null,
+    [editingItemId, items]
+  )
+
+  useEffect(() => {
+    if (!editingItemId) {
+      return
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [editingItemId])
+
+  function closeEditor() {
+    setEditingItemId(null)
+    setEditingDraft(null)
+    setEditingError(null)
+  }
+
+  function handleBrowseModeChange(nextMode: 'all' | ClosetBrowseMode) {
+    setBrowseMode(nextMode)
+    setActiveBrowseGroupValue(null)
+  }
 
   async function handleDeleteItem(item: ClosetItemCardData) {
     if (!window.confirm(`确定要删除这件${item.category}${item.subCategory ? `（${item.subCategory}）` : ''}吗？删除后需要重新上传。`)) {
@@ -208,14 +267,20 @@ export function ClosetPage({
   }
 
   async function handleReanalyzeItem(item: ClosetItemCardData) {
+    setEditingItemId(item.id)
+    setEditingDraft({
+      imageUrl: item.imageUrl ?? '',
+      category: item.category,
+      subCategory: item.subCategory ?? '未知类型请手动选择',
+      colorCategory: item.colorCategory ?? '未知颜色请手动选择',
+      styleTags: item.styleTags
+    })
     setReanalyzingItemId(item.id)
     setEditingError(null)
 
     try {
       const nextDraft = await reanalyzeItem({ itemId: item.id })
-      setEditingItemId(item.id)
       setEditingDraft(nextDraft)
-      router.refresh()
     } catch (error) {
       setEditingError(error instanceof Error ? error.message : '重新识别失败，请稍后再试')
     } finally {
@@ -233,8 +298,7 @@ export function ClosetPage({
 
     try {
       await updateItem({ itemId: editingItemId, draft: nextDraft })
-      setEditingItemId(null)
-      setEditingDraft(null)
+      closeEditor()
       router.refresh()
     } catch (error) {
       setEditingError(error instanceof Error ? error.message : '保存失败，请稍后再试')
@@ -301,59 +365,156 @@ export function ClosetPage({
       {itemCount > 0 ? (
         <ClosetSection
           eyebrow="Step 3"
-          title="衣橱清单"
+          title="衣橱浏览"
           description={
             activeFilterSummary
               ? `当前筛选：${activeFilterSummary.label}。${activeFilterSummary.detail}`
-              : '按卡片建议查看重复、闲置和基础缺口对应的单品。'
+              : '全部、按类型、按颜色三种方式都能看，小缩略图视图更适合先做整体管理。'
           }
-          meta={activeFilterId ? `${filteredItems.length} 件已筛选` : `${itemCount} 件全部单品`}
+          meta={activeFilterId || activeBrowseGroupLabel ? `${visibleItems.length} 件当前结果` : `${itemCount} 件全部单品`}
         >
           <div className="rounded-[1.5rem] border border-black/7 bg-white/92 p-4 shadow-[0_14px_34px_rgba(26,26,26,0.06)] backdrop-blur sm:p-5">
-            <ClosetItemGrid
-              items={filteredItems}
-              onEditItem={handleEditItem}
-              onReanalyzeItem={handleReanalyzeItem}
-              onDeleteItem={handleDeleteItem}
-              reanalyzingItemId={reanalyzingItemId}
-              deletingItemId={deletingItemId}
-              emptyTitle={gridEmptyTitle}
-              emptyDescription={gridEmptyDescription}
-            />
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'all', label: '全部衣物' },
+                  { value: 'category', label: '按类型' },
+                  { value: 'color', label: '按颜色' }
+                ].map((option) => {
+                  const isActive = browseMode === option.value
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                        isActive
+                          ? 'bg-[var(--color-primary)] text-white'
+                          : 'border border-[var(--color-neutral-mid)] bg-white text-[var(--color-neutral-dark)]'
+                      }`}
+                      onClick={() => handleBrowseModeChange(option.value as 'all' | ClosetBrowseMode)}
+                      aria-pressed={isActive}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {browseMode === 'all' ? (
+                <ClosetItemGrid
+                  items={visibleItems}
+                  onEditItem={handleEditItem}
+                  onReanalyzeItem={handleReanalyzeItem}
+                  onDeleteItem={handleDeleteItem}
+                  reanalyzingItemId={reanalyzingItemId}
+                  deletingItemId={deletingItemId}
+                  emptyTitle={gridEmptyTitle}
+                  emptyDescription={gridEmptyDescription}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <ClosetGroupBrowser
+                    groups={browseGroups}
+                    mode={browseMode}
+                    activeGroupValue={activeBrowseGroupValue}
+                    onSelectGroup={(value) => setActiveBrowseGroupValue((current) => (current === value ? null : value))}
+                    onClearGroup={() => setActiveBrowseGroupValue(null)}
+                  />
+
+                  <div className="rounded-[1.25rem] border border-black/7 bg-[var(--color-secondary)]/25 p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--color-neutral-dark)]">
+                          {browseMode === 'category' ? '类型分组详情' : '颜色分组详情'}
+                        </p>
+                        <p className="text-xs text-[var(--color-neutral-dark)]">
+                          {activeBrowseGroupLabel
+                            ? `当前查看：${activeBrowseGroupLabel}`
+                            : `点一个${browseMode === 'category' ? '类型' : '颜色'}卡片，看这一组里的单品。`}
+                        </p>
+                      </div>
+                      {activeBrowseGroupLabel ? (
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--color-neutral-dark)]">
+                          {visibleItems.length} 件
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <ClosetItemGrid
+                      items={visibleItems}
+                      onEditItem={handleEditItem}
+                      onReanalyzeItem={handleReanalyzeItem}
+                      onDeleteItem={handleDeleteItem}
+                      reanalyzingItemId={reanalyzingItemId}
+                      deletingItemId={deletingItemId}
+                      emptyTitle={gridEmptyTitle}
+                      emptyDescription={gridEmptyDescription}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </ClosetSection>
       ) : null}
 
       {editingItemId && editingDraft ? (
-        <Card>
-          <div className="flex flex-col gap-3">
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">Step 4</p>
-              <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">编辑识别结果</h2>
-              <p className="text-sm text-[var(--color-neutral-dark)]">
-                你可以直接改分类、子分类和颜色，也可以先点“一键重新识别”再决定是否保存。
-              </p>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-4 sm:items-center">
+          <div className="absolute inset-0" onClick={closeEditor} aria-hidden="true" />
+          <div role="dialog" aria-modal="true" aria-label="编辑识别结果" className="relative z-10 w-full max-w-2xl">
+            <Card>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">编辑面板</p>
+                    <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">编辑识别结果</h2>
+                    <p className="text-sm text-[var(--color-neutral-dark)]">
+                      这里会立刻显示当前草稿。点“一键重新识别”后，新结果也会直接回到这个面板里。
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="shrink-0 text-sm text-[var(--color-neutral-dark)] underline underline-offset-2"
+                    onClick={closeEditor}
+                  >
+                    关闭
+                  </button>
+                </div>
 
-            <ClosetUploadForm initialDraft={editingDraft} disabled={isSavingEdit} submitLabel="保存修改" onSubmit={handleSaveEdit} />
+                {currentEditingItem ? (
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--color-neutral-dark)]">
+                    <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1">
+                      当前衣物：{currentEditingItem.category}
+                      {currentEditingItem.subCategory ? ` / ${currentEditingItem.subCategory}` : ''}
+                    </span>
+                    {reanalyzingItemId === currentEditingItem.id ? (
+                      <span className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-white">重新识别中…</span>
+                    ) : null}
+                  </div>
+                ) : null}
 
-            {editingError ? <p className="text-sm text-red-600">{editingError}</p> : null}
+                <ClosetUploadForm initialDraft={editingDraft} disabled={isSavingEdit} submitLabel="保存修改" onSubmit={handleSaveEdit} />
 
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="text-sm text-[var(--color-neutral-dark)] underline underline-offset-2"
-                onClick={() => {
-                  setEditingItemId(null)
-                  setEditingDraft(null)
-                  setEditingError(null)
-                }}
-              >
-                关闭编辑
-              </button>
-            </div>
+                {editingError ? <p className="text-sm text-red-600">{editingError}</p> : null}
+
+                {currentEditingItem ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-[var(--color-primary)] underline underline-offset-2"
+                      onClick={() => void handleReanalyzeItem(currentEditingItem)}
+                      disabled={reanalyzingItemId === currentEditingItem.id}
+                    >
+                      {reanalyzingItemId === currentEditingItem.id ? '重新识别中…' : '再次识别当前图片'}
+                    </button>
+                    <p className="text-xs text-[var(--color-neutral-dark)]">保存后会立刻刷新衣橱卡片和 Today 相关数据。</p>
+                  </div>
+                ) : null}
+              </div>
+            </Card>
           </div>
-        </Card>
+        </div>
       ) : null}
     </AppShell>
   )

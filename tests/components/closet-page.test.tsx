@@ -1,11 +1,14 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { waitFor } from '@testing-library/react'
 import { ClosetPage } from '@/components/closet/closet-page'
 
 const analyzeUpload = vi.fn()
 const analyzeImportUrl = vi.fn()
 const saveItem = vi.fn()
 const deleteItem = vi.fn()
+const updateItem = vi.fn()
+const reanalyzeItem = vi.fn()
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
@@ -39,6 +42,8 @@ describe('ClosetPage', () => {
         analyzeUpload={analyzeUpload}
         analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
       />
     )
@@ -118,6 +123,8 @@ describe('ClosetPage', () => {
         analyzeUpload={analyzeUpload}
         analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
       />
     )
@@ -206,6 +213,8 @@ describe('ClosetPage', () => {
         analyzeUpload={analyzeUpload}
         analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
       />
     )
@@ -254,6 +263,8 @@ describe('ClosetPage', () => {
         analyzeUpload={analyzeUpload}
         analyzeImportUrl={analyzeImportUrl}
         saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
         deleteItem={deleteItem}
       />
     )
@@ -261,5 +272,151 @@ describe('ClosetPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '删除这件衣物' }))
     expect(confirm).toHaveBeenCalled()
     expect(deleteItem).toHaveBeenCalledWith({ itemId: 'item-1' })
+  })
+
+  it('opens the edit panel immediately when editing a saved item', () => {
+    render(
+      <ClosetPage
+        userId="user-1"
+        itemCount={1}
+        items={[
+          {
+            id: 'item-1',
+            imageUrl: 'https://example.com/top.jpg',
+            category: '上衣',
+            subCategory: '衬衫',
+            colorCategory: '蓝色',
+            styleTags: ['通勤'],
+            lastWornDate: null,
+            wearCount: 0,
+            createdAt: '2026-04-19T12:00:00Z'
+          }
+        ]}
+        insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
+        deleteItem={deleteItem}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '编辑识别结果' }))
+
+    expect(screen.getByRole('dialog', { name: '编辑识别结果' })).toBeInTheDocument()
+    expect(screen.getByLabelText('分类')).toHaveValue('上装')
+    expect(screen.getByLabelText('子分类')).toHaveValue('衬衫')
+  })
+
+  it('shows the refreshed draft in the edit panel after reanalyzing', async () => {
+    reanalyzeItem.mockResolvedValueOnce({
+      imageUrl: 'https://example.com/top.jpg',
+      category: '外套',
+      subCategory: '西装外套',
+      colorCategory: '卡其色',
+      styleTags: ['通勤']
+    })
+
+    render(
+      <ClosetPage
+        userId="user-1"
+        itemCount={1}
+        items={[
+          {
+            id: 'item-1',
+            imageUrl: 'https://example.com/top.jpg',
+            category: '上衣',
+            subCategory: '衬衫',
+            colorCategory: '蓝色',
+            styleTags: ['通勤'],
+            lastWornDate: null,
+            wearCount: 0,
+            createdAt: '2026-04-19T12:00:00Z'
+          }
+        ]}
+        insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
+        deleteItem={deleteItem}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '一键重新识别' }))
+
+    expect(screen.getByRole('dialog', { name: '编辑识别结果' })).toBeInTheDocument()
+    expect(reanalyzeItem).toHaveBeenCalledWith({ itemId: 'item-1' })
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('分类')).toHaveValue('外套')
+      expect(screen.getByLabelText('子分类')).toHaveValue('西装外套')
+      expect(screen.getByLabelText('颜色')).toHaveValue('卡其色')
+    })
+  })
+
+  it('supports grouped browsing by category and color', () => {
+    render(
+      <ClosetPage
+        userId="user-1"
+        itemCount={3}
+        items={[
+          {
+            id: 'item-1',
+            imageUrl: 'https://example.com/top.jpg',
+            category: '上衣',
+            subCategory: '衬衫',
+            colorCategory: '蓝色',
+            styleTags: ['通勤'],
+            lastWornDate: null,
+            wearCount: 0,
+            createdAt: '2026-04-19T12:00:00Z'
+          },
+          {
+            id: 'item-2',
+            imageUrl: 'https://example.com/coat.jpg',
+            category: '外套',
+            subCategory: '西装外套',
+            colorCategory: '蓝色',
+            styleTags: ['通勤'],
+            lastWornDate: null,
+            wearCount: 0,
+            createdAt: '2026-04-19T12:01:00Z'
+          },
+          {
+            id: 'item-3',
+            imageUrl: 'https://example.com/pants.jpg',
+            category: '裤装',
+            subCategory: '西裤',
+            colorCategory: '黑色',
+            styleTags: ['极简'],
+            lastWornDate: null,
+            wearCount: 0,
+            createdAt: '2026-04-19T12:02:00Z'
+          }
+        ]}
+        insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
+        deleteItem={deleteItem}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '按类型' }))
+    expect(screen.getAllByText('上衣').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('外套').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('裤装').length).toBeGreaterThan(0)
+
+    fireEvent.click(screen.getByRole('button', { name: '按颜色' }))
+    expect(screen.getAllByText('蓝色').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('黑色').length).toBeGreaterThan(0)
   })
 })

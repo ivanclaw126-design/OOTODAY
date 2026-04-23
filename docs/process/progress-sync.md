@@ -70,6 +70,11 @@ Native tool persistence comes before repo-local mirrors.
 ## Latest Sync Snapshot
 
 - Date: 2026-04-23
+- Product state: Closet saved-item editing is no longer visually hidden at the bottom of the page; it now opens in a visible overlay panel immediately, and one-click re-recognition pushes the refreshed draft back into that same panel so the user can see and save the new result right away
+- Product state: Closet browsing now has three management modes: all items, grouped by category, and grouped by color; the grouped views use compact thumbnails so the user can scan the wardrobe more like a management board before drilling into a group
+- Product state: 共享颜色规则现在已经下沉成通用实现，repo 内新增的 `lib/closet/color-strategy.ts` 已同时服务 Today / Shop / Inspiration / Travel；Today 也已从内联配色解释迁到这层 helper，上层只保留天气、场景和语气差异
+- Product state: Travel 也已接入共享颜色规则层，打包方案现在会补充基础色占比、同色系轮换、以及重点色控制这类复穿解释，帮助用户理解为什么这几件更适合少带多穿
+- Product state: Inspiration 也已接入共享穿搭规则层：分析结果现在新增“颜色为什么成立”解释区，会说明这套灵感是否依赖同色系深浅、基础色托底、或单一亮点色；复刻计划在存在 accent 单品时也会提醒优先保住那一处重点
 - Product state: 共享穿搭规则层又往前推进了一步：Shop 购买分析现在也开始复用 `base / support / accent` 颜色角色语言，结果页新增 `Color Strategy` 区块，会解释这件候选单品更适合做基础主轴、过渡层还是整套重点，以及现有基础色是否足够把它托住
 - Product state: 新的穿搭分类与配色策略设计不再只是文档，第一段实现已经落到代码：`lib/closet/taxonomy.ts` 现在能推导 `color_intensity`，Today 推荐理由也开始使用更产品化的规则语言，能解释同色系深浅、基础色托底、以及亮色只保留一处重点这类判断
 - Product state: repo 内现在补上了一份新的《穿搭分类与配色策略设计》规格，基于 2026-04-23 对 YouTube / B 站高热视频样本的调研，把当前 Closet taxonomy 之上的下一层共用规则语言整理出来，明确了服装扩展维度、颜色强弱、基础色 / 辅助色 / 强调色角色，以及 `60/30/10`、同色系优先、邻近色优先、首尾呼应、视觉重量平衡等默认策略，准备作为 Today / Shop / Inspiration / Travel 后续共用的解释与打分框架
@@ -81,6 +86,9 @@ Native tool persistence comes before repo-local mirrors.
   - Repo 内新增了 `docs/superpowers/specs/2026-04-23-outfit-taxonomy-color-strategy-design.md` 与对应 plan，作为当前 taxonomy / recommendation 之上的统一穿搭规则层设计
   - 该 plan 已经开始进入实现态：`color_intensity` 映射已落地，Today explanation 也完成了第一轮接入，并有对应单元测试覆盖
   - 同一套规则语言现在也已进入 Shop：`color_role` 已落地到 taxonomy helper，购买分析会输出颜色策略提示，前端结果页也已展示
+  - 同一套规则语言现在也已进入 Inspiration：新增 `build-inspiration-color-strategy.ts`，AI 负责拆单品，本地规则负责解释颜色成立原因与复刻重点
+  - 同一套规则语言现在也已进入 Travel：打包 notes 开始解释基础色占比、同色系轮换和重点色数量，复穿逻辑不再只停留在件数层面
+  - 共享实现层已真正覆盖四条主线：新增 `lib/closet/color-strategy.ts` 后，Today / Shop / Inspiration / Travel 的颜色解释都开始收敛到同一组 helper 与测试
   - Native Superpowers persistence in this repo remains the spec/plan artifact set plus execution checkbox state
   - Shop has moved into a more usable multi-input flow, Inspiration now covers the "灵感图 -> 我的版本" path, Closet has started turning stored wardrobe data into organizing guidance, and Travel now has its first MVP spec/plan plus a working `/travel` route
   - Closet organizing v1 currently includes duplicate-item grouping, idle-item reminders, missing-basics prompts, clickable filters that switch the Closet grid into the relevant view, and a new "下一步先做这些" action plan that surfaces the most useful next 3 actions
@@ -110,7 +118,8 @@ Native tool persistence comes before repo-local mirrors.
   - The new repo-local command `npm run travel:db:check` now distinguishes “migration missing” from “current environment cannot reach Supabase Postgres”; in this environment it fails on remote connectivity timeout rather than local migration state
   - Useful operational note from earlier checkpoints remains valid: importing local Chrome `localhost` cookies is enough to quickly recover an authenticated QA session
 - Pending sync work:
-  - `color_intensity`、Today explanation、Shop color-role explanation 已落地，下一步应决定是先把同一套解释模板扩到 Inspiration，还是先做 Travel 的复穿导向颜色逻辑
+  - Run one real browser pass on `/closet` to confirm the new edit overlay and grouped thumbnail views feel right on mobile and desktop, not just in component tests
+  - Today、Shop、Inspiration、Travel 已全部接入第一版共享颜色规则层，且解释文案已下沉到共享 helper；下一步更适合继续下沉成更通用的 score 结构，或补一轮真实页面 QA
   - Travel editable saved plans are now shipped; the next step is deciding whether to add “另存为新方案” or unsaved-change protection on top
   - Travel direct-update behavior is no longer pending QA; the remaining follow-up is whether to add unsaved-change protection or “另存为新方案”
   - When remote connectivity allows, push `supabase/migrations/20260422_add_travel_plans.sql` so Travel can move from fallback storage back to its dedicated table

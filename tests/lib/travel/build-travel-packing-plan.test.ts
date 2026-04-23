@@ -69,6 +69,7 @@ describe('buildTravelPackingPlan', () => {
     expect(plan.dailyPlan[0]?.dayLabel).toBe('第 1 天')
     expect(plan.missingHints).toEqual([])
     expect(plan.notes.length).toBeGreaterThan(1)
+    expect(plan.notes.some((note) => note.includes('基础色占比够高'))).toBe(true)
   })
 
   it('surfaces packing risks when wardrobe coverage is shallow', () => {
@@ -138,5 +139,69 @@ describe('buildTravelPackingPlan', () => {
 
     expect(plan.notes).toContain('目的地温度比较温和，优先带最稳定的基础组合，再用上衣和场景做变化。')
     expect(plan.notes).not.toContain('天气数据暂时不可用，这份清单先按衣橱稳定度和场景覆盖来排。')
+  })
+
+  it('adds color-role based repeat-wear guidance for travel packing', () => {
+    const plan = buildTravelPackingPlan({
+      destinationCity: '香港',
+      days: 3,
+      scenes: ['休闲'],
+      weather: {
+        city: 'Hong Kong',
+        temperatureC: 24,
+        conditionLabel: 'sunny',
+        isWarm: true,
+        isCold: false
+      },
+      items: [
+        {
+          id: 'top-1',
+          imageUrl: null,
+          category: '上衣',
+          subCategory: 'T恤',
+          colorCategory: '白色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-01T00:00:00Z'
+        },
+        {
+          id: 'top-2',
+          imageUrl: null,
+          category: '上衣',
+          subCategory: '衬衫',
+          colorCategory: '米色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-02T00:00:00Z'
+        },
+        {
+          id: 'bottom-1',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '短裤',
+          colorCategory: '卡其色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-03T00:00:00Z'
+        },
+        {
+          id: 'dress-1',
+          imageUrl: null,
+          category: '全身装',
+          subCategory: '连衣裙',
+          colorCategory: '红色',
+          styleTags: ['约会'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-04T00:00:00Z'
+        }
+      ]
+    })
+
+    expect(plan.notes.some((note) => note.includes('基础色占比够高'))).toBe(true)
+    expect(plan.notes.some((note) => note.includes('只带一处重点色'))).toBe(true)
   })
 })

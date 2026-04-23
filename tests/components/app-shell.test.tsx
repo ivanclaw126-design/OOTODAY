@@ -1,14 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { AppShell } from '@/components/app-shell'
-import { vi } from 'vitest'
-
-vi.mock('next/navigation', () => ({
-  usePathname: () => '/today'
-}))
 
 describe('AppShell', () => {
-  it('renders the page title and all primary navigation links', () => {
+  it('renders the page title and children without embedding navigation', () => {
     render(
       <AppShell title="Today">
         <div>page body</div>
@@ -16,10 +11,7 @@ describe('AppShell', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Today' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute('href', '/today')
-    expect(screen.getByRole('link', { name: 'Closet' })).toHaveAttribute('href', '/closet')
-    expect(screen.getByRole('link', { name: 'Travel' })).toHaveAttribute('href', '/travel')
-    expect(screen.getByRole('link', { name: 'Inspiration' })).toHaveAttribute('href', '/inspiration')
-    expect(screen.getByRole('link', { name: 'Shop' })).toHaveAttribute('href', '/shop')
+    expect(screen.getByText('page body')).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
   })
 })

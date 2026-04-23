@@ -24,7 +24,8 @@ describe('buildInspirationRemixPlan', () => {
             styleTags: ['极简']
           }
         ],
-        stylingTips: []
+        stylingTips: [],
+        colorStrategyNotes: ['这套灵感有基础色托底，所以整体看起来更稳。']
       },
       [
         {
@@ -64,7 +65,7 @@ describe('buildInspirationRemixPlan', () => {
 
     expect(result.matchedCount).toBe(1)
     expect(result.totalCount).toBe(2)
-    expect(result.coverageLabel).toBe('已经能穿出七成感觉')
+    expect(result.coverageLabel).toContain('已经能穿出七成感觉')
     expect(result.steps[0]?.note).toContain('黑色 西装外套')
     expect(result.steps[1]?.note).toContain('待补位单品')
     expect(result.missingItems).toHaveLength(1)
