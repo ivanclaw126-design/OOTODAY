@@ -98,9 +98,9 @@ function CategorySvg({ category, size = 'md' }: { category: string | null | unde
 function SubCategorySvg({ subCategory, size = 'md' }: { subCategory: string | null | undefined; size?: 'sm' | 'md' }) {
   const normalized = normalizeInput(subCategory)
   const className = iconClassName(size)
-  const baseProps = {
+  const baseProps: React.SVGProps<SVGSVGElement> = {
     viewBox: '0 0 32 32',
-    'aria-hidden': 'true',
+    'aria-hidden': true,
     className,
     fill: 'none',
     stroke: 'currentColor',
