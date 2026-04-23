@@ -345,7 +345,6 @@ describe('resolveShopInput', () => {
       sourceUrl: 'https://item.taobao.com/item.htm?id=3'
     })
   })
-
   it('rejects generic pinduoduo share images', async () => {
     vi.stubGlobal(
       'fetch',

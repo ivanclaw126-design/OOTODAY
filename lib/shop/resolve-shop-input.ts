@@ -118,11 +118,6 @@ function readEmbeddedStringValues(html: string, fieldNames: string[]) {
   return Array.from(new Set(values))
 }
 
-function readEmbeddedStringArrayField(html: string, fieldNames: string[]) {
-  const values = readEmbeddedStringArrayValues(html, fieldNames)
-  return values[0] ?? null
-}
-
 function readEmbeddedStringArrayValues(html: string, fieldNames: string[]) {
   const values: string[] = []
 
