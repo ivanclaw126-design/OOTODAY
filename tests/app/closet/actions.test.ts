@@ -7,6 +7,7 @@ const deleteClosetItem = vi.fn()
 const importRemoteImageToStorage = vi.fn()
 const resolveShopInput = vi.fn()
 const revalidatePath = vi.fn()
+const setClosetItemImageFlip = vi.fn()
 
 vi.mock('next/cache', () => ({
   revalidatePath
@@ -30,6 +31,10 @@ vi.mock('@/lib/shop/resolve-shop-input', () => ({
 
 vi.mock('@/lib/closet/save-closet-item', () => ({
   saveClosetItem
+}))
+
+vi.mock('@/lib/closet/set-closet-item-image-flip', () => ({
+  setClosetItemImageFlip
 }))
 
 vi.mock('@/lib/closet/delete-closet-item', () => ({
@@ -58,6 +63,7 @@ afterEach(() => {
   deleteClosetItem.mockReset()
   importRemoteImageToStorage.mockReset()
   resolveShopInput.mockReset()
+  setClosetItemImageFlip.mockReset()
   revalidatePath.mockReset()
   vi.unstubAllEnvs()
   vi.resetModules()
@@ -262,5 +268,36 @@ describe('analyzeClosetImportUrlAction', () => {
       draft: null
     })
     expect(analyzeItemImage).not.toHaveBeenCalled()
+  })
+})
+
+describe('toggleClosetItemImageFlipAction', () => {
+  it('rotates the image for the current user and revalidates dependent pages', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    setClosetItemImageFlip.mockResolvedValue({
+      id: 'item-1',
+      imageUrl: validImageUrl,
+      imageFlipped: true,
+      persisted: true
+    })
+
+    const { toggleClosetItemImageFlipAction } = await import('@/app/closet/actions')
+
+    await expect(toggleClosetItemImageFlipAction({ itemId: 'item-1', imageFlipped: true })).resolves.toEqual({
+      id: 'item-1',
+      imageUrl: validImageUrl,
+      imageFlipped: true,
+      persisted: true
+    })
+    expect(setClosetItemImageFlip).toHaveBeenCalledWith({
+      userId: 'user-1',
+      itemId: 'item-1',
+      imageFlipped: true
+    })
+    expect(revalidatePath).toHaveBeenCalledWith('/closet')
+    expect(revalidatePath).toHaveBeenCalledWith('/today')
+    expect(revalidatePath).toHaveBeenCalledWith('/travel')
+    expect(revalidatePath).toHaveBeenCalledWith('/looks')
+    expect(revalidatePath).toHaveBeenCalledWith('/shop')
   })
 })

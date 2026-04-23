@@ -157,78 +157,87 @@ export function InspirationPage({
   return (
     <AppShell title="Looks">
       <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
-        <div className="flex flex-col gap-3">
-          <div>
+        <div className="flex flex-col gap-5">
+          <div className="space-y-2">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Looks Breakdown</p>
-            <p className="mt-2 text-xl font-semibold tracking-[-0.04em] text-[var(--color-primary)]">先拆掉这套灵感的骨架，再看你衣橱里能借什么。</p>
-            <p className="text-sm text-[var(--color-neutral-dark)]">贴一张图，我会拆出核心搭配，再对照你衣橱里能借用的单品。</p>
-          </div>
-
-          <div className="flex flex-col gap-3 rounded-[1.8rem] border border-[var(--color-line)] bg-[#111111] p-4 text-white shadow-[var(--shadow-strong)]">
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <div className="flex flex-wrap gap-2">
-                <SecondaryButton type="button" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting} className="shrink-0 whitespace-nowrap">
-                  上传灵感图
-                </SecondaryButton>
-                {selectedFileName ? (
-                  <SecondaryButton type="button" onClick={clearSelectedImage} disabled={isSubmitting} className="shrink-0 whitespace-nowrap">
-                    删除当前图片
-                  </SecondaryButton>
-                ) : null}
-                <input
-                  ref={fileInputRef}
-                  aria-label="上传灵感图片"
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleFileChange}
-                  disabled={isSubmitting}
-                />
-              </div>
-              <span className="text-sm text-white/82">支持电脑端拖拽，也支持 iPhone / iPad 相册或拍照上传。</span>
+            <div className="space-y-2">
+              <p className="text-xl font-semibold tracking-[-0.03em] text-[var(--color-primary)]">先拆掉这套灵感的骨架，再看你衣橱里能借什么</p>
+              <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">给我一张图或链接，我会先拆出关键单品、搭配逻辑，再落到你现有衣橱能怎么复刻。</p>
             </div>
-
-            <label
-              onDragOver={(event) => {
-                event.preventDefault()
-                setIsDragging(true)
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={(event) => void handleDrop(event)}
-              className={`flex min-h-28 flex-col items-center justify-center rounded-lg border border-dashed px-4 py-5 text-center text-sm transition ${
-                isDragging
-                  ? 'border-[var(--color-primary)] bg-[var(--color-secondary)] text-[var(--color-primary)]'
-                  : 'border-white/18 bg-white/8 text-white/82'
-              }`}
-            >
-              <span className={`font-medium ${isDragging ? 'text-[var(--color-primary)]' : 'text-white'}`}>拖拽灵感图到这里</span>
-              <span>{selectedFileName ? `已选择：${selectedFileName}` : '也可以点击上方按钮选择本地图片'}</span>
-            </label>
-
-            {previewUrl ? (
-              <div className="overflow-hidden rounded-lg border border-[var(--color-neutral-mid)]">
-                <Image
-                  src={previewUrl}
-                  alt="待拆解灵感图预览"
-                  width={960}
-                  height={960}
-                  unoptimized
-                  className="h-56 w-full object-cover"
-                />
-              </div>
-            ) : null}
           </div>
 
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-[var(--color-primary)]">灵感图片链接</span>
-            <input
-              aria-label="灵感图片链接"
-              value={sourceUrl}
-              onChange={(event) => setSourceUrl(event.target.value)}
-              placeholder="https://..."
-              className="rounded-[1rem] border border-[var(--color-line)] bg-white/74 px-3 py-3"
-            />
-          </label>
+          <div className="rounded-[1.8rem] border border-[var(--color-line)] bg-[#111111] p-4 text-white shadow-[var(--shadow-strong)]">
+            <div className="flex flex-col gap-4">
+              <div>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/70">Input</p>
+                <p className="mt-2 text-sm text-white/82">本地图适合随手拆解，图片链接适合直接粘贴小红书、截图图床或灵感合集里的单张图。</p>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="flex flex-wrap gap-2">
+                  <SecondaryButton type="button" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting} className="shrink-0 whitespace-nowrap">
+                    上传灵感图
+                  </SecondaryButton>
+                  {selectedFileName ? (
+                    <SecondaryButton type="button" onClick={clearSelectedImage} disabled={isSubmitting} className="shrink-0 whitespace-nowrap">
+                      删除当前图片
+                    </SecondaryButton>
+                  ) : null}
+                  <input
+                    ref={fileInputRef}
+                    aria-label="上传灵感图片"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleFileChange}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <span className="text-sm text-white/82">电脑端支持拖拽，iPhone / iPad 可直接从相册或拍照上传。</span>
+              </div>
+
+              <label
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  setIsDragging(true)
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(event) => void handleDrop(event)}
+                className={`flex min-h-32 flex-col items-center justify-center rounded-[1.25rem] border border-dashed px-4 py-6 text-center text-sm transition ${
+                  isDragging
+                    ? 'border-[var(--color-primary)] bg-[var(--color-secondary)] text-[var(--color-primary)]'
+                    : 'border-white/18 bg-white/8 text-white/82'
+                }`}
+              >
+                <span className={`font-medium ${isDragging ? 'text-[var(--color-primary)]' : 'text-white'}`}>拖拽灵感图到这里</span>
+                <span className="mt-1 max-w-sm leading-6">{selectedFileName ? `已选择：${selectedFileName}` : '也可以点击上方按钮选择本地图片'}</span>
+              </label>
+
+              {previewUrl ? (
+                <div className="overflow-hidden rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-white/70">
+                  <Image
+                    src={previewUrl}
+                    alt="待拆解灵感图预览"
+                    width={960}
+                    height={960}
+                    unoptimized
+                    className="h-56 w-full object-cover"
+                  />
+                </div>
+              ) : null}
+
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-medium text-white/82">灵感图片链接</span>
+                <input
+                  aria-label="灵感图片链接"
+                  value={sourceUrl}
+                  onChange={(event) => setSourceUrl(event.target.value)}
+                  placeholder="https://..."
+                  className="rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white placeholder:text-white/45"
+                />
+              </label>
+            </div>
+          </div>
 
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 

@@ -113,7 +113,11 @@ type ClosetPageProps = {
   updateItem: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<void>
   reanalyzeItem: (input: { itemId: string }) => Promise<ClosetAnalysisDraft>
   deleteItem: (input: { itemId: string }) => Promise<void>
-  toggleImageFlip: (input: { itemId: string; imageFlipped: boolean }) => Promise<{ persisted: boolean }>
+  toggleImageFlip: (input: { itemId: string; imageFlipped: boolean }) => Promise<{
+    persisted: boolean
+    imageUrl?: string | null
+    imageFlipped?: boolean
+  }>
 }
 
 export function ClosetPage({
@@ -142,16 +146,17 @@ export function ClosetPage({
   const [isImportCollapsed, setIsImportCollapsed] = useState(itemCount > 0)
   const [isInsightsCollapsed, setIsInsightsCollapsed] = useState(itemCount > 0)
   const [flippingItemId, setFlippingItemId] = useState<string | null>(null)
-  const [imageFlipOverrides, setImageFlipOverrides] = useState<Record<string, boolean>>({})
+  const [imageOverrides, setImageOverrides] = useState<Record<string, { imageFlipped?: boolean; imageUrl?: string | null }>>({})
   const router = useRouter()
 
   const displayItems = useMemo(
     () =>
       items.map((item) => ({
         ...item,
-        imageFlipped: imageFlipOverrides[item.id] ?? item.imageFlipped
+        imageFlipped: imageOverrides[item.id]?.imageFlipped ?? item.imageFlipped,
+        imageUrl: imageOverrides[item.id]?.imageUrl ?? item.imageUrl
       })),
-    [imageFlipOverrides, items]
+    [imageOverrides, items]
   )
 
   const activeMissingBasic = useMemo(
@@ -331,9 +336,12 @@ export function ClosetPage({
         itemId: item.id,
         imageFlipped: !item.imageFlipped
       })
-      setImageFlipOverrides((current) => ({
+      setImageOverrides((current) => ({
         ...current,
-        [item.id]: !item.imageFlipped
+        [item.id]: {
+          imageFlipped: result.imageFlipped ?? !item.imageFlipped,
+          imageUrl: result.imageUrl ?? item.imageUrl
+        }
       }))
 
       if (result.persisted) {
