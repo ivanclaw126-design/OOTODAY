@@ -8,10 +8,16 @@ import type { TodayView } from '@/lib/today/types'
 export async function getTodayView({
   userId,
   city,
+  accountEmail,
+  passwordBootstrapped,
+  passwordChangedAt,
   offset = 0
 }: {
   userId: string
   city: string | null
+  accountEmail: string | null
+  passwordBootstrapped: boolean
+  passwordChangedAt: string | null
   offset?: number
 }): Promise<TodayView> {
   const [closet, ootdStatus, recentOotdHistory] = await Promise.all([
@@ -24,6 +30,9 @@ export async function getTodayView({
     return {
       itemCount: 0,
       city,
+      accountEmail,
+      passwordBootstrapped,
+      passwordChangedAt,
       weatherState: city ? { status: 'unavailable', city } : { status: 'not-set' },
       recommendations: [],
       recommendationError: false,
@@ -36,6 +45,9 @@ export async function getTodayView({
     return {
       itemCount: closet.itemCount,
       city: null,
+      accountEmail,
+      passwordBootstrapped,
+      passwordChangedAt,
       weatherState: { status: 'not-set' },
       recommendations: generateTodayRecommendations(closet.items, null, offset),
       recommendationError: false,
@@ -50,6 +62,9 @@ export async function getTodayView({
     return {
       itemCount: closet.itemCount,
       city,
+      accountEmail,
+      passwordBootstrapped,
+      passwordChangedAt,
       weatherState: { status: 'unavailable', city },
       recommendations: generateTodayRecommendations(closet.items, null, offset),
       recommendationError: false,
@@ -61,6 +76,9 @@ export async function getTodayView({
   return {
     itemCount: closet.itemCount,
     city,
+    accountEmail,
+    passwordBootstrapped,
+    passwordChangedAt,
     weatherState: { status: 'ready', weather },
     recommendations: generateTodayRecommendations(closet.items, weather, offset),
     recommendationError: false,

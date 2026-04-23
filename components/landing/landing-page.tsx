@@ -1,4 +1,20 @@
-export function LandingPage({ magicLinkSent }: { magicLinkSent: boolean }) {
+function getAuthErrorMessage(authError: string | null) {
+  if (!authError) {
+    return null
+  }
+
+  const messages: Record<string, string> = {
+    missing_credentials: '请输入邮箱和密码后再登录。',
+    invalid_credentials: '邮箱或密码不正确。如果这是第一次登录，请先用邮箱链接激活账号。',
+    password_bootstrap_failed: '邮箱登录成功了，但默认密码初始化失败。请再用 magic link 进一次，或联系我处理。'
+  }
+
+  return messages[authError] ?? '登录失败，请稍后再试。'
+}
+
+export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boolean; authError: string | null }) {
+  const authErrorMessage = getAuthErrorMessage(authError)
+
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f7f4ee_0%,#fafafa_45%,#f3efe7_100%)] px-4 py-6 text-[var(--color-primary)] sm:px-6 sm:py-8">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col justify-between overflow-hidden rounded-[2rem] border border-black/8 bg-white/75 shadow-[0_24px_80px_rgba(26,26,26,0.08)] backdrop-blur md:min-h-[calc(100vh-4rem)]">
@@ -62,11 +78,11 @@ export function LandingPage({ magicLinkSent }: { magicLinkSent: boolean }) {
                 <p className="text-sm uppercase tracking-[0.2em] text-[var(--color-accent)]">Start here</p>
                 <h2 className="text-3xl leading-tight font-semibold tracking-[-0.03em]">先拿到登录链接</h2>
                 <p className="break-words text-sm leading-7 text-[var(--color-neutral-dark)] sm:text-base">
-                  现在是小范围内测。登录后先去导入衣物，导完第一批就能看到 Today 的真实推荐。
+                  现在是小范围内测。第一次建议先用邮箱链接进来，系统会同时给这个账号启用默认密码 `123456`，后面你就可以直接用邮箱和密码登录，再去 Today 里改掉它。
                 </p>
               </div>
 
-              <form action="/auth/login" className="mt-8 flex min-w-0 flex-col gap-4">
+              <form action="/auth/login" method="post" className="mt-8 flex min-w-0 flex-col gap-4">
                 <label className="flex min-w-0 w-full flex-col gap-2 text-sm font-medium">
                   <span>邮箱地址</span>
                   <input
@@ -86,6 +102,46 @@ export function LandingPage({ magicLinkSent }: { magicLinkSent: boolean }) {
                 </button>
               </form>
 
+              <div className="mt-5 rounded-[1.5rem] border border-black/8 bg-[#fcfaf6] p-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-[var(--color-primary)]">邮箱 + 密码登录</p>
+                  <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">
+                    第一次先用上面的 magic link 激活。激活后默认密码是 `123456`，你可以先进系统，再自己改掉。
+                  </p>
+                </div>
+
+                <form action="/auth/password-login" method="post" className="mt-4 flex min-w-0 flex-col gap-3">
+                  <label className="flex min-w-0 w-full flex-col gap-2 text-sm font-medium">
+                    <span>邮箱地址</span>
+                    <input
+                      aria-label="登录邮箱地址"
+                      className="min-h-12 w-full min-w-0 rounded-2xl border border-[var(--color-neutral-mid)] bg-white px-4 py-3 text-base outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
+                      name="email"
+                      placeholder="you@example.com"
+                      type="email"
+                      required
+                    />
+                  </label>
+                  <label className="flex min-w-0 w-full flex-col gap-2 text-sm font-medium">
+                    <span>密码</span>
+                    <input
+                      aria-label="登录密码"
+                      className="min-h-12 w-full min-w-0 rounded-2xl border border-[var(--color-neutral-mid)] bg-white px-4 py-3 text-base outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
+                      name="password"
+                      placeholder="123456"
+                      type="password"
+                      required
+                    />
+                  </label>
+                  <button
+                    className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-[var(--color-neutral-mid)] bg-white px-5 py-3 text-base font-medium text-[var(--color-primary)] transition hover:bg-[#faf8f2]"
+                    type="submit"
+                  >
+                    邮箱密码登录
+                  </button>
+                </form>
+              </div>
+
               <div className="mt-6 w-full min-w-0 rounded-[1.5rem] bg-[#f6f3eb] p-4 text-sm leading-6 text-[var(--color-neutral-dark)]">
                 <p className="font-medium text-[var(--color-primary)]">你进来之后会先做什么</p>
                 <p className="mt-2 break-words">先把几件常穿衣服导进 Closet，再去 Today 看推荐。如果最近要出门，也可以顺手试 Travel。</p>
@@ -93,7 +149,13 @@ export function LandingPage({ magicLinkSent }: { magicLinkSent: boolean }) {
 
               {magicLinkSent ? (
                 <p className="mt-4 rounded-2xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/8 px-4 py-3 text-sm text-[var(--color-accent)]">
-                  登录链接已发送，请检查邮箱。
+                  登录链接已发送，请检查邮箱。第一次点进去后，系统会同时给这个账号启用默认密码 `123456`。
+                </p>
+              ) : null}
+
+              {authErrorMessage ? (
+                <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {authErrorMessage}
                 </p>
               ) : null}
             </div>

@@ -41,6 +41,9 @@ export type TodayOotdHistoryEntry = {
 export type TodayView = {
   itemCount: number
   city: string | null
+  accountEmail: string | null
+  passwordBootstrapped: boolean
+  passwordChangedAt: string | null
   weatherState: TodayWeatherState
   recommendations: TodayRecommendation[]
   recommendationError: boolean

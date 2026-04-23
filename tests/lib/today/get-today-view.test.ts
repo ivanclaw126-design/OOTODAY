@@ -50,9 +50,20 @@ describe('getTodayView', () => {
 
     const { getTodayView } = await import('@/lib/today/get-today-view')
 
-    await expect(getTodayView({ userId: 'user-1', city: null })).resolves.toEqual({
+    await expect(
+      getTodayView({
+        userId: 'user-1',
+        city: null,
+        accountEmail: 'user@example.com',
+        passwordBootstrapped: true,
+        passwordChangedAt: null
+      })
+    ).resolves.toEqual({
       itemCount: 2,
       city: null,
+      accountEmail: 'user@example.com',
+      passwordBootstrapped: true,
+      passwordChangedAt: null,
       weatherState: { status: 'not-set' },
       recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }, { id: 'rec-3' }],
       recommendationError: false,
@@ -82,9 +93,20 @@ describe('getTodayView', () => {
 
     const { getTodayView } = await import('@/lib/today/get-today-view')
 
-    await expect(getTodayView({ userId: 'user-1', city: 'Shanghai' })).resolves.toEqual({
+    await expect(
+      getTodayView({
+        userId: 'user-1',
+        city: 'Shanghai',
+        accountEmail: 'user@example.com',
+        passwordBootstrapped: true,
+        passwordChangedAt: '2026-04-21T10:00:00.000Z'
+      })
+    ).resolves.toEqual({
       itemCount: 1,
       city: 'Shanghai',
+      accountEmail: 'user@example.com',
+      passwordBootstrapped: true,
+      passwordChangedAt: '2026-04-21T10:00:00.000Z',
       weatherState: { status: 'unavailable', city: 'Shanghai' },
       recommendations: [],
       recommendationError: false,

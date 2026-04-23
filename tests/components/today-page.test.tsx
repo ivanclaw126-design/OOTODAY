@@ -5,6 +5,7 @@ import { TodayPage } from '@/components/today/today-page'
 const updateCity = vi.fn().mockResolvedValue({ error: null })
 const refreshRecommendations = vi.fn().mockResolvedValue(undefined)
 const submitOotd = vi.fn()
+const changePassword = vi.fn().mockResolvedValue({ error: null })
 
 const recommendation = {
   id: 'rec-1',
@@ -45,6 +46,9 @@ describe('TodayPage', () => {
         view={{
           itemCount: 0,
           city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
           weatherState: { status: 'not-set' },
           recommendations: [],
           recommendationError: false,
@@ -54,6 +58,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
       />
     )
 
@@ -67,6 +72,9 @@ describe('TodayPage', () => {
         view={{
           itemCount: 3,
           city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
           weatherState: { status: 'not-set' },
           recommendations: [recommendation],
           recommendationError: false,
@@ -76,6 +84,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
       />
     )
 
@@ -88,6 +97,9 @@ describe('TodayPage', () => {
         view={{
           itemCount: 3,
           city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
           weatherState: { status: 'not-set' },
           recommendations: [recommendation],
           recommendationError: false,
@@ -97,6 +109,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
       />
     )
 
@@ -117,6 +130,9 @@ describe('TodayPage', () => {
         view={{
           itemCount: 3,
           city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
           weatherState: { status: 'unavailable', city: 'Shanghai' },
           recommendations: [recommendation, { ...recommendation, id: 'rec-2' }],
           recommendationError: false,
@@ -126,6 +142,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
       />
     )
 
@@ -152,6 +169,9 @@ describe('TodayPage', () => {
         view={{
           itemCount: 3,
           city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
           weatherState: { status: 'not-set' },
           recommendations: [recommendation],
           recommendationError: false,
@@ -161,6 +181,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
       />
     )
 
@@ -178,6 +199,9 @@ describe('TodayPage', () => {
         view={{
           itemCount: 2,
           city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: '2026-04-21T10:00:00.000Z',
           weatherState: { status: 'unavailable', city: 'Shanghai' },
           recommendations: [recommendation],
           recommendationError: false,
@@ -190,6 +214,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
       />
     )
 
@@ -203,6 +228,9 @@ describe('TodayPage', () => {
         view={{
           itemCount: 2,
           city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: '2026-04-21T10:00:00.000Z',
           weatherState: { status: 'unavailable', city: 'Shanghai' },
           recommendations: [recommendation],
           recommendationError: false,
@@ -222,11 +250,51 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
       />
     )
 
     expect(screen.getByText('最近穿搭记录')).toBeInTheDocument()
     expect(screen.getByText('4 / 5 分')).toBeInTheDocument()
     expect(screen.getByText('OOTD: 衬衫 + 西裤；理由：基础组合稳定不出错')).toBeInTheDocument()
+  })
+
+  it('shows default password guidance and lets the user submit a new password', async () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 2,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: {
+            status: 'recorded',
+            wornAt: '2026-04-21T08:00:00.000Z'
+          },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+      />
+    )
+
+    expect(screen.getByText(/默认密码/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '立即修改密码' }))
+    fireEvent.change(screen.getByLabelText('新密码'), { target: { value: 'betterpass123' } })
+    fireEvent.change(screen.getByLabelText('确认新密码'), { target: { value: 'betterpass123' } })
+    fireEvent.click(screen.getByRole('button', { name: '更新密码' }))
+
+    await waitFor(() => {
+      expect(changePassword).toHaveBeenCalledWith({
+        password: 'betterpass123',
+        confirmPassword: 'betterpass123'
+      })
+    })
   })
 })

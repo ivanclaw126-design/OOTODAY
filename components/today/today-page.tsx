@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { AppShell } from '@/components/app-shell'
+import { TodayAccountSecurityCard } from '@/components/today/today-account-security-card'
 import { TodayCityForm } from '@/components/today/today-city-form'
 import { TodayCityPromptCard } from '@/components/today/today-city-prompt-card'
 import { TodayOotdHistory } from '@/components/today/today-ootd-history'
@@ -15,7 +16,8 @@ export function TodayPage({
   view,
   updateCity,
   submitOotd,
-  refreshRecommendations
+  refreshRecommendations,
+  changePassword
 }: {
   view: TodayView
   updateCity: (input: { city: string }) => Promise<{ error: string | null }>
@@ -24,6 +26,7 @@ export function TodayPage({
     satisfactionScore: number
   }) => Promise<{ error: string | null; wornAt: string | null }>
   refreshRecommendations: () => Promise<void>
+  changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
 }) {
   const [isEditingCity, setIsEditingCity] = useState(false)
   const [ootdStatus, setOotdStatus] = useState<TodayOotdStatus>(view.ootdStatus)
@@ -79,6 +82,13 @@ export function TodayPage({
                 {view.city ? '修改城市' : '设置城市'}
               </SecondaryButton>
             </div>
+
+            <TodayAccountSecurityCard
+              email={view.accountEmail}
+              passwordBootstrapped={view.passwordBootstrapped}
+              passwordChangedAt={view.passwordChangedAt}
+              changePassword={changePassword}
+            />
 
             <TodayOotdHistory entries={view.recentOotdHistory} />
           </>

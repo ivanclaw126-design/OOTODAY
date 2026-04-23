@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const getSession = vi.fn()
 const eq = vi.fn(() => Promise.resolve({ error: null }))
 const from = vi.fn(() => ({ update: () => ({ eq }) }))
-const createSupabaseServerClient = vi.fn(async () => ({ from }))
+const updateUser = vi.fn(() => Promise.resolve({ error: null }))
+const getUser = vi.fn(() => Promise.resolve({ data: { user: { user_metadata: {} } } }))
+const createSupabaseServerClient = vi.fn(async () => ({ from, auth: { updateUser, getUser } }))
 const revalidatePath = vi.fn()
 const redirect = vi.fn()
 const saveTodayOotdFeedback = vi.fn()
@@ -34,6 +36,10 @@ describe('today actions', () => {
     eq.mockClear()
     from.mockClear()
     createSupabaseServerClient.mockClear()
+    updateUser.mockReset()
+    updateUser.mockResolvedValue({ error: null })
+    getUser.mockReset()
+    getUser.mockResolvedValue({ data: { user: { user_metadata: {} } } })
     revalidatePath.mockReset()
     redirect.mockReset()
     saveTodayOotdFeedback.mockReset()
@@ -131,5 +137,25 @@ describe('today actions', () => {
 
     expect(revalidatePath).toHaveBeenCalledWith('/today')
     expect(redirect).toHaveBeenCalledWith('/today?offset=3')
+  })
+
+  it('updates the signed-in user password and records password state', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+
+    const { changeTodayPasswordAction } = await import('@/app/today/actions')
+
+    await expect(changeTodayPasswordAction({ password: 'newpass123', confirmPassword: 'newpass123' })).resolves.toEqual({
+      error: null
+    })
+
+    expect(updateUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        password: 'newpass123',
+        data: expect.objectContaining({
+          password_bootstrapped: true
+        })
+      })
+    )
+    expect(revalidatePath).toHaveBeenCalledWith('/today')
   })
 })
