@@ -205,8 +205,12 @@ export function ClosetPage({
   }, [browseMode, insightFilteredItems])
 
   const visibleItems = useMemo(() => {
-    if (browseMode === 'all' || !activeBrowseGroupValue) {
+    if (browseMode === 'all') {
       return insightFilteredItems
+    }
+
+    if (!activeBrowseGroupValue) {
+      return []
     }
 
     return insightFilteredItems.filter((item) => {
@@ -279,10 +283,18 @@ export function ClosetPage({
       ? null
       : browseGroups.find((group) => group.value === activeBrowseGroupValue)?.label ?? activeBrowseGroupValue
 
-  const gridEmptyTitle = activeMissingBasic ? `${activeMissingBasic.label} 当前还没补进衣橱` : '当前没有符合条件的单品'
-  const gridEmptyDescription = activeMissingBasic
-    ? activeMissingBasic.reason
-    : '换个筛选看看，或者继续往衣橱里补新的单品。'
+  const gridEmptyTitle =
+    browseMode !== 'all' && !activeBrowseGroupValue
+      ? `先点一个${browseMode === 'category' ? '类型' : '颜色'}卡片`
+      : activeMissingBasic
+        ? `${activeMissingBasic.label} 当前还没补进衣橱`
+        : '当前没有符合条件的单品'
+  const gridEmptyDescription =
+    browseMode !== 'all' && !activeBrowseGroupValue
+      ? `先按${browseMode === 'category' ? '类型' : '颜色'}扫一眼，再展开具体单品，浏览会清楚很多。`
+      : activeMissingBasic
+        ? activeMissingBasic.reason
+        : '换个筛选看看，或者继续往衣橱里补新的单品。'
 
   const currentEditingItem = useMemo(
     () => displayItems.find((item) => item.id === editingItemId) ?? null,
