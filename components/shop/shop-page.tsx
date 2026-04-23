@@ -45,6 +45,7 @@ export function ShopPage({
   storageBucket: string
   analyzeCandidate: (input: {
     sourceUrl: string
+    preferredImageUrl?: string
   }) => Promise<{ error: string | null; analysis: ShopPurchaseAnalysis | null }>
 }) {
   const supabase = createSupabaseBrowserClient()
@@ -88,13 +89,13 @@ export function ShopPage({
     setIsDragging(false)
   }
 
-  const runAnalysis = async (nextSourceUrl: string, manageSubmittingState = true) => {
+  const runAnalysis = async (nextSourceUrl: string, manageSubmittingState = true, preferredImageUrl?: string) => {
     if (manageSubmittingState) {
       setIsSubmitting(true)
     }
 
     setError(null)
-    const result = await analyzeCandidate({ sourceUrl: nextSourceUrl })
+    const result = await analyzeCandidate({ sourceUrl: nextSourceUrl, preferredImageUrl })
 
     if (manageSubmittingState) {
       setIsSubmitting(false)
@@ -308,6 +309,56 @@ export function ShopPage({
                 {analysis.candidate.category} · {analysis.candidate.styleTags.join(' / ') || '无明显风格标签'}
               </p>
             </div>
+
+            <div className="overflow-hidden rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-white/70">
+              <Image
+                src={analysis.candidate.imageUrl}
+                alt={analysis.candidate.sourceTitle ? `${analysis.candidate.sourceTitle} 商品图` : '商品分析结果图'}
+                width={960}
+                height={960}
+                unoptimized
+                className="h-72 w-full object-cover"
+              />
+            </div>
+
+            {analysis.candidate.imageCandidates.length > 1 ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Candidate Images</p>
+                  <p className="text-sm text-[var(--color-neutral-dark)]">如果当前像模特全身图，可以直接换成更干净的单品图重跑分析。</p>
+                </div>
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+                  {analysis.candidate.imageCandidates.map((candidateImageUrl, index) => {
+                    const isActive = candidateImageUrl === analysis.candidate.imageUrl
+
+                    return (
+                      <button
+                        key={candidateImageUrl}
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => void runAnalysis(analysis.candidate.sourceUrl, true, candidateImageUrl)}
+                        className={`overflow-hidden rounded-[1rem] border text-left transition ${
+                          isActive
+                            ? 'border-[var(--color-primary)] ring-2 ring-[rgba(54,42,32,0.14)]'
+                            : 'border-[var(--color-neutral-mid)] hover:border-[var(--color-primary)]'
+                        }`}
+                        aria-pressed={isActive}
+                        aria-label={`切换候选图 ${index + 1}`}
+                      >
+                        <Image
+                          src={candidateImageUrl}
+                          alt={`候选商品图 ${index + 1}`}
+                          width={320}
+                          height={320}
+                          unoptimized
+                          className="h-24 w-full object-cover"
+                        />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid gap-3 md:grid-cols-3">
               <div className="rounded-[1.25rem] border border-[var(--color-neutral-mid)] bg-[var(--color-secondary)] p-4">
