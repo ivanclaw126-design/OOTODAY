@@ -155,6 +155,8 @@ describe('InspirationPage', () => {
       />
     )
 
+    expect(screen.getByRole('heading', { name: 'Looks' })).toBeInTheDocument()
+
     fireEvent.change(screen.getByRole('textbox', { name: '灵感图片链接' }), {
       target: { value: 'https://example.com/look.jpg' }
     })

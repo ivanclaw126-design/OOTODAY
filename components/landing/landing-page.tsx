@@ -79,11 +79,11 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
 
           <section className="order-1 relative min-w-0 flex items-center bg-[linear-gradient(180deg,rgba(231,255,55,0.08)_0%,rgba(255,255,255,0)_55%),linear-gradient(140deg,#fdfcf8_0%,#f4efe5_100%)] p-6 sm:p-8 md:order-2 md:p-12">
             <div className="absolute inset-x-6 top-6 h-px bg-[linear-gradient(90deg,rgba(26,26,26,0.04),rgba(26,26,26,0.16),rgba(26,26,26,0.04))] md:inset-x-12 md:top-12" />
-            <div className="relative min-w-0 w-full rounded-[2rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-5 text-white shadow-[var(--shadow-strong)] sm:p-6">
+            <div className="relative min-w-0 w-full rounded-[2rem] border border-[var(--color-line)] bg-white/94 p-5 text-[var(--color-primary)] shadow-[var(--shadow-soft)] sm:p-6">
               <div className="space-y-3">
-                <p className="text-sm uppercase tracking-[0.2em] text-white/58">Start here</p>
+                <p className="text-sm uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Start here</p>
                 <h2 className="text-3xl leading-tight font-semibold tracking-[-0.05em]">先拿到登录链接</h2>
-                <p className="break-words text-sm leading-7 text-white/72 sm:text-base">
+                <p className="break-words text-sm leading-7 text-[var(--color-neutral-dark)] sm:text-base">
                   现在是小范围内测。第一次建议先用邮箱链接进来，系统会同时给这个账号启用默认密码 `123456`，后面你就可以直接用邮箱和密码登录，再去 Today 里改掉它。
                 </p>
               </div>
@@ -93,7 +93,7 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                   <span>邮箱地址</span>
                   <input
                     aria-label="邮箱地址"
-                    className="min-h-12 w-full min-w-0 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-base text-white outline-none transition placeholder:text-white/28 focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
+                    className="min-h-12 w-full min-w-0 rounded-2xl border border-[var(--color-neutral-mid)] bg-white px-4 py-3 text-base outline-none transition placeholder:text-[var(--color-neutral-dark)]/50 focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
                     name="email"
                     placeholder="you@example.com"
                     type="email"
@@ -108,10 +108,10 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                 </button>
               </form>
 
-              <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/4 p-4">
+              <div className="mt-5 rounded-[1.5rem] border border-[var(--color-line)] bg-[var(--color-secondary)]/50 p-4">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-white">邮箱 + 密码登录</p>
-                  <p className="text-sm leading-6 text-white/70">
+                  <p className="text-sm font-medium text-[var(--color-primary)]">邮箱 + 密码登录</p>
+                  <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">
                     第一次先用上面的 magic link 激活。激活后这里默认会直接使用 `123456` 登录，你不用再手动输入；如果后面改过密码，再展开下面自己填写。
                   </p>
                 </div>
@@ -128,8 +128,8 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                       required
                     />
                   </label>
-                  <details className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white/70">
-                    <summary className="cursor-pointer list-none font-medium text-white">
+                  <details className="rounded-2xl border border-[var(--color-line)] bg-white px-4 py-3 text-sm text-[var(--color-neutral-dark)]">
+                    <summary className="cursor-pointer list-none font-medium text-[var(--color-primary)]">
                       使用其他密码
                     </summary>
                     <div className="mt-3">
@@ -137,7 +137,7 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                         <span>密码</span>
                         <input
                           aria-label="登录密码"
-                          className="min-h-12 w-full min-w-0 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-base text-white outline-none transition placeholder:text-white/28 focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
+                          className="min-h-12 w-full min-w-0 rounded-2xl border border-[var(--color-neutral-mid)] bg-white px-4 py-3 text-base outline-none transition placeholder:text-[var(--color-neutral-dark)]/50 focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/15"
                           name="password"
                           placeholder="如果你已经改过密码，再在这里输入"
                           type="password"
@@ -146,7 +146,7 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                     </div>
                   </details>
                   <button
-                    className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-white/14 bg-white/8 px-5 py-3 text-base font-medium text-white transition hover:bg-white/14"
+                    className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-[var(--color-neutral-mid)] bg-white px-5 py-3 text-base font-medium text-[var(--color-primary)] transition hover:bg-[var(--color-secondary)]"
                     type="submit"
                   >
                     邮箱密码登录
@@ -154,8 +154,8 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                 </form>
               </div>
 
-              <div className="mt-6 w-full min-w-0 rounded-[1.5rem] bg-white/6 p-4 text-sm leading-6 text-white/70">
-                <p className="font-medium text-white">你进来之后会先做什么</p>
+              <div className="mt-6 w-full min-w-0 rounded-[1.5rem] bg-[var(--color-secondary)]/50 p-4 text-sm leading-6 text-[var(--color-neutral-dark)]">
+                <p className="font-medium text-[var(--color-primary)]">你进来之后会先做什么</p>
                 <p className="mt-2 break-words">先把几件常穿衣服导进 Closet，再去 Today 看推荐。如果最近要出门，也可以顺手试 Travel。</p>
               </div>
 

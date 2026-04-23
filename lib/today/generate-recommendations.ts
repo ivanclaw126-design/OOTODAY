@@ -11,6 +11,12 @@ import {
 } from '@/lib/closet/taxonomy'
 import type { TodayRecommendation, TodayRecommendationItem, TodayWeather } from '@/lib/today/types'
 
+type RecommendationCandidate = {
+  recommendation: TodayRecommendation
+  mainIds: string[]
+  score: number
+}
+
 function toRecommendationItem(item: ClosetItemCardData): TodayRecommendationItem {
   return {
     id: item.id,
@@ -67,17 +73,6 @@ function compareWearPriority(a: ClosetItemCardData, b: ClosetItemCardData) {
   return b.createdAt.localeCompare(a.createdAt)
 }
 
-function rotateItems(items: ClosetItemCardData[], offset: number) {
-  if (items.length === 0) {
-    return []
-  }
-
-  const sorted = [...items].sort(compareWearPriority)
-  const normalizedOffset = offset % sorted.length
-
-  return [...sorted.slice(normalizedOffset), ...sorted.slice(0, normalizedOffset)]
-}
-
 function countSharedStyleTags(a: string[], b: string[]) {
   return a.filter((tag) => b.includes(tag)).length
 }
@@ -91,12 +86,6 @@ function scoreTopBottomPair(top: ClosetItemCardData, bottom: ClosetItemCardData)
       : 0
 
   return sharedStyleScore + colorScore + neutralBonus
-}
-
-function pickBestBottom(top: ClosetItemCardData, bottoms: ClosetItemCardData[], usedMainIds: Set<string>) {
-  return bottoms
-    .filter((candidate) => !usedMainIds.has(candidate.id))
-    .sort((left, right) => scoreTopBottomPair(top, right) - scoreTopBottomPair(top, left) || compareWearPriority(left, right))[0] ?? null
 }
 
 function pickBestOuterLayer(
@@ -166,53 +155,66 @@ function buildDressReason(dress: ClosetItemCardData, outerLayer: ClosetItemCardD
   return buildReason(parts)
 }
 
-export function generateTodayRecommendations(
-  items: ClosetItemCardData[],
-  weather: TodayWeather | null,
-  offset = 0
-): TodayRecommendation[] {
-  const tops = items.filter((item) => isTopCategory(item.category))
-  const bottoms = items.filter((item) => isBottomCategory(item.category))
-  const dresses = items.filter((item) => isOnePieceCategory(item.category))
+function getWearFreshnessScore(item: ClosetItemCardData) {
+  let score = 0
+
+  if (!item.lastWornDate) {
+    score += 8
+  }
+
+  score += Math.max(0, 4 - item.wearCount)
+
+  return score
+}
+
+function buildRecommendationCandidates(items: ClosetItemCardData[], weather: TodayWeather | null) {
+  const tops = [...items.filter((item) => isTopCategory(item.category))].sort(compareWearPriority)
+  const bottoms = [...items.filter((item) => isBottomCategory(item.category))].sort(compareWearPriority)
+  const dresses = [...items.filter((item) => isOnePieceCategory(item.category))].sort(compareWearPriority)
   const outerLayers = [...items.filter((item) => isOuterwearCategory(item.category))].sort(compareWearPriority)
+  const candidates: RecommendationCandidate[] = []
 
-  const recommendations: TodayRecommendation[] = []
-  const usedMainIds = new Set<string>()
-  const rotatedTops = rotateItems(tops, offset)
-  const rotatedBottoms = rotateItems(bottoms, offset)
-  const rotatedDresses = rotateItems(dresses, offset)
-
-  for (const dress of rotatedDresses) {
-    if (recommendations.length === 3) {
-      break
-    }
-
-    usedMainIds.add(dress.id)
+  for (const dress of dresses) {
     const matchingOuterLayer = pickBestOuterLayer(dress, outerLayers, weather)
-
-    recommendations.push({
-      id: `dress-${dress.id}`,
-      reason: buildDressReason(dress, matchingOuterLayer, weather),
-      top: null,
-      bottom: null,
-      dress: toRecommendationItem(dress),
-      outerLayer: matchingOuterLayer ? toRecommendationItem(matchingOuterLayer) : null
+    candidates.push({
+      score: 140 + getWearFreshnessScore(dress),
+      mainIds: [dress.id],
+      recommendation: {
+        id: `dress-${dress.id}`,
+        reason: buildDressReason(dress, matchingOuterLayer, weather),
+        top: null,
+        bottom: null,
+        dress: toRecommendationItem(dress),
+        outerLayer: matchingOuterLayer ? toRecommendationItem(matchingOuterLayer) : null
+      }
     })
   }
 
-  for (const top of rotatedTops) {
-    if (recommendations.length === 3) {
-      break
+  for (const top of tops) {
+    for (const bottom of bottoms) {
+      candidates.push({
+        score: 100 + scoreTopBottomPair(top, bottom) * 8 + getWearFreshnessScore(top) + getWearFreshnessScore(bottom),
+        mainIds: [top.id, bottom.id],
+        recommendation: {
+          id: `set-${top.id}-${bottom.id}`,
+          reason: buildPairReason(top, bottom, weather),
+          top: toRecommendationItem(top),
+          bottom: toRecommendationItem(bottom),
+          dress: null,
+          outerLayer: (() => {
+            const matchingOuterLayer = pickBestOuterLayer(top, outerLayers, weather)
+            return matchingOuterLayer ? toRecommendationItem(matchingOuterLayer) : null
+          })()
+        }
+      })
     }
+  }
 
-    if (usedMainIds.has(top.id)) {
-      continue
-    }
-
-    const bottom = pickBestBottom(top, rotatedBottoms, usedMainIds)
-
-    if (!bottom) {
-      recommendations.push({
+  for (const top of tops) {
+    candidates.push({
+      score: 40 + getWearFreshnessScore(top),
+      mainIds: [top.id],
+      recommendation: {
         id: `single-${top.id}`,
         reason: buildReason([
           weather?.isWarm ? '天气偏暖，先从轻便上装开始' : '',
@@ -224,28 +226,68 @@ export function generateTodayRecommendations(
         bottom: null,
         dress: null,
         outerLayer: null
-      })
-      usedMainIds.add(top.id)
-      continue
-    }
-
-    usedMainIds.add(top.id)
-    usedMainIds.add(bottom.id)
-
-    const matchingOuterLayer = pickBestOuterLayer(top, outerLayers, weather)
-
-    recommendations.push({
-      id: `set-${top.id}-${bottom.id}`,
-      reason: buildPairReason(top, bottom, weather),
-      top: toRecommendationItem(top),
-      bottom: toRecommendationItem(bottom),
-      dress: null,
-      outerLayer: matchingOuterLayer ? toRecommendationItem(matchingOuterLayer) : null
+      }
     })
   }
 
+  return candidates.sort((left, right) => {
+    if (right.score !== left.score) {
+      return right.score - left.score
+    }
+
+    return left.recommendation.id.localeCompare(right.recommendation.id)
+  })
+}
+
+function buildRecommendationBatch(candidates: RecommendationCandidate[], offset: number) {
+  if (candidates.length === 0) {
+    return []
+  }
+
+  const windowStart = (Math.max(0, offset) * 3) % candidates.length
+  const rotatedCandidates = [...candidates.slice(windowStart), ...candidates.slice(0, windowStart)]
+  const selected: TodayRecommendation[] = []
+  const usedMainIds = new Set<string>()
+
+  for (const candidate of rotatedCandidates) {
+    const conflicts = candidate.mainIds.some((id) => usedMainIds.has(id))
+
+    if (conflicts && rotatedCandidates.length > 3) {
+      continue
+    }
+
+    selected.push(candidate.recommendation)
+    candidate.mainIds.forEach((id) => usedMainIds.add(id))
+
+    if (selected.length === 3) {
+      return selected
+    }
+  }
+
+  for (const candidate of rotatedCandidates) {
+    if (selected.some((item) => item.id === candidate.recommendation.id)) {
+      continue
+    }
+
+    selected.push(candidate.recommendation)
+
+    if (selected.length === 3) {
+      return selected
+    }
+  }
+
+  return selected
+}
+
+export function generateTodayRecommendations(
+  items: ClosetItemCardData[],
+  weather: TodayWeather | null,
+  offset = 0
+): TodayRecommendation[] {
+  const recommendations = buildRecommendationBatch(buildRecommendationCandidates(items, weather), offset)
+
   while (recommendations.length < 3 && recommendations.length > 0) {
-    const seed = recommendations[recommendations.length % recommendations.length]
+    const seed = recommendations[recommendations.length % Math.max(1, recommendations.length)]
     recommendations.push({
       ...seed,
       id: `${seed.id}-alt-${recommendations.length}`,

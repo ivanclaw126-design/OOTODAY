@@ -5,10 +5,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
 const links = [
-  { href: '/today', label: 'Today' },
   { href: '/closet', label: 'Closet' },
   { href: '/travel', label: 'Travel' },
-  { href: '/inspiration', label: 'Inspiration' },
+  { href: '/today', label: 'Today' },
+  { href: '/inspiration', label: 'Looks' },
   { href: '/shop', label: 'Shop' }
 ] as const
 
@@ -166,7 +166,7 @@ export function BottomNav() {
               }}
               data-nav-index={links.findIndex((candidate) => candidate.href === link.href)}
               aria-current={pathname === link.href ? 'page' : undefined}
-              className={`group relative flex min-h-[3.2rem] w-full flex-col items-center justify-center rounded-[1.2rem] px-2 py-2 text-[0.76rem] font-semibold uppercase tracking-[0.08em] transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] ${
+              className={`group relative flex min-h-[3.2rem] w-full flex-col items-center justify-center rounded-[1.2rem] px-1.5 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] sm:text-[0.76rem] ${
                 pathname === link.href
                   ? 'translate-y-[-1px] text-white'
                   : 'text-[rgba(82,82,82,0.74)] hover:bg-black/4 hover:text-[var(--color-primary)]'

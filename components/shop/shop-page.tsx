@@ -183,11 +183,11 @@ export function ShopPage({
             </div>
           </div>
 
-          <div className="rounded-[1.8rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">
+          <div className="rounded-[1.8rem] border border-[var(--color-line)] bg-[#111111] p-4 text-white shadow-[var(--shadow-strong)]">
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/58">Input</p>
-                <p className="mt-2 text-sm text-white/68">图片适合快速判断，链接适合直接分析商品页。</p>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/70">Input</p>
+                <p className="mt-2 text-sm text-white/82">图片适合快速判断，链接适合直接分析商品页。</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -208,7 +208,7 @@ export function ShopPage({
                 onChange={handleFileChange}
                 disabled={isSubmitting}
               />
-                <span className="text-sm text-white/68">电脑端支持拖拽，iPhone / iPad 可直接从相册或拍照上传。</span>
+                <span className="text-sm text-white/82">电脑端支持拖拽，iPhone / iPad 可直接从相册或拍照上传。</span>
               </div>
 
               <label
@@ -221,7 +221,7 @@ export function ShopPage({
                 className={`flex min-h-32 flex-col items-center justify-center rounded-[1.25rem] border border-dashed px-4 py-6 text-center text-sm transition ${
                   isDragging
                     ? 'border-[var(--color-primary)] bg-[var(--color-secondary)] text-[var(--color-primary)]'
-                    : 'border-white/12 bg-white/6 text-white/68'
+                    : 'border-white/18 bg-white/8 text-white/82'
                 }`}
               >
                 <span className={`font-medium ${isDragging ? 'text-[var(--color-primary)]' : 'text-white'}`}>拖拽图片到这里</span>
@@ -242,13 +242,13 @@ export function ShopPage({
               ) : null}
 
               <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-medium text-white/74">商品链接或图片链接</span>
+                <span className="font-medium text-white/82">商品链接或图片链接</span>
                 <input
                   aria-label="商品链接或图片链接"
                   value={sourceUrl}
                   onChange={(event) => setSourceUrl(event.target.value)}
                   placeholder="https://..."
-                  className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-3 text-white placeholder:text-white/32"
+                  className="rounded-[1rem] border border-white/18 bg-white/10 px-3 py-3 text-white placeholder:text-white/45"
                 />
               </label>
             </div>

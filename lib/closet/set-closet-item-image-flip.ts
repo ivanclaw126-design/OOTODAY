@@ -20,9 +20,21 @@ export async function setClosetItemImageFlip({
     .select('id')
     .single()
 
+  // Older deployed databases may not have the image_flipped column yet.
+  // Read-paths already degrade gracefully, so keep the action from crashing too.
+  if (error && /image_flipped/i.test(error.message)) {
+    return {
+      id: itemId,
+      persisted: false as const
+    }
+  }
+
   if (error) {
     throw error
   }
 
-  return data
+  return {
+    ...data,
+    persisted: true as const
+  }
 }

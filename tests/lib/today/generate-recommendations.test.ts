@@ -257,4 +257,13 @@ describe('generateTodayRecommendations', () => {
     expect(recommendations[0]?.top?.id).toBe('top-fresh')
     expect(recommendations[0]?.bottom?.id).toBe('bottom-fresh')
   })
+
+  it('returns a visibly different batch when offset increases', () => {
+    const firstBatch = generateTodayRecommendations(items, null, 0)
+    const secondBatch = generateTodayRecommendations(items, null, 1)
+
+    expect(firstBatch).toHaveLength(3)
+    expect(secondBatch).toHaveLength(3)
+    expect(secondBatch.map((item) => item.id)).not.toEqual(firstBatch.map((item) => item.id))
+  })
 })

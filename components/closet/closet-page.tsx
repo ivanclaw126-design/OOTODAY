@@ -19,49 +19,85 @@ function ClosetSection({
   eyebrow,
   title,
   description,
-  meta,
   collapsible = false,
   collapsed = false,
   onToggle,
+  emphasize = false,
+  tone = 'default',
   children
 }: {
   eyebrow: string
   title: string
   description: string
-  meta?: string
   collapsible?: boolean
   collapsed?: boolean
   onToggle?: () => void
+  emphasize?: boolean
+  tone?: 'default' | 'import' | 'insights' | 'browse'
   children: ReactNode
 }) {
+  const toneClasses =
+    tone === 'import'
+      ? 'bg-[#f3ecdf]'
+      : tone === 'insights'
+        ? 'bg-[#f6efe3]'
+        : tone === 'browse'
+          ? 'bg-[linear-gradient(180deg,rgba(255,255,255,0.78)_0%,rgba(240,233,223,0.96)_100%)]'
+          : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(243,236,225,0.98)_100%)]'
+
+  const layerBackClass =
+    tone === 'import'
+      ? 'bg-[#ddd4c4]'
+      : tone === 'insights'
+        ? 'bg-[#e5d8c8]'
+        : 'bg-[#ddd5c8]'
+
+  const layerMidClass =
+    tone === 'import'
+      ? 'bg-[#ebe2d3]'
+      : tone === 'insights'
+        ? 'bg-[#efe5d9]'
+        : 'bg-[#ebe2d3]'
+
+  const isLayered = tone !== 'browse'
+
   return (
-    <section className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">{eyebrow}</p>
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--color-primary)]">{title}</h2>
-          <p className="max-w-xl text-xs text-[var(--color-neutral-dark)] sm:text-sm">{description}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {meta ? (
-            <div className="shrink-0 rounded-full border border-[var(--color-line)] bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-neutral-dark)] shadow-sm">
-              {meta}
+    <div className={`relative ${isLayered ? 'px-1 pb-3 pt-1.5' : ''}`}>
+      {isLayered ? (
+        <>
+          <div className={`absolute inset-x-2 bottom-0 top-4 rounded-[1.55rem] border border-black/6 ${layerBackClass}`} aria-hidden="true" />
+          <div className={`absolute inset-x-1 bottom-1 top-2.5 rounded-[1.55rem] border border-black/6 ${layerMidClass}`} aria-hidden="true" />
+        </>
+      ) : null}
+
+      <section
+        className={`relative rounded-[1.5rem] border border-[var(--color-line)] ${toneClasses} p-3.5 shadow-[var(--shadow-soft)] ${
+          emphasize ? 'sm:p-4' : ''
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--color-neutral-dark)]">{eyebrow}</p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <h2 className="text-base font-semibold tracking-[-0.03em] text-[var(--color-primary)]">{title}</h2>
+              <p className="text-xs text-[var(--color-neutral-dark)]">{description}</p>
             </div>
-          ) : null}
+          </div>
+
           {collapsible ? (
             <button
               type="button"
-              className="shrink-0 rounded-full border border-[var(--color-line)] bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-neutral-dark)] shadow-sm"
+              className="shrink-0 rounded-full border border-[var(--color-line)] bg-white/88 px-2.5 py-1 text-[11px] font-semibold tracking-[0.02em] text-[var(--color-neutral-dark)] shadow-sm"
               onClick={onToggle}
             >
               {collapsed ? '展开' : '收起'}
             </button>
           ) : null}
         </div>
-      </div>
 
-      {!collapsed ? children : null}
-    </section>
+        {collapsed ? null : <div className="mt-3">{children}</div>}
+      </section>
+    </div>
   )
 }
 
@@ -77,7 +113,7 @@ type ClosetPageProps = {
   updateItem: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<void>
   reanalyzeItem: (input: { itemId: string }) => Promise<ClosetAnalysisDraft>
   deleteItem: (input: { itemId: string }) => Promise<void>
-  toggleImageFlip: (input: { itemId: string; imageFlipped: boolean }) => Promise<void>
+  toggleImageFlip: (input: { itemId: string; imageFlipped: boolean }) => Promise<{ persisted: boolean }>
 }
 
 export function ClosetPage({
@@ -106,7 +142,17 @@ export function ClosetPage({
   const [isImportCollapsed, setIsImportCollapsed] = useState(itemCount > 0)
   const [isInsightsCollapsed, setIsInsightsCollapsed] = useState(itemCount > 0)
   const [flippingItemId, setFlippingItemId] = useState<string | null>(null)
+  const [imageFlipOverrides, setImageFlipOverrides] = useState<Record<string, boolean>>({})
   const router = useRouter()
+
+  const displayItems = useMemo(
+    () =>
+      items.map((item) => ({
+        ...item,
+        imageFlipped: imageFlipOverrides[item.id] ?? item.imageFlipped
+      })),
+    [imageFlipOverrides, items]
+  )
 
   const activeMissingBasic = useMemo(
     () => insights.missingBasics.find((item) => item.id === activeFilterId) ?? null,
@@ -115,35 +161,35 @@ export function ClosetPage({
 
   const insightFilteredItems = useMemo(() => {
     if (!activeFilterId) {
-      return items
+      return displayItems
     }
 
     const duplicateGroup = insights.duplicateGroups.find((group) => group.id === activeFilterId)
 
     if (duplicateGroup) {
-      return items.filter((item) => duplicateGroup.itemIds.includes(item.id))
+      return displayItems.filter((item) => duplicateGroup.itemIds.includes(item.id))
     }
 
     const idleItem = insights.idleItems.find((item) => item.id === activeFilterId)
 
     if (idleItem) {
-      return items.filter((item) => item.id === idleItem.id)
+      return displayItems.filter((item) => item.id === idleItem.id)
     }
 
     if (activeFilterId === 'dark-bottom') {
-      return items.filter((item) => isBottomCategory(item.category))
+      return displayItems.filter((item) => isBottomCategory(item.category))
     }
 
     if (activeFilterId === 'outerwear') {
-      return items.filter((item) => isOuterwearCategory(item.category))
+      return displayItems.filter((item) => isOuterwearCategory(item.category))
     }
 
     if (activeFilterId === 'basic-top') {
-      return items.filter((item) => isTopCategory(item.category))
+      return displayItems.filter((item) => isTopCategory(item.category))
     }
 
-    return items
-  }, [activeFilterId, insights.duplicateGroups, insights.idleItems, items])
+    return displayItems
+  }, [activeFilterId, displayItems, insights.duplicateGroups, insights.idleItems])
 
   const browseGroups = useMemo(() => {
     if (browseMode === 'all') {
@@ -234,8 +280,8 @@ export function ClosetPage({
     : '换个筛选看看，或者继续往衣橱里补新的单品。'
 
   const currentEditingItem = useMemo(
-    () => items.find((item) => item.id === editingItemId) ?? null,
-    [editingItemId, items]
+    () => displayItems.find((item) => item.id === editingItemId) ?? null,
+    [displayItems, editingItemId]
   )
 
   useEffect(() => {
@@ -281,11 +327,18 @@ export function ClosetPage({
     setFlippingItemId(item.id)
 
     try {
-      await toggleImageFlip({
+      const result = await toggleImageFlip({
         itemId: item.id,
         imageFlipped: !item.imageFlipped
       })
-      router.refresh()
+      setImageFlipOverrides((current) => ({
+        ...current,
+        [item.id]: !item.imageFlipped
+      }))
+
+      if (result.persisted) {
+        router.refresh()
+      }
     } finally {
       setFlippingItemId(null)
     }
@@ -346,30 +399,26 @@ export function ClosetPage({
 
   return (
     <AppShell title="Closet">
-      <Card>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-primary)]">衣橱管理</p>
-            <h1 className="text-lg font-semibold text-[var(--color-neutral-dark)]">先看衣橱，再决定下一步</h1>
-            <p className="max-w-xl text-sm text-[var(--color-neutral-dark)]">导入和整理入口先收起来，已导入衣物会更容易一眼看到。</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-neutral-dark)]">
-            <span className="rounded-full border border-[var(--color-line)] bg-white/72 px-3 py-1">已收录 {itemCount} 件单品</span>
-            <span className="rounded-full border border-[var(--color-line)] bg-[rgba(231,255,55,0.18)] px-3 py-1 text-[var(--color-primary)]">支持多入口导入</span>
+      <section className="overflow-hidden rounded-[1.55rem] bg-[#111111] text-white shadow-[var(--shadow-strong)]">
+        <div className="flex flex-wrap items-end justify-between gap-3 px-4 py-3 sm:px-5">
+          <div className="flex items-end gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/58">Closet</p>
+            <p className="text-sm text-white/72">已收录</p>
+            <p className="text-[2rem] font-semibold leading-none tracking-[-0.08em] text-[var(--color-accent)]">{itemCount}</p>
+            <p className="pb-0.5 text-sm text-white/72">件</p>
           </div>
         </div>
-      </Card>
+      </section>
 
       {itemCount > 0 ? (
-        <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+        <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
           <ClosetSection
             eyebrow="Step 1"
             title="导入衣物"
-            description="相册、商品链接和拼图拆分都从这里进入。"
-            meta="默认收起"
+            description="相册、链接、拼图都从这里进。"
             collapsible
             collapsed={isImportCollapsed}
+            tone="import"
             onToggle={() => setIsImportCollapsed((current) => !current)}
           >
             <ClosetUploadCard
@@ -384,10 +433,10 @@ export function ClosetPage({
           <ClosetSection
             eyebrow="Step 2"
             title="整理建议"
-            description="重复、闲置和基础缺口先集中看。"
-            meta={activeFilterSummary ? '已选中筛选' : '默认收起'}
+            description="重复、闲置、基础缺口都在这里。"
             collapsible
             collapsed={isInsightsCollapsed}
+            tone="insights"
             onToggle={() => setIsInsightsCollapsed((current) => !current)}
           >
             <ClosetInsightsPanel
@@ -404,7 +453,6 @@ export function ClosetPage({
             eyebrow="Step 1"
             title="导入衣物"
             description="先放进第一件，后面就能开始整理。"
-            meta="先从这里开始"
           >
             <ClosetUploadCard
               userId={userId}
@@ -428,11 +476,12 @@ export function ClosetPage({
               ? `当前筛选：${activeFilterSummary.label}。${activeFilterSummary.detail}`
               : '先按类型浏览，再决定要不要切到颜色视图。'
           }
-          meta={activeFilterId || activeBrowseGroupLabel ? `${visibleItems.length} 件当前结果` : `${itemCount} 件全部单品`}
+          emphasize
+          tone="browse"
         >
-          <div className="rounded-[1.9rem] border border-[var(--color-line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.74)_0%,rgba(240,233,223,0.94)_100%)] p-4 shadow-[var(--shadow-soft)] backdrop-blur sm:p-5">
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
+          <div className="rounded-[1.45rem] border border-[var(--color-line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.74)_0%,rgba(240,233,223,0.94)_100%)] p-3 shadow-[var(--shadow-soft)] backdrop-blur sm:p-4">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
                 {[
                   { value: 'all', label: '全部衣物' },
                   { value: 'category', label: '按类型' },
@@ -444,7 +493,7 @@ export function ClosetPage({
                     <button
                       key={option.value}
                       type="button"
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition sm:text-sm ${
                         isActive
                           ? 'bg-[var(--color-primary)] text-white shadow-[0_14px_28px_rgba(0,0,0,0.16)]'
                           : 'border border-[var(--color-line)] bg-white/80 text-[var(--color-neutral-dark)]'
@@ -481,13 +530,13 @@ export function ClosetPage({
                     onClearGroup={() => setActiveBrowseGroupValue(null)}
                   />
 
-                  <div className="rounded-[1.5rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.56)] p-4">
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div className="rounded-[1.25rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.56)] p-3">
+                    <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold tracking-[-0.02em] text-[var(--color-primary)]">
                           {browseMode === 'category' ? '类型分组详情' : '颜色分组详情'}
                         </p>
-                        <p className="text-xs text-[var(--color-neutral-dark)]">
+                        <p className="text-[11px] text-[var(--color-neutral-dark)]">
                           {activeBrowseGroupLabel
                             ? `当前查看：${activeBrowseGroupLabel}`
                             : `点一个${browseMode === 'category' ? '类型' : '颜色'}卡片继续看。`}

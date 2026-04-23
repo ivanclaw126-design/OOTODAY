@@ -132,8 +132,11 @@ describe('ClosetPage', () => {
       />
     )
 
-    expect(screen.getByText('已收录 2 件单品')).toBeInTheDocument()
+    expect(screen.getAllByText('Closet').length).toBeGreaterThan(0)
+    expect(screen.getByText('已收录')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: '展开' })).toHaveLength(2)
+    expect(screen.queryByText('相册')).not.toBeInTheDocument()
+    expect(screen.queryByText('重复款')).not.toBeInTheDocument()
     expect(screen.getByText('上装')).toBeInTheDocument()
     expect(screen.getByText('衬衫')).toBeInTheDocument()
     expect(screen.getByText('蓝色')).toBeInTheDocument()
@@ -283,7 +286,7 @@ describe('ClosetPage', () => {
   })
 
   it('toggles image flip for a saved item', async () => {
-    toggleImageFlip.mockResolvedValue(undefined)
+    toggleImageFlip.mockResolvedValue({ persisted: true })
 
     render(
       <ClosetPage
@@ -315,9 +318,9 @@ describe('ClosetPage', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '翻转图片' }))
+    fireEvent.click(screen.getByRole('button', { name: '右转 90°' }))
     expect(toggleImageFlip).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: '确认翻转' }))
+    fireEvent.click(screen.getByRole('button', { name: '确认右转' }))
 
     await waitFor(() => {
       expect(toggleImageFlip).toHaveBeenCalledWith({

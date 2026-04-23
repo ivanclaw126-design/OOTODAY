@@ -44,12 +44,14 @@ export function ClosetItemCard({
     <article className="overflow-hidden rounded-lg bg-white shadow-sm">
       <div className="aspect-square bg-[var(--color-secondary)]">
         {item.imageUrl ? (
-          <img
-            src={item.imageUrl}
-            alt={imageAlt}
-            className="h-full w-full object-cover transition-transform duration-200"
-            style={item.imageFlipped ? { transform: 'scaleX(-1)' } : undefined}
-          />
+          <div className="flex h-full w-full items-center justify-center overflow-hidden">
+            <img
+              src={item.imageUrl}
+              alt={imageAlt}
+              className={`h-full w-full transition-transform duration-200 ${item.imageFlipped ? 'object-contain' : 'object-cover'}`}
+              style={item.imageFlipped ? { transform: 'rotate(90deg)' } : undefined}
+            />
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-[var(--color-neutral-dark)]">
             暂无图片
@@ -72,7 +74,7 @@ export function ClosetItemCard({
                   onClick={handleFlipIntent}
                   disabled={isFlipping}
                 >
-                  {isFlipping ? '处理中…' : item.imageFlipped ? '恢复原图' : '翻转图片'}
+                  {isFlipping ? '处理中…' : item.imageFlipped ? '恢复原图' : '右转 90°'}
                 </button>
                 {isFlipConfirming ? (
                   <button
@@ -81,7 +83,7 @@ export function ClosetItemCard({
                     onClick={handleConfirmFlip}
                     disabled={isFlipping}
                   >
-                    {item.imageFlipped ? '确认恢复' : '确认翻转'}
+                    {item.imageFlipped ? '确认恢复' : '确认右转'}
                   </button>
                 ) : null}
               </div>

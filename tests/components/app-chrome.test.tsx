@@ -33,7 +33,8 @@ describe('AppChrome', () => {
 
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute('aria-current', 'page')
-    expect(prefetch).toHaveBeenCalledWith('/closet')
+    expect(prefetch).toHaveBeenCalledWith('/travel')
+    expect(prefetch).toHaveBeenCalledWith('/inspiration')
 
     usePathnameMock.mockReturnValue('/')
     rerender(
@@ -85,6 +86,19 @@ describe('AppChrome', () => {
     })
 
     expect(push).toHaveBeenCalledWith('/travel')
+  })
+
+  it('renders the shorter Looks nav label', () => {
+    usePathnameMock.mockReturnValue('/inspiration')
+
+    render(
+      <AppChrome>
+        <div>page body</div>
+      </AppChrome>
+    )
+
+    expect(screen.getByRole('link', { name: 'Looks' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByRole('link', { name: 'Inspiration' })).not.toBeInTheDocument()
   })
 
   it('ignores swipe navigation from interactive targets', () => {
