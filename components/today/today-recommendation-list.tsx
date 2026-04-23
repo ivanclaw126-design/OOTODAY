@@ -25,6 +25,15 @@ export function TodayRecommendationList({
     )
   }
 
+  if (recommendations.length === 0) {
+    return (
+      <EmptyState
+        title="暂时还凑不出 3 套推荐"
+        description="先补齐上装、下装或连衣裙这类核心单品，再回来刷新推荐。"
+      />
+    )
+  }
+
   return (
     <section className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">

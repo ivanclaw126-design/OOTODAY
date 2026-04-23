@@ -1,4 +1,5 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import { ClosetItemImage } from '@/components/closet/closet-item-image'
 import { ClosetCategoryIcon, ClosetColorIcon } from '@/components/closet/closet-taxonomy-icons'
 
 export type ClosetBrowseMode = 'category' | 'color'
@@ -118,7 +119,11 @@ export function ClosetGroupBrowser({
                 {group.items.slice(0, 8).map((item) => (
                   <div key={item.id} className="aspect-square overflow-hidden rounded-[0.75rem] bg-[var(--color-secondary)]">
                     {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={`${group.label} 缩略图`} className="h-full w-full object-cover" />
+                      <ClosetItemImage
+                        src={item.imageUrl}
+                        alt={`${group.label} 缩略图`}
+                        rotated={Boolean(item.imageFlipped)}
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-neutral-dark)]">暂无图</div>
                     )}

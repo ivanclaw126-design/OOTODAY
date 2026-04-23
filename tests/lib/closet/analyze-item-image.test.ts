@@ -33,7 +33,7 @@ describe('analyzeItemImage', () => {
     const { analyzeItemImage } = await import('@/lib/closet/analyze-item-image')
 
     await expect(analyzeItemImage('https://example.com/shirt.jpg')).resolves.toEqual({
-      category: '上衣',
+      category: '上装',
       subCategory: '衬衫',
       colorCategory: '蓝色',
       styleTags: ['通勤', '简约']
@@ -189,7 +189,7 @@ describe('analyzeItemImage', () => {
     const { analyzeItemImage } = await import('@/lib/closet/analyze-item-image')
 
     await expect(analyzeItemImage('https://example.com/shirt.jpg')).resolves.toEqual({
-      category: '上衣',
+      category: '上装',
       subCategory: '衬衫',
       colorCategory: '蓝色',
       styleTags: ['通勤', '简约', '基础款', '日常', 'clean']

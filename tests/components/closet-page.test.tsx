@@ -412,7 +412,7 @@ describe('ClosetPage', () => {
     expect(reanalyzeItem).toHaveBeenCalledWith({ itemId: 'item-1' })
 
     await waitFor(() => {
-      expect(screen.getByLabelText('分类')).toHaveValue('外套')
+      expect(screen.getByLabelText('分类')).toHaveValue('外层')
       expect(screen.getByLabelText('子分类')).toHaveValue('西装外套')
       expect(screen.getByLabelText('颜色')).toHaveValue('卡其色')
     })

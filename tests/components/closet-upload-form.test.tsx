@@ -19,13 +19,13 @@ describe('ClosetUploadForm', () => {
     const onSubmit = vi.fn()
     const { getByLabelText, getByRole } = render(<ClosetUploadForm initialDraft={baseDraft} onSubmit={onSubmit} />)
 
-    fireEvent.change(getByLabelText('分类'), { target: { value: '外套' } })
+    fireEvent.change(getByLabelText('分类'), { target: { value: '外层' } })
     fireEvent.change(getByLabelText('风格标签'), { target: { value: '通勤, 极简' } })
     fireEvent.submit(getByRole('button', { name: '保存到衣橱' }).closest('form')!)
 
     expect(onSubmit).toHaveBeenCalledWith({
       imageUrl: 'https://example.com/shirt.jpg',
-      category: '外套',
+      category: '外层',
       subCategory: '未知类型请手动选择',
       colorCategory: '蓝色',
       styleTags: ['通勤', '极简']
@@ -36,7 +36,7 @@ describe('ClosetUploadForm', () => {
     const onSubmit = vi.fn()
     const { getByLabelText, rerender } = render(<ClosetUploadForm initialDraft={baseDraft} onSubmit={onSubmit} />)
 
-    fireEvent.change(getByLabelText('分类'), { target: { value: '外套' } })
+    fireEvent.change(getByLabelText('分类'), { target: { value: '外层' } })
     fireEvent.change(getByLabelText('风格标签'), { target: { value: '通勤，极简' } })
 
     rerender(
@@ -52,7 +52,7 @@ describe('ClosetUploadForm', () => {
       />
     )
 
-    expect(getByLabelText('分类')).toHaveValue('外套')
+    expect(getByLabelText('分类')).toHaveValue('外层')
     expect(getByLabelText('风格标签')).toHaveValue('通勤，极简')
   })
 
@@ -78,15 +78,15 @@ describe('ClosetUploadForm', () => {
     const onSubmit = vi.fn()
     const { getByRole, getByText, getByLabelText } = render(<ClosetUploadForm initialDraft={baseDraft} onSubmit={onSubmit} />)
 
-    fireEvent.click(getByRole('button', { name: '外套' }))
+    fireEvent.click(getByRole('button', { name: '外层' }))
     fireEvent.click(getByRole('button', { name: '卡其色' }))
     fireEvent.submit(getByText('保存到衣橱').closest('form')!)
 
-    expect(getByLabelText('分类')).toHaveValue('外套')
+    expect(getByLabelText('分类')).toHaveValue('外层')
     expect(getByLabelText('颜色')).toHaveValue('卡其色')
     expect(onSubmit).toHaveBeenCalledWith({
       imageUrl: 'https://example.com/shirt.jpg',
-      category: '外套',
+      category: '外层',
       subCategory: '未知类型请手动选择',
       colorCategory: '卡其色',
       styleTags: ['通勤', '简约']

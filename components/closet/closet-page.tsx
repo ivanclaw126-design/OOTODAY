@@ -254,8 +254,8 @@ export function ClosetPage({
 
     if (activeFilterId === 'outerwear') {
       return {
-        label: '基础缺口：外套',
-        detail: '先补一件好叠穿的外套，通勤和天气变化都会更省心。'
+        label: '基础缺口：外层',
+        detail: '先补一件好叠穿的外层，通勤和天气变化都会更省心。'
       }
     }
 
@@ -411,7 +411,7 @@ export function ClosetPage({
       </section>
 
       {itemCount > 0 ? (
-        <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
+        <div className="grid gap-3">
           <ClosetSection
             eyebrow="Step 1"
             title="导入衣物"

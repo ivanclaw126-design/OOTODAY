@@ -214,7 +214,7 @@ describe('analyzeClosetImportUrlAction', () => {
       error: null,
       draft: {
         imageUrl: validImageUrl,
-        category: '外套',
+        category: '外层',
         subCategory: '西装外套',
         colorCategory: '米色',
         styleTags: ['通勤']

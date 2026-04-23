@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { PrimaryButton } from '@/components/ui/button'
-import { ClosetCategoryBadge, ClosetColorBadge, ClosetCategoryIcon, ClosetColorIcon } from '@/components/closet/closet-taxonomy-icons'
+import {
+  ClosetCategoryBadge,
+  ClosetColorBadge,
+  ClosetCategoryIcon,
+  ClosetColorIcon,
+  ClosetSubCategoryBadge,
+  ClosetSubCategoryIcon
+} from '@/components/closet/closet-taxonomy-icons'
 import {
   getCategoryOptions,
   getColorOptions,
@@ -140,6 +147,9 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
 
         <label className="flex flex-col gap-1 text-sm">
           <span>子分类</span>
+          <div className="flex flex-wrap gap-2">
+            <ClosetSubCategoryBadge subCategory={draft.subCategory} />
+          </div>
           <select
             aria-label="子分类"
             value={draft.subCategory}
@@ -152,6 +162,27 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
               </option>
             ))}
           </select>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {subCategoryOptions.map((option) => {
+              const isActive = draft.subCategory === option.value
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setDraft((current) => ({ ...current, subCategory: option.value }))}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    isActive
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                      : 'border-[var(--color-neutral-mid)] bg-white text-[var(--color-neutral-dark)]'
+                  }`}
+                >
+                  <ClosetSubCategoryIcon subCategory={option.value} size="sm" />
+                  <span>{option.label}</span>
+                </button>
+              )
+            })}
+          </div>
         </label>
       </div>
 

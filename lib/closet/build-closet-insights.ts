@@ -163,10 +163,10 @@ export function buildClosetInsights(items: ClosetItemCardData[], now = new Date(
   if (!hasLightOuterwear(items)) {
     missingBasics.push({
       id: 'outerwear',
-      label: '可叠穿外套',
-      reason: '天气变化和层次搭配都需要一件外套来做切换',
+      label: '可叠穿外层',
+      reason: '天气变化和层次搭配都需要一件外层来做切换',
       priority: 'medium',
-      nextStep: '等基础上衣和下装更稳后，再补一件好叠穿的外套会更划算'
+      nextStep: '等基础上衣和下装更稳后，再补一件好叠穿的外层会更划算'
     })
   }
 

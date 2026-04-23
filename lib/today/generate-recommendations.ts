@@ -117,7 +117,7 @@ function buildPairReason(top: ClosetItemCardData, bottom: ClosetItemCardData, we
   }
 
   if (weather?.isCold) {
-    parts.push('天气偏冷，建议加一层外套')
+    parts.push('天气偏冷，建议加一层外层')
   }
 
   parts.push(...buildTodayColorNotes([top.colorCategory, bottom.colorCategory]))
@@ -145,7 +145,7 @@ function buildPairReason(top: ClosetItemCardData, bottom: ClosetItemCardData, we
 
 function buildDressReason(dress: ClosetItemCardData, outerLayer: ClosetItemCardData | null, weather: TodayWeather | null) {
   const parts = [
-    weather?.isCold ? '天气偏冷，建议叠加外套' : '一件完成主造型，省决策成本',
+    weather?.isCold ? '天气偏冷，建议叠加外层' : '一件完成主造型，省决策成本',
     outerLayer && scoreColorCompatibility(dress.colorCategory, outerLayer.colorCategory) >= 2 ? '外层和主件颜色衔接自然' : '',
     ...buildTodayColorNotes([dress.colorCategory, outerLayer?.colorCategory]),
     isVividColor(dress.colorCategory) ? '主件颜色已经足够有重点，其他部分可以收一收' : '',
@@ -218,7 +218,7 @@ function buildRecommendationCandidates(items: ClosetItemCardData[], weather: Tod
         id: `single-${top.id}`,
         reason: buildReason([
           weather?.isWarm ? '天气偏暖，先从轻便上装开始' : '',
-          weather?.isCold ? '天气偏冷，建议先补下装或外套再完善整套' : '',
+          weather?.isCold ? '天气偏冷，建议先补下装或外层再完善整套' : '',
           isVividColor(top.colorCategory) ? '这件颜色存在感更强，后续更适合配基础下装' : '先用基础单品起一套思路',
           '先用已有单品起一套思路'
         ]),

@@ -82,8 +82,8 @@ function buildDailyPlan({
           : '这一天保留基础轮廓，靠上衣或场景切换做变化。'
 
     const outfitSummary = dress
-      ? `${describeItem(dress) || '连衣裙'}${layer ? ` + ${describeItem(layer) || '外套'}` : ''}`
-      : [top ? describeItem(top) || '上衣' : '待补上衣', bottom ? describeItem(bottom) || '下装' : '待补下装', layer ? describeItem(layer) || '外套' : null]
+      ? `${describeItem(dress) || '连衣裙'}${layer ? ` + ${describeItem(layer) || '外层'}` : ''}`
+      : [top ? describeItem(top) || '上衣' : '待补上衣', bottom ? describeItem(bottom) || '下装' : '待补下装', layer ? describeItem(layer) || '外层' : null]
           .filter(Boolean)
           .join(' + ')
 
@@ -143,8 +143,8 @@ export function buildTravelPackingPlan({
   const entries = [
     buildEntry('tops', '上衣', topQuantity, tops, '上衣按 2 天左右轮换一次来带，能兼顾体积和变化。'),
     buildEntry('bottoms', '下装', bottomQuantity, bottoms, '下装复穿频率可以更高，优先带最稳的基础款。'),
-    buildEntry('dresses', '全身装', dressQuantity, dresses, '如果行程里有休闲或约会场景，带一件全身装能快速起完整造型。'),
-    buildEntry('outerwear', '外套', outerwearQuantity, outerwear, '外套主要承担温差和正式感，带 1 件最稳的就够。')
+    buildEntry('dresses', '连体/全身装', dressQuantity, dresses, '如果行程里有休闲或约会场景，带一件连体/全身装能快速起完整造型。'),
+    buildEntry('outerwear', '外层', outerwearQuantity, outerwear, '外层主要承担温差和正式感，带 1 件最稳的就够。')
   ].filter((entry): entry is TravelPackingEntry => entry !== null)
 
   const missingHints: string[] = []
@@ -158,7 +158,7 @@ export function buildTravelPackingPlan({
   }
 
   if ((weather?.isCold || days >= 4) && outerwear.length === 0) {
-    missingHints.push('这趟更适合带一件外套，但当前衣橱里没有可直接打包的外套。')
+    missingHints.push('这趟更适合带一件外层，但当前衣橱里没有可直接打包的外层。')
   }
 
   if (includesFormalScene(scenes) && tops.length === 0) {
@@ -172,7 +172,7 @@ export function buildTravelPackingPlan({
     days >= 4 ? '把最稳的下装当成复穿核心，再用上衣切换场景，会比硬塞更多单品更省空间。' : '短途优先带最不会出错的组合，不必为了变化硬加太多单品。',
     weather
       ? weather.isWarm
-        ? '目的地偏暖，优先选轻薄和透气的单品，把外套权重往下放。'
+        ? '目的地偏暖，优先选轻薄和透气的单品，把外层权重往下放。'
         : weather.isCold
           ? '目的地偏冷，记得把层次和叠穿放进清单，而不是只看单件好不好看。'
           : '目的地温度比较温和，优先带最稳定的基础组合，再用上衣和场景做变化。'
@@ -182,7 +182,7 @@ export function buildTravelPackingPlan({
   notes.push(...buildColorStrategyNotes([...tops, ...bottoms, ...dresses, ...outerwear]))
 
   if (includesFormalScene(scenes)) {
-    notes.push('正式或通勤场景优先靠深色下装和一件外套稳住，不需要每一天都完全换新。')
+    notes.push('正式或通勤场景优先靠深色下装和一件外层稳住，不需要每一天都完全换新。')
   }
 
   const dailyPlan = buildDailyPlan({
