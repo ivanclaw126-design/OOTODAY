@@ -15,11 +15,17 @@
 html {
   background: var(--color-neutral-light);
   color: var(--color-primary);
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   min-height: 100vh;
   font-family: var(--font-body), sans-serif;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 h1,

@@ -168,13 +168,13 @@ export function ClosetCollageSplitter({ disabled = false, onSplitComplete }: Clo
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-neutral-mid)] p-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+        <div className="min-w-0">
           <p className="text-sm font-medium">拼图拆分导入</p>
           <p className="text-sm text-[var(--color-neutral-dark)]">适合一张图里放了多件单品的截图。先选 1 张拼图，再手动保留 2-4 个裁剪框，拆好的图片会自动进入现有导入队列。</p>
         </div>
         <label
-          className={`inline-flex rounded-md border border-[var(--color-neutral-mid)] px-4 py-2.5 text-sm font-medium text-[var(--color-primary)] ${
+          className={`inline-flex shrink-0 rounded-md border border-[var(--color-neutral-mid)] px-4 py-2.5 text-sm font-medium text-[var(--color-primary)] ${
             disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
           }`}
         >

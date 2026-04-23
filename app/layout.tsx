@@ -1,5 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import type { Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { Noto_Sans_SC, Noto_Serif_SC } from 'next/font/google'
 
@@ -18,6 +19,12 @@ const displayFont = Noto_Serif_SC({
 export const metadata: Metadata = {
   title: 'OOTODAY',
   description: 'AI-powered personal wardrobe assistant'
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover'
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -70,7 +70,7 @@ export function TravelPage({
   return (
     <AppShell title="Travel">
       <Card>
-        <form action="/travel" className="flex flex-col gap-5">
+        <form action="/travel" className="flex min-w-0 flex-col gap-5">
           <div className="space-y-3">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Trip Setup</p>
             <div className="space-y-2">
@@ -99,19 +99,19 @@ export function TravelPage({
           </div>
 
           <div className="rounded-[1.5rem] border border-[var(--color-neutral-mid)] bg-[rgba(255,255,255,0.72)] p-4 shadow-[0_18px_60px_rgba(39,31,24,0.08)]">
-            <div className="grid gap-4 md:grid-cols-[1.1fr_0.6fr]">
-              <label className="flex flex-col gap-2 text-sm">
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.6fr)]">
+              <label className="flex min-w-0 w-full flex-col gap-2 text-sm">
                 <span className="font-medium">目的地城市</span>
                 <input
                   name="city"
                   value={draftCity}
                   onChange={(event) => setDraftCity(event.target.value)}
                   placeholder="例如：东京"
-                  className="rounded-[1rem] border border-[var(--color-neutral-mid)] bg-white/75 px-3 py-3"
+                  className="w-full min-w-0 rounded-[1rem] border border-[var(--color-neutral-mid)] bg-white/75 px-3 py-3"
                 />
               </label>
 
-              <label className="flex flex-col gap-2 text-sm">
+              <label className="flex min-w-0 w-full flex-col gap-2 text-sm">
                 <span className="font-medium">出行天数</span>
                 <input
                   name="days"
@@ -120,7 +120,7 @@ export function TravelPage({
                   max={14}
                   value={draftDays}
                   onChange={(event) => setDraftDays(event.target.value)}
-                  className="rounded-[1rem] border border-[var(--color-neutral-mid)] bg-white/75 px-3 py-3"
+                  className="w-full min-w-0 rounded-[1rem] border border-[var(--color-neutral-mid)] bg-white/75 px-3 py-3"
                 />
               </label>
             </div>
@@ -153,8 +153,10 @@ export function TravelPage({
 
           {view.savedPlanId ? <input type="hidden" name="savedPlanId" value={view.savedPlanId} /> : null}
 
-          <div>
-            <PrimaryButton type="submit">生成打包清单</PrimaryButton>
+          <div className="min-w-0">
+            <PrimaryButton type="submit" className="w-full sm:w-auto">
+              生成打包清单
+            </PrimaryButton>
           </div>
         </form>
       </Card>

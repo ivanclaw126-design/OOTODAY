@@ -19,9 +19,9 @@ export function BottomNav() {
       aria-label="Primary"
       className="fixed inset-x-0 bottom-0 z-20 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 sm:px-4 md:static md:px-0 md:pb-0 md:pt-1"
     >
-      <ul className="mx-auto flex max-w-3xl items-center justify-between gap-1 rounded-[1.75rem] border border-black/8 bg-white/88 px-2 py-2 shadow-[0_18px_42px_rgba(26,26,26,0.10)] backdrop-blur md:rounded-[1.4rem] md:bg-white/72">
+      <ul className="mx-auto flex max-w-3xl min-w-0 items-center gap-1 overflow-x-auto rounded-[1.75rem] border border-black/8 bg-white/88 px-2 py-2 shadow-[0_18px_42px_rgba(26,26,26,0.10)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:justify-between md:overflow-visible md:rounded-[1.4rem] md:bg-white/72">
         {links.map((link) => (
-          <li key={link.href}>
+          <li key={link.href} className="shrink-0">
             <Link
               className={`inline-flex min-h-11 items-center justify-center rounded-2xl px-3 py-2 text-sm font-medium transition sm:px-4 ${
                 pathname === link.href
