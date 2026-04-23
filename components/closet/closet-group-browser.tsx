@@ -1,4 +1,5 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import { ClosetCategoryIcon, ClosetColorIcon } from '@/components/closet/closet-taxonomy-icons'
 
 export type ClosetBrowseMode = 'category' | 'color'
 
@@ -99,11 +100,14 @@ export function ClosetGroupBrowser({
               aria-pressed={isActive}
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-base font-semibold text-[var(--color-neutral-dark)]">{group.label}</p>
-                  <p className="text-xs text-[var(--color-neutral-dark)]">
-                    {group.count} 件{mode === 'category' ? '同类单品' : '同色单品'}
-                  </p>
+                <div className="flex min-w-0 items-start gap-3">
+                  {mode === 'category' ? <ClosetCategoryIcon category={group.label} /> : <ClosetColorIcon color={group.label} />}
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold text-[var(--color-neutral-dark)]">{group.label}</p>
+                    <p className="text-xs text-[var(--color-neutral-dark)]">
+                      {group.count} 件{mode === 'category' ? '同类单品' : '同色单品'}
+                    </p>
+                  </div>
                 </div>
                 <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-[var(--color-neutral-dark)] shadow-sm">
                   {modeLabel}

@@ -71,6 +71,7 @@ describe('ShopPage', () => {
       analysis: {
         candidate: {
           imageUrl: 'https://example.com/item.jpg',
+          imageCandidates: ['https://example.com/item.jpg'],
           sourceUrl: 'https://shop.example.com/item',
           sourceTitle: 'Soft Knit Cardigan',
           category: '上衣',
@@ -82,6 +83,7 @@ describe('ShopPage', () => {
         duplicateRisk: 'low',
         estimatedOutfitCount: 3,
         missingCategoryHints: [],
+        colorStrategyHints: [],
         recommendation: 'buy',
         recommendationReason: '它和现有衣橱能快速接上，新增后大概率能立刻穿起来。'
       }
@@ -95,13 +97,17 @@ describe('ShopPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '开始分析' }))
 
     await waitFor(() => {
-      expect(analyzeCandidate).toHaveBeenCalledWith({ sourceUrl: 'https://shop.example.com/item' })
+      expect(analyzeCandidate).toHaveBeenCalledWith({
+        sourceUrl: 'https://shop.example.com/item',
+        preferredImageUrl: undefined
+      })
     })
 
     expect(screen.getByText('建议买')).toBeInTheDocument()
     expect(screen.getByText('Soft Knit Cardigan')).toBeInTheDocument()
     expect(screen.getByText('Outfit Yield')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.getByAltText('Soft Knit Cardigan 商品图')).toBeInTheDocument()
   })
 
   it('uploads a local image and analyzes the uploaded public url', async () => {
@@ -115,6 +121,7 @@ describe('ShopPage', () => {
       analysis: {
         candidate: {
           imageUrl: 'https://example.com/uploads/local-item.jpg',
+          imageCandidates: ['https://example.com/uploads/local-item.jpg'],
           sourceUrl: 'https://example.com/uploads/local-item.jpg',
           sourceTitle: null,
           category: '上衣',
@@ -126,6 +133,7 @@ describe('ShopPage', () => {
         duplicateRisk: 'low',
         estimatedOutfitCount: 2,
         missingCategoryHints: [],
+        colorStrategyHints: [],
         recommendation: 'consider',
         recommendationReason: '它可以补充现有衣橱，但收益还没有高到闭眼入。'
       }
@@ -140,7 +148,10 @@ describe('ShopPage', () => {
 
     await waitFor(() => {
       expect(upload).toHaveBeenCalled()
-      expect(analyzeCandidate).toHaveBeenCalledWith({ sourceUrl: 'https://example.com/uploads/local-item.jpg' })
+      expect(analyzeCandidate).toHaveBeenCalledWith({
+        sourceUrl: 'https://example.com/uploads/local-item.jpg',
+        preferredImageUrl: undefined
+      })
     })
 
     expect(screen.getByText('衬衫 · 白色')).toBeInTheDocument()
@@ -157,6 +168,7 @@ describe('ShopPage', () => {
       analysis: {
         candidate: {
           imageUrl: 'https://example.com/uploads/dropped-item.jpg',
+          imageCandidates: ['https://example.com/uploads/dropped-item.jpg'],
           sourceUrl: 'https://example.com/uploads/dropped-item.jpg',
           sourceTitle: null,
           category: '外套',
@@ -168,6 +180,7 @@ describe('ShopPage', () => {
         duplicateRisk: 'low',
         estimatedOutfitCount: 1,
         missingCategoryHints: [],
+        colorStrategyHints: [],
         recommendation: 'consider',
         recommendationReason: '它可以补充现有衣橱，但收益还没有高到闭眼入。'
       }
@@ -184,7 +197,10 @@ describe('ShopPage', () => {
 
     await waitFor(() => {
       expect(upload).toHaveBeenCalled()
-      expect(analyzeCandidate).toHaveBeenCalledWith({ sourceUrl: 'https://example.com/uploads/dropped-item.jpg' })
+      expect(analyzeCandidate).toHaveBeenCalledWith({
+        sourceUrl: 'https://example.com/uploads/dropped-item.jpg',
+        preferredImageUrl: undefined
+      })
     })
 
     expect(screen.getByText('夹克 · 黑色')).toBeInTheDocument()
@@ -201,6 +217,7 @@ describe('ShopPage', () => {
       analysis: {
         candidate: {
           imageUrl: 'https://example.com/uploads/local-item.jpg',
+          imageCandidates: ['https://example.com/uploads/local-item.jpg'],
           sourceUrl: 'https://example.com/uploads/local-item.jpg',
           sourceTitle: null,
           category: '上衣',
@@ -212,6 +229,7 @@ describe('ShopPage', () => {
         duplicateRisk: 'low',
         estimatedOutfitCount: 2,
         missingCategoryHints: [],
+        colorStrategyHints: [],
         recommendation: 'consider',
         recommendationReason: '它可以补充现有衣橱，但收益还没有高到闭眼入。'
       }
@@ -225,7 +243,10 @@ describe('ShopPage', () => {
     })
 
     await waitFor(() => {
-      expect(analyzeCandidate).toHaveBeenCalledWith({ sourceUrl: 'https://example.com/uploads/local-item.jpg' })
+      expect(analyzeCandidate).toHaveBeenCalledWith({
+        sourceUrl: 'https://example.com/uploads/local-item.jpg',
+        preferredImageUrl: undefined
+      })
     })
 
     fireEvent.click(screen.getByRole('button', { name: '删除当前图片' }))
@@ -235,5 +256,76 @@ describe('ShopPage', () => {
     expect(screen.queryByText('衬衫 · 白色')).not.toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: '商品链接或图片链接' })).toHaveValue('')
     expect(screen.queryByRole('button', { name: '删除当前图片' })).not.toBeInTheDocument()
+  })
+
+  it('lets users switch to another candidate image and rerun analysis', async () => {
+    const analyzeCandidate = vi
+      .fn()
+      .mockResolvedValueOnce({
+        error: null,
+        analysis: {
+          candidate: {
+            imageUrl: 'https://example.com/model-look.jpg',
+            imageCandidates: ['https://example.com/model-look.jpg', 'https://example.com/clean-product.jpg'],
+            sourceUrl: 'https://shop.example.com/item',
+            sourceTitle: 'Soft Knit Cardigan',
+            category: '上衣',
+            subCategory: '针织衫',
+            colorCategory: '藏蓝',
+            styleTags: ['通勤']
+          },
+          duplicateItems: [],
+          duplicateRisk: 'low',
+          estimatedOutfitCount: 3,
+          missingCategoryHints: [],
+          colorStrategyHints: [],
+          recommendation: 'buy',
+          recommendationReason: '它和现有衣橱能快速接上，新增后大概率能立刻穿起来。'
+        }
+      })
+      .mockResolvedValueOnce({
+        error: null,
+        analysis: {
+          candidate: {
+            imageUrl: 'https://example.com/clean-product.jpg',
+            imageCandidates: ['https://example.com/clean-product.jpg', 'https://example.com/model-look.jpg'],
+            sourceUrl: 'https://shop.example.com/item',
+            sourceTitle: 'Soft Knit Cardigan',
+            category: '上衣',
+            subCategory: '针织衫',
+            colorCategory: '藏蓝',
+            styleTags: ['通勤']
+          },
+          duplicateItems: [],
+          duplicateRisk: 'low',
+          estimatedOutfitCount: 3,
+          missingCategoryHints: [],
+          colorStrategyHints: [],
+          recommendation: 'buy',
+          recommendationReason: '它和现有衣橱能快速接上，新增后大概率能立刻穿起来。'
+        }
+      })
+
+    render(<ShopPage itemCount={3} userId="user-1" storageBucket="ootd-images" analyzeCandidate={analyzeCandidate} />)
+
+    fireEvent.change(screen.getByRole('textbox', { name: '商品链接或图片链接' }), {
+      target: { value: 'https://shop.example.com/item' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: '开始分析' }))
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Soft Knit Cardigan 商品图')).toHaveAttribute('src', 'https://example.com/model-look.jpg')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '切换候选图 2' }))
+
+    await waitFor(() => {
+      expect(analyzeCandidate).toHaveBeenLastCalledWith({
+        sourceUrl: 'https://shop.example.com/item',
+        preferredImageUrl: 'https://example.com/clean-product.jpg'
+      })
+    })
+
+    expect(screen.getByAltText('Soft Knit Cardigan 商品图')).toHaveAttribute('src', 'https://example.com/clean-product.jpg')
   })
 })

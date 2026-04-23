@@ -47,6 +47,9 @@ describe('analyzePurchaseCandidate', () => {
     const analysis = analyzePurchaseCandidate(
       {
         imageUrl: 'https://example.com/candidate.jpg',
+        imageCandidates: ['https://example.com/candidate.jpg'],
+        sourceUrl: 'https://example.com/candidate.jpg',
+        sourceTitle: null,
         category: '上衣',
         subCategory: '针织衫',
         colorCategory: '藏蓝',
@@ -65,6 +68,9 @@ describe('analyzePurchaseCandidate', () => {
     const analysis = analyzePurchaseCandidate(
       {
         imageUrl: 'https://example.com/candidate.jpg',
+        imageCandidates: ['https://example.com/candidate.jpg'],
+        sourceUrl: 'https://example.com/candidate.jpg',
+        sourceTitle: null,
         category: '上衣',
         subCategory: '白T恤',
         colorCategory: '白色',
@@ -82,6 +88,9 @@ describe('analyzePurchaseCandidate', () => {
     const analysis = analyzePurchaseCandidate(
       {
         imageUrl: 'https://example.com/candidate.jpg',
+        imageCandidates: ['https://example.com/candidate.jpg'],
+        sourceUrl: 'https://example.com/candidate.jpg',
+        sourceTitle: null,
         category: '上衣',
         subCategory: '衬衫',
         colorCategory: '蓝色',
@@ -99,6 +108,7 @@ describe('analyzePurchaseCandidate', () => {
     const analysis = analyzePurchaseCandidate(
       {
         imageUrl: 'https://example.com/candidate.jpg',
+        imageCandidates: ['https://example.com/candidate.jpg'],
         sourceUrl: 'https://example.com/item',
         sourceTitle: '红色针织衫',
         category: '上衣',

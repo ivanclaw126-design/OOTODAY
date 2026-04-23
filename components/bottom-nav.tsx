@@ -17,7 +17,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      data-no-app-swipe
+      data-app-swipe-zone
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-3 sm:px-4"
     >
       <ul className="pointer-events-auto relative mx-auto grid max-w-[26rem] min-w-0 grid-cols-5 items-center gap-1 rounded-[1.55rem] border border-[rgba(255,255,255,0.78)] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(248,245,240,0.92)_100%)] px-2 py-1.5 shadow-[0_14px_34px_rgba(33,27,20,0.12),0_1px_0_rgba(255,255,255,0.88)_inset] backdrop-blur-md before:pointer-events-none before:absolute before:inset-x-3 before:top-1 before:h-px before:rounded-full before:bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.92)_20%,rgba(255,255,255,0.92)_80%,rgba(255,255,255,0)_100%)] before:content-['']">

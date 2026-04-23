@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OOTODAY Closet Taxonomy Icon Preview</title>
+    <style>
+      :root {
+        --bg: #f5f0e6;
+        --panel: rgba(255, 252, 247, 0.88);
+        --panel-strong: #fffdfa;
+        --line: rgba(44, 37, 29, 0.08);
+        --text: #1f1b16;
+        --muted: #6c6258;
+        --accent: #171717;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "SF Pro Text", "PingFang SC", "Noto Sans SC", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.65), transparent 30%),
+          linear-gradient(180deg, #f8f4ec 0%, #f2ece2 45%, #ebe3d8 100%);
+        color: var(--text);
+      }
+
+      .page {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 40px 24px 64px;
+      }
+
+      .hero {
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: 32px;
+        background: var(--panel);
+        box-shadow: 0 18px 40px rgba(35, 27, 18, 0.08);
+        backdrop-filter: blur(14px);
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        font-size: 12px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(34px, 5vw, 60px);
+        line-height: 1;
+        letter-spacing: -0.05em;
+      }
+
+      .hero p {
+        max-width: 760px;
+        margin: 14px 0 0;
+        font-size: 15px;
+        line-height: 1.75;
+        color: var(--muted);
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .meta span {
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(44, 37, 29, 0.08);
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .section {
+        margin-top: 26px;
+        padding: 24px;
+        border-radius: 30px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: 0 14px 36px rgba(35, 27, 18, 0.06);
+      }
+
+      .section-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.04em;
+      }
+
+      .section-header p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .count {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.76);
+        border: 1px solid rgba(44, 37, 29, 0.08);
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+      }
+
+      .category-card {
+        padding: 18px;
+        border-radius: 24px;
+        border: 1px solid rgba(44, 37, 29, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 244, 238, 0.86));
+      }
+
+      .category-icon {
+        width: 64px;
+        height: 64px;
+        display: grid;
+        place-items: center;
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 10px 22px rgba(36, 28, 20, 0.08);
+      }
+
+      .category-icon svg {
+        width: 34px;
+        height: 34px;
+        stroke: var(--accent);
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+
+      .category-card h3,
+      .color-card h3 {
+        margin: 14px 0 0;
+        font-size: 17px;
+      }
+
+      .category-card p,
+      .color-card p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .color-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+      }
+
+      .color-card {
+        padding: 16px;
+        border-radius: 22px;
+        border: 1px solid rgba(44, 37, 29, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 244, 238, 0.9));
+      }
+
+      .color-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 18px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 10px 20px rgba(36, 28, 20, 0.08);
+      }
+
+      .color-icon::after {
+        content: "";
+        position: absolute;
+        inset: 7px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+      }
+
+      .color-icon[data-pattern="stripe"]::before,
+      .color-icon[data-pattern="grid"]::before,
+      .color-icon[data-pattern="diagonal"]::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0.22;
+      }
+
+      .color-icon[data-pattern="stripe"]::before {
+        background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.95) 0 3px, transparent 3px 8px);
+      }
+
+      .color-icon[data-pattern="grid"]::before {
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.88) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.88) 1px, transparent 1px);
+        background-size: 8px 8px;
+      }
+
+      .color-icon[data-pattern="diagonal"]::before {
+        background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0 4px, transparent 4px 10px);
+      }
+
+      .footer-note {
+        margin-top: 22px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      @media (max-width: 640px) {
+        .page {
+          padding: 24px 16px 48px;
+        }
+
+        .hero,
+        .section {
+          padding: 18px;
+          border-radius: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <section class="hero">
+        <p class="eyebrow">OOTODAY / Local Preview</p>
+        <h1>Closet Taxonomy Icons</h1>
+        <p>
+          这一版先做成偏 Apple App Store 系统感的轻图标方案，目标不是花哨，而是让用户在“按类型 / 按颜色”浏览、编辑和筛选时更快扫到目标。
+          上半部分是类型图标，下半部分是颜色图标预览。
+        </p>
+        <div class="meta">
+          <span>方向：简洁线性图标</span>
+          <span>用途：Closet 浏览 / 编辑 / 过滤</span>
+          <span>当前阶段：仅本地预览，不上线</span>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>类型分类图标</h2>
+            <p>先服务于主分类识别，保证一眼能看懂，不走拟物路线。</p>
+          </div>
+          <span class="count">11 categories</span>
+        </div>
+        <div class="category-grid" id="category-grid"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>颜色分类图标</h2>
+            <p>颜色这部分我建议用“统一圆角色块 + 少量纹理差异”，比给每个颜色画不同形状更稳。</p>
+          </div>
+          <span class="count">26 colors</span>
+        </div>
+        <div class="color-grid" id="color-grid"></div>
+        <p class="footer-note">
+          建议上线时只在颜色浏览、颜色筛选、编辑下拉里用这组色块 icon，不要在主卡片里过度堆色块，不然视觉会很碎。
+        </p>
+      </section>
+    </div>
+
+    <script>
+      const categoryIcons = {
+        "上装": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10 10.5 13.6 7h4.8L22 10.5l3.5 2.3-2 4.2-2.5-1.4V25H11V15.6L8.5 17 6.5 12.8z"/></svg>`,
+        "下装": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 6.5h10l1.4 18-4.5 1.5-1.9-8.6L14 26l-4.4-1.5z"/></svg>`,
+        "全身装": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12.5 7h7l2 4-2.4 3.1.9 10.4H12L13 14.1 10.5 11z"/></svg>`,
+        "外套": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 7.5 14 6h4l3 1.5L24.5 12l-2.2 2.2-2.3-1.7V25H12V12.5l-2.3 1.7L7.5 12z"/><path d="M16 10.5V25"/></svg>`,
+        "套装": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 8.5h8v6H7z"/><path d="M9 14.5v9.5"/><path d="M13 14.5v9.5"/><path d="M17 8.5h8v6h-8z"/><path d="M19 14.5v9.5"/><path d="M23 14.5v9.5"/></svg>`,
+        "内搭": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12 8.5 14.5 11h3L20 8.5l2.5 2v13H9.5v-13z"/></svg>`,
+        "鞋履": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 18.5c2.2 0 3.2-1.8 4-4l4 2.2c1.2.7 2.3 1 4 1h1.5c2.2 0 4 1.8 4 4V24H7z"/></svg>`,
+        "包袋": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 12h14l-1 12.5H10z"/><path d="M12 12V10a4 4 0 0 1 8 0v2"/></svg>`,
+        "配饰": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 6.5 18.6 12l6 .8-4.4 4.2 1 6-5.2-2.8L10.8 23l1-6L7.4 12.8l6-.8z"/></svg>`,
+        "家居服": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11.5 7.5h9v5.3h-9z"/><path d="M11.8 12.8 9.5 24.5"/><path d="M20.2 12.8l2.3 11.7"/><path d="M14.5 12.8v11.7"/><path d="M17.5 12.8v11.7"/></svg>`,
+        "未知类型请手动选择": `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 9h14v14H9z"/><path d="M16 13.5a2.5 2.5 0 1 1 0 5v2"/><path d="M16 23.5h0"/></svg>`
+      };
+
+      const categoryDescriptions = {
+        "上装": "适合 Today / Closet 主浏览里的上身主类。",
+        "下装": "轮廓直接读作裤装 / 裙装这一组。",
+        "全身装": "一件成型的单品，用完整 silhouette 来读。",
+        "外套": "偏 blazer / jacket 轮廓，比较中性。",
+        "套装": "双件感更强，方便和单件类区分。",
+        "内搭": "保持轻量，不和上装主类抢形状。",
+        "鞋履": "更适合小尺寸展示。",
+        "包袋": "适合列表、chip、filter tag 一起复用。",
+        "配饰": "做成抽象星形，避免帽子/首饰过于单一。",
+        "家居服": "偏睡衣感，但不做过强家居符号。",
+        "未知类型请手动选择": "保底态，提醒需要人工确认。"
+      };
+
+      const categoryOrder = ["上装", "下装", "全身装", "外套", "套装", "内搭", "鞋履", "包袋", "配饰", "家居服", "未知类型请手动选择"];
+
+      const colors = [
+        ["白色", "#F7F4EE", "neutral", "grid"],
+        ["米白色", "#F2E7D4", "neutral", "grid"],
+        ["浅灰色", "#D9DADF", "neutral", "grid"],
+        ["灰色", "#A8A8AE", "neutral", "grid"],
+        ["深灰色", "#57575E", "neutral", "grid"],
+        ["黑色", "#1A1A1F", "neutral", "grid"],
+        ["米色", "#D9C6AA", "neutral", "grid"],
+        ["卡其色", "#B89A68", "neutral", "grid"],
+        ["驼色", "#A8744A", "neutral", "diagonal"],
+        ["棕色", "#7A5337", "neutral", "diagonal"],
+        ["深棕色", "#523423", "neutral", "diagonal"],
+        ["浅蓝色", "#B8D7F5", "blue", "stripe"],
+        ["蓝色", "#4D8CD9", "blue", "stripe"],
+        ["牛仔蓝", "#5C6FA8", "blue", "stripe"],
+        ["藏蓝色", "#203A68", "blue", "stripe"],
+        ["绿色", "#4E9C68", "green", "stripe"],
+        ["橄榄绿", "#5F6740", "green", "diagonal"],
+        ["黄色", "#D5AE37", "yellow", "stripe"],
+        ["橙色", "#D67A33", "orange", "stripe"],
+        ["红色", "#C94C46", "red", "stripe"],
+        ["酒红色", "#7C2E39", "red", "diagonal"],
+        ["粉色", "#E8B9C7", "pink", "stripe"],
+        ["紫色", "#8F73B5", "purple", "stripe"],
+        ["金色", "#C7A246", "metallic", "diagonal"],
+        ["银色", "#B7BDC9", "metallic", "diagonal"],
+        ["未知颜色请手动选择", "#D7D2CB", "neutral", "grid"]
+      ];
+
+      const categoryGrid = document.getElementById("category-grid");
+      const colorGrid = document.getElementById("color-grid");
+
+      categoryOrder.forEach((name) => {
+        const card = document.createElement("article");
+        card.className = "category-card";
+        card.innerHTML = `
+          <div class="category-icon">${categoryIcons[name]}</div>
+          <h3>${name}</h3>
+          <p>${categoryDescriptions[name]}</p>
+        `;
+        categoryGrid.appendChild(card);
+      });
+
+      colors.forEach(([name, hex, family, pattern]) => {
+        const card = document.createElement("article");
+        card.className = "color-card";
+        card.innerHTML = `
+          <div class="color-icon" style="background:${hex}" data-pattern="${pattern}"></div>
+          <h3>${name}</h3>
+          <p>${family} family</p>
+        `;
+        colorGrid.appendChild(card);
+      });
+    </script>
+  </body>
+</html>

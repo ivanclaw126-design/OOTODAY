@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { PrimaryButton } from '@/components/ui/button'
+import { ClosetCategoryBadge, ClosetColorBadge, ClosetCategoryIcon, ClosetColorIcon } from '@/components/closet/closet-taxonomy-icons'
 import {
   getCategoryOptions,
   getColorOptions,
@@ -99,6 +100,9 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm">
           <span>分类</span>
+          <div className="flex flex-wrap gap-2">
+            <ClosetCategoryBadge category={draft.category} />
+          </div>
           <select
             aria-label="分类"
             value={draft.category}
@@ -111,6 +115,27 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
               </option>
             ))}
           </select>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {categoryOptions.map((option) => {
+              const isActive = draft.category === option.value
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleCategoryChange(option.value)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    isActive
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                      : 'border-[var(--color-neutral-mid)] bg-white text-[var(--color-neutral-dark)]'
+                  }`}
+                >
+                  <ClosetCategoryIcon category={option.value} size="sm" />
+                  <span>{option.label}</span>
+                </button>
+              )
+            })}
+          </div>
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
@@ -133,6 +158,9 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm">
           <span>颜色</span>
+          <div className="flex flex-wrap gap-2">
+            <ClosetColorBadge color={draft.colorCategory} />
+          </div>
           <select
             aria-label="颜色"
             value={draft.colorCategory}
@@ -145,6 +173,27 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
               </option>
             ))}
           </select>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {colorOptions.map((option) => {
+              const isActive = draft.colorCategory === option.value
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setDraft((current) => ({ ...current, colorCategory: option.value }))}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    isActive
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                      : 'border-[var(--color-neutral-mid)] bg-white text-[var(--color-neutral-dark)]'
+                  }`}
+                >
+                  <ClosetColorIcon color={option.value} size="sm" />
+                  <span>{option.label}</span>
+                </button>
+              )
+            })}
+          </div>
         </label>
 
         <label className="flex flex-col gap-1 text-sm">

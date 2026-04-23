@@ -45,6 +45,7 @@ describe('analyzeShopCandidateAction', () => {
     resolveShopInput.mockResolvedValue({
       error: '请输入可访问的商品链接或图片链接',
       imageUrl: null,
+      imageCandidates: [],
       sourceTitle: null,
       sourceUrl: null
     })
@@ -62,6 +63,7 @@ describe('analyzeShopCandidateAction', () => {
     resolveShopInput.mockResolvedValue({
       error: null,
       imageUrl: 'https://example.com/item.jpg',
+      imageCandidates: ['https://example.com/item.jpg'],
       sourceTitle: 'Soft Knit Cardigan',
       sourceUrl: 'https://shop.example.com/item'
     })
@@ -95,6 +97,7 @@ describe('analyzeShopCandidateAction', () => {
     expect(result.error).toBeNull()
     expect(result.analysis?.candidate.subCategory).toBe('针织衫')
     expect(result.analysis?.candidate.sourceTitle).toBe('Soft Knit Cardigan')
+    expect(result.analysis?.candidate.imageCandidates).toEqual(['https://example.com/item.jpg'])
     expect(result.analysis?.estimatedOutfitCount).toBe(1)
     expect(result.analysis?.recommendation).toBe('consider')
   })
@@ -104,6 +107,7 @@ describe('analyzeShopCandidateAction', () => {
     resolveShopInput.mockResolvedValue({
       error: null,
       imageUrl: 'https://example.com/item.jpg',
+      imageCandidates: ['https://example.com/item.jpg'],
       sourceTitle: 'Industrial Socket',
       sourceUrl: 'https://shop.example.com/item'
     })
@@ -121,8 +125,40 @@ describe('analyzeShopCandidateAction', () => {
     const { analyzeShopCandidateAction } = await import('@/app/shop/actions')
 
     await expect(analyzeShopCandidateAction({ sourceUrl: 'https://shop.example.com/item' })).resolves.toEqual({
-      error: '当前只支持上衣、裤装、裙装、连衣裙、外套这类服饰单品分析，请换一个服饰商品链接或图片试试',
+      error: '当前只支持上装、下装、全身装、外套这类服饰单品分析，请换一个服饰商品链接或图片试试',
       analysis: null
+    })
+  })
+
+  it('passes the preferred candidate image when users switch product images', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    resolveShopInput.mockResolvedValue({
+      error: null,
+      imageUrl: 'https://example.com/clean-product.jpg',
+      imageCandidates: ['https://example.com/clean-product.jpg', 'https://example.com/model-look.jpg'],
+      sourceTitle: 'Soft Knit Cardigan',
+      sourceUrl: 'https://shop.example.com/item'
+    })
+    analyzeItemImage.mockResolvedValue({
+      category: '上装',
+      subCategory: '针织衫',
+      colorCategory: '藏蓝',
+      styleTags: ['通勤']
+    })
+    getClosetView.mockResolvedValue({
+      itemCount: 1,
+      items: []
+    })
+
+    const { analyzeShopCandidateAction } = await import('@/app/shop/actions')
+
+    await analyzeShopCandidateAction({
+      sourceUrl: 'https://shop.example.com/item',
+      preferredImageUrl: 'https://example.com/clean-product.jpg'
+    })
+
+    expect(resolveShopInput).toHaveBeenCalledWith('https://shop.example.com/item', {
+      preferredImageUrl: 'https://example.com/clean-product.jpg'
     })
   })
 })
