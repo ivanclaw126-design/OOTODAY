@@ -391,7 +391,7 @@ describe('TodayPage', () => {
       </ThemeProvider>
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '打开设置' }))
+    fireEvent.click(screen.getByRole('button', { name: '设置' }))
 
     expect(screen.getByText('界面配色主题')).toBeInTheDocument()
     expect(screen.getByText('Gallery Blue')).toBeInTheDocument()
