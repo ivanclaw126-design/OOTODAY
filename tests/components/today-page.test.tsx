@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ThemeProvider } from '@/components/theme/theme-provider'
 import { TodayPage } from '@/components/today/today-page'
 
 const updateCity = vi.fn().mockResolvedValue({ error: null })
@@ -43,6 +44,9 @@ describe('TodayPage', () => {
     updateHistoryEntry.mockResolvedValue({ error: null, entry: null })
     deleteHistoryEntry.mockReset()
     deleteHistoryEntry.mockResolvedValue({ error: null })
+    document.documentElement.removeAttribute('data-theme')
+    document.documentElement.removeAttribute('data-theme-switching')
+    window.localStorage.clear()
   })
 
   afterEach(() => {
@@ -359,5 +363,46 @@ describe('TodayPage', () => {
         confirmPassword: 'betterpass123'
       })
     })
+  })
+
+  it('shows theme cards in settings and applies the selected theme', async () => {
+    render(
+      <ThemeProvider>
+        <TodayPage
+          view={{
+            itemCount: 2,
+            city: 'Shanghai',
+            accountEmail: 'user@example.com',
+            passwordBootstrapped: true,
+            passwordChangedAt: null,
+            weatherState: { status: 'unavailable', city: 'Shanghai' },
+            recommendations: [recommendation],
+            recommendationError: false,
+            ootdStatus: { status: 'not-recorded' },
+            recentOotdHistory: []
+          }}
+          updateCity={updateCity}
+          submitOotd={submitOotd}
+          refreshRecommendations={refreshRecommendations}
+          changePassword={changePassword}
+          updateHistoryEntry={updateHistoryEntry}
+          deleteHistoryEntry={deleteHistoryEntry}
+        />
+      </ThemeProvider>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '打开设置' }))
+
+    expect(screen.getByText('界面配色主题')).toBeInTheDocument()
+    expect(screen.getByText('Gallery Blue')).toBeInTheDocument()
+    expect(screen.getByText('Luxury editorial tone')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到 Gallery Blue' }))
+
+    await waitFor(() => {
+      expect(document.documentElement.dataset.theme).toBe('gallery-blue')
+    })
+
+    expect(window.localStorage.getItem('ootoday-theme')).toBe('gallery-blue')
   })
 })

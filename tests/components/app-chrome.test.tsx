@@ -16,6 +16,8 @@ describe('AppChrome', () => {
     push.mockReset()
     prefetch.mockReset()
     usePathnameMock.mockReset()
+    document.documentElement.removeAttribute('data-theme')
+    window.localStorage.clear()
   })
 
   afterEach(() => {
@@ -120,5 +122,18 @@ describe('AppChrome', () => {
     })
 
     expect(push).not.toHaveBeenCalled()
+  })
+
+  it('hydrates the stored theme onto the document root', () => {
+    usePathnameMock.mockReturnValue('/today')
+    window.localStorage.setItem('ootoday-theme', 'gallery-blue')
+
+    render(
+      <AppChrome>
+        <div>page body</div>
+      </AppChrome>
+    )
+
+    expect(document.documentElement.dataset.theme).toBe('gallery-blue')
   })
 })

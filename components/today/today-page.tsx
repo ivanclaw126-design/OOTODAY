@@ -2,6 +2,7 @@
 
 import { startTransition, useState } from 'react'
 import { AppShell } from '@/components/app-shell'
+import { ThemeSettingsCard } from '@/components/theme/theme-settings-card'
 import { TodayAccountSecurityCard } from '@/components/today/today-account-security-card'
 import { TodayCityForm } from '@/components/today/today-city-form'
 import { TodayCityPromptCard } from '@/components/today/today-city-prompt-card'
@@ -158,14 +159,14 @@ export function TodayPage({
             role="dialog"
             aria-modal="true"
             aria-label="Today 设置"
-            className="relative z-10 w-full max-w-lg"
+            className="relative z-10 w-full max-w-3xl"
           >
-            <div className="rounded-[1.75rem] border border-black/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,245,240,0.95)_100%)] p-5 shadow-[0_24px_60px_rgba(26,26,26,0.18)]">
+            <div className="max-h-[min(88vh,860px)] overflow-hidden rounded-[1.75rem] border border-black/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,245,240,0.95)_100%)] p-5 shadow-[0_24px_60px_rgba(26,26,26,0.18)]">
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-primary)]">Settings</p>
-                  <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">账号与登录设置</h2>
-                  <p className="text-sm text-[var(--color-neutral-dark)]">账号操作收在这里，需要时再处理。</p>
+                  <h2 className="text-lg font-semibold text-[var(--color-neutral-dark)]">主题与账号设置</h2>
+                  <p className="text-sm text-[var(--color-neutral-dark)]">主题切换和账号操作都收在这里，避免打断 Today 主决策区的使用节奏。</p>
                 </div>
                 <button
                   type="button"
@@ -176,12 +177,15 @@ export function TodayPage({
                 </button>
               </div>
 
-              <TodayAccountSecurityCard
-                email={view.accountEmail}
-                passwordBootstrapped={view.passwordBootstrapped}
-                passwordChangedAt={view.passwordChangedAt}
-                changePassword={changePassword}
-              />
+              <div className="max-h-[calc(min(88vh,860px)-5.75rem)] space-y-4 overflow-y-auto pr-1">
+                <ThemeSettingsCard />
+                <TodayAccountSecurityCard
+                  email={view.accountEmail}
+                  passwordBootstrapped={view.passwordBootstrapped}
+                  passwordChangedAt={view.passwordChangedAt}
+                  changePassword={changePassword}
+                />
+              </div>
             </div>
           </div>
         </div>
