@@ -2,13 +2,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getSession = vi.fn()
 const eq = vi.fn(() => Promise.resolve({ error: null }))
-const from = vi.fn(() => ({ update: () => ({ eq }) }))
+const maybeSingle = vi.fn(() => Promise.resolve({ data: { city: 'Shanghai' } }))
+const selectProfiles = vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle })) }))
+const updateProfiles = vi.fn(() => ({ eq }))
+const from = vi.fn((table: string) => {
+  if (table === 'profiles') {
+    return {
+      update: updateProfiles,
+      select: selectProfiles
+    }
+  }
+
+  return { update: () => ({ eq }) }
+})
 const updateUser = vi.fn(() => Promise.resolve({ error: null }))
 const getUser = vi.fn(() => Promise.resolve({ data: { user: { user_metadata: {} } } }))
 const createSupabaseServerClient = vi.fn(async () => ({ from, auth: { updateUser, getUser } }))
 const revalidatePath = vi.fn()
-const redirect = vi.fn()
 const saveTodayOotdFeedback = vi.fn()
+const getClosetView = vi.fn()
+const getWeather = vi.fn()
+const generateTodayRecommendations = vi.fn()
 
 vi.mock('@/lib/auth/get-session', () => ({
   getSession
@@ -22,18 +36,30 @@ vi.mock('@/lib/today/save-today-ootd-feedback', () => ({
   saveTodayOotdFeedback
 }))
 
-vi.mock('next/cache', () => ({
-  revalidatePath
+vi.mock('@/lib/closet/get-closet-view', () => ({
+  getClosetView
 }))
 
-vi.mock('next/navigation', () => ({
-  redirect
+vi.mock('@/lib/today/get-weather', () => ({
+  getWeather
+}))
+
+vi.mock('@/lib/today/generate-recommendations', () => ({
+  generateTodayRecommendations
+}))
+
+vi.mock('next/cache', () => ({
+  revalidatePath
 }))
 
 describe('today actions', () => {
   beforeEach(() => {
     getSession.mockReset()
     eq.mockClear()
+    maybeSingle.mockReset()
+    maybeSingle.mockResolvedValue({ data: { city: 'Shanghai' } })
+    selectProfiles.mockClear()
+    updateProfiles.mockClear()
     from.mockClear()
     createSupabaseServerClient.mockClear()
     updateUser.mockReset()
@@ -41,8 +67,10 @@ describe('today actions', () => {
     getUser.mockReset()
     getUser.mockResolvedValue({ data: { user: { user_metadata: {} } } })
     revalidatePath.mockReset()
-    redirect.mockReset()
     saveTodayOotdFeedback.mockReset()
+    getClosetView.mockReset()
+    getWeather.mockReset()
+    generateTodayRecommendations.mockReset()
   })
 
   it('updates the signed-in user city and revalidates Today', async () => {
@@ -130,13 +158,24 @@ describe('today actions', () => {
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
-  it('revalidates and redirects when refreshing recommendations', async () => {
+  it('returns a fresh recommendation batch without redirecting the page', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    getClosetView.mockResolvedValue({
+      itemCount: 2,
+      items: [{ id: 'item-1' }, { id: 'item-2' }]
+    })
+    getWeather.mockResolvedValue({ city: 'Shanghai', temperatureC: 24, conditionLabel: '晴', isWarm: true, isCold: false })
+    generateTodayRecommendations.mockReturnValue([{ id: 'rec-1' }, { id: 'rec-2' }])
+
     const { refreshTodayRecommendationsAction } = await import('@/app/today/actions')
 
-    await refreshTodayRecommendationsAction(3)
+    await expect(refreshTodayRecommendationsAction(3)).resolves.toEqual({
+      recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }]
+    })
 
-    expect(revalidatePath).toHaveBeenCalledWith('/today')
-    expect(redirect).toHaveBeenCalledWith('/today?offset=3')
+    expect(getClosetView).toHaveBeenCalledWith('user-1')
+    expect(generateTodayRecommendations).toHaveBeenCalledWith([{ id: 'item-1' }, { id: 'item-2' }], expect.any(Object), 3)
+    expect(revalidatePath).not.toHaveBeenCalled()
   })
 
   it('updates the signed-in user password and records password state', async () => {

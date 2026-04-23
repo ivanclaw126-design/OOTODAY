@@ -5,15 +5,6 @@ export async function getClosetView(userId: string, options?: { limit?: number }
   const supabase = await createSupabaseServerClient()
   const limit = options?.limit ?? 6
 
-  const { count, error: countError } = await supabase
-    .from('items')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-
-  if (countError) {
-    throw countError
-  }
-
   let query = supabase
     .from('items')
     .select('id, image_url, category, sub_category, color_category, style_tags, last_worn_date, wear_count, created_at')
@@ -42,8 +33,24 @@ export async function getClosetView(userId: string, options?: { limit?: number }
     createdAt: item.created_at
   }))
 
+  if (limit === 0) {
+    return {
+      itemCount: items.length,
+      items
+    }
+  }
+
+  const { count, error: countError } = await supabase
+    .from('items')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
+  if (countError) {
+    throw countError
+  }
+
   return {
-    itemCount: count ?? 0,
+    itemCount: count ?? items.length,
     items
   }
 }

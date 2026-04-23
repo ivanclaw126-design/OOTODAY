@@ -1,11 +1,13 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth/get-session'
 import { validatePassword } from '@/lib/auth/password'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getClosetView } from '@/lib/closet/get-closet-view'
+import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { saveTodayOotdFeedback } from '@/lib/today/save-today-ootd-feedback'
+import { getWeather } from '@/lib/today/get-weather'
 import type { TodayRecommendation } from '@/lib/today/types'
 
 export async function updateTodayCityAction({ city }: { city: string }) {
@@ -59,8 +61,28 @@ export async function submitTodayOotdAction({
 }
 
 export async function refreshTodayRecommendationsAction(offset: number) {
-  revalidatePath('/today')
-  redirect(`/today?offset=${offset}`)
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  const supabase = await createSupabaseServerClient()
+  const [{ data: profile }, closet] = await Promise.all([
+    supabase.from('profiles').select('city').eq('id', session.user.id).maybeSingle(),
+    getClosetView(session.user.id)
+  ])
+
+  if (closet.itemCount === 0) {
+    return { recommendations: [] }
+  }
+
+  const city = profile?.city ?? null
+  const weather = city ? await getWeather(city) : null
+
+  return {
+    recommendations: generateTodayRecommendations(closet.items, weather, offset)
+  }
 }
 
 export async function changeTodayPasswordAction({

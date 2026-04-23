@@ -59,7 +59,7 @@ export default async function TodayRoute({
   async function refreshRecommendations() {
     'use server'
 
-    await refreshTodayRecommendationsAction((Number.isNaN(offset) ? 0 : offset) + 1)
+    return refreshTodayRecommendationsAction((Number.isNaN(offset) ? 0 : offset) + 1)
   }
 
   async function changePassword(input: { password: string; confirmPassword: string }) {

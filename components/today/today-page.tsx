@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { startTransition, useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { TodayAccountSecurityCard } from '@/components/today/today-account-security-card'
 import { TodayCityForm } from '@/components/today/today-city-form'
@@ -25,11 +25,13 @@ export function TodayPage({
     recommendation: TodayRecommendation
     satisfactionScore: number
   }) => Promise<{ error: string | null; wornAt: string | null }>
-  refreshRecommendations: () => Promise<void>
+  refreshRecommendations: () => Promise<{ recommendations: TodayRecommendation[] }>
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
 }) {
   const [isEditingCity, setIsEditingCity] = useState(false)
   const [ootdStatus, setOotdStatus] = useState<TodayOotdStatus>(view.ootdStatus)
+  const [recommendations, setRecommendations] = useState(view.recommendations)
+  const [isRefreshingRecommendations, setIsRefreshingRecommendations] = useState(false)
 
   async function submitTodayOotd(input: {
     recommendation: TodayRecommendation
@@ -42,6 +44,19 @@ export function TodayPage({
     }
 
     return result
+  }
+
+  async function handleRefreshRecommendations() {
+    setIsRefreshingRecommendations(true)
+
+    try {
+      const result = await refreshRecommendations()
+      startTransition(() => {
+        setRecommendations(result.recommendations)
+      })
+    } finally {
+      setIsRefreshingRecommendations(false)
+    }
   }
 
   return (
@@ -68,15 +83,15 @@ export function TodayPage({
             ) : null}
 
             <TodayRecommendationList
-              recommendations={view.recommendations}
+              recommendations={recommendations}
               recommendationError={view.recommendationError}
               ootdStatus={ootdStatus}
               submitOotd={submitTodayOotd}
             />
 
             <div className="flex flex-col gap-2 sm:flex-row">
-              <SecondaryButton type="button" onClick={() => void refreshRecommendations()}>
-                换一批推荐
+              <SecondaryButton type="button" onClick={() => void handleRefreshRecommendations()} disabled={isRefreshingRecommendations}>
+                {isRefreshingRecommendations ? '正在整理新推荐...' : '换一批推荐'}
               </SecondaryButton>
               <SecondaryButton type="button" onClick={() => setIsEditingCity(true)}>
                 {view.city ? '修改城市' : '设置城市'}

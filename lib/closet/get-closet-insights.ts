@@ -2,7 +2,11 @@ import { buildClosetInsights } from '@/lib/closet/build-closet-insights'
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
-export async function getClosetInsights(userId: string) {
+export async function getClosetInsights(userId: string, preloadedItems?: ClosetItemCardData[]) {
+  if (preloadedItems) {
+    return buildClosetInsights(preloadedItems)
+  }
+
   const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase

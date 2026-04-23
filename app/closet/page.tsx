@@ -63,7 +63,8 @@ export default async function ClosetRoute() {
   await ensureProfile(userId)
 
   const { storageBucket } = getEnv()
-  const [closet, insights] = await Promise.all([getClosetView(userId, { limit: 0 }), getClosetInsights(userId)])
+  const closet = await getClosetView(userId, { limit: 0 })
+  const insights = await getClosetInsights(userId, closet.items)
 
   return (
     <ClosetPage
