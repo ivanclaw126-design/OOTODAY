@@ -2,10 +2,13 @@ import type { ReactNode } from 'react'
 
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="min-h-screen pb-36 md:pb-24">
-      <header className="mx-auto flex max-w-4xl flex-col gap-1 px-4 pb-2 pt-4 sm:px-6 sm:pt-5">
+    <div className="min-h-screen pb-32 md:pb-20">
+      <header className="mx-auto flex max-w-4xl flex-col gap-1 px-4 pb-1.5 pt-3 sm:px-6 sm:pb-2 sm:pt-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">OOTODAY</p>
-        <h1 aria-label={title} className="max-w-2xl text-[1.7rem] leading-[1] font-semibold tracking-[-0.04em] text-[var(--color-primary)] sm:text-[2rem]">
+        <h1
+          aria-label={title}
+          className="max-w-2xl text-[1.28rem] leading-[0.94] font-semibold tracking-[-0.04em] text-[var(--color-primary)] sm:text-[1.85rem]"
+        >
           {title}
         </h1>
       </header>
