@@ -9,7 +9,7 @@
 - Closet 已具备第一阶段低成本导入闭环：本地图片上传、相册批量导入、商品链接或图片链接导入、拼图拆分导入，以及保存后继续浏览和编辑；单品还支持可选 `algorithm_meta`，用于后续更准确判断 slot、层次角色、轮廓、材质重量、正式度、保暖度、舒适度、视觉重量和图案。
 - Closet 已具备第一阶段整理能力：重复提醒、闲置提醒、基础缺口、优先动作清单、按类型/按颜色分组浏览、编辑识别结果、重新识别、删除、图片右转 90°。
 - Today + OOTD 已形成主链路：基于衣橱生成规则型推荐，支持天气增强、城市保存、换一批推荐、记录今日已穿、满意度反馈、最近历史查看与编辑/删除。
-- 推荐偏好引擎已完成共享评价体系阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序、低频 deterministic “灵感尝试”推荐、跨 Today / Shop / Looks / Travel 的推荐文案统一，以及共享 outfit evaluator 对颜色、轮廓、层次、视觉中心、场景、天气、完整度和新鲜度的统一评分。
+- 推荐偏好引擎已完成共享评价体系阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序、Today 第 3 套安全灵感套装、跨 Today / Shop / Looks / Travel 的推荐文案统一，以及共享 outfit evaluator 对颜色、轮廓、层次、视觉中心、场景、天气、完整度和新鲜度的统一评分。
 - Beta 首轮体验已开始收敛：登录后入口会按衣橱状态自动分流到 `Closet onboarding` 或 `Today`，Landing / Closet / Today 已接入统一 first-run checklist、明确的下一步 CTA 与可达的反馈入口。
 - Beta 最小观测层已落地：Landing、登录邮件发送、Closet 导入启动与保存、Today 浏览、OOTD 提交、反馈入口打开已接入轻量 telemetry；登录失败、导入失败、识别失败、Today 提交失败等高价值路径已接入统一 issue reporting，且失败不会阻塞主流程。
 - Today / Closet 已完成第一轮 server-client 边界收敛：页面壳、状态头和主路径提示已回到服务端，交互性的推荐/历史/设置与衣橱导入/浏览/编辑收敛到更小的客户端工作区；路由层已补 Suspense fallback，并已完成一轮 dev browser QA 与 bundle manifest 复核。
@@ -51,6 +51,8 @@
 - Today 已补首轮闭环提示：空衣橱态会直接引导去 `Closet onboarding`，首次成功推荐后会强调“记录一次反馈”，并新增轻量的未来 1-3 天预看占位区。
 - Today / Closet 的高频交互区已从整页客户端壳里拆出；当前 manifest 复核显示 Today 已较轻，Closet 仍因导入/图片工作流保留较大客户端岛，后续优化应聚焦导入区懒加载而非继续扩功能。
 - Today 推荐已接入共享 outfit evaluator：候选池会按天气/季节/暖度先过滤再排序，15 度这类微凉天气在有替代物时不会优先推荐短裤、凉鞋/拖鞋；最终排序仍读取 `finalWeights`，因此问卷和 Today 评分会真实改变颜色、轮廓、层次、场景、天气等维度权重。
+- Today 的“为什么推荐这套”已改为展示当前套装贡献最高的评分亮点，例如完整度、天气舒适、配色、场景、比例、层次、视觉重点和新鲜度，不再固定拼接同一组解释。
+- Today 默认会把第 3 套作为“灵感套装”，但只从配色、天气舒适、场景适配、完整度和 hard avoids 都过线的候选里挑，并优先选择与前两套主件/颜色/外层差异更高的组合；`exploration.rate = 0` 时仍不插入灵感套装。
 
 ### 4. Shop Purchase Analysis MVP
 

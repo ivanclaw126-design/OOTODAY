@@ -11,9 +11,9 @@ import {
   isVividColor,
   scoreColorCompatibility
 } from '@/lib/closet/taxonomy'
-import { buildInspirationAttemptLabel, buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
+import { buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
 import { DEFAULT_PREFERENCE_PROFILE, DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
-import { isGoodInspirationCandidate, pickDeterministicInspirationCandidate, shouldShowInspiration } from '@/lib/recommendation/exploration'
+import { isGoodInspirationCandidate } from '@/lib/recommendation/exploration'
 import {
   evaluateOutfit,
   filterWeatherSuitableItems,
@@ -61,6 +61,19 @@ type OutfitDraft = {
   mainIds: string[]
 }
 
+type ScoreHighlightKey = keyof ScoreWeights
+
+const SCORE_HIGHLIGHT_KEYS: ScoreHighlightKey[] = [
+  'completeness',
+  'weatherComfort',
+  'colorHarmony',
+  'sceneFit',
+  'silhouetteBalance',
+  'layering',
+  'focalPoint',
+  'freshness'
+]
+
 function toRecommendationItem(item: ClosetItemCardData): TodayRecommendationItem {
   return {
     id: item.id,
@@ -82,6 +95,33 @@ function clampScore(score: number) {
 
 function buildTodayColorNotes(colors: Array<string | null | undefined>) {
   return buildRecommendationColorNotes(colors, 'today').map((note) => note.replace(/。$/u, ''))
+}
+
+function describeItem(item: ClosetItemCardData | null | undefined) {
+  return item ? item.subCategory ?? item.category : ''
+}
+
+function getUniqueColors(draft: OutfitDraft) {
+  return [...new Set(getSelectedItems(draft).map((item) => item.colorCategory).filter((color): color is string => Boolean(color)))]
+}
+
+function getSharedStyleTag(draft: OutfitDraft) {
+  const items = getSelectedItems(draft)
+  const tags = items.flatMap((item) => item.styleTags)
+
+  return tags.find((tag, index) => tags.indexOf(tag) !== index) ?? tags[0] ?? null
+}
+
+function getFocusItem(draft: OutfitDraft) {
+  const selectedItems = getSelectedItems(draft)
+
+  return selectedItems.find((item) => isVividColor(item.colorCategory)) ??
+    selectedItems.find((item) => item.algorithmMeta?.visualWeight !== undefined && item.algorithmMeta.visualWeight >= 4) ??
+    draft.outerLayer ??
+    draft.bag ??
+    draft.shoes ??
+    selectedItems[0] ??
+    null
 }
 
 function compareWearPriority(a: ClosetItemCardData, b: ClosetItemCardData) {
@@ -357,52 +397,149 @@ function getFinalScore(componentScores: ScoreWeights, weights: ScoreWeights) {
   return getWeightedOutfitScore(componentScores, weights)
 }
 
-function buildPairReason(draft: OutfitDraft, weather: TodayWeather | null) {
-  const top = draft.top
-  const bottom = draft.bottom
+function buildScoreHighlight(
+  key: ScoreHighlightKey,
+  draft: OutfitDraft,
+  componentScores: ScoreWeights,
+  weather: TodayWeather | null,
+  profile: PreferenceProfile
+) {
+  const score = componentScores[key]
+  const scoreText = Math.round(score)
+  const colorText = getUniqueColors(draft).slice(0, 4).join(' / ')
+  const sharedTag = getSharedStyleTag(draft)
+
+  if (key === 'completeness') {
+    if (score >= 90) {
+      const finishers = [draft.outerLayer ? '外层' : null, draft.shoes ? '鞋履' : null, draft.bag ? '包袋' : null]
+        .filter(Boolean)
+        .join('、')
+
+      return `完整度 ${scoreText}：${finishers || '核心单品'}已补齐，出门不用再补关键 slot`
+    }
+
+    return `完整度 ${scoreText}：核心组合能成立，但${draft.missingSlots.map((slot) => slot === 'outerLayer' ? '外层' : slot === 'shoes' ? '鞋履' : slot === 'bag' ? '包袋' : '单品').join('、')}还可继续补齐`
+  }
+
+  if (key === 'weatherComfort') {
+    if (!weather) {
+      return `舒适度 ${scoreText}：单品厚薄和鞋履都在日常安全区`
+    }
+
+    if (weather.isCold) {
+      return draft.outerLayer
+        ? `天气舒适 ${scoreText}：${describeItem(draft.outerLayer)}负责保暖，冷天不会只靠内搭硬撑`
+        : `天气舒适 ${scoreText}：核心单品可先成立，但冷天外层仍是短板`
+    }
+
+    if (isMildCoolWeather(weather)) {
+      return draft.outerLayer
+        ? `天气舒适 ${scoreText}：${weather.temperatureC}度微凉，${describeItem(draft.outerLayer)}负责控温`
+        : `天气舒适 ${scoreText}：${weather.temperatureC}度微凉，核心单品偏轻，建议补外层`
+    }
+
+    if (weather.isWarm) {
+      return `天气舒适 ${scoreText}：偏暖天气里主件轻量，没有额外堆厚重外层`
+    }
+
+    return `天气舒适 ${scoreText}：温度温和，单品厚薄不用做极端取舍`
+  }
+
+  if (key === 'colorHarmony') {
+    const colorNotes = buildTodayColorNotes(getSelectedItems(draft).map((item) => item.colorCategory))
+    const colorPoint = colorNotes[0] ? colorNotes[0].replace(/^基础色托底，?/u, '') : '颜色冲突低'
+
+    return `配色 ${scoreText}：${colorText || '现有颜色'}，${colorPoint}`
+  }
+
+  if (key === 'sceneFit') {
+    const sceneLabel = profile.preferredScenes.includes('work')
+      ? '通勤'
+      : profile.preferredScenes.includes('date')
+        ? '约会'
+        : profile.preferredScenes.includes('travel')
+          ? '出行'
+          : '日常'
+
+    return `场景 ${scoreText}：${sharedTag ? `风格线索集中在${sharedTag}` : '单品风格不互相打架'}，适合${sceneLabel}使用`
+  }
+
+  if (key === 'silhouetteBalance') {
+    if (draft.dress) {
+      return `比例 ${scoreText}：${describeItem(draft.dress)}一件成型，轮廓不会被上下装切碎`
+    }
+
+    if (draft.top && draft.bottom) {
+      return `比例 ${scoreText}：${describeItem(draft.top)}配${describeItem(draft.bottom)}，上装和下装体量相对平衡`
+    }
+
+    return `比例 ${scoreText}：先保住已有主件轮廓，再补缺失单品`
+  }
+
+  if (key === 'layering') {
+    if (draft.outerLayer) {
+      return `层次 ${scoreText}：${describeItem(draft.outerLayer)}只加一层，温差和轮廓都更清楚`
+    }
+
+    return `层次 ${scoreText}：不强行叠穿，保留更轻的日常轮廓`
+  }
+
+  if (key === 'focalPoint') {
+    const focusItem = getFocusItem(draft)
+
+    return focusItem
+      ? `视觉重点 ${scoreText}：重点落在${describeItem(focusItem)}，没有同时堆多个抢眼单品`
+      : `视觉重点 ${scoreText}：整体收得干净，没有多焦点竞争`
+  }
+
+  const freshItem = getSelectedItems(draft).find((item) => !item.lastWornDate) ?? getSelectedItems(draft).sort(compareWearPriority)[0]
+
+  return freshItem
+    ? `新鲜度 ${scoreText}：优先调用${describeItem(freshItem)}，减少连续穿同一件的疲劳`
+    : `新鲜度 ${scoreText}：穿着频率仍在可接受范围`
+}
+
+function buildHighScoreReason(
+  draft: OutfitDraft,
+  componentScores: ScoreWeights,
+  weather: TodayWeather | null,
+  profile: PreferenceProfile,
+  weights: ScoreWeights
+) {
   const parts: string[] = []
 
-  if (!top || !bottom) {
-    return buildReason([
-      weather?.isCold ? '天气偏冷，先从已有单品开始，后续补齐外层和下装' : '',
-      '先用已有单品起一套思路'
-    ])
+  if (draft.outfitKind === 'partial') {
+    parts.push(weather?.isCold ? '先用已有单品起一套思路，冷天后续优先补外层' : '先用已有单品起一套思路')
   }
 
-  const sharedTag = top.styleTags.find((tag) => bottom.styleTags.includes(tag))
+  const rankedKeys = SCORE_HIGHLIGHT_KEYS
+    .filter((key) => componentScores[key] >= 68)
+    .sort((left, right) => {
+      const leftImpact = componentScores[left] * weights[left]
+      const rightImpact = componentScores[right] * weights[right]
 
-  if (weather?.isWarm) {
-    parts.push('天气偏暖，优先轻量组合')
-  }
+      if (rightImpact !== leftImpact) {
+        return rightImpact - leftImpact
+      }
 
-  if (weather?.isCold) {
-    parts.push(draft.outerLayer ? '天气偏冷，已补上外层' : '天气偏冷，建议补一件外层')
-  } else if (weather && isMildCoolWeather(weather)) {
-    parts.push(draft.outerLayer ? '天气微凉，已补轻外层' : '天气微凉，建议补一件轻外层')
-  }
+      return componentScores[right] - componentScores[left]
+    })
 
-  parts.push(...buildTodayColorNotes(getSelectedItems(draft).map((item) => item.colorCategory)))
+  for (const key of rankedKeys) {
+    const highlight = buildScoreHighlight(key, draft, componentScores, weather, profile)
+    const dimension = highlight.split(' ')[0]
 
-  if (!parts.some((part) => part.includes('同色系') || part.includes('基础色') || part.includes('亮色'))) {
-    const colorScore = scoreColorCompatibility(top.colorCategory, bottom.colorCategory)
+    if (!parts.some((part) => part.startsWith(dimension))) {
+      parts.push(highlight)
+    }
 
-    if (colorScore >= 2) {
-      parts.push('颜色有呼应，日常直接穿也不容易出错')
-    } else if (colorScore === 1) {
-      parts.push('配色更有存在感，适合想要一点变化')
-    } else {
-      parts.push('先靠基础轮廓稳住，再用配饰补完成度')
+    if (parts.length >= 4) {
+      break
     }
   }
 
-  if (draft.shoes || draft.bag) {
-    parts.push('鞋包已经补齐，出门完整度更高')
-  }
-
-  if (sharedTag) {
-    parts.push(`风格统一在${sharedTag}`)
-  } else if (isNeutralColor(top.colorCategory) || isNeutralColor(bottom.colorCategory)) {
-    parts.push('中性色打底，容错率更高')
+  if (parts.length === 0) {
+    parts.push('这套分数集中在基础可穿性，适合先作为日常安全组合')
   }
 
   return buildReason(parts)
@@ -431,36 +568,16 @@ function buildMissingSlotReason(draft: OutfitDraft) {
   return parts
 }
 
-function buildDressReason(draft: OutfitDraft, weather: TodayWeather | null) {
-  const dress = draft.dress
-
-  if (!dress) {
-    return '先用已有单品起一套思路'
-  }
-
-  const parts = [
-    weather?.isCold
-      ? draft.outerLayer
-        ? '天气偏冷，用外层补足保暖'
-        : '天气偏冷，建议补一件外层'
-      : weather && isMildCoolWeather(weather)
-        ? draft.outerLayer
-          ? '天气微凉，用轻外层处理温差'
-          : '天气微凉，建议补一件轻外层'
-      : '一件完成主造型，省决策成本',
-    draft.outerLayer && scoreColorCompatibility(dress.colorCategory, draft.outerLayer.colorCategory) >= 2 ? '外层和主件颜色衔接自然' : '',
-    ...buildTodayColorNotes(getSelectedItems(draft).map((item) => item.colorCategory)),
-    isVividColor(dress.colorCategory) ? '主件颜色已经足够有重点，其他部分可以收一收' : '',
-    draft.shoes || draft.bag ? '鞋包补上后完成度更稳' : '',
-    dress.styleTags[0] ? `风格偏${dress.styleTags[0]}` : ''
-  ]
-
-  return buildReason(parts)
-}
-
-function toRecommendation(draft: OutfitDraft, componentScores: ScoreWeights, score: number, weather: TodayWeather | null): TodayRecommendation {
+function toRecommendation(
+  draft: OutfitDraft,
+  componentScores: ScoreWeights,
+  score: number,
+  weather: TodayWeather | null,
+  profile: PreferenceProfile,
+  weights: ScoreWeights
+): TodayRecommendation {
   const confidence = clampScore(componentScores.completeness * 0.52 + score * 0.48)
-  const coreReason = draft.outfitKind === 'onePiece' ? buildDressReason(draft, weather) : buildPairReason(draft, weather)
+  const coreReason = buildHighScoreReason(draft, componentScores, weather, profile, weights)
 
   return {
     id: draft.id,
@@ -529,7 +646,7 @@ function buildRecommendationCandidates(
       score,
       mainIds: completedDraft.mainIds,
       draft: completedDraft,
-      recommendation: toRecommendation(completedDraft, componentScores, score, weather)
+      recommendation: toRecommendation(completedDraft, componentScores, score, weather, profile, weights)
     })
   }
 
@@ -672,37 +789,130 @@ function toInspirationSignal(candidate: RecommendationCandidate, profile: Prefer
   }
 }
 
-function buildInspirationDifference(candidate: RecommendationCandidate, profile: PreferenceProfile) {
+function buildInspirationDifference(candidate: RecommendationCandidate, profile: PreferenceProfile, baselineRecommendations: TodayRecommendation[] = []) {
   const selectedItems = getSelectedItems(candidate.draft)
   const vividItem = selectedItems.find((item) => isVividColor(item.colorCategory))
+  const baselineColors = new Set(
+    baselineRecommendations
+      .flatMap((recommendation) => [
+        recommendation.dress,
+        recommendation.top,
+        recommendation.bottom,
+        recommendation.outerLayer,
+        recommendation.shoes,
+        recommendation.bag,
+        ...(recommendation.accessories ?? [])
+      ])
+      .filter((item): item is TodayRecommendationItem => Boolean(item))
+      .map((item) => item.colorCategory)
+      .filter(Boolean)
+  )
+  const candidateColors = getUniqueColors(candidate.draft)
+  const hasNewColor = candidateColors.some((color) => !baselineColors.has(color))
 
-  if (profile.focalPointPreference !== 'shoes' && candidate.draft.shoes) {
-    return '比你的日常偏好更强调鞋履存在感，但颜色和场景仍在安全范围内。'
-  }
-
-  if (profile.focalPointPreference !== 'bagAccessory' && (candidate.draft.bag || candidate.draft.accessories.length > 0)) {
-    return '比你的日常搭配更重视包袋或配饰细节，适合小幅试新。'
+  if (candidate.draft.outfitKind === 'onePiece') {
+    return '用一件式替代上下装组合，给当天多一个更省决策的轮廓选择，但仍守住配色和天气底线。'
   }
 
   if (vividItem) {
-    return `比你的日常色彩更有重点，把${vividItem.colorCategory}控制在一处来试新。`
+    return `比前两套多一处${vividItem.colorCategory}重点，视觉变化更明确，但重点仍控制在单件上。`
   }
 
-  if (!profile.slotPreference.outerwear && candidate.draft.outerLayer) {
-    return '比你的日常组合多一层外层，适合尝试更完整的层次。'
+  if (hasNewColor && candidateColors.length > 0) {
+    return `换到${candidateColors.slice(0, 3).join(' / ')}这组颜色，和前两套拉开差异，但仍保持低冲突。`
   }
 
-  return '比你的日常推荐多一点变化，但没有越过避雷、天气和场景底线。'
+  if (candidate.draft.outerLayer) {
+    return `用${describeItem(candidate.draft.outerLayer)}改变外层气质，提供另一种层次选择，但不牺牲天气舒适度。`
+  }
+
+  if (profile.focalPointPreference === 'subtle') {
+    return '这套比前两套换了主组合，但重点仍然收得干净，适合作为低风险灵感套装。'
+  }
+
+  return '比前两套多一点变化，但没有越过避雷、天气、场景和配色底线。'
 }
 
-function toInspirationRecommendation(candidate: RecommendationCandidate, profile: PreferenceProfile): TodayRecommendation {
+function toInspirationRecommendation(candidate: RecommendationCandidate, profile: PreferenceProfile, baselineRecommendations: TodayRecommendation[] = []): TodayRecommendation {
   return {
     ...candidate.recommendation,
     id: `inspiration-${candidate.recommendation.id}`,
+    reason: `灵感套装：${candidate.recommendation.reason}`,
     mode: 'inspiration',
-    inspirationReason: `低频${buildInspirationAttemptLabel()}`,
-    dailyDifference: buildInspirationDifference(candidate, profile)
+    inspirationReason: '灵感套装',
+    dailyDifference: buildInspirationDifference(candidate, profile, baselineRecommendations)
   }
+}
+
+function getRecommendationItems(recommendation: TodayRecommendation) {
+  return [
+    recommendation.dress,
+    recommendation.top,
+    recommendation.bottom,
+    recommendation.outerLayer,
+    recommendation.shoes,
+    recommendation.bag,
+    ...(recommendation.accessories ?? [])
+  ].filter((item): item is TodayRecommendationItem => Boolean(item))
+}
+
+function getDiversityScore(candidate: RecommendationCandidate, baselineRecommendations: TodayRecommendation[]) {
+  const baselineIds = new Set(baselineRecommendations.flatMap(getRecommendationItems).map((item) => item.id))
+  const baselineColors = new Set(baselineRecommendations.flatMap(getRecommendationItems).map((item) => item.colorCategory).filter(Boolean))
+  const candidateItems = getSelectedItems(candidate.draft)
+  const candidateColors = getUniqueColors(candidate.draft)
+  const newMainIds = candidate.mainIds.filter((id) => !baselineIds.has(id)).length
+  const newColorCount = candidateColors.filter((color) => !baselineColors.has(color)).length
+  const outfitKindBonus = baselineRecommendations.some((recommendation) => Boolean(recommendation.dress)) === Boolean(candidate.draft.dress) ? 0 : 12
+  const outerBonus = candidate.draft.outerLayer && !baselineRecommendations.some((recommendation) => recommendation.outerLayer?.id === candidate.draft.outerLayer?.id) ? 8 : 0
+
+  return newMainIds * 16 + newColorCount * 8 + outfitKindBonus + outerBonus + Math.min(8, candidateItems.length)
+}
+
+function isSafeInspirationCandidate(candidate: RecommendationCandidate, profile: PreferenceProfile, weather: TodayWeather | null) {
+  const scores = candidate.recommendation.componentScores
+  const signal = toInspirationSignal(candidate, profile, weather)
+
+  return (
+    scores.colorHarmony >= 62 &&
+    scores.weatherComfort >= 62 &&
+    scores.sceneFit >= 56 &&
+    scores.completeness >= 70 &&
+    isGoodInspirationCandidate(signal, profile)
+  )
+}
+
+function pickInspirationCandidate({
+  candidates,
+  dailyRecommendations,
+  profile,
+  weather
+}: {
+  candidates: RecommendationCandidate[]
+  dailyRecommendations: TodayRecommendation[]
+  profile: PreferenceProfile
+  weather: TodayWeather | null
+}) {
+  const dailyIds = new Set(dailyRecommendations.map((recommendation) => recommendation.id))
+  const dailyMainIds = new Set(dailyRecommendations.flatMap(getRecommendationItems).map((item) => item.id))
+  const safeCandidates = candidates
+    .filter((candidate) => !dailyIds.has(candidate.recommendation.id))
+    .filter((candidate) => isSafeInspirationCandidate(candidate, profile, weather))
+  const nonOverlappingCandidates = safeCandidates.filter((candidate) => candidate.mainIds.every((id) => !dailyMainIds.has(id)))
+  const candidatePool = nonOverlappingCandidates.length > 0 ? nonOverlappingCandidates : safeCandidates
+
+  return candidatePool
+    .map((candidate) => ({
+      candidate,
+      selectionScore: candidate.score * 0.45 + getDiversityScore(candidate, dailyRecommendations)
+    }))
+    .sort((left, right) => {
+      if (right.selectionScore !== left.selectionScore) {
+        return right.selectionScore - left.selectionScore
+      }
+
+      return left.candidate.recommendation.id.localeCompare(right.candidate.recommendation.id)
+    })[0]?.candidate ?? null
 }
 
 function buildRecommendationBatch(candidates: RecommendationCandidate[], offset: number) {
@@ -749,61 +959,45 @@ function maybeInsertInspirationRecommendation({
   recommendations,
   candidates,
   preferenceState,
-  weather,
-  offset,
-  explorationSeed
+  weather
 }: {
   recommendations: TodayRecommendation[]
   candidates: RecommendationCandidate[]
   preferenceState?: RecommendationPreferenceState
   weather: TodayWeather | null
-  offset: number
-  explorationSeed?: string
 }) {
-  if (!preferenceState) {
-    return recommendations
-  }
-
   const profile = preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE
-  const selectedIds = new Set(recommendations.map((recommendation) => recommendation.id))
-  const candidatePool = candidates.filter((candidate) => !selectedIds.has(candidate.recommendation.id))
-  const inspirationPool = candidatePool.length > 0 ? candidatePool : candidates
-  const signals = inspirationPool
-    .map((candidate) => toInspirationSignal(candidate, profile, weather))
-    .filter((signal) => isGoodInspirationCandidate(signal, profile))
 
-  if (!shouldShowInspiration({
-    profile,
-    seed: `${explorationSeed ?? 'today'}:${offset}:show`,
-    candidateCount: signals.length,
-    alreadyShownToday: recommendations.some((recommendation) => recommendation.mode === 'inspiration')
-  })) {
+  if (!profile.exploration.enabled || profile.exploration.rate <= 0 || recommendations.length < 3) {
     return recommendations
   }
 
-  const selectedSignal = pickDeterministicInspirationCandidate(signals, profile, `${explorationSeed ?? 'today'}:${offset}:pick`)
-  const selectedCandidate = selectedSignal
-    ? inspirationPool.find((candidate) => candidate.recommendation.id === selectedSignal.id)
-    : null
+  if (recommendations.some((recommendation) => recommendation.mode === 'inspiration')) {
+    return recommendations
+  }
+
+  const dailyRecommendations = recommendations.filter((recommendation) => recommendation.mode !== 'inspiration')
+  const fixedDailyRecommendations = dailyRecommendations.slice(0, 2)
+  const selectedCandidate = pickInspirationCandidate({
+    candidates,
+    dailyRecommendations: fixedDailyRecommendations,
+    profile,
+    weather
+  })
 
   if (!selectedCandidate) {
     return recommendations
   }
 
-  const inspirationRecommendation = toInspirationRecommendation(selectedCandidate, profile)
-  const dailyRecommendations = recommendations.filter((recommendation) => recommendation.mode !== 'inspiration')
+  const inspirationRecommendation = toInspirationRecommendation(selectedCandidate, profile, fixedDailyRecommendations)
 
-  if (dailyRecommendations.length >= 3) {
-    return [...dailyRecommendations.slice(0, 2), inspirationRecommendation]
-  }
-
-  return [...dailyRecommendations, inspirationRecommendation].slice(0, 3)
+  return [...fixedDailyRecommendations, inspirationRecommendation].slice(0, 3)
 }
 
 export function generateTodayRecommendations(
   params: GenerateTodayRecommendationsParams
 ): TodayRecommendation[] {
-  const { items, weather, preferenceState, explorationSeed } = params
+  const { items, weather, preferenceState } = params
   const offset = params.offset ?? 0
   const candidates = buildRecommendationCandidates(items, weather, preferenceState)
   const recommendations = buildRecommendationBatch(candidates, offset)
@@ -821,8 +1015,6 @@ export function generateTodayRecommendations(
     recommendations,
     candidates,
     preferenceState,
-    weather,
-    offset,
-    explorationSeed
+    weather
   }).slice(0, 3)
 }

@@ -89,8 +89,8 @@ const inspirationRecommendation = {
   ...completeRecommendation,
   id: 'rec-inspiration',
   mode: 'inspiration' as const,
-  inspirationReason: '低频灵感尝试',
-  dailyDifference: '比你的日常推荐更强调鞋履存在感，但颜色和场景仍在安全范围内。'
+  inspirationReason: '灵感套装',
+  dailyDifference: '比前两套多一点变化，但没有越过避雷、天气和场景底线。'
 }
 
 describe('TodayPage', () => {
@@ -416,9 +416,8 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getAllByText('灵感尝试').length).toBeGreaterThan(0)
-    expect(screen.getByText('低频灵感尝试')).toBeInTheDocument()
-    expect(screen.getByText('比你的日常推荐更强调鞋履存在感，但颜色和场景仍在安全范围内。')).toBeInTheDocument()
+    expect(screen.getAllByText('灵感套装').length).toBeGreaterThan(0)
+    expect(screen.getByText('比前两套多一点变化，但没有越过避雷、天气和场景底线。')).toBeInTheDocument()
   })
 
   it('expands the score chooser and requires a score before submit', () => {

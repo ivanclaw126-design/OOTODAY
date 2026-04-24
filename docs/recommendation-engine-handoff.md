@@ -6,6 +6,8 @@ Phase 9 shared methodology evaluator completed on 2026-04-25.
 
 Today / Shop / Inspiration / Travel now share recommendation copy and a shared deterministic outfit evaluator for color harmony, silhouette balance, layering, focal point, scene fit, weather comfort, completeness, and freshness. Page-specific wording remains intact for Today completion, Shop purchase value, Travel packing completeness, and Inspiration remix guidance.
 
+Follow-up Today refinement completed on 2026-04-25: Today recommendation reasons now surface the highest-contributing score highlights instead of repeated boilerplate, and the third Today card becomes a safe `灵感套装` when exploration is enabled.
+
 ## Phase 9 Shared Methodology Evaluator
 
 ### Files Changed
@@ -20,6 +22,8 @@ Today / Shop / Inspiration / Travel now share recommendation copy and a shared d
 - `lib/today/generate-recommendations.ts`
   - Uses the shared evaluator for component scores and `finalWeights` sorting.
   - Filters/ranks candidates by weather suitability before outfit generation; 15 degree weather no longer prefers shorts or sandals when covered alternatives exist.
+  - Builds the visible recommendation reason from the highest-contributing score dimensions: completeness, weather comfort, color harmony, scene fit, silhouette balance, layering, focal point, and freshness.
+  - Converts the third Today card into a safe `灵感套装` when exploration is enabled and `exploration.rate > 0`; the candidate must pass color, weather, scene, completeness, hard-avoid, and distance checks, and is selected for higher diversity from the first two daily outfits.
 - `lib/shop/analyze-purchase-candidate.ts`
   - Estimates purchase outfit count by inserting the candidate into real outfit drafts and scoring through the shared evaluator, while preserving shoe finisher, scene bag, and visual-focus semantics.
 - `lib/inspiration/match-closet-to-inspiration.ts`
@@ -33,6 +37,7 @@ Today / Shop / Inspiration / Travel now share recommendation copy and a shared d
 ### Phase 9 Verification
 
 - Targeted tests passed: `tests/lib/recommendation/outfit-evaluator.test.ts`, Today, Shop, Inspiration, Travel, and copy tests: 50 tests.
+- Today refinement targeted tests passed: `tests/lib/today/generate-recommendations.test.ts` and `tests/components/today-page.test.tsx`: 33 tests.
 - `npm test` passed: 62 test files, 285 tests.
 - `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
 - `npm run build` passed.
@@ -564,6 +569,8 @@ Earlier Today exploration changes are also present in the current branch:
 - Shared evaluator inputs prefer `algorithmMeta` and `seasonTags`, but tolerate missing metadata through category, subcategory, style tags, color category, wear history, and item text.
 - 15 degree weather treats summer shorts and sandals/slides as low suitability when covered alternatives exist.
 - Tonal copy no longer treats all neutral colors as one family; achromatic neutrals and warm neutrals are separate clusters.
+- Today reasons are score-highlight driven; high-scoring dimensions are named with their score instead of using the same generic weather/color/completeness sentence across every card.
+- Today card 3 is reserved for `灵感套装` when exploration is enabled and a safe diverse candidate exists; `exploration.rate = 0` still guarantees no inspiration card.
 - Inspiration AI output includes outfit formulas: color, silhouette, layering, and focal point.
 - Inspiration key items can carry slot, silhouette, layer role, importance, and alternatives.
 - Inspiration closet matching is formula-weighted instead of category-only.
