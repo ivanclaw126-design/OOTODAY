@@ -103,7 +103,7 @@ describe('SettingsPage', () => {
     expect(await screen.findByText('推荐权重重置失败，请稍后重试')).toBeInTheDocument()
   })
 
-  it('confirms before copying the demo closet', async () => {
+  it('asks for a demo closet audience before copying', async () => {
     render(
       <SettingsPage
         source="default"
@@ -117,12 +117,14 @@ describe('SettingsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '复制演示衣橱' }))
     expect(copyDemoCloset).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: '确认复制' }))
+    expect(screen.getByRole('button', { name: /女装演示衣橱/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /男装演示衣橱/ })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /复制男装衣橱/ }))
 
     await waitFor(() => {
-      expect(copyDemoCloset).toHaveBeenCalled()
+      expect(copyDemoCloset).toHaveBeenCalledWith('mens')
     })
-    expect(screen.getByText('已复制 12 件演示衣物')).toBeInTheDocument()
+    expect(screen.getByText('已复制 12 件男装演示衣物')).toBeInTheDocument()
   })
 
   it('confirms before clearing the current closet', async () => {

@@ -10,6 +10,7 @@ import {
 import { getSession } from '@/lib/auth/get-session'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
+import type { DemoClosetAudience } from '@/lib/demo/demo-closet'
 
 export default async function SettingsRoute() {
   const session = await getSession()
@@ -36,10 +37,10 @@ export default async function SettingsRoute() {
     return restartStyleQuestionnaireAction()
   }
 
-  async function copyDemoCloset() {
+  async function copyDemoCloset(audience: DemoClosetAudience) {
     'use server'
 
-    return copyDemoClosetAction()
+    return copyDemoClosetAction(audience)
   }
 
   async function clearCloset() {

@@ -117,9 +117,9 @@ describe('settings actions', () => {
 
     const { copyDemoClosetAction } = await import('@/app/settings/actions')
 
-    await expect(copyDemoClosetAction()).resolves.toEqual({ error: null, copiedCount: 8 })
+    await expect(copyDemoClosetAction('mens')).resolves.toEqual({ error: null, copiedCount: 8 })
     expect(ensureProfile).toHaveBeenCalledWith('user-1')
-    expect(copyDemoClosetToUser).toHaveBeenCalledWith('user-1')
+    expect(copyDemoClosetToUser).toHaveBeenCalledWith('user-1', 'mens')
     expect(revalidatePath).toHaveBeenCalledWith('/closet')
     expect(revalidatePath).toHaveBeenCalledWith('/today')
   })

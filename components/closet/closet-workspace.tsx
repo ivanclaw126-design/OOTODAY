@@ -8,12 +8,14 @@ import { ClosetSection } from '@/components/closet/closet-section'
 import { ClosetCategoryBadge, ClosetColorBadge } from '@/components/closet/closet-taxonomy-icons'
 import { ClosetUploadCard } from '@/components/closet/closet-upload-card'
 import { ClosetUploadForm } from '@/components/closet/closet-upload-form'
+import { DemoClosetImportPrompt } from '@/components/closet/demo-closet-import-prompt'
 import { buildClosetBrowseGroups, ClosetGroupBrowser, type ClosetBrowseMode } from '@/components/closet/closet-group-browser'
 import { Card } from '@/components/ui/card'
 import { buildClosetUploadPath } from '@/lib/closet/build-upload-path'
 import { isRestoreWindowActive, normalizeQuarterTurns } from '@/lib/closet/image-rotation'
 import { isBottomCategory, isOuterwearCategory, isTopCategory } from '@/lib/closet/taxonomy'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import type { DemoClosetAudience } from '@/lib/demo/demo-closet'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult, ClosetInsights, ClosetItemCardData } from '@/lib/closet/types'
 
 type UsageView = 'all' | 'most-worn' | 'least-recently-worn'
@@ -40,6 +42,7 @@ export function ClosetWorkspace({
   replaceItemImage,
   reanalyzeItem,
   deleteItem,
+  copyDemoCloset,
   updateImageRotation
 }: {
   userId: string
@@ -54,6 +57,7 @@ export function ClosetWorkspace({
   replaceItemImage: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<ImageUpdateResult>
   reanalyzeItem: (input: { itemId: string }) => Promise<ClosetAnalysisDraft>
   deleteItem: (input: { itemId: string }) => Promise<void>
+  copyDemoCloset: (audience: DemoClosetAudience) => Promise<{ error: string | null; copiedCount: number }>
   updateImageRotation: (input: {
     itemId: string
     operation: 'rotate-right-90' | 'restore-original'
@@ -650,6 +654,9 @@ export function ClosetWorkspace({
             analyzeImportUrl={analyzeImportUrl}
             saveItem={saveItem}
           />
+          <div className="mt-4">
+            <DemoClosetImportPrompt copyDemoCloset={copyDemoCloset} />
+          </div>
         </ClosetSection>
 
         <ClosetSection

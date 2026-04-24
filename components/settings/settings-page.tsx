@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import type { DemoClosetAudience } from '@/lib/demo/demo-closet'
 import { StatusBanner } from '@/components/ui/status-banner'
 import type { PreferenceSource } from '@/lib/recommendation/preference-types'
 
@@ -20,6 +21,29 @@ const sourceDescriptions: Record<PreferenceSource, string> = {
 }
 
 type ConfirmAction = 'reset' | 'restart' | 'copy-demo' | 'clear-closet'
+
+const demoClosetOptions: Array<{
+  audience: DemoClosetAudience
+  title: string
+  countLabel: string
+  description: string
+  imageUrl: string
+}> = [
+  {
+    audience: 'womens',
+    title: '女装演示衣橱',
+    countLabel: '48 件',
+    description: '通勤、约会、旅行和灵感复刻都有完整覆盖。',
+    imageUrl: '/demo-closets/studio-womens.jpg'
+  },
+  {
+    audience: 'mens',
+    title: '男装演示衣橱',
+    countLabel: '46 件',
+    description: '商务休闲、周末、轻户外和差旅场景更稳定。',
+    imageUrl: '/demo-closets/studio-mens.jpg'
+  }
+]
 
 function formatUpdatedAt(value: string) {
   const date = new Date(value)
@@ -48,7 +72,7 @@ export function SettingsPage({
   updatedAt: string
   resetPreferences: () => Promise<{ error: string | null }>
   restartQuestionnaire: () => Promise<{ error: string | null }>
-  copyDemoCloset: () => Promise<{ error: string | null; copiedCount: number }>
+  copyDemoCloset: (audience: DemoClosetAudience) => Promise<{ error: string | null; copiedCount: number }>
   clearCloset: () => Promise<{ error: string | null }>
 }) {
   const [currentSource, setCurrentSource] = useState(source)
@@ -94,13 +118,13 @@ export function SettingsPage({
     }
   }
 
-  async function handleCopyDemo() {
+  async function handleCopyDemo(audience: DemoClosetAudience) {
     setIsCopyingDemo(true)
     setConfirmAction(null)
     setMessage(null)
     setError(null)
 
-    const result = await copyDemoCloset()
+    const result = await copyDemoCloset(audience)
     setIsCopyingDemo(false)
 
     if (result.error) {
@@ -108,7 +132,7 @@ export function SettingsPage({
       return
     }
 
-    setMessage(`已复制 ${result.copiedCount} 件演示衣物`)
+    setMessage(`已复制 ${result.copiedCount} 件${audience === 'mens' ? '男装' : '女装'}演示衣物`)
   }
 
   async function handleClearCloset() {
@@ -263,7 +287,9 @@ export function SettingsPage({
                     ? '确认复制演示衣橱'
                     : '确认清空衣橱'
             }
-            className="relative z-10 w-full max-w-md rounded-[1.5rem] border border-black/10 bg-white p-5 shadow-[0_24px_60px_rgba(21,21,18,0.22)]"
+            className={`relative z-10 w-full rounded-[1.5rem] border border-black/10 bg-white p-5 shadow-[0_24px_60px_rgba(21,21,18,0.22)] ${
+              confirmAction === 'copy-demo' ? 'max-w-3xl' : 'max-w-md'
+            }`}
           >
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">Confirm</p>
@@ -282,45 +308,72 @@ export function SettingsPage({
                   : confirmAction === 'restart'
                     ? '进入问卷前会先把推荐权重恢复到默认；如果中途退出，会保持默认状态。'
                     : confirmAction === 'copy-demo'
-                      ? '这会把演示账号里的单品复制到当前账号，现有衣橱不会被删除。'
+                      ? '选择一套演示衣橱复制到当前账号，现有衣橱不会被删除。'
                       : '这会删除当前账号的衣物、今日穿搭、保存搭配和旅行方案。演示账号不会受到影响。'}
               </p>
             </div>
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <SecondaryButton type="button" onClick={() => setConfirmAction(null)} disabled={isBusy}>
-                取消
-              </SecondaryButton>
-              <PrimaryButton
-                type="button"
-                disabled={isBusy}
-                onClick={() => {
-                  if (confirmAction === 'reset') {
-                    void handleReset()
-                    return
-                  }
+            {confirmAction === 'copy-demo' ? (
+              <>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {demoClosetOptions.map((option) => (
+                    <button
+                      key={option.audience}
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => void handleCopyDemo(option.audience)}
+                      className="group overflow-hidden rounded-[1.2rem] border border-[var(--color-line)] bg-white text-left transition duration-200 hover:-translate-y-0.5 hover:border-black/24 hover:shadow-[0_18px_38px_rgba(21,21,18,0.13)] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span
+                        role="img"
+                        aria-label={`${option.title}影棚示意图`}
+                        className="block aspect-[3/4] bg-cover bg-center"
+                        style={{ backgroundImage: `url(${option.imageUrl})` }}
+                      />
+                      <span className="block p-4">
+                        <span className="flex items-center justify-between gap-3">
+                          <span className="text-base font-semibold tracking-[-0.03em] text-[var(--color-primary)]">{option.title}</span>
+                          <span className="rounded-full border border-black/10 px-2.5 py-1 text-xs font-semibold text-[var(--color-neutral-dark)]">{option.countLabel}</span>
+                        </span>
+                        <span className="mt-2 block text-sm leading-6 text-[var(--color-neutral-dark)]">{option.description}</span>
+                        <span className="mt-4 inline-flex text-sm font-semibold text-[var(--color-primary)]">
+                          {isCopyingDemo ? '复制中' : `复制${option.audience === 'mens' ? '男装' : '女装'}衣橱`}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-5 flex justify-end">
+                  <SecondaryButton type="button" onClick={() => setConfirmAction(null)} disabled={isBusy}>
+                    取消
+                  </SecondaryButton>
+                </div>
+              </>
+            ) : (
+              <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <SecondaryButton type="button" onClick={() => setConfirmAction(null)} disabled={isBusy}>
+                  取消
+                </SecondaryButton>
+                <PrimaryButton
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => {
+                    if (confirmAction === 'reset') {
+                      void handleReset()
+                      return
+                    }
 
-                  if (confirmAction === 'restart') {
-                    void handleRestart()
-                    return
-                  }
+                    if (confirmAction === 'restart') {
+                      void handleRestart()
+                      return
+                    }
 
-                  if (confirmAction === 'copy-demo') {
-                    void handleCopyDemo()
-                    return
-                  }
-
-                  void handleClearCloset()
-                }}
-              >
-                {confirmAction === 'reset'
-                  ? '确认重置推荐权重'
-                  : confirmAction === 'restart'
-                    ? '确认重新填写'
-                    : confirmAction === 'copy-demo'
-                      ? '确认复制'
-                      : '确认清空'}
-              </PrimaryButton>
-            </div>
+                    void handleClearCloset()
+                  }}
+                >
+                  {confirmAction === 'reset' ? '确认重置推荐权重' : confirmAction === 'restart' ? '确认重新填写' : '确认清空'}
+                </PrimaryButton>
+              </div>
+            )}
           </div>
         </div>
       ) : null}

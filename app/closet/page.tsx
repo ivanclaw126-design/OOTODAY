@@ -11,6 +11,7 @@ import { ensureProfile } from '@/lib/profiles/ensure-profile'
 import {
   analyzeClosetImportUrlAction,
   analyzeClosetUploadAction,
+  copyDemoClosetAction,
   deleteClosetItemAction,
   reanalyzeClosetItemAction,
   replaceClosetItemImageAction,
@@ -19,6 +20,7 @@ import {
   updateClosetItemAction
 } from '@/app/closet/actions'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
+import type { DemoClosetAudience } from '@/lib/demo/demo-closet'
 
 async function ClosetRouteContent({
   searchParams
@@ -55,6 +57,12 @@ async function ClosetRouteContent({
     'use server'
 
     await deleteClosetItemAction(input)
+  }
+
+  async function copyDemoCloset(audience: DemoClosetAudience) {
+    'use server'
+
+    return copyDemoClosetAction(audience)
   }
 
   async function updateItem(input: { itemId: string; draft: ClosetAnalysisDraft }): Promise<void> {
@@ -106,6 +114,7 @@ async function ClosetRouteContent({
       replaceItemImage={replaceItemImage}
       reanalyzeItem={reanalyzeItem}
       deleteItem={deleteItem}
+      copyDemoCloset={copyDemoCloset}
       updateImageRotation={updateImageRotation}
     />
   )

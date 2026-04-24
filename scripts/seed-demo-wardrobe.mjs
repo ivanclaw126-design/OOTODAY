@@ -2,7 +2,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
-import manifest from '../data/demo-wardrobe.json' with { type: 'json' }
 
 const DEFAULT_DEMO_EMAIL = 'test@test.com'
 const STORAGE_PREFIX = 'demo-wardrobe'
@@ -256,6 +255,11 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const storageBucket = process.env.NEXT_PUBLIC_STORAGE_BUCKET
 const demoEmail = getArgValue('--email') ?? process.env.DEMO_SEED_EMAIL ?? process.env.DEMO_EMAIL ?? DEFAULT_DEMO_EMAIL
+const demoAudience = getArgValue('--audience') ?? process.env.DEMO_AUDIENCE ?? (demoEmail.includes('test-men') ? 'mens' : 'womens')
+const manifestPath =
+  getArgValue('--manifest') ??
+  (demoAudience === 'mens' ? 'data/demo-wardrobe-men.json' : 'data/demo-wardrobe.json')
+const manifest = JSON.parse(readFileSync(resolve(process.cwd(), manifestPath), 'utf8'))
 
 if (!supabaseUrl || !serviceRoleKey || !storageBucket) {
   console.error('Missing NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or NEXT_PUBLIC_STORAGE_BUCKET')
@@ -340,5 +344,7 @@ if (insertError) {
 
 console.log(`Seeded ${inserts.length} demo wardrobe items`)
 console.log(`Demo seed email: ${demoEmail}`)
+console.log(`Demo seed audience: ${demoAudience}`)
 console.log(`Demo seed user id: ${user.id}`)
+console.log(`Manifest: ${manifestPath}`)
 console.log(`Storage prefix: ${storageFolder}`)

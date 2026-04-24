@@ -3,7 +3,10 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getEnv } from '@/lib/env'
 import type { Database } from '@/types/database'
 
+export type DemoClosetAudience = 'womens' | 'mens'
+
 export const DEMO_SEED_EMAIL = process.env.DEMO_SEED_EMAIL ?? process.env.DEMO_EMAIL ?? 'test@test.com'
+export const DEMO_MENS_SEED_EMAIL = process.env.DEMO_MENS_SEED_EMAIL ?? 'test-men@test.com'
 
 type ClosetItemRow = Database['public']['Tables']['items']['Row']
 type ClosetItemInsert = Database['public']['Tables']['items']['Insert']
@@ -150,8 +153,12 @@ async function listUserStoragePaths(prefix: string) {
   return paths
 }
 
-export async function copyDemoClosetToUser(userId: string) {
-  const seedUserId = await getUserIdByEmail(DEMO_SEED_EMAIL)
+function getDemoSeedEmail(audience: DemoClosetAudience) {
+  return audience === 'mens' ? DEMO_MENS_SEED_EMAIL : DEMO_SEED_EMAIL
+}
+
+export async function copyDemoClosetToUser(userId: string, audience: DemoClosetAudience = 'womens') {
+  const seedUserId = await getUserIdByEmail(getDemoSeedEmail(audience))
 
   if (!seedUserId) {
     return { copiedCount: 0, error: '演示账号还没有创建' }
