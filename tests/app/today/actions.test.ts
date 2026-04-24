@@ -20,6 +20,8 @@ const getUser = vi.fn(() => Promise.resolve({ data: { user: { user_metadata: {} 
 const createSupabaseServerClient = vi.fn(async () => ({ from, auth: { updateUser, getUser } }))
 const revalidatePath = vi.fn()
 const saveTodayOotdFeedback = vi.fn()
+const applyFeedback = vi.fn()
+const getPreferenceState = vi.fn()
 const getClosetView = vi.fn()
 const getWeather = vi.fn()
 const generateTodayRecommendations = vi.fn()
@@ -34,6 +36,14 @@ vi.mock('@/lib/supabase/server', () => ({
 
 vi.mock('@/lib/today/save-today-ootd-feedback', () => ({
   saveTodayOotdFeedback
+}))
+
+vi.mock('@/lib/recommendation/apply-feedback', () => ({
+  applyFeedback
+}))
+
+vi.mock('@/lib/recommendation/get-preference-state', () => ({
+  getPreferenceState
 }))
 
 vi.mock('@/lib/closet/get-closet-view', () => ({
@@ -68,6 +78,10 @@ describe('today actions', () => {
     getUser.mockResolvedValue({ data: { user: { user_metadata: {} } } })
     revalidatePath.mockReset()
     saveTodayOotdFeedback.mockReset()
+    applyFeedback.mockReset()
+    applyFeedback.mockResolvedValue({ source: 'adaptive' })
+    getPreferenceState.mockReset()
+    getPreferenceState.mockResolvedValue({ source: 'default' })
     getClosetView.mockReset()
     getWeather.mockReset()
     generateTodayRecommendations.mockReset()
@@ -111,12 +125,26 @@ describe('today actions', () => {
         styleTags: ['通勤']
       },
       dress: null,
-      outerLayer: null
+      outerLayer: null,
+      componentScores: {
+        colorHarmony: 88,
+        silhouetteBalance: 80,
+        layering: 70,
+        focalPoint: 65,
+        sceneFit: 82,
+        weatherComfort: 76,
+        completeness: 90,
+        freshness: 72
+      }
     }
 
     const { submitTodayOotdAction } = await import('@/app/today/actions')
 
-    await expect(submitTodayOotdAction({ recommendation, satisfactionScore: 4 })).resolves.toEqual({
+    await expect(submitTodayOotdAction({
+      recommendation,
+      satisfactionScore: 4,
+      reasonTags: ['like_color', 'like_scene_fit']
+    })).resolves.toEqual({
       error: null,
       wornAt: '2026-04-21T09:00:00.000Z'
     })
@@ -126,6 +154,46 @@ describe('today actions', () => {
       recommendation,
       satisfactionScore: 4
     })
+    expect(applyFeedback).toHaveBeenCalledWith({
+      userId: 'user-1',
+      rating: 4,
+      reasonTags: ['like_color', 'like_scene_fit'],
+      recommendationId: 'rec-1',
+      recommendationSnapshot: recommendation,
+      componentScores: recommendation.componentScores,
+      context: 'today'
+    })
+    expect(revalidatePath).toHaveBeenCalledWith('/today')
+  })
+
+  it('keeps a saved ootd successful when preference learning fails', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    saveTodayOotdFeedback.mockResolvedValue({
+      error: null,
+      wornAt: '2026-04-21T09:00:00.000Z'
+    })
+    applyFeedback.mockRejectedValue(new Error('preference write failed'))
+
+    const { submitTodayOotdAction } = await import('@/app/today/actions')
+
+    await expect(
+      submitTodayOotdAction({
+        recommendation: {
+          id: 'rec-1',
+          reason: '基础组合稳定不出错',
+          top: null,
+          bottom: null,
+          dress: null,
+          outerLayer: null
+        },
+        satisfactionScore: 4,
+        reasonTags: ['like_color']
+      })
+    ).resolves.toEqual({
+      error: null,
+      wornAt: '2026-04-21T09:00:00.000Z'
+    })
+
     expect(revalidatePath).toHaveBeenCalledWith('/today')
   })
 
@@ -148,7 +216,8 @@ describe('today actions', () => {
           dress: null,
           outerLayer: null
         },
-        satisfactionScore: 4
+        satisfactionScore: 4,
+        reasonTags: []
       })
     ).resolves.toEqual({
       error: '今天已经记录过穿搭了',
@@ -174,7 +243,13 @@ describe('today actions', () => {
     })
 
     expect(getClosetView).toHaveBeenCalledWith('user-1', { limit: 0 })
-    expect(generateTodayRecommendations).toHaveBeenCalledWith([{ id: 'item-1' }, { id: 'item-2' }], expect.any(Object), 3)
+    expect(getPreferenceState).toHaveBeenCalledWith({ userId: 'user-1' })
+    expect(generateTodayRecommendations).toHaveBeenCalledWith({
+      items: [{ id: 'item-1' }, { id: 'item-2' }],
+      weather: expect.any(Object),
+      offset: 3,
+      preferenceState: { source: 'default' }
+    })
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 

@@ -1,4 +1,5 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import type { ScoreWeights, TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 
 export type TodayWeather = {
   city: string
@@ -25,6 +26,25 @@ export type TodayRecommendation = {
   bottom: TodayRecommendationItem | null
   dress: TodayRecommendationItem | null
   outerLayer: TodayRecommendationItem | null
+  shoes?: TodayRecommendationItem | null
+  bag?: TodayRecommendationItem | null
+  accessories?: TodayRecommendationItem[]
+  missingSlots?: TodayRecommendationMissingSlot[]
+  confidence?: number
+  componentScores?: ScoreWeights
+  mode?: TodayRecommendationMode
+}
+
+export type TodayRecommendationMissingSlot = 'top' | 'bottom' | 'dress' | 'outerLayer' | 'shoes' | 'bag' | 'accessories'
+
+export type TodayRecommendationMode = 'separates' | 'onePiece' | 'partial'
+
+export type { TodayFeedbackReasonTag }
+
+export type TodayOotdFeedbackInput = {
+  recommendation: TodayRecommendation
+  satisfactionScore: number
+  reasonTags: TodayFeedbackReasonTag[]
 }
 
 export type TodayOotdStatus =

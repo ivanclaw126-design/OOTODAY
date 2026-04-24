@@ -14,7 +14,7 @@ import {
 import { getSession } from '@/lib/auth/get-session'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getTodayView } from '@/lib/today/get-today-view'
-import type { TodayHistoryUpdateInput, TodayRecommendation } from '@/lib/today/types'
+import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput } from '@/lib/today/types'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 
 async function TodayRouteContent({
@@ -55,7 +55,7 @@ async function TodayRouteContent({
     return updateTodayCityAction(input)
   }
 
-  async function submitOotd(input: { recommendation: TodayRecommendation; satisfactionScore: number }) {
+  async function submitOotd(input: TodayOotdFeedbackInput) {
     'use server'
 
     return submitTodayOotdAction(input)

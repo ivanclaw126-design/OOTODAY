@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import { FeedbackLink } from '@/components/beta/feedback-link'
 
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
@@ -15,11 +16,19 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
               {title}
             </h1>
           </div>
-          <FeedbackLink
-            surface={`app_shell:${title.toLowerCase()}`}
-            label="提反馈"
-            className="inline-flex shrink-0 items-center rounded-full border border-[var(--color-line)] bg-white/80 px-3 py-1.5 text-xs font-semibold tracking-[0.04em] text-[var(--color-primary)] shadow-[var(--shadow-soft)]"
-          />
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/settings"
+              className="inline-flex items-center rounded-full border border-[var(--color-line)] bg-white/80 px-3 py-1.5 text-xs font-semibold tracking-[0.04em] text-[var(--color-primary)] shadow-[var(--shadow-soft)]"
+            >
+              设置
+            </Link>
+            <FeedbackLink
+              surface={`app_shell:${title.toLowerCase()}`}
+              label="提反馈"
+              className="inline-flex items-center rounded-full border border-[var(--color-line)] bg-white/80 px-3 py-1.5 text-xs font-semibold tracking-[0.04em] text-[var(--color-primary)] shadow-[var(--shadow-soft)]"
+            />
+          </div>
         </div>
       </header>
       <main className="mx-auto flex max-w-4xl flex-col gap-5 px-4 sm:px-6">{children}</main>

@@ -1,7 +1,7 @@
 import { EmptyState } from '@/components/ui/empty-state'
 import { FeedbackLink } from '@/components/beta/feedback-link'
 import { TodayRecommendationCard } from '@/components/today/today-recommendation-card'
-import type { TodayOotdStatus, TodayRecommendation } from '@/lib/today/types'
+import type { TodayOotdFeedbackInput, TodayOotdStatus, TodayRecommendation } from '@/lib/today/types'
 
 export function TodayRecommendationList({
   recommendations,
@@ -14,10 +14,7 @@ export function TodayRecommendationList({
   recommendationError: boolean
   ootdStatus: TodayOotdStatus
   recordedRecommendationId: string | null
-  submitOotd: (input: {
-    recommendation: TodayRecommendation
-    satisfactionScore: number
-  }) => Promise<{ error: string | null; wornAt: string | null }>
+  submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
 }) {
   if (recommendationError) {
     return (

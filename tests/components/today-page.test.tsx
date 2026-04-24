@@ -33,6 +33,50 @@ const recommendation = {
   outerLayer: null
 }
 
+const completeRecommendation = {
+  ...recommendation,
+  id: 'rec-complete',
+  shoes: {
+    id: 'shoes-1',
+    imageUrl: null,
+    category: '鞋履',
+    subCategory: '乐福鞋',
+    colorCategory: '黑色',
+    styleTags: ['通勤']
+  },
+  bag: {
+    id: 'bag-1',
+    imageUrl: null,
+    category: '包袋',
+    subCategory: '托特包',
+    colorCategory: '黑色',
+    styleTags: ['通勤']
+  },
+  accessories: [
+    {
+      id: 'accessory-1',
+      imageUrl: null,
+      category: '配饰',
+      subCategory: '腰带',
+      colorCategory: '黑色',
+      styleTags: ['通勤']
+    }
+  ],
+  missingSlots: ['outerLayer' as const],
+  confidence: 82,
+  componentScores: {
+    colorHarmony: 92,
+    silhouetteBalance: 78,
+    layering: 62,
+    focalPoint: 70,
+    sceneFit: 86,
+    weatherComfort: 74,
+    completeness: 88,
+    freshness: 80
+  },
+  mode: 'separates' as const
+}
+
 describe('TodayPage', () => {
   beforeEach(() => {
     submitOotd.mockReset()
@@ -109,6 +153,38 @@ describe('TodayPage', () => {
     expect(screen.getByRole('button', { name: '记为今日已穿并评分' })).toBeInTheDocument()
   })
 
+  it('renders full outfit slots and a gentle missing-slot hint', () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 6,
+          city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'not-set' },
+          recommendations: [completeRecommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    expect(screen.getByText('完整度 82')).toBeInTheDocument()
+    expect(screen.getByText('鞋包配饰')).toBeInTheDocument()
+    expect(screen.getAllByText(/乐福鞋/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/托特包/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/腰带/).length).toBeGreaterThan(0)
+    expect(screen.getByText('这套还缺 外层，可以先按主组合穿，后续在衣橱里补齐会更完整。')).toBeInTheDocument()
+  })
+
   it('expands the score chooser and requires a score before submit', () => {
     render(
       <TodayPage
@@ -136,6 +212,8 @@ describe('TodayPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '记为今日已穿并评分' }))
 
     expect(screen.getByRole('button', { name: '1 分' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '颜色好看' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '层次太复杂' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '提交今日记录' })).toBeDisabled()
   })
 
@@ -170,10 +248,16 @@ describe('TodayPage', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: '记为今日已穿并评分' })[0])
     fireEvent.click(screen.getByRole('button', { name: '4 分' }))
+    fireEvent.click(screen.getByRole('button', { name: '颜色好看' }))
+    fireEvent.click(screen.getByRole('button', { name: '适合今天' }))
     fireEvent.click(screen.getByRole('button', { name: '提交今日记录' }))
 
     await waitFor(() => {
-      expect(submitOotd).toHaveBeenCalledWith({ recommendation, satisfactionScore: 4 })
+      expect(submitOotd).toHaveBeenCalledWith({
+        recommendation,
+        satisfactionScore: 4,
+        reasonTags: ['like_color', 'like_scene_fit']
+      })
     })
 
     expect(screen.getByText('今日已记录')).toBeInTheDocument()
