@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-24
-- Branch / theme: `codex/recommendation-engine-phase-4-5` - Cross-page recommendation language QA Phase 8
+- Branch / theme: `main` - Phase 9 beta readiness QA checklist
 - Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-181500-cross-page-recommendation-language-phase-8.md`
-- Current blocker: local Phase 8 work is not pushed; new CI/App Quality workflows have not run on GitHub yet; recommendation storage and closet algorithm metadata migrations are still unverified remotely
-- Next plan to read: `docs/recommendation-engine-handoff.md`
-- Intended summary if `/context-save` fails: Phase 8 added `lib/recommendation/copy.ts` and connected Today, Shop, Inspiration, Travel, and color strategy helpers to shared Chinese recommendation language for foundation colors, tonal depth, one accent, multiple competing accents, missing shoes/bags/accessories, and inspiration-attempt labeling. Targeted copy tests and lint passed; full test/build were rerun in-session.
+- Current blocker: beta checklist execution is not complete on the deployed environment; Vercel verification is blocked locally by missing CLI / connector 403; real-email Auth and mobile touch QA still need target-environment evidence.
+- Next plan to read: `docs/beta-readiness-checklist.md`
+- Intended summary if `/context-save` fails: Phase 9 created the beta readiness QA checklist, updated project progress/TODOs, verified GitHub Actions latest pushed main, confirmed Supabase remote schema up to date through the IPv4 transaction-pooler path, and fixed `scripts/check-travel-plans-migration.sh` so repeat checks disable statement cache and detect the migration version correctly.
 
 ## Snapshot Template
 
