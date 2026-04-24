@@ -159,7 +159,7 @@ describe('TravelPage', () => {
     confirm.mockRestore()
   })
 
-  it('submits the latest draft inputs when saving an edited plan', () => {
+  it('submits the latest draft inputs when saving an edited plan', async () => {
     const { container } = render(
       <TravelPage
         savePlan={vi.fn()}
@@ -208,9 +208,11 @@ describe('TravelPage', () => {
     expect(daysInput).not.toBeNull()
     expect(leisureCheckbox).not.toBeNull()
 
-    fireEvent.change(cityInput!, { target: { value: '大阪' } })
-    fireEvent.change(daysInput!, { target: { value: '5' } })
-    fireEvent.click(leisureCheckbox!)
+    await act(async () => {
+      fireEvent.change(cityInput!, { target: { value: '大阪' } })
+      fireEvent.change(daysInput!, { target: { value: '5' } })
+      fireEvent.click(leisureCheckbox!)
+    })
 
     const saveForm = container.querySelector('input[name="savedPlanSource"]')?.closest('form')
 
