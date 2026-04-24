@@ -3,6 +3,7 @@ import { PageViewTracker } from '@/components/beta/page-view-tracker'
 import { AppShell } from '@/components/app-shell'
 import Link from 'next/link'
 import { TodayInteractiveWorkspace } from '@/components/today/today-interactive-workspace'
+import { TodaySettingsPanel } from '@/components/today/today-settings-panel'
 import { TodayStatusCard } from '@/components/today/today-status-card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PrimaryLink } from '@/components/ui/button'
@@ -79,12 +80,17 @@ export function TodayPage({
             updateCity={updateCity}
             submitOotd={submitOotd}
             refreshRecommendations={refreshRecommendations}
-            changePassword={changePassword}
-            signOut={signOut}
             updateHistoryEntry={updateHistoryEntry}
             deleteHistoryEntry={deleteHistoryEntry}
           />
         )}
+        <TodaySettingsPanel
+          accountEmail={view.accountEmail}
+          passwordBootstrapped={view.passwordBootstrapped}
+          passwordChangedAt={view.passwordChangedAt}
+          changePassword={changePassword}
+          signOut={signOut}
+        />
       </div>
     </AppShell>
   )
