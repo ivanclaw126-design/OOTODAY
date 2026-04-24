@@ -33,7 +33,7 @@ export async function analyzeShopCandidateAction({
 
   const [candidate, closet, preferenceState] = await Promise.all([
     analyzeItemImage(resolved.imageUrl),
-    getClosetView(session.user.id),
+    getClosetView(session.user.id, { limit: 0 }),
     getPreferenceState({ userId: session.user.id })
   ])
 

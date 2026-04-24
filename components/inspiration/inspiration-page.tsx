@@ -256,10 +256,10 @@ export function InspirationPage({
 
       {analysis ? (
         <>
-          <Card className="overflow-hidden bg-[#111111] text-white shadow-[var(--shadow-strong)]">
+          <Card className="overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(241,235,226,0.96)_100%)]">
             <div className="flex flex-col gap-5">
               <div className="grid gap-4 md:grid-cols-[0.88fr_1.12fr]">
-                <div className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/4">
+                <div className="overflow-hidden rounded-[1.4rem] border border-[var(--color-line)] bg-white">
                   <Image
                     src={analysis.imageUrl}
                     alt={analysis.sourceTitle ? `${analysis.sourceTitle} 灵感图` : '灵感图'}
@@ -270,32 +270,32 @@ export function InspirationPage({
                   />
                 </div>
 
-                <div className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-white/56">一句话总结 At A Glance</p>
+                <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-white/82 p-4 shadow-[0_12px_28px_rgba(17,14,9,0.06)]">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[var(--color-neutral-dark)]">一句话总结 At A Glance</p>
                   {analysis.sourceTitle ? (
-                    <p className="mt-3 text-sm font-medium text-white/76">{analysis.sourceTitle}</p>
+                    <p className="mt-3 text-sm font-medium text-[var(--color-neutral-dark)]">{analysis.sourceTitle}</p>
                   ) : null}
-                  <div className="mt-3 rounded-[1.2rem] border border-white/8 bg-black/26 p-4">
+                  <div className="mt-3 rounded-[1.2rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4">
                     <div className="mb-3 h-1.5 w-14 rounded-full bg-[var(--color-accent)]/90" />
-                    <p className="max-w-[18rem] text-[1.58rem] font-semibold leading-[1.28] tracking-[-0.045em] text-white sm:max-w-none sm:text-[1.84rem]">
+                    <p className="max-w-[18rem] text-[1.35rem] font-semibold leading-[1.35] text-white sm:max-w-none sm:text-[1.56rem]">
                       {analysis.breakdown.summary}
                     </p>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2 text-sm">
-                    <span className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-white/84">场景 · {analysis.breakdown.scene}</span>
-                    <span className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-white/84">气质 · {analysis.breakdown.vibe}</span>
+                    <span className="rounded-full border border-[var(--color-line)] bg-white px-3 py-1 text-[var(--color-primary)]">场景 · {analysis.breakdown.scene}</span>
+                    <span className="rounded-full border border-[var(--color-line)] bg-white px-3 py-1 text-[var(--color-primary)]">气质 · {analysis.breakdown.vibe}</span>
                   </div>
                   <div className="mt-4 grid gap-2 text-sm">
-                    <p className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-2 text-white/84">
+                    <p className="rounded-[1rem] border border-[var(--color-line)] bg-white/72 px-3 py-2 text-[var(--color-neutral-dark)]">
                       色彩公式 · {analysis.breakdown.colorFormula ?? '按关键单品颜色复刻'}
                     </p>
-                    <p className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-2 text-white/84">
+                    <p className="rounded-[1rem] border border-[var(--color-line)] bg-white/72 px-3 py-2 text-[var(--color-neutral-dark)]">
                       轮廓公式 · {analysis.breakdown.silhouetteFormula ?? '先保住核心轮廓比例'}
                     </p>
-                    <p className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-2 text-white/84">
+                    <p className="rounded-[1rem] border border-[var(--color-line)] bg-white/72 px-3 py-2 text-[var(--color-neutral-dark)]">
                       叠穿公式 · {analysis.breakdown.layeringFormula ?? '按内外层关系复刻'}
                     </p>
-                    <p className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-2 text-white/84">
+                    <p className="rounded-[1rem] border border-[var(--color-line)] bg-white/72 px-3 py-2 text-[var(--color-neutral-dark)]">
                       视觉中心 · {analysis.breakdown.focalPoint ?? '保住最显眼的关键单品'}
                     </p>
                   </div>
@@ -303,11 +303,11 @@ export function InspirationPage({
               </div>
 
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-white">关键单品 Key Pieces</p>
+                <p className="text-sm font-medium text-[var(--color-primary)]">关键单品 Key Pieces</p>
                 {analysis.breakdown.keyItems.map((item) => (
-                  <div key={item.id} className="rounded-[1.2rem] border border-white/10 bg-white/4 p-3">
+                  <div key={item.id} className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/68 p-3">
                     <p className="text-sm font-medium">{item.label}</p>
-                    <p className="text-sm text-white/82">
+                    <p className="text-sm text-[var(--color-neutral-dark)]">
                       {item.category}
                       {item.slot ? ` · ${item.slot}` : ''}
                       {item.colorHint ? ` · ${item.colorHint}` : ''}
@@ -317,16 +317,16 @@ export function InspirationPage({
                       {item.styleTags.length > 0 ? ` · ${item.styleTags.join(' / ')}` : ''}
                     </p>
                     {(item.alternatives ?? []).length > 0 ? (
-                      <p className="mt-1 text-sm text-white/68">可替代：{(item.alternatives ?? []).join(' / ')}</p>
+                      <p className="mt-1 text-sm text-[var(--color-neutral-dark)]">可替代：{(item.alternatives ?? []).join(' / ')}</p>
                     ) : null}
                   </div>
                 ))}
               </div>
 
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-white">搭配逻辑 Styling Logic</p>
+                <p className="text-sm font-medium text-[var(--color-primary)]">搭配逻辑 Styling Logic</p>
                 {analysis.breakdown.stylingTips.map((tip) => (
-                  <p key={tip} className="text-sm text-white/82">
+                  <p key={tip} className="text-sm text-[var(--color-neutral-dark)]">
                     {tip}
                   </p>
                 ))}
@@ -336,7 +336,7 @@ export function InspirationPage({
                 <div className="flex flex-col gap-2">
                   <p className="text-sm font-medium text-[var(--color-accent)]">颜色为什么成立 Color Notes</p>
                   {(analysis.breakdown.colorStrategyNotes ?? []).map((note) => (
-                    <p key={note} className="text-sm text-white/86">
+                    <p key={note} className="text-sm text-[var(--color-neutral-dark)]">
                       {note}
                     </p>
                   ))}

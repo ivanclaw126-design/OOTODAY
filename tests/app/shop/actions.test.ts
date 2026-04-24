@@ -107,6 +107,7 @@ describe('analyzeShopCandidateAction', () => {
     expect(result.analysis?.candidate.imageCandidates).toEqual(['https://example.com/item.jpg'])
     expect(result.analysis?.estimatedOutfitCount).toBe(1)
     expect(result.analysis?.recommendation).toBe('consider')
+    expect(getClosetView).toHaveBeenCalledWith('user-1', { limit: 0 })
     expect(getPreferenceState).toHaveBeenCalledWith({ userId: 'user-1' })
   })
 

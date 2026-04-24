@@ -162,6 +162,73 @@ describe('matchClosetToInspiration', () => {
     expect(matches[0]?.scoreBreakdown?.matchType).toBe('formulaSubstitute')
   })
 
+  it('does not borrow accessories for core clothing slots when no same-slot substitute exists', () => {
+    const matches = matchClosetToInspiration(
+      {
+        summary: 'summary',
+        scene: 'scene',
+        vibe: 'vibe',
+        colorFormula: '米白色上装 + 卡其色下装',
+        silhouetteFormula: '宽松短袖 + 直筒下装',
+        layeringFormula: '单层',
+        focalPoint: '米白短袖衬衫',
+        keyItems: [
+          {
+            id: 'shirt',
+            label: '米白短袖衬衫',
+            category: 'shirt',
+            slot: 'top',
+            colorHint: '米白色',
+            silhouette: ['宽松'],
+            layerRole: 'base',
+            importance: 5,
+            styleTags: ['base', 'clean']
+          },
+          {
+            id: 'trousers',
+            label: '高腰阔腿裤',
+            category: 'trousers',
+            slot: 'bottom',
+            colorHint: '米色',
+            silhouette: ['高腰', '阔腿'],
+            layerRole: 'base',
+            importance: 5,
+            styleTags: ['tailored']
+          }
+        ],
+        stylingTips: [],
+        colorStrategyNotes: []
+      },
+      [
+        {
+          id: 'beige-scarf',
+          imageUrl: 'https://example.com/scarf.jpg',
+          category: '配饰',
+          subCategory: '围巾',
+          colorCategory: '米色',
+          styleTags: ['base', 'clean'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-22T00:00:00Z'
+        },
+        {
+          id: 'black-bag',
+          imageUrl: 'https://example.com/bag.jpg',
+          category: '包袋',
+          subCategory: '单肩包',
+          colorCategory: '黑色',
+          styleTags: ['tailored'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-22T00:00:00Z'
+        }
+      ]
+    )
+
+    expect(matches[0]?.matchedItems).toHaveLength(0)
+    expect(matches[1]?.matchedItems).toHaveLength(0)
+  })
+
   it('uses silhouette and color to substitute a long dark coat with a long dark blazer', () => {
     const matches = matchClosetToInspiration(
       {
