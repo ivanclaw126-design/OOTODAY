@@ -34,14 +34,14 @@ const demoClosetOptions: Array<{
     title: '女装演示衣橱',
     countLabel: '48 件',
     description: '通勤、约会、旅行和灵感复刻都有完整覆盖。',
-    imageUrl: '/demo-closets/studio-womens.jpg'
+    imageUrl: '/demo-closets/studio-womens.png'
   },
   {
     audience: 'mens',
     title: '男装演示衣橱',
     countLabel: '46 件',
     description: '商务休闲、周末、轻户外和差旅场景更稳定。',
-    imageUrl: '/demo-closets/studio-mens.jpg'
+    imageUrl: '/demo-closets/studio-mens.png'
   }
 ]
 
@@ -273,7 +273,7 @@ export function SettingsPage({
       </div>
 
       {confirmAction ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/38 p-4 sm:items-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/38 p-3 sm:items-center sm:p-4">
           <div className="absolute inset-0" onClick={() => setConfirmAction(null)} aria-hidden="true" />
           <div
             role="dialog"
@@ -287,7 +287,7 @@ export function SettingsPage({
                     ? '确认复制演示衣橱'
                     : '确认清空衣橱'
             }
-            className={`relative z-10 w-full rounded-[1.5rem] border border-black/10 bg-white p-5 shadow-[0_24px_60px_rgba(21,21,18,0.22)] ${
+            className={`relative z-10 max-h-[calc(100svh-1.5rem)] w-full overflow-y-auto rounded-[1.25rem] border border-black/10 bg-white p-4 shadow-[0_24px_60px_rgba(21,21,18,0.22)] sm:rounded-[1.5rem] sm:p-5 ${
               confirmAction === 'copy-demo' ? 'max-w-3xl' : 'max-w-md'
             }`}
           >
@@ -314,35 +314,35 @@ export function SettingsPage({
             </div>
             {confirmAction === 'copy-demo' ? (
               <>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
                   {demoClosetOptions.map((option) => (
                     <button
                       key={option.audience}
                       type="button"
                       disabled={isBusy}
                       onClick={() => void handleCopyDemo(option.audience)}
-                      className="group overflow-hidden rounded-[1.2rem] border border-[var(--color-line)] bg-white text-left transition duration-200 hover:-translate-y-0.5 hover:border-black/24 hover:shadow-[0_18px_38px_rgba(21,21,18,0.13)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="group overflow-hidden rounded-[1rem] border border-[var(--color-line)] bg-white text-left transition duration-200 hover:-translate-y-0.5 hover:border-black/24 hover:shadow-[0_18px_38px_rgba(21,21,18,0.13)] disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-[1.2rem]"
                     >
                       <span
                         role="img"
                         aria-label={`${option.title}影棚示意图`}
-                        className="block aspect-[3/4] bg-cover bg-center"
+                        className="block aspect-[4/3] bg-cover bg-[center_18%]"
                         style={{ backgroundImage: `url(${option.imageUrl})` }}
                       />
-                      <span className="block p-4">
-                        <span className="flex items-center justify-between gap-3">
-                          <span className="text-base font-semibold tracking-[-0.03em] text-[var(--color-primary)]">{option.title}</span>
-                          <span className="rounded-full border border-black/10 px-2.5 py-1 text-xs font-semibold text-[var(--color-neutral-dark)]">{option.countLabel}</span>
+                      <span className="block p-3 sm:p-4">
+                        <span className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                          <span className="text-sm font-semibold tracking-[-0.03em] text-[var(--color-primary)] sm:text-base">{option.title}</span>
+                          <span className="w-fit rounded-full border border-black/10 px-2 py-0.5 text-[11px] font-semibold text-[var(--color-neutral-dark)] sm:px-2.5 sm:py-1 sm:text-xs">{option.countLabel}</span>
                         </span>
-                        <span className="mt-2 block text-sm leading-6 text-[var(--color-neutral-dark)]">{option.description}</span>
-                        <span className="mt-4 inline-flex text-sm font-semibold text-[var(--color-primary)]">
+                        <span className="mt-2 hidden text-sm leading-6 text-[var(--color-neutral-dark)] sm:block">{option.description}</span>
+                        <span className="mt-3 inline-flex text-sm font-semibold text-[var(--color-primary)] sm:mt-4">
                           {isCopyingDemo ? '复制中' : `复制${option.audience === 'mens' ? '男装' : '女装'}衣橱`}
                         </span>
                       </span>
                     </button>
                   ))}
                 </div>
-                <div className="mt-5 flex justify-end">
+                <div className="mt-4 flex justify-end sm:mt-5">
                   <SecondaryButton type="button" onClick={() => setConfirmAction(null)} disabled={isBusy}>
                     取消
                   </SecondaryButton>
