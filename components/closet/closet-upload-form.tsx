@@ -3,11 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { PrimaryButton } from '@/components/ui/button'
 import {
-  ClosetCategoryBadge,
-  ClosetColorBadge,
   ClosetCategoryIcon,
   ClosetColorIcon,
-  ClosetSubCategoryBadge,
   ClosetSubCategoryIcon
 } from '@/components/closet/closet-taxonomy-icons'
 import {
@@ -46,6 +43,12 @@ function parseStyleTags(styleTagsText: string) {
 }
 
 const conditionOptions = ['全新', '良好', '常穿', '待观察'] as const
+const activeChoiceClassName =
+  'border-[var(--color-primary)] bg-[var(--color-accent)] text-[var(--color-primary)] shadow-[0_10px_22px_rgba(17,14,9,0.12)] ring-1 ring-[var(--color-primary)]/10'
+const inactiveChoiceClassName = 'border-[var(--color-neutral-mid)] bg-white/88 text-[var(--color-neutral-dark)]'
+const activeIconClassName = 'bg-[var(--color-primary)] text-[var(--color-accent)]'
+const inactiveIconClassName = 'bg-white/72'
+const selectedSummaryClassName = `inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium ${activeChoiceClassName}`
 
 export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel = '保存到衣橱', onSubmit }: ClosetUploadFormProps) {
   const normalizedInitialDraft = {
@@ -116,7 +119,12 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
         <label className="flex flex-col gap-1 text-sm">
           <span>分类</span>
           <div className="flex flex-wrap gap-2">
-            <ClosetCategoryBadge category={draft.category} />
+            <span className={selectedSummaryClassName}>
+              <span className={`rounded-full p-1 ${activeIconClassName}`}>
+                <ClosetCategoryIcon category={draft.category} size="sm" />
+              </span>
+              <span>{draft.category}</span>
+            </span>
           </div>
           <input aria-label="分类" value={draft.category} readOnly className="sr-only" />
           <div className="mt-2 flex flex-wrap gap-2">
@@ -129,12 +137,12 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
                   type="button"
                   onClick={() => handleCategoryChange(option.value)}
                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    isActive
-                      ? 'border-[var(--color-primary)] bg-white text-[var(--color-primary)] shadow-[0_10px_20px_rgba(17,14,9,0.08)]'
-                      : 'border-[var(--color-neutral-mid)] bg-white/88 text-[var(--color-neutral-dark)]'
+                    isActive ? activeChoiceClassName : inactiveChoiceClassName
                   }`}
                 >
-                  <ClosetCategoryIcon category={option.value} size="sm" />
+                  <span className={`rounded-full p-1 ${isActive ? activeIconClassName : inactiveIconClassName}`}>
+                    <ClosetCategoryIcon category={option.value} size="sm" />
+                  </span>
                   <span>{option.label}</span>
                 </button>
               )
@@ -146,7 +154,12 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
         <label className="flex flex-col gap-1 text-sm">
           <span>子分类</span>
           <div className="flex flex-wrap gap-2">
-            <ClosetSubCategoryBadge subCategory={draft.subCategory} />
+            <span className={selectedSummaryClassName}>
+              <span className={`rounded-full p-1 ${activeIconClassName}`}>
+                <ClosetSubCategoryIcon subCategory={draft.subCategory} size="sm" />
+              </span>
+              <span>{draft.subCategory}</span>
+            </span>
           </div>
           <input aria-label="子分类" value={draft.subCategory} readOnly className="sr-only" />
           <div className="mt-2 flex flex-wrap gap-2">
@@ -159,12 +172,12 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
                   type="button"
                   onClick={() => setDraft((current) => ({ ...current, subCategory: option.value }))}
                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    isActive
-                      ? 'border-[var(--color-primary)] bg-white text-[var(--color-primary)] shadow-[0_10px_20px_rgba(17,14,9,0.08)]'
-                      : 'border-[var(--color-neutral-mid)] bg-white/88 text-[var(--color-neutral-dark)]'
+                    isActive ? activeChoiceClassName : inactiveChoiceClassName
                   }`}
                 >
-                  <ClosetSubCategoryIcon subCategory={option.value} size="sm" />
+                  <span className={`rounded-full p-1 ${isActive ? activeIconClassName : inactiveIconClassName}`}>
+                    <ClosetSubCategoryIcon subCategory={option.value} size="sm" />
+                  </span>
                   <span>{option.label}</span>
                 </button>
               )
@@ -182,7 +195,12 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
         <label className="flex flex-col gap-1 text-sm">
           <span>颜色</span>
           <div className="flex flex-wrap gap-2">
-            <ClosetColorBadge color={draft.colorCategory} />
+            <span className={selectedSummaryClassName}>
+              <span className={`rounded-full p-1 ${activeIconClassName}`}>
+                <ClosetColorIcon color={draft.colorCategory} size="sm" />
+              </span>
+              <span>{draft.colorCategory}</span>
+            </span>
           </div>
           <input aria-label="颜色" value={draft.colorCategory} readOnly className="sr-only" />
           <div className="mt-2 flex flex-wrap gap-2">
@@ -195,12 +213,12 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
                   type="button"
                   onClick={() => setDraft((current) => ({ ...current, colorCategory: option.value }))}
                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    isActive
-                      ? 'border-[var(--color-primary)] bg-white text-[var(--color-primary)] shadow-[0_10px_20px_rgba(17,14,9,0.08)]'
-                      : 'border-[var(--color-neutral-mid)] bg-white/88 text-[var(--color-neutral-dark)]'
+                    isActive ? activeChoiceClassName : inactiveChoiceClassName
                   }`}
                 >
-                  <ClosetColorIcon color={option.value} size="sm" />
+                  <span className={`rounded-full p-1 ${isActive ? activeIconClassName : inactiveIconClassName}`}>
+                    <ClosetColorIcon color={option.value} size="sm" />
+                  </span>
                   <span>{option.label}</span>
                 </button>
               )
