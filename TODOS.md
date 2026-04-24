@@ -51,14 +51,16 @@ Deferred work from `/plan-eng-review` on 2026-04-19.
 **Context:** V1 uses manual city input to avoid browser permission friction.
 **Depends on:** Mobile app implementation.
 
-### Deployment Auth QA
-**What:** Verify deployed magic link, default password login, changed password login, and bootstrap route splitting.
-**Why:** Local and automated auth coverage exists, but provider email and deployed callback URLs are environment-sensitive.
-**Pros:** Catches the main production-only beta risk before inviting testers.
-**Cons:** Requires deployed environment and real inbox checks.
-**Depends on:** active deployment URL and test account access.
+### Beta Readiness QA
+**Status:** Checklist created in `docs/beta-readiness-checklist.md`; execution still pending for target beta environment.
+**What:** Verify Auth, recommendation preferences, Today, Looks, Shop, Travel, mobile UX, CI, Vercel build, Supabase migrations, and deployment env vars before inviting testers.
+**Why:** Local and automated coverage exists, but provider email, deployed callback URLs, mobile touch behavior, and hosted environment variables are environment-sensitive.
+**Pros:** Catches production-only beta risks before inviting testers.
+**Cons:** Requires deployed environment, real inbox checks, mobile viewport/touch checks, and Vercel access.
+**Depends on:** active deployment URL, test account access, and authenticated Vercel project access.
 
 ### Cross-Page Language QA
+**Status:** Shared copy layer shipped; keep representative visual/manual checks in the beta readiness checklist until target-environment QA passes.
 **What:** Review Today, Shop, Looks, and Travel color-strategy explanations for consistent wording.
 **Why:** Shared deterministic helpers are wired, but user-facing language still needs a coherent product voice pass.
 **Pros:** Better perceived intelligence and less duplicated explanation language.

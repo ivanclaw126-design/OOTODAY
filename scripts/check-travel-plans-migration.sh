@@ -9,7 +9,7 @@ build_candidate_db_urls() {
   ROOT_DIR_FOR_PY="$ROOT_DIR" python3 - <<'PY'
 from pathlib import Path
 import os
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 
 def parse_env_file(path: Path) -> dict[str, str]:
@@ -44,6 +44,13 @@ def derive_transaction_pooler(url: str | None) -> str | None:
     return urlunparse(parsed._replace(netloc=f"{parsed.username}:{parsed.password}@{parsed.hostname}:6543"))
 
 
+def disable_statement_cache(url: str) -> str:
+    parsed = urlparse(url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query["statement_cache_capacity"] = "0"
+    return urlunparse(parsed._replace(query=urlencode(query)))
+
+
 root = Path(os.environ["ROOT_DIR_FOR_PY"])
 env_values: dict[str, str] = {}
 for env_file in (root / ".env.local", root / ".env"):
@@ -62,8 +69,9 @@ for label, url in (
 ):
     if not url or url in seen:
         continue
-    candidates.append((label, url))
-    seen.add(url)
+    normalized_url = disable_statement_cache(url)
+    candidates.append((label, normalized_url))
+    seen.add(normalized_url)
 
 for label, url in candidates:
     print(f"{label}\t{url}")
@@ -141,7 +149,7 @@ fi
 echo "[travel-plans-check] Connected via ${USED_STRATEGY} path."
 echo "$OUTPUT"
 
-if printf '%s' "$OUTPUT" | grep -q "20260422_add_travel_plans"; then
+if printf '%s' "$OUTPUT" | grep -q "20260422"; then
   echo "[travel-plans-check] Migration is already visible to the linked project."
 else
   PUSH_CHECK_CMD=(supabase db push --dry-run)

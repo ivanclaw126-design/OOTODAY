@@ -3,8 +3,40 @@ import type { TodayWeather } from '@/lib/today/types'
 
 type WeatherPayload = {
   name?: string
-  weather?: Array<{ description?: string }>
+  weather?: Array<{ description?: string; main?: string }>
   main?: { temp?: number }
+}
+
+const CONDITION_LABELS: Record<string, string> = {
+  'clear sky': '晴',
+  clear: '晴',
+  clouds: '多云',
+  'few clouds': '少云',
+  'scattered clouds': '多云',
+  'broken clouds': '多云',
+  'overcast clouds': '阴',
+  drizzle: '小雨',
+  rain: '雨',
+  'light rain': '小雨',
+  'moderate rain': '中雨',
+  'heavy intensity rain': '大雨',
+  thunderstorm: '雷雨',
+  snow: '雪',
+  mist: '薄雾',
+  fog: '雾',
+  haze: '霾',
+  smoke: '烟雾',
+  dust: '浮尘',
+  sand: '扬沙',
+  squall: '飑',
+  tornado: '龙卷风'
+}
+
+function localizeConditionLabel(description: string, main?: string) {
+  const normalizedDescription = description.trim().toLowerCase()
+  const normalizedMain = main?.trim().toLowerCase()
+
+  return CONDITION_LABELS[normalizedDescription] ?? (normalizedMain ? CONDITION_LABELS[normalizedMain] : undefined) ?? description
 }
 
 async function readWeather(url: string) {
@@ -21,7 +53,8 @@ async function readWeather(url: string) {
 
 function normalizeWeather(payload: WeatherPayload): TodayWeather | null {
   const temperature = payload.main?.temp
-  const conditionLabel = payload.weather?.[0]?.description
+  const condition = payload.weather?.[0]
+  const conditionLabel = condition?.description
   const normalizedCity = payload.name
 
   if (typeof temperature !== 'number' || !conditionLabel || !normalizedCity) {
@@ -31,7 +64,7 @@ function normalizeWeather(payload: WeatherPayload): TodayWeather | null {
   return {
     city: normalizedCity,
     temperatureC: Math.round(temperature),
-    conditionLabel,
+    conditionLabel: localizeConditionLabel(conditionLabel, condition.main),
     isWarm: temperature >= 24,
     isCold: temperature <= 12
   }
@@ -63,7 +96,8 @@ async function getWeatherByGeocoding(city: string, apiKey: string, baseUrl: stri
     lat: String(match.lat),
     lon: String(match.lon),
     appid: apiKey,
-    units: 'metric'
+    units: 'metric',
+    lang: 'zh_cn'
   })
 
   return readWeather(`${baseUrl}?${searchParams.toString()}`)
@@ -82,7 +116,8 @@ export async function getWeather(city: string): Promise<TodayWeather | null> {
   const searchParams = new URLSearchParams({
     q: city,
     appid: apiKey,
-    units: 'metric'
+    units: 'metric',
+    lang: 'zh_cn'
   })
 
   const directPayload = await readWeather(`${baseUrl}?${searchParams.toString()}`)

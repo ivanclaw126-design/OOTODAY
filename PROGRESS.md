@@ -99,6 +99,8 @@
 - Closet 仍是客户端体积重点：当前导入、远程链接、拼图与编辑能力集中在同一交互岛里，下一轮若继续压包，应优先把低频导入/图片处理路径懒加载。
 - 移动端底部导航在 full-page 截图里会覆盖部分中段内容；实际滚动底部已有 padding，但 beta 前仍建议再做一次手感微调。
 - Today、Shop、Looks、Travel 已完成一轮跨页面语言一致性 QA；后续仍可补视觉回归截图覆盖更多文案状态。
+- Phase 9 beta readiness checklist 已创建：`docs/beta-readiness-checklist.md` 覆盖 Auth、偏好、Today、Looks、Shop、Travel、移动端和 CI/部署验收；真实邮箱 Auth、Vercel build、移动端手感仍需在目标环境逐项打勾。
+- Supabase 迁移检查已修正为 IPv4 transaction pooler + disabled statement cache 路径；`supabase db push --include-all` 与 `npm run travel:db:check` 当前均可确认远端 schema reachable/up to date。
 - Auth 还需要一轮真实邮箱与部署环境验证，覆盖“默认密码直登”和“改密后使用其他密码”两个分支。
 - Shop 对淘宝 / 得物的商品图兼容仍有继续提升空间，但当前先保持核心服饰范围，不扩品类。
 
@@ -128,7 +130,7 @@
 
 ## 下一步
 
-1. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
-2. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
-3. 为 Today、Shop、Looks、Travel 的关键推荐文案状态补视觉回归截图或手动截图 QA。
-4. 做一轮移动端 beta 手感 QA，重点看底部导航覆盖感、Closet 浏览区和导入确认表单。
+1. 按 `docs/beta-readiness-checklist.md` 跑目标环境 beta go/no-go：优先 Auth、推荐偏好、Today、移动端和 CI/部署。
+2. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
+3. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
+4. 为 Today、Shop、Looks、Travel 的关键推荐文案状态补视觉回归截图或手动截图 QA。
