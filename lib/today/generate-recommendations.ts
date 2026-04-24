@@ -14,6 +14,14 @@ import {
 import { buildInspirationAttemptLabel, buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
 import { DEFAULT_PREFERENCE_PROFILE, DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
 import { isGoodInspirationCandidate, pickDeterministicInspirationCandidate, shouldShowInspiration } from '@/lib/recommendation/exploration'
+import {
+  evaluateOutfit,
+  filterWeatherSuitableItems,
+  getItemFreshnessScore,
+  getItemWeatherSuitability,
+  getWeightedOutfitScore,
+  rankItemsForRecommendation
+} from '@/lib/recommendation/outfit-evaluator'
 import type { InspirationCandidateSignals, PreferenceProfile, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
 import type {
   TodayRecommendation,
@@ -109,7 +117,22 @@ function countSharedStyleTags(a: string[], b: string[]) {
 }
 
 function itemSearchText(item: ClosetItemCardData) {
-  return [item.category, item.subCategory, item.colorCategory, ...item.styleTags].filter(Boolean).join(' ').toLowerCase()
+  const meta = item.algorithmMeta
+
+  return [
+    item.category,
+    item.subCategory,
+    item.colorCategory,
+    ...item.styleTags,
+    ...(item.seasonTags ?? []),
+    meta?.slot,
+    meta?.layerRole,
+    meta?.length,
+    meta?.fabricWeight,
+    meta?.pattern,
+    ...(meta?.silhouette ?? []),
+    ...(meta?.material ?? [])
+  ].filter(Boolean).join(' ').toLowerCase()
 }
 
 function hasAnyTextToken(item: ClosetItemCardData, tokens: string[]) {
@@ -140,31 +163,11 @@ function getWeatherMatchScore(item: ClosetItemCardData, weather: TodayWeather | 
     return 0
   }
 
-  if (weather.isCold) {
-    return hasAnyTextToken(item, ['靴', '皮鞋', '乐福', '厚', '保暖', '防风']) ? 5 : 0
-  }
-
-  if (isMildCoolWeather(weather)) {
-    return hasAnyTextToken(item, ['开衫', '夹克', '冲锋衣', '风衣', '薄', '轻', '防风']) ? 7 : 0
-  }
-
-  if (weather.isWarm) {
-    return hasAnyTextToken(item, ['凉鞋', '帆布', '轻便', '草编', '薄']) ? 5 : 0
-  }
-
-  return 0
+  return (getItemWeatherSuitability(item, weather) - 70) / 5
 }
 
 function getWearFreshnessScore(item: ClosetItemCardData) {
-  let score = 0
-
-  if (!item.lastWornDate) {
-    score += 8
-  }
-
-  score += Math.max(0, 4 - item.wearCount)
-
-  return score
+  return getItemFreshnessScore(item) / 10
 }
 
 function average(numbers: number[]) {
@@ -346,159 +349,12 @@ function addCompletionSlots({
   return draft
 }
 
-function scoreColorHarmony(draft: OutfitDraft) {
-  const selectedItems = getSelectedItems(draft)
-
-  if (selectedItems.length <= 1) {
-    return 62
-  }
-
-  const pairScores: number[] = []
-
-  for (let left = 0; left < selectedItems.length; left += 1) {
-    for (let right = left + 1; right < selectedItems.length; right += 1) {
-      pairScores.push(scoreColorCompatibility(selectedItems[left].colorCategory, selectedItems[right].colorCategory))
-    }
-  }
-
-  return clampScore(45 + average(pairScores) * 15)
-}
-
-function scoreSilhouetteBalance(draft: OutfitDraft, profile: PreferenceProfile) {
-  if (draft.outfitKind === 'partial') {
-    return draft.bottom || draft.top ? 46 : 35
-  }
-
-  let score = draft.outfitKind === 'onePiece' ? 78 : 74
-
-  if (draft.outfitKind === 'onePiece' && profile.silhouettePreference.includes('onePiece')) {
-    score += 12
-  }
-
-  if (draft.outfitKind === 'separates' && draft.top && draft.bottom) {
-    score += Math.min(10, countSharedStyleTags(draft.top.styleTags, draft.bottom.styleTags) * 5)
-
-    if (profile.silhouettePreference.includes('shortTopHighWaist') || profile.silhouettePreference.includes('fittedTopWideBottom')) {
-      score += 4
-    }
-  }
-
-  return clampScore(score)
-}
-
-function scoreLayering(draft: OutfitDraft, weather: TodayWeather | null, profile: PreferenceProfile) {
-  const wantsOuterLayer = shouldUseOuterLayer(weather, profile)
-
-  if (weather?.isCold) {
-    return draft.outerLayer ? 94 : 42
-  }
-
-  if (weather && isMildCoolWeather(weather)) {
-    return draft.outerLayer ? 88 : 52
-  }
-
-  if (weather?.isWarm) {
-    return draft.outerLayer ? 64 : 90
-  }
-
-  if (wantsOuterLayer) {
-    return draft.outerLayer ? 86 : 56
-  }
-
-  return draft.outerLayer ? 76 : 82
-}
-
-function scoreFocalPoint(draft: OutfitDraft, profile: PreferenceProfile) {
-  if (profile.focalPointPreference === 'shoes') {
-    return draft.shoes ? 90 : 48
-  }
-
-  if (profile.focalPointPreference === 'bagAccessory') {
-    return draft.bag || draft.accessories.length > 0 ? 90 : 50
-  }
-
-  if (profile.focalPointPreference === 'upperBody') {
-    return draft.top && isVividColor(draft.top.colorCategory) ? 88 : 68
-  }
-
-  if (profile.focalPointPreference === 'waist') {
-    return draft.outfitKind === 'separates' ? 78 : 64
-  }
-
-  const selectedItems = getSelectedItems(draft)
-  const vividCount = selectedItems.filter((item) => isVividColor(item.colorCategory)).length
-
-  return vividCount <= 1 ? 84 : 62
-}
-
-function scoreSceneFit(draft: OutfitDraft, profile: PreferenceProfile) {
-  const sceneTags: Record<PreferenceProfile['preferredScenes'][number], string[]> = {
-    work: ['通勤', '正式', '商务'],
-    casual: ['休闲', '基础', '极简'],
-    date: ['约会', '优雅', '甜美'],
-    travel: ['旅行', '休闲', '轻便'],
-    outdoor: ['户外', '运动', '防风'],
-    party: ['派对', '亮片', '华丽']
-  }
-  const selectedTags = getSelectedItems(draft).flatMap((item) => item.styleTags)
-  const preferredTags = profile.preferredScenes.flatMap((scene) => sceneTags[scene] ?? [])
-  const matchedTags = new Set(selectedTags.filter((tag) => preferredTags.includes(tag)))
-
-  if (matchedTags.size > 0) {
-    return clampScore(76 + matchedTags.size * 6)
-  }
-
-  const coreItems = buildCoreReferenceItems(draft)
-  const sharedCoreTags = coreItems.length > 1 ? countSharedStyleTags(coreItems[0].styleTags, coreItems[1].styleTags) : 0
-
-  return clampScore(64 + sharedCoreTags * 6)
-}
-
-function scoreWeatherComfort(draft: OutfitDraft, weather: TodayWeather | null) {
-  if (weather?.isCold) {
-    return draft.outerLayer ? 92 : 45
-  }
-
-  if (weather && isMildCoolWeather(weather)) {
-    return draft.outerLayer ? 88 : 62
-  }
-
-  if (weather?.isWarm) {
-    return draft.outerLayer ? 62 : 90
-  }
-
-  return draft.shoes ? 82 : 70
-}
-
-function scoreCompleteness(draft: OutfitDraft) {
-  const coreMissing = draft.missingSlots.filter((slot) => slot === 'top' || slot === 'bottom' || slot === 'dress').length
-  const optionalMissing = draft.missingSlots.length - coreMissing
-
-  return clampScore(100 - coreMissing * 28 - optionalMissing * 12)
-}
-
-function scoreFreshness(draft: OutfitDraft) {
-  const selectedItems = getSelectedItems(draft)
-  return clampScore(48 + average(selectedItems.map(getWearFreshnessScore)) * 4)
-}
-
 function buildComponentScores(draft: OutfitDraft, weather: TodayWeather | null, profile: PreferenceProfile): ScoreWeights {
-  return {
-    colorHarmony: scoreColorHarmony(draft),
-    silhouetteBalance: scoreSilhouetteBalance(draft, profile),
-    layering: scoreLayering(draft, weather, profile),
-    focalPoint: scoreFocalPoint(draft, profile),
-    sceneFit: scoreSceneFit(draft, profile),
-    weatherComfort: scoreWeatherComfort(draft, weather),
-    completeness: scoreCompleteness(draft),
-    freshness: scoreFreshness(draft)
-  }
+  return evaluateOutfit(draft, { weather, profile }).componentScores
 }
 
 function getFinalScore(componentScores: ScoreWeights, weights: ScoreWeights) {
-  return Object.entries(weights).reduce((score, [key, weight]) => {
-    return score + componentScores[key as keyof ScoreWeights] * weight
-  }, 0)
+  return getWeightedOutfitScore(componentScores, weights)
 }
 
 function buildPairReason(draft: OutfitDraft, weather: TodayWeather | null) {
@@ -632,13 +488,29 @@ function buildRecommendationCandidates(
 ) {
   const profile = preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE
   const weights = preferenceState?.finalWeights ?? DEFAULT_RECOMMENDATION_WEIGHTS
-  const tops = [...items.filter((item) => isTopCategory(item.category))].sort(compareWearPriority)
-  const bottoms = [...items.filter((item) => isBottomCategory(item.category))].sort(compareWearPriority)
-  const dresses = [...items.filter((item) => isOnePieceCategory(item.category))].sort(compareWearPriority)
-  const outerLayers = [...items.filter((item) => isOuterwearCategory(item.category))].sort(compareWearPriority)
-  const shoes = [...items.filter((item) => isShoesCategory(item.category))].sort(compareWearPriority)
-  const bags = [...items.filter((item) => isBagCategory(item.category))].sort(compareWearPriority)
-  const accessories = [...items.filter((item) => isAccessoryCategory(item.category))].sort(compareWearPriority)
+  const rankContext = { weather, profile }
+  const tops = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isTopCategory(item.category)), weather, 46),
+    rankContext
+  )
+  const bottoms = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isBottomCategory(item.category)), weather, 52),
+    rankContext
+  )
+  const dresses = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isOnePieceCategory(item.category)), weather, 50),
+    rankContext
+  )
+  const outerLayers = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isOuterwearCategory(item.category)), weather, 45),
+    rankContext
+  )
+  const shoes = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isShoesCategory(item.category)), weather, 52),
+    rankContext
+  )
+  const bags = rankItemsForRecommendation(items.filter((item) => isBagCategory(item.category)), rankContext)
+  const accessories = rankItemsForRecommendation(items.filter((item) => isAccessoryCategory(item.category)), rankContext)
   const candidates: RecommendationCandidate[] = []
   const finishDraft = (draft: OutfitDraft) => {
     const completedDraft = addCompletionSlots({

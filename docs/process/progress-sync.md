@@ -37,12 +37,12 @@
 
 ## Latest Sync Snapshot
 
-- Date: 2026-04-24
-- Branch / theme: `codex/closet-image-replace` - saved Closet item image replacement
-- Latest checkpoint: `~/.gstack/projects/ivanclaw126-design-OOTODAY/checkpoints/20260424-235434-closet-image-replace.md`
-- Current blocker: no product blocker; branch is implemented and verified locally, but not committed/pushed yet.
-- Next plan to read: none for this branch; review the changed Closet files and tests directly.
-- Intended summary if `/context-save` fails: Saved Closet items can now replace their image from upload, drag/drop, or product/image link after confirmation; replacement persists through a new server action and can be undone through the existing restore-original window.
+- Date: 2026-04-25
+- Branch / theme: shared recommendation methodology evaluator
+- Latest checkpoint: not written in-session; use this snapshot if native Gstack context is missing.
+- Current blocker: no code blocker; local implementation, tests, lint, and build pass. Browser visual regression screenshots are still a follow-up.
+- Next plan to read: `docs/superpowers/plans/2026-04-23-outfit-taxonomy-color-strategy.md`
+- Intended summary if `/context-save` fails: Added `lib/recommendation/outfit-evaluator.ts` and wired Today, Shop, Inspiration, and Travel to shared scoring. The evaluator uses colors, tonal clusters, visual weight, silhouette, layer role, warmth, fabric weight, formality, comfort, pattern, scene, weather, completeness, freshness, `seasonTags`, and `algorithmMeta`, with category/subcategory/style fallback. Today and Travel now avoid 15-degree shorts/sandals when alternatives exist; Shop counts purchase value through scored outfit drafts; Inspiration reads metadata and nudges formula matching with `finalWeights`.
 
 ## Snapshot Template
 

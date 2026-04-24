@@ -1,10 +1,10 @@
 import {
   getColorDefinition,
   getOutfitColorRole,
-  hasSameColorFamily,
   isNeutralColor,
   normalizeColorValue
 } from '@/lib/closet/taxonomy'
+import { hasTonalColorRelationship } from '@/lib/recommendation/outfit-evaluator'
 
 export type RecommendationCopySurface = 'today' | 'shop' | 'inspiration' | 'travel' | 'default'
 export type RecommendationMissingSlot = 'shoes' | 'bag' | 'accessories' | 'outerLayer'
@@ -82,7 +82,7 @@ export function buildRecommendationColorNotes(
   const accentCount = normalizedColors.filter((color) => getOutfitColorRole(color) === 'accent').length
   const sameFamilyPairCount = countPairs(
     normalizedColors,
-    (left, right) => left !== right && hasSameColorFamily(left, right)
+    (left, right) => left !== right && hasTonalColorRelationship(left, right)
   )
 
   if (foundationCount >= 2 || (foundationCount >= 1 && normalizedColors.length <= 2)) {

@@ -284,6 +284,90 @@ describe('buildTravelPackingPlan', () => {
     expect(plan.notes).not.toContain('天气数据暂时不可用，这份清单先按衣橱稳定度和场景覆盖来排。')
   })
 
+  it('does not pack shorts or sandals for 15 degree travel when alternatives exist', () => {
+    const plan = buildTravelPackingPlan({
+      destinationCity: '上海',
+      days: 3,
+      scenes: ['休闲'],
+      weather: {
+        city: 'Shanghai',
+        temperatureC: 15,
+        conditionLabel: '阴',
+        isWarm: false,
+        isCold: false
+      },
+      items: [
+        {
+          id: 'top-1',
+          imageUrl: null,
+          category: '上衣',
+          subCategory: 'T恤',
+          colorCategory: '白色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-01T00:00:00Z'
+        },
+        {
+          id: 'shorts',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '短裤',
+          colorCategory: '卡其色',
+          styleTags: ['休闲'],
+          seasonTags: ['夏'],
+          algorithmMeta: { warmthLevel: 0, length: '短款' },
+          lastWornDate: null,
+          wearCount: 9,
+          createdAt: '2026-04-02T00:00:00Z'
+        },
+        {
+          id: 'pants',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '休闲裤',
+          colorCategory: '卡其色',
+          styleTags: ['休闲'],
+          seasonTags: ['春秋'],
+          algorithmMeta: { warmthLevel: 2, length: '长款' },
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-03T00:00:00Z'
+        },
+        {
+          id: 'sandals',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '凉鞋/拖鞋',
+          colorCategory: '黑色',
+          styleTags: ['休闲'],
+          seasonTags: ['夏'],
+          algorithmMeta: { warmthLevel: 0 },
+          lastWornDate: null,
+          wearCount: 9,
+          createdAt: '2026-04-04T00:00:00Z'
+        },
+        {
+          id: 'sneakers',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '运动鞋',
+          colorCategory: '白色',
+          styleTags: ['舒适'],
+          algorithmMeta: { warmthLevel: 2, comfortLevel: 5 },
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-05T00:00:00Z'
+        }
+      ]
+    })
+
+    expect(plan.entries.find((entry) => entry.categoryLabel === '下装')?.selectedItems.map((item) => item.id)).toEqual(['pants'])
+    expect(plan.entries.find((entry) => entry.categoryLabel === '舒适鞋')?.selectedItems.map((item) => item.id)).toEqual(['sneakers'])
+    expect(plan.dailyPlan.map((day) => day.selectedItems.map((item) => item.id)).flat()).not.toContain('shorts')
+    expect(plan.dailyPlan.map((day) => day.selectedItems.map((item) => item.id)).flat()).not.toContain('sandals')
+  })
+
   it('adds color-role based repeat-wear guidance for travel packing', () => {
     const plan = buildTravelPackingPlan({
       destinationCity: '香港',

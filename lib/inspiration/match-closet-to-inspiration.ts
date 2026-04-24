@@ -22,7 +22,9 @@ import type {
   InspirationOutfitSlot
 } from '@/lib/inspiration/types'
 import { DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
+import { evaluateOutfit, getWeightedOutfitScore } from '@/lib/recommendation/outfit-evaluator'
 import type { PreferenceProfile, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
+import type { TodayRecommendationMissingSlot } from '@/lib/today/types'
 
 const SCORE_WEIGHTS = {
   categoryScore: 0.35,
@@ -93,7 +95,22 @@ function countSharedTags(a: string[], b: string[]) {
 }
 
 function itemSearchText(item: ClosetItemCardData) {
-  return [item.category, item.subCategory, item.colorCategory, ...item.styleTags].filter(Boolean).join(' ').toLowerCase()
+  const meta = item.algorithmMeta
+
+  return [
+    item.category,
+    item.subCategory,
+    item.colorCategory,
+    ...item.styleTags,
+    ...(item.seasonTags ?? []),
+    meta?.slot,
+    meta?.layerRole,
+    meta?.length,
+    meta?.fabricWeight,
+    meta?.pattern,
+    ...(meta?.silhouette ?? []),
+    ...(meta?.material ?? [])
+  ].filter(Boolean).join(' ').toLowerCase()
 }
 
 function keyItemSearchText(item: InspirationKeyItem) {
@@ -152,6 +169,40 @@ function inferSlotFromCategory(category: string | null | undefined): Inspiration
   return 'unknown'
 }
 
+function inferSlotFromItem(item: ClosetItemCardData): InspirationOutfitSlot | 'unknown' {
+  const slot = item.algorithmMeta?.slot
+
+  if (slot === 'top') {
+    return 'top'
+  }
+
+  if (slot === 'bottom') {
+    return 'bottom'
+  }
+
+  if (slot === 'onePiece') {
+    return 'onePiece'
+  }
+
+  if (slot === 'outerwear') {
+    return 'outerLayer'
+  }
+
+  if (slot === 'shoes') {
+    return 'shoes'
+  }
+
+  if (slot === 'bag') {
+    return 'bag'
+  }
+
+  if (slot === 'accessory') {
+    return 'accessory'
+  }
+
+  return inferSlotFromCategory(item.category)
+}
+
 function normalizeSlot(value: string | null | undefined, fallbackCategory: string | null | undefined): InspirationOutfitSlot | 'unknown' {
   const normalizedValue = normalizeInput(value)
 
@@ -187,7 +238,13 @@ function normalizeSlot(value: string | null | undefined, fallbackCategory: strin
 }
 
 function inferLayerRole(item: ClosetItemCardData): InspirationLayerRole {
-  const slot = inferSlotFromCategory(item.category)
+  const metaLayerRole = item.algorithmMeta?.layerRole
+
+  if (metaLayerRole === 'base' || metaLayerRole === 'mid' || metaLayerRole === 'outer' || metaLayerRole === 'statement' || metaLayerRole === 'support') {
+    return metaLayerRole
+  }
+
+  const slot = inferSlotFromItem(item)
 
   if (slot === 'outerLayer') {
     return 'outer'
@@ -442,6 +499,60 @@ function getPracticalityFit(profile: PreferenceProfile | null, closetText: strin
   return { multiplier: 1, fit: 0.62, note: null }
 }
 
+function missingSlots(...slots: TodayRecommendationMissingSlot[]) {
+  return slots
+}
+
+function buildSingleItemOutfit(item: ClosetItemCardData, slot: InspirationOutfitSlot | 'unknown') {
+  if (slot === 'top') {
+    return { top: item, missingSlots: missingSlots('bottom', 'shoes', 'bag') }
+  }
+
+  if (slot === 'bottom') {
+    return { bottom: item, missingSlots: missingSlots('top', 'shoes', 'bag') }
+  }
+
+  if (slot === 'onePiece') {
+    return { dress: item, missingSlots: missingSlots('shoes', 'bag') }
+  }
+
+  if (slot === 'outerLayer') {
+    return { outerLayer: item, missingSlots: missingSlots('top', 'bottom', 'shoes', 'bag') }
+  }
+
+  if (slot === 'shoes') {
+    return { shoes: item, missingSlots: missingSlots('top', 'bottom', 'bag') }
+  }
+
+  if (slot === 'bag') {
+    return { bag: item, missingSlots: missingSlots('top', 'bottom', 'shoes') }
+  }
+
+  return { accessories: [item], missingSlots: missingSlots('top', 'bottom', 'shoes', 'bag') }
+}
+
+function getMethodologyFit(
+  profile: PreferenceProfile | null,
+  finalWeights: ScoreWeights | null,
+  closetItem: ClosetItemCardData,
+  closetSlot: InspirationOutfitSlot | 'unknown'
+) {
+  if (!finalWeights) {
+    return { multiplier: 1, fit: 0.65 }
+  }
+
+  const componentScores = evaluateOutfit(
+    buildSingleItemOutfit(closetItem, closetSlot),
+    { profile }
+  ).componentScores
+  const fit = clamp(getWeightedOutfitScore(componentScores, finalWeights) / 100, 0, 1)
+
+  return {
+    multiplier: clamp(0.86 + fit * 0.28, 0.9, 1.12),
+    fit
+  }
+}
+
 function buildPreferenceAdjustment({
   profile,
   inspirationItem,
@@ -449,7 +560,8 @@ function buildPreferenceAdjustment({
   closetSlot,
   closetLayerRole,
   silhouetteTokens,
-  closetText
+  closetText,
+  finalWeights
 }: {
   profile: PreferenceProfile | null
   inspirationItem: InspirationKeyItem
@@ -458,6 +570,7 @@ function buildPreferenceAdjustment({
   closetLayerRole: InspirationLayerRole
   silhouetteTokens: string[]
   closetText: string
+  finalWeights: ScoreWeights | null
 }) {
   if (!profile) {
     return {
@@ -473,12 +586,14 @@ function buildPreferenceAdjustment({
   const layerFit = getLayerPreferenceFit(profile, inspirationItem, closetLayerRole)
   const focalFit = getFocalPreferenceFit(profile, inspirationItem, closetSlot)
   const practicalityFit = getPracticalityFit(profile, closetText)
+  const methodologyFit = getMethodologyFit(profile, finalWeights, closetItem, closetSlot)
   const fit =
     colorFit.fit * 0.3 +
     silhouetteFit.fit * 0.2 +
     layerFit.fit * 0.15 +
     focalFit.fit * 0.2 +
-    practicalityFit.fit * 0.15
+    practicalityFit.fit * 0.1 +
+    methodologyFit.fit * 0.05
   const distanceFromDailyStyle = clamp(1 - fit, 0, 1)
   const tooFarForDaily = distanceFromDailyStyle > profile.exploration.maxDistanceFromDailyStyle + 0.22
   const explorationMultiplier = tooFarForDaily ? 0.58 : distanceFromDailyStyle > profile.exploration.maxDistanceFromDailyStyle ? 0.82 : 1
@@ -488,6 +603,7 @@ function buildPreferenceAdjustment({
       layerFit.multiplier *
       focalFit.multiplier *
       practicalityFit.multiplier *
+      methodologyFit.multiplier *
       explorationMultiplier,
     0.42,
     1.28
@@ -512,7 +628,7 @@ function scoreClosetItem(
   const normalizedInspirationCategory = normalizeCategoryValue(inspirationItem.category)
   const normalizedClosetCategory = normalizeCategoryValue(closetItem.category)
   const inspirationSlot = normalizeSlot(inspirationItem.slot, inspirationItem.category)
-  const closetSlot = inferSlotFromCategory(closetItem.category)
+  const closetSlot = inferSlotFromItem(closetItem)
   const closetText = itemSearchText(closetItem)
   const layerRole = inspirationItem.layerRole
   const closetLayerRole = inferLayerRole(closetItem)
@@ -531,7 +647,8 @@ function scoreClosetItem(
     closetSlot,
     closetLayerRole,
     silhouetteTokens,
-    closetText
+    closetText,
+    finalWeights: context.finalWeights
   })
   const categoryScore = normalizedClosetCategory === normalizedInspirationCategory ? context.weights.categoryScore : 0
   const slotScore = closetSlot === inspirationSlot ? context.weights.slotScore : 0

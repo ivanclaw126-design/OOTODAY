@@ -2,9 +2,45 @@
 
 ## Current Phase Completed
 
-Phase 8 cross-page recommendation language QA completed on 2026-04-24.
+Phase 9 shared methodology evaluator completed on 2026-04-25.
 
-Today / Shop / Inspiration / Travel now share recommendation copy for foundation colors, tonal palettes, single accents, multiple accents, missing shoes, missing bags, missing accessories, missing outer layers, and inspiration-attempt labeling. Page-specific wording remains intact for Today completion, Shop purchase value, Travel packing completeness, and Inspiration remix guidance.
+Today / Shop / Inspiration / Travel now share recommendation copy and a shared deterministic outfit evaluator for color harmony, silhouette balance, layering, focal point, scene fit, weather comfort, completeness, and freshness. Page-specific wording remains intact for Today completion, Shop purchase value, Travel packing completeness, and Inspiration remix guidance.
+
+## Phase 9 Shared Methodology Evaluator
+
+### Files Changed
+
+- `lib/recommendation/outfit-evaluator.ts`
+  - Adds the shared evaluator used by Today, Shop, Inspiration, and Travel.
+  - Scores real outfit dimensions: base color anchor, tonal relationship, accent control, visual weight, silhouette, layer role, warmth, fabric weight, formality, comfort, pattern, scene fit, weather fit, completeness, and freshness.
+  - Tolerates partial metadata by falling back to category, subcategory, style tags, season tags, and item text.
+  - Exposes `evaluateOutfit()`, `getWeightedOutfitScore()`, `getItemWeatherSuitability()`, `filterWeatherSuitableItems()`, `rankItemsForRecommendation()`, and `hasTonalColorRelationship()`.
+- `lib/closet/types.ts` / `lib/closet/get-closet-view.ts`
+  - Adds optional `seasonTags` to closet card data and reads `items.season_tags` so summer-only items can be penalized outside hot weather.
+- `lib/today/generate-recommendations.ts`
+  - Uses the shared evaluator for component scores and `finalWeights` sorting.
+  - Filters/ranks candidates by weather suitability before outfit generation; 15 degree weather no longer prefers shorts or sandals when covered alternatives exist.
+- `lib/shop/analyze-purchase-candidate.ts`
+  - Estimates purchase outfit count by inserting the candidate into real outfit drafts and scoring through the shared evaluator, while preserving shoe finisher, scene bag, and visual-focus semantics.
+- `lib/inspiration/match-closet-to-inspiration.ts`
+  - Reads `algorithmMeta.slot`, `layerRole`, `silhouette`, and `length` before text fallbacks.
+  - Uses `finalWeights` as a methodology multiplier for formula-substitute ranking.
+- `lib/travel/build-travel-packing-plan.ts`
+  - Ranks each packing slot by destination weather, scene, warmth, season, comfort, and preference profile before creating entries and daily plans.
+- `lib/recommendation/copy.ts`
+  - Uses tonal color clusters for same-family copy, so unrelated neutrals such as black/khaki or gray/brown no longer produce the “同色系深浅” explanation.
+
+### Phase 9 Verification
+
+- Targeted tests passed: `tests/lib/recommendation/outfit-evaluator.test.ts`, Today, Shop, Inspiration, Travel, and copy tests: 50 tests.
+- `npm test` passed: 62 test files, 285 tests.
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm run build` passed.
+
+### Phase 9 Remaining Issues
+
+- Browser visual regression screenshots were not added in this phase.
+- Shop, Inspiration, and Travel still do not have their own page-specific feedback loops; they consume Today/questionnaire-derived `finalWeights`.
 
 ## Supabase Remote Reconciliation
 
@@ -468,6 +504,12 @@ Earlier Today exploration changes are also present in the current branch:
   - `shouldShowInspiration({ profile, deterministicValue?, seed?, candidateCount?, alreadyShownToday? })`
   - `isGoodInspirationCandidate(candidate, profile)`
   - `pickDeterministicInspirationCandidate(candidates, profile, seed?)`
+  - `evaluateOutfit(outfit, context?)`
+  - `getWeightedOutfitScore(componentScores, weights?)`
+  - `getItemWeatherSuitability(item, weather?)`
+  - `filterWeatherSuitableItems(items, weather?, threshold?)`
+  - `rankItemsForRecommendation(items, context?)`
+  - `hasTonalColorRelationship(leftColor, rightColor)`
   - `generateTodayRecommendations({ items, weather, offset?, preferenceState?, explorationSeed? })`
 - Shop APIs:
   - `supportedFashionCategories`
@@ -518,12 +560,17 @@ Earlier Today exploration changes are also present in the current branch:
 - Travel missing hints explicitly explain missing shoes, bags, and outerwear impact.
 - Travel packing reads preference state when available and adjusts light packing, complete styling, layering complexity, and comfort-shoe priority.
 - Today / Shop / Inspiration / Travel share the same core language for foundation colors, tonal depth, single accent, multiple accent competition, missing shoes, missing bags, missing accessories, and inspiration-attempt labeling.
+- Today / Shop / Inspiration / Travel share the same core evaluator dimensions: color harmony, silhouette balance, layering, focal point, scene fit, weather comfort, completeness, and freshness.
+- Shared evaluator inputs prefer `algorithmMeta` and `seasonTags`, but tolerate missing metadata through category, subcategory, style tags, color category, wear history, and item text.
+- 15 degree weather treats summer shorts and sandals/slides as low suitability when covered alternatives exist.
+- Tonal copy no longer treats all neutral colors as one family; achromatic neutrals and warm neutrals are separate clusters.
 - Inspiration AI output includes outfit formulas: color, silhouette, layering, and focal point.
 - Inspiration key items can carry slot, silhouette, layer role, importance, and alternatives.
 - Inspiration closet matching is formula-weighted instead of category-only.
 - Inspiration can recommend substitutes when no same-category closet item exists.
 - Inspiration matching reads preference state, strictly filters hard avoids, and gently nudges formula matching with `finalWeights` without blocking medium-distance inspiration substitutes.
 - Closet items can carry optional `algorithmMeta` for slot, layer role, silhouette, length, material, fabric weight, formality, warmth, comfort, visual weight, and pattern; existing algorithms still fall back to category/subcategory/style tags.
+- Closet item cards can carry optional `seasonTags`; current Supabase reads include `items.season_tags` where available.
 
 ## Tests Added Or Updated
 
@@ -547,6 +594,13 @@ Earlier Today exploration changes are also present in the current branch:
   - light-packing reduction of backup shoes/non-essential bags
   - complete-styling retention of shoe/bag slots
   - comfort-first shoe ranking for walking-heavy trips
+- Shared evaluator tests cover:
+  - 15 degree weather filtering of shorts and sandals when alternatives exist
+  - fallback scoring without `algorithmMeta` or `seasonTags`
+  - full component score coverage for a cool-weather outfit
+  - tonal color clusters separating achromatic neutrals from warm neutrals
+- Today tests cover 15 degree recommendation avoiding shorts and sandals when alternatives exist.
+- Travel tests cover 15 degree packing avoiding shorts and sandals when alternatives exist.
 - Shared recommendation copy tests cover:
   - black/white/gray, beige/brown, and navy foundation-color language
   - tonal-depth language
@@ -574,22 +628,21 @@ Earlier Today exploration changes are also present in the current branch:
 Verification:
 
 - `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
-- `npm test` passed: 60 test files, 256 tests.
+- `npm test` passed: 62 test files, 285 tests.
 - `npm run build` passed, with `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
 
 ## Known Limitations
 
 - The new CI/App Quality GitHub Actions workflows have not run on GitHub in this session.
 - The Supabase migration for recommendation storage still has not been pushed/applied remotely in this phase.
-- Shop accessory analysis is still deterministic and profile-weighted; it does not yet learn from Shop-specific feedback events.
-- Bag and accessory scoring uses existing closet metadata only; it does not yet infer detailed occasion constraints from calendars, travel plans, or OOTD history.
+- Shop, Inspiration, and Travel consume the shared evaluator and `finalWeights`, but they still do not have their own page-specific feedback events.
+- Bag and accessory scoring uses closet metadata and evaluator fallback only; it does not yet infer detailed occasion constraints from calendars, travel plans, or OOTD history.
 - Cross-page language now shares helper copy, but page-level visual QA screenshots were not added in this phase.
 - Accessories still share the old `estimatedOutfitCount` display slot for compatibility, even though the recommendation reason frames them as visual/style reinforcement.
-- Travel shoe and bag selection now uses preference state when available, but it is still deterministic and does not yet learn from Travel-specific feedback.
+- Travel shoe and bag selection now uses preference state and shared evaluator context when available, but it is still deterministic and does not yet learn from Travel-specific feedback.
 - Travel scenes do not yet include explicit `步行` or `旅行` options, so the algorithm treats `户外`, `休闲`, and longer trips as walking-heavy signals.
 - Inspiration formula matching still depends on image-analysis metadata quality; weak AI output falls back to generic formula text.
-- Closet items do not yet store explicit silhouette/layer-role fields, so the matcher infers them from category, subcategory, and style tags.
-- Closet algorithm metadata is stored as JSON and preserved, but recommendation modules have not yet been refactored to consume it directly.
+- Closet items store explicit algorithm metadata as JSON when available, but old rows can still lack detailed fields, so every recommendation surface keeps category/subcategory/style fallback logic.
 - Inspiration preference distance is still a deterministic heuristic and does not yet learn from Looks-specific feedback.
 
 ## Recommended Next Prompt

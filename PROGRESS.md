@@ -1,6 +1,6 @@
 # OOTODAY 进度追踪
 
-> 最后更新：2026-04-24
+> 最后更新：2026-04-25
 > 角色：项目总览页。这里只记录当前稳定状态、已完成里程碑、未闭环事项和运行约定，不记录 session 级流水账。
 
 ## 当前状态
@@ -9,14 +9,14 @@
 - Closet 已具备第一阶段低成本导入闭环：本地图片上传、相册批量导入、商品链接或图片链接导入、拼图拆分导入，以及保存后继续浏览和编辑；单品还支持可选 `algorithm_meta`，用于后续更准确判断 slot、层次角色、轮廓、材质重量、正式度、保暖度、舒适度、视觉重量和图案。
 - Closet 已具备第一阶段整理能力：重复提醒、闲置提醒、基础缺口、优先动作清单、按类型/按颜色分组浏览、编辑识别结果、重新识别、删除、图片右转 90°。
 - Today + OOTD 已形成主链路：基于衣橱生成规则型推荐，支持天气增强、城市保存、换一批推荐、记录今日已穿、满意度反馈、最近历史查看与编辑/删除。
-- 推荐偏好引擎已完成前八阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序、低频 deterministic “灵感尝试”推荐，以及跨 Today / Shop / Looks / Travel 的推荐文案统一。
+- 推荐偏好引擎已完成共享评价体系阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序、低频 deterministic “灵感尝试”推荐、跨 Today / Shop / Looks / Travel 的推荐文案统一，以及共享 outfit evaluator 对颜色、轮廓、层次、视觉中心、场景、天气、完整度和新鲜度的统一评分。
 - Beta 首轮体验已开始收敛：登录后入口会按衣橱状态自动分流到 `Closet onboarding` 或 `Today`，Landing / Closet / Today 已接入统一 first-run checklist、明确的下一步 CTA 与可达的反馈入口。
 - Beta 最小观测层已落地：Landing、登录邮件发送、Closet 导入启动与保存、Today 浏览、OOTD 提交、反馈入口打开已接入轻量 telemetry；登录失败、导入失败、识别失败、Today 提交失败等高价值路径已接入统一 issue reporting，且失败不会阻塞主流程。
 - Today / Closet 已完成第一轮 server-client 边界收敛：页面壳、状态头和主路径提示已回到服务端，交互性的推荐/历史/设置与衣橱导入/浏览/编辑收敛到更小的客户端工作区；路由层已补 Suspense fallback，并已完成一轮 dev browser QA 与 bundle manifest 复核。
 - Shop 已完成偏好感知的扩展购买分析：支持商品链接、本地图片、图片 URL 输入，输出重复风险、可搭/收尾/强化收益、购买建议；分析范围已从核心服饰扩展到鞋履、包袋、配饰，并会结合用户偏好调整舒适、造型、低调与 hard avoids 的购买判断。
 - Looks 已完成偏好感知的公式化灵感复刻：支持上传灵感图或图片链接，输出色彩/轮廓/叠穿/视觉中心公式、关键单品、衣橱借用与替代建议，并会结合用户推荐偏好轻微调整排序、过滤 hard avoids、解释适合日常复刻还是更适合作为灵感尝试。
 - Travel 已完成偏好感知的扩展打包方案：支持目的地、天数、场景生成旅行清单、按天轮换建议、鞋履/包袋/外层缺口提示，以及最近方案保存/重开/更新/删除；偏好会影响轻装、完整造型、叠穿复杂度和舒适鞋优先级。
-- 配色、缺失 slot 与灵感尝试文案已进入共享层：Today、Shop、Looks、Travel 均开始复用统一的 taxonomy、color strategy helper 与 recommendation copy helper。
+- 配色、缺失 slot、灵感尝试文案和核心评分已进入共享层：Today、Shop、Looks、Travel 均开始复用统一的 taxonomy、color strategy helper、recommendation copy helper 与 outfit evaluator。
 
 ## 已完成里程碑
 
@@ -50,6 +50,7 @@
 - 提交 OOTD 后会同步更新 `items.last_worn_date / wear_count`，推荐逻辑也会优先避开最近刚穿过的单品。
 - Today 已补首轮闭环提示：空衣橱态会直接引导去 `Closet onboarding`，首次成功推荐后会强调“记录一次反馈”，并新增轻量的未来 1-3 天预看占位区。
 - Today / Closet 的高频交互区已从整页客户端壳里拆出；当前 manifest 复核显示 Today 已较轻，Closet 仍因导入/图片工作流保留较大客户端岛，后续优化应聚焦导入区懒加载而非继续扩功能。
+- Today 推荐已接入共享 outfit evaluator：候选池会按天气/季节/暖度先过滤再排序，15 度这类微凉天气在有替代物时不会优先推荐短裤、凉鞋/拖鞋；最终排序仍读取 `finalWeights`，因此问卷和 Today 评分会真实改变颜色、轮廓、层次、场景、天气等维度权重。
 
 ### 4. Shop Purchase Analysis MVP
 
@@ -58,6 +59,7 @@
 - 已完成非服饰类目拦截，避免输出误导性购买建议。
 - 已完成结果结构化输出：重复风险、预计可搭套数、是否值得买，以及颜色策略解释。
 - 已扩到鞋履、包袋、配饰，并接入用户推荐偏好：舒适优先会提高舒适鞋和可复用基础款价值，造型优先会提高包袋/配饰/视觉中心价值，低调偏好会降低大面积亮色、大 logo 和多焦点单品建议，hard avoids 会触发明确拦截或强提醒。
+- 购买可搭套数已从简单品类计数升级为共享 evaluator 评分：候选商品会被放进真实核心 outfit 中计算颜色、场景、完整度和用户最终权重，鞋包配饰继续保留收尾/场景/视觉中心的业务语义。
 
 ### 5. Looks Inspiration Remix MVP
 
@@ -65,6 +67,7 @@
 - 已完成与现有衣橱的借用匹配，并补上“我的版本怎么穿”复刻路径。
 - 已开始复用共享颜色解释层，可说明这套灵感为什么成立，以及复刻时应优先保住哪一处重点。
 - 已从“按类别匹配单品”升级为“偏好感知的穿搭公式匹配”：AI 拆出色彩、轮廓、叠穿和视觉中心公式；关键单品记录 slot、轮廓、层次角色、重要度和替代方案；衣橱匹配会综合类别、slot、颜色、轮廓、风格标签、层次角色和用户偏好，并在没有同类单品时给替代建议。
+- Looks 匹配会优先读取衣橱 `algorithmMeta.slot / layerRole / silhouette / length`，并用用户 `finalWeights` 对公式替代排序做轻微倍率调整，弱 metadata 时继续回退到 category / subCategory / styleTags。
 
 ### 6. Travel Packing MVP
 
@@ -72,6 +75,7 @@
 - 已完成缺口提醒、复穿策略、按天轮换建议、最近方案保存/重开/更新/删除。
 - 已完成鞋履与包袋扩展：通勤/正式场景会优先正式鞋和包袋，户外/步行/长途场景会优先舒适鞋，长途可加入备用鞋；缺鞋、缺包、缺外层会说明对旅行执行的影响。
 - 已接入用户推荐偏好：轻装用户会减少备用鞋、非必要包袋和复杂配饰；偏完整造型会保留鞋包配饰 slot；不喜欢复杂叠穿会减少三层组合；偏舒适会在步行/户外/长途场景提高舒适鞋优先级。
+- 打包候选池已接入共享 evaluator：目的地天气、场景、季节、暖度和舒适度会先影响每个 slot 的过滤与排序，15 度或更冷场景在有替代物时会压低短裤、凉鞋/拖鞋。
 - 远端 `travel_plans` 表未就绪时，fallback 存储也会保留完整方案快照，避免重开时静默重算。
 - 已通过自动化验证与真实浏览器 dogfood；保存后直接编辑并点击“更新这份方案”也已跑通。
 
@@ -80,7 +84,9 @@
 - 已新增 repo 内规格稿：`docs/superpowers/specs/2026-04-23-outfit-taxonomy-color-strategy-design.md`。
 - 已将分类、颜色强弱、基础色/辅助色/重点色等语言下沉到共享 helper。
 - Today、Shop、Looks、Travel 已接入第一版共享解释层，减少页面间重复规则分支。
-- 下一步不是继续堆研究样本，而是继续统一 score / explanation 结构，并补跨页面真实 QA。
+- Today、Shop、Looks、Travel 已接入共享 outfit evaluator，统一输出 `colorHarmony`、`silhouetteBalance`、`layering`、`focalPoint`、`sceneFit`、`weatherComfort`、`completeness`、`freshness` 八个维度；缺少 metadata 时会回退到 category / subCategory / styleTags / seasonTags。
+- 配色文案不再把所有中性色都当成“同色系”：黑/灰属于无彩中性色簇，米/卡其/棕属于暖中性色簇，只有真实同簇或同色相才输出“同色系深浅”。
+- 下一步不是继续堆研究样本，而是补跨页面真实浏览器截图 QA 和部署环境回归。
 
 ### 8. Beta Onboarding + Telemetry Foundation
 
@@ -99,7 +105,7 @@
 - Closet 的右转 90° 需要在旧库环境里再点一轮真实浏览器确认，确保不再触发 node/server action 报错。
 - Closet 仍是客户端体积重点：当前导入、远程链接、拼图与编辑能力集中在同一交互岛里，下一轮若继续压包，应优先把低频导入/图片处理路径懒加载。
 - 移动端底部导航在 full-page 截图里会覆盖部分中段内容；实际滚动底部已有 padding，但 beta 前仍建议再做一次手感微调。
-- Today、Shop、Looks、Travel 已完成一轮跨页面语言一致性 QA；后续仍可补视觉回归截图覆盖更多文案状态。
+- Today、Shop、Looks、Travel 已完成共享 evaluator 的单元测试覆盖；后续仍可补视觉回归截图覆盖更多文案状态。
 - Phase 9 beta readiness checklist 已创建：`docs/beta-readiness-checklist.md` 覆盖 Auth、偏好、Today、Looks、Shop、Travel、移动端和 CI/部署验收；真实邮箱 Auth、Vercel build、移动端手感仍需在目标环境逐项打勾。
 - Supabase 迁移检查已修正为 IPv4 transaction pooler + disabled statement cache 路径；`supabase db push --include-all` 与 `npm run travel:db:check` 当前均可确认远端 schema reachable/up to date。
 - Auth 还需要一轮真实邮箱与部署环境验证，覆盖“默认密码直登”和“改密后使用其他密码”两个分支。
@@ -135,4 +141,4 @@
 2. 用 `test@test.com` 维护女装 demo 图片衣橱，用 `test-men@test.com` 维护男装 demo 图片衣橱，并在部署环境验证“复制演示衣橱”和“清空我的衣橱”两条 Settings 路径。
 3. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
 4. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
-5. 为 Today、Shop、Looks、Travel 的关键推荐文案状态补视觉回归截图或手动截图 QA。
+5. 为 Today、Shop、Looks、Travel 的关键推荐和文案状态补视觉回归截图或手动截图 QA。

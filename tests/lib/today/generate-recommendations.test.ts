@@ -245,6 +245,100 @@ describe('generateTodayRecommendations', () => {
     expect(recommendations[0]?.componentScores?.weatherComfort).toBeGreaterThan(80)
   })
 
+  it('does not pick shorts or sandals at 15 degrees when covered alternatives exist', () => {
+    const recommendations = generateTodayRecommendations({
+      items: [
+        {
+          id: 'tee',
+          imageUrl: null,
+          category: '上装',
+          subCategory: 'T恤',
+          colorCategory: '白色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'shorts',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '短裤',
+          colorCategory: '卡其色',
+          styleTags: ['休闲'],
+          seasonTags: ['夏'],
+          algorithmMeta: { warmthLevel: 0, length: '短款' },
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:01:00Z'
+        },
+        {
+          id: 'pants',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '休闲裤',
+          colorCategory: '卡其色',
+          styleTags: ['休闲'],
+          seasonTags: ['春秋'],
+          algorithmMeta: { warmthLevel: 2, length: '长款' },
+          lastWornDate: '2026-04-20',
+          wearCount: 1,
+          createdAt: '2026-04-19T10:02:00Z'
+        },
+        {
+          id: 'jacket',
+          imageUrl: null,
+          category: '外层',
+          subCategory: '夹克',
+          colorCategory: '黑色',
+          styleTags: ['休闲'],
+          algorithmMeta: { warmthLevel: 3, layerRole: 'outer' },
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:03:00Z'
+        },
+        {
+          id: 'sandals',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '凉鞋/拖鞋',
+          colorCategory: '黑色',
+          styleTags: ['休闲'],
+          seasonTags: ['夏'],
+          algorithmMeta: { warmthLevel: 0 },
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:04:00Z'
+        },
+        {
+          id: 'sneakers',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '运动鞋',
+          colorCategory: '白色',
+          styleTags: ['舒适', '休闲'],
+          algorithmMeta: { warmthLevel: 2, comfortLevel: 5 },
+          lastWornDate: '2026-04-20',
+          wearCount: 1,
+          createdAt: '2026-04-19T10:05:00Z'
+        }
+      ],
+      weather: {
+        city: 'Shanghai',
+        temperatureC: 15,
+        conditionLabel: '阴',
+        isWarm: false,
+        isCold: false
+      },
+      preferenceState: resetRecommendationPreferences()
+    })
+
+    expect(recommendations[0]?.bottom?.id).toBe('pants')
+    expect(recommendations[0]?.shoes?.id).toBe('sneakers')
+    expect(recommendations[0]?.bottom?.id).not.toBe('shorts')
+    expect(recommendations[0]?.shoes?.id).not.toBe('sandals')
+  })
+
   it('adds shoes, bag, accessories, confidence, and component scores when available', () => {
     const preferenceState = resetRecommendationPreferences()
     const recommendations = generateTodayRecommendations({

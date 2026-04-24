@@ -1,5 +1,6 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import { buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
+import { filterWeatherSuitableItems, rankItemsForRecommendation } from '@/lib/recommendation/outfit-evaluator'
 import {
   isBagCategory,
   isBottomCategory,
@@ -16,7 +17,22 @@ function describeItem(item: ClosetItemCardData) {
 }
 
 function itemSearchText(item: ClosetItemCardData) {
-  return [item.category, item.subCategory, item.colorCategory, ...item.styleTags].filter(Boolean).join(' ').toLowerCase()
+  const meta = item.algorithmMeta
+
+  return [
+    item.category,
+    item.subCategory,
+    item.colorCategory,
+    ...item.styleTags,
+    ...(item.seasonTags ?? []),
+    meta?.slot,
+    meta?.layerRole,
+    meta?.length,
+    meta?.fabricWeight,
+    meta?.pattern,
+    ...(meta?.silhouette ?? []),
+    ...(meta?.material ?? [])
+  ].filter(Boolean).join(' ').toLowerCase()
 }
 
 function sortForTravel(left: ClosetItemCardData, right: ClosetItemCardData) {
@@ -45,10 +61,8 @@ function sortForComfortTravel(left: ClosetItemCardData, right: ClosetItemCardDat
   return sortForTravel(left, right)
 }
 
-function pickItems(items: ClosetItemCardData[], quantity: number) {
-  return [...items]
-    .sort(sortForTravel)
-    .slice(0, Math.max(0, quantity))
+function pickRankedItems(items: ClosetItemCardData[], quantity: number) {
+  return items.slice(0, Math.max(0, quantity))
 }
 
 function pickComfortItems(items: ClosetItemCardData[], quantity: number) {
@@ -65,7 +79,7 @@ function buildEntry(
   reason: string,
   slot?: TravelPackingSlot
 ): TravelPackingEntry | null {
-  const selected = pickItems(items, quantity)
+  const selected = pickRankedItems(items, quantity)
 
   if (selected.length === 0) {
     return null
@@ -139,14 +153,14 @@ function buildDailyPlan({
   bags: ClosetItemCardData[]
   scenes: TravelScene[]
 }): TravelDailyPlanEntry[] {
-  const rankedTops = [...tops].sort(sortForTravel)
-  const rankedBottoms = [...bottoms].sort(sortForTravel)
-  const rankedDresses = [...dresses].sort(sortForTravel)
-  const rankedOuterwear = [...outerwear].sort(sortForTravel)
-  const rankedFormalShoes = [...formalShoes].sort(sortForTravel)
-  const rankedComfortShoes = [...comfortShoes].sort(sortForTravel)
-  const rankedBackupShoes = [...backupShoes].sort(sortForTravel)
-  const rankedBags = [...bags].sort(sortForTravel)
+  const rankedTops = tops
+  const rankedBottoms = bottoms
+  const rankedDresses = dresses
+  const rankedOuterwear = outerwear
+  const rankedFormalShoes = formalShoes
+  const rankedComfortShoes = comfortShoes
+  const rankedBackupShoes = backupShoes
+  const rankedBags = bags
   const formalTrip = includesFormalScene(scenes)
   const walkingTrip = includesWalkingHeavyScene(scenes, days)
 
@@ -245,30 +259,46 @@ export function buildTravelPackingPlan({
   preferenceState
 }: TravelPlannerInput): TravelPackingPlan {
   const profile = preferenceState?.profile
+  const rankContext = { weather, profile, travelScenes: scenes }
   const lightPacking = prefersLightPacking(profile)
   const completeStyling = prefersCompleteStyling(profile)
   const dislikesComplexLayering = (profile?.layeringPreference.complexity ?? 1) === 0
   const comfortLeads = Boolean(profile && profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority)
-  const tops = items.filter((item) => isTopCategory(item.category))
-  const bottoms = items.filter((item) => isBottomCategory(item.category))
-  const dresses = items.filter((item) => isOnePieceCategory(item.category))
-  const outerwear = items.filter((item) => isOuterwearCategory(item.category))
-  const shoes = items.filter((item) => isShoesCategory(item.category))
-  const bags = items.filter((item) => isBagCategory(item.category))
+  const tops = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isTopCategory(item.category)), weather, 46),
+    rankContext
+  )
+  const bottoms = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isBottomCategory(item.category)), weather, 52),
+    rankContext
+  )
+  const dresses = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isOnePieceCategory(item.category)), weather, 50),
+    rankContext
+  )
+  const outerwear = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isOuterwearCategory(item.category)), weather, 45),
+    rankContext
+  )
+  const shoes = rankItemsForRecommendation(
+    filterWeatherSuitableItems(items.filter((item) => isShoesCategory(item.category)), weather, 52),
+    rankContext
+  )
+  const bags = rankItemsForRecommendation(items.filter((item) => isBagCategory(item.category)), rankContext)
   const formalTrip = includesFormalScene(scenes)
   const walkingTrip = includesWalkingHeavyScene(scenes, days)
   const formalShoeCandidates = shoes.filter(isFormalShoe)
   const comfortShoeCandidates = shoes.filter((item) => isComfortShoe(item) || !isFormalShoe(item))
   const formalBagCandidates = bags.filter(isFormalBag)
-  const selectedFormalShoes = formalTrip ? pickItems(formalShoeCandidates, 1) : []
+  const selectedFormalShoes = formalTrip ? pickRankedItems(formalShoeCandidates, 1) : []
   const selectedComfortShoes = walkingTrip || comfortLeads || selectedFormalShoes.length === 0 ? pickComfortItems(comfortShoeCandidates, 1) : []
   const selectedShoeIds = new Set([...selectedFormalShoes, ...selectedComfortShoes].map((item) => item.id))
   const selectedBackupShoes =
     !lightPacking && shoes.length > selectedShoeIds.size && (days >= 4 || walkingTrip || completeStyling)
-      ? pickItems(shoes.filter((item) => !selectedShoeIds.has(item.id)), 1)
+      ? pickRankedItems(shoes.filter((item) => !selectedShoeIds.has(item.id)), 1)
       : []
   const selectedBags = bags.length > 0 && (!lightPacking || formalTrip || completeStyling)
-    ? pickItems(formalTrip && formalBagCandidates.length > 0 ? formalBagCandidates : bags, 1)
+    ? pickRankedItems(formalTrip && formalBagCandidates.length > 0 ? formalBagCandidates : bags, 1)
     : []
 
   const topQuantity = Math.max(2, Math.min(tops.length, Math.ceil(days / 2) + (includesFormalScene(scenes) ? 1 : 0)))
