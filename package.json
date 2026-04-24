@@ -10,6 +10,7 @@
     "test": "vitest run",
     "demo:magiclink": "node scripts/demo-account.mjs",
     "demo:wardrobe:seed": "node scripts/seed-demo-wardrobe.mjs",
+    "demo:wardrobe:preview": "node scripts/generate-demo-wardrobe-preview.mjs",
     "travel:db:check": "bash scripts/check-travel-plans-migration.sh"
   },
   "dependencies": {

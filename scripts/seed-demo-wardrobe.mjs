@@ -5,6 +5,35 @@ import { createClient } from '@supabase/supabase-js'
 
 const DEFAULT_DEMO_EMAIL = 'test@test.com'
 const STORAGE_PREFIX = 'demo-wardrobe'
+const DEMO_IMAGE_ROOT = 'public/demo-wardrobe-items'
+const STORAGE_RETRY_ATTEMPTS = 5
+const STORAGE_UPLOAD_DELAY_MS = 350
+
+function sleep(ms) {
+  return new Promise((resolveSleep) => setTimeout(resolveSleep, ms))
+}
+
+async function withStorageRetry(label, operation) {
+  let lastError = null
+
+  for (let attempt = 1; attempt <= STORAGE_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation()
+    } catch (error) {
+      lastError = error
+
+      if (attempt >= STORAGE_RETRY_ATTEMPTS) {
+        break
+      }
+
+      const delayMs = 750 * attempt
+      console.warn(`${label} failed on attempt ${attempt}; retrying in ${delayMs}ms`)
+      await sleep(delayMs)
+    }
+  }
+
+  throw lastError
+}
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) {
@@ -86,10 +115,12 @@ async function listStoragePaths(admin, bucket, folder) {
   const paths = []
 
   async function walk(currentFolder) {
-    const { data, error } = await admin.storage.from(bucket).list(currentFolder, {
-      limit: 1000,
-      sortBy: { column: 'name', order: 'asc' }
-    })
+    const { data, error } = await withStorageRetry(`List storage ${currentFolder}`, () =>
+      admin.storage.from(bucket).list(currentFolder, {
+        limit: 1000,
+        sortBy: { column: 'name', order: 'asc' }
+      })
+    )
 
     if (error) {
       throw error
@@ -221,8 +252,23 @@ function renderSvg(item) {
 </svg>`
 }
 
-function normalizeStoragePath(userId, slug) {
-  return `${userId}/${STORAGE_PREFIX}/${slugify(slug)}.svg`
+function normalizeStoragePath(userId, slug, extension = 'svg') {
+  return `${userId}/${STORAGE_PREFIX}/${slugify(slug)}.${extension}`
+}
+
+function resolveDemoImageAsset(slug) {
+  const audienceFolder = demoAudience === 'mens' ? 'mens' : 'womens'
+  const imagePath = resolve(process.cwd(), DEMO_IMAGE_ROOT, audienceFolder, `${slugify(slug)}.png`)
+
+  if (!existsSync(imagePath)) {
+    return null
+  }
+
+  return {
+    path: imagePath,
+    extension: 'png',
+    contentType: 'image/png'
+  }
 }
 
 function toInsertPayload(item, userId, imageUrl) {
@@ -301,7 +347,9 @@ const existingPaths = await listStoragePaths(admin, storageBucket, storageFolder
 })
 
 if (existingPaths.length > 0) {
-  const { error } = await admin.storage.from(storageBucket).remove(existingPaths)
+  const { error } = await withStorageRetry(`Remove ${existingPaths.length} storage objects`, () =>
+    admin.storage.from(storageBucket).remove(existingPaths)
+  )
 
   if (error) {
     throw error
@@ -321,12 +369,16 @@ if (deleteError) {
 const inserts = []
 
 for (const item of manifest.items) {
-  const storagePath = normalizeStoragePath(user.id, item.slug)
-  const svg = renderSvg(item)
-  const { error: uploadError } = await admin.storage.from(storageBucket).upload(storagePath, Buffer.from(svg, 'utf8'), {
-    contentType: 'image/svg+xml; charset=utf-8',
-    upsert: true
-  })
+  const imageAsset = resolveDemoImageAsset(item.slug)
+  const storagePath = normalizeStoragePath(user.id, item.slug, imageAsset?.extension)
+  const imageBody = imageAsset ? readFileSync(imageAsset.path) : Buffer.from(renderSvg(item), 'utf8')
+  const contentType = imageAsset?.contentType ?? 'image/svg+xml; charset=utf-8'
+  const { error: uploadError } = await withStorageRetry(`Upload ${storagePath}`, () =>
+    admin.storage.from(storageBucket).upload(storagePath, imageBody, {
+      contentType,
+      upsert: true
+    })
+  )
 
   if (uploadError) {
     throw uploadError
@@ -334,6 +386,7 @@ for (const item of manifest.items) {
 
   const { data } = admin.storage.from(storageBucket).getPublicUrl(storagePath)
   inserts.push(toInsertPayload(item, user.id, data.publicUrl))
+  await sleep(STORAGE_UPLOAD_DELAY_MS)
 }
 
 const { error: insertError } = await admin.from('items').insert(inserts)

@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 
 export function VisualChoiceCard({
+  ariaLabel,
   title,
   description,
   selected,
@@ -10,6 +11,7 @@ export function VisualChoiceCard({
   visual,
   compact = false
 }: {
+  ariaLabel?: string
   title: string
   description: string
   selected: boolean
@@ -20,17 +22,23 @@ export function VisualChoiceCard({
   return (
     <button
       type="button"
+      aria-label={ariaLabel}
       aria-pressed={selected}
       onClick={onClick}
       className={[
-        'group flex h-full min-h-[10.5rem] flex-col items-stretch gap-3 rounded-[1.2rem] border p-3 text-left transition',
+        'group flex h-full flex-col items-stretch gap-3 rounded-[1.2rem] border p-3 text-left transition',
+        compact ? 'min-h-[16.5rem]' : 'min-h-[18.5rem]',
         selected
           ? 'border-[var(--color-primary)] bg-white shadow-[0_16px_34px_rgba(0,0,0,0.12)]'
-          : 'border-[var(--color-line)] bg-white/62 hover:-translate-y-0.5 hover:bg-white hover:shadow-[var(--shadow-soft)]',
-        compact ? 'min-h-[7.4rem]' : ''
+          : 'border-[var(--color-line)] bg-white/62 hover:-translate-y-0.5 hover:bg-white hover:shadow-[var(--shadow-soft)]'
       ].join(' ')}
     >
-      <div className="flex min-h-[4.8rem] items-center justify-center rounded-[0.9rem] border border-[var(--color-line)] bg-[rgba(246,241,232,0.82)] p-2">
+      <div
+        className={[
+          'flex items-center justify-center overflow-hidden rounded-[0.9rem] border border-[var(--color-line)] bg-[rgba(246,241,232,0.82)] p-1.5',
+          compact ? 'h-[10.5rem]' : 'h-[12.5rem]'
+        ].join(' ')}
+      >
         {visual}
       </div>
       <div className="space-y-1">

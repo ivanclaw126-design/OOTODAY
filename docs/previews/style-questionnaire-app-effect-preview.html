@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OOTODAY 问卷图片接入效果预览</title>
+    <style>
+      :root {
+        --paper: #f7f3eb;
+        --panel: rgba(255, 255, 255, 0.72);
+        --ink: #151512;
+        --muted: #6d7169;
+        --line: rgba(21, 21, 18, 0.12);
+        --accent: #8f6f3f;
+        --green: #3f4a3c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      }
+
+      main {
+        width: min(1180px, calc(100vw - 28px));
+        margin: 0 auto;
+        padding: 28px 0 80px;
+      }
+
+      .hero {
+        overflow: hidden;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 30px;
+        padding: 24px;
+        background: linear-gradient(180deg, rgba(21, 21, 18, 0.96), rgba(55, 61, 43, 0.94));
+        color: #fff;
+        box-shadow: 0 24px 54px rgba(21, 21, 18, 0.18);
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: #d8b276;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 8px 0 8px;
+        font-size: clamp(30px, 4vw, 44px);
+        letter-spacing: 0;
+      }
+
+      .hero p:last-child {
+        max-width: 680px;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      section {
+        margin-top: 18px;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--panel);
+      }
+
+      h2 {
+        margin: 0;
+        color: var(--ink);
+        font-size: 22px;
+        letter-spacing: 0;
+      }
+
+      .rule {
+        margin: 8px 0 16px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .grid.cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .card {
+        min-height: 296px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .card.selected {
+        border-color: var(--ink);
+        background: #fff;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.12);
+      }
+
+      .visual {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        background: rgba(246, 241, 232, 0.82);
+        padding: 6px;
+      }
+
+      .visual.compact {
+        height: 168px;
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .copy {
+        display: grid;
+        gap: 5px;
+      }
+
+      .title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .title-row strong {
+        color: var(--ink);
+        font-size: 15px;
+      }
+
+      .dot {
+        width: 12px;
+        height: 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+      }
+
+      .selected .dot {
+        border-color: var(--ink);
+        background: #d8b276;
+      }
+
+      .copy p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 980px) {
+        .grid,
+        .grid.cols-4 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        main {
+          width: min(100vw - 20px, 1180px);
+          padding-top: 18px;
+        }
+
+        section {
+          padding: 14px;
+        }
+
+        .grid,
+        .grid.cols-4 {
+          grid-template-columns: 1fr;
+        }
+
+        .visual,
+        .visual.compact {
+          height: 220px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="hero">
+        <p class="eyebrow">Style profile</p>
+        <h1>让推荐先认识你的穿法</h1>
+        <p>本页模拟当前 app 问卷布局：真实选项图已替换原先占位图，图片槽位也调高，便于用户直接理解每个选项。</p>
+      </div>
+      <div id="app"></div>
+    </main>
+
+    <script>
+      const base = "../../public/style-questionnaire/";
+      const sections = [
+        {
+          title: "01 / Scene · 你最常需要穿搭服务的场景是什么？",
+          rule: "至少选择 1 个，最多选择 2 个。",
+          cols: 3,
+          selected: ["轻松日常"],
+          items: [
+            ["通勤干净", "更重视场景适配和稳定完成度。", "01-01-scene-work.png"],
+            ["轻松日常", "保留舒适、好穿和复穿空间。", "01-02-scene-casual.png"],
+            ["约会/聚会", "允许更多视觉中心和造型感。", "01-03-scene-date.png"],
+            ["城市旅行", "更重视天气舒适和少量单品成套。", "01-04-scene-travel.png"],
+            ["运动户外", "把天气和舒适度权重放高。", "01-05-scene-outdoor.png"]
+          ]
+        },
+        {
+          title: "02 / Silhouette · 你更喜欢哪种全身轮廓？",
+          rule: "可多选，选择 0-5 个都可以。",
+          cols: 3,
+          selected: [],
+          items: [
+            ["上短下长", "强调腰线和比例。", "02-01-silhouette-short-top-high-waist.png"],
+            ["上松下窄", "上半身放松，下半身收住。", "02-02-silhouette-loose-top-slim-bottom.png"],
+            ["上窄下宽", "上半身利落，下装更有廓形。", "02-03-silhouette-fitted-top-wide-bottom.png"],
+            ["全身松弛", "整体宽松、舒适优先。", "02-04-silhouette-relaxed-all.png"],
+            ["连衣裙/一体式", "减少上下装搭配成本。", "02-05-silhouette-one-piece.png"]
+          ]
+        },
+        {
+          title: "03 / Color · 你更喜欢哪种配色？",
+          rule: "单选，只能选择 1 个。",
+          cols: 3,
+          selected: ["基础色 + 一处亮色"],
+          items: [
+            ["黑白灰 / 米棕 / 藏青", "低冲突、复穿稳定。", "03-01-color-neutral.png"],
+            ["同色系深浅", "靠颜色层次建立完整感。", "03-02-color-tonal.png"],
+            ["柔和低饱和", "保留颜色但降低存在感。", "03-03-color-soft.png"],
+            ["基础色 + 一处亮色", "用一个重点提神。", "03-04-color-one-accent.png"],
+            ["高对比 / 撞色", "接受更强视觉冲突。", "03-05-color-bold-contrast.png"]
+          ]
+        },
+        {
+          title: "04 / Layering · 你能接受多复杂的叠穿？",
+          rule: "单选，只能选择 1 个。",
+          cols: 4,
+          selected: ["轻外套"],
+          items: [
+            ["简单两件", "尽量避免复杂叠穿。", "04-01-layering-simple.png"],
+            ["轻外套", "接受轻量外层。", "04-02-layering-light-layer.png"],
+            ["三层叠穿", "愿意用层次增强造型。", "04-03-layering-three-layer.png"],
+            ["材质混搭", "接受更复杂的层次和材质变化。", "04-04-layering-texture-mix.png"]
+          ]
+        },
+        {
+          title: "05 / Focus · 你希望一套穿搭的视觉中心通常在哪里？",
+          rule: "单选，只能选择 1 个。",
+          cols: 3,
+          selected: ["整体低调"],
+          items: [
+            ["上半身 / 脸周围", "重点靠近上半身。", "05-01-focal-upper-body.png"],
+            ["腰线", "重点放在比例和腰线。", "05-02-focal-waist.png"],
+            ["鞋子", "允许鞋子成为视觉重点。", "05-03-focal-shoes.png"],
+            ["包 / 配饰", "让包袋或配饰完成造型。", "05-04-focal-bag-accessory.png"],
+            ["整体低调", "不强调单点抢眼。", "05-05-focal-subtle.png"]
+          ]
+        },
+        {
+          title: "06 / Practicality · 你更看重舒适实用，还是造型感？",
+          rule: "单选，只能选择 1 个。",
+          cols: 4,
+          selected: ["均衡"],
+          items: [
+            ["舒适优先", "提高天气舒适和实用性。", "06-01-practicality-comfort.png"],
+            ["均衡", "保持默认平衡。", "06-02-practicality-balanced.png"],
+            ["造型优先", "提高层次和视觉重点。", "06-03-practicality-style.png"],
+            ["工作日舒适，周末造型", "在舒适和造型之间略偏完整。", "06-04-practicality-weekday-weekend.png"]
+          ]
+        },
+        {
+          title: "07 / Slots · 你希望推荐包含哪些单品层级？",
+          rule: "可多选，选择 0-4 个都可以。",
+          cols: 4,
+          compact: true,
+          selected: ["外套", "鞋子", "包袋"],
+          items: [
+            ["外套", "允许推荐外层。", "07-01-slot-outerwear.png"],
+            ["鞋子", "推荐尽量补齐鞋履。", "07-02-slot-shoes.png"],
+            ["包袋", "用包袋补完整度和呼应。", "07-03-slot-bag.png"],
+            ["配饰", "允许少量配饰成为细节。", "07-04-slot-accessories.png"]
+          ]
+        },
+        {
+          title: "08 / Explore · 你愿意偶尔尝试和平时不同的风格吗？",
+          rule: "单选，只能选择 1 个。",
+          cols: 4,
+          selected: ["一点变化"],
+          items: [
+            ["尽量稳定", "几乎不插入灵感推荐。", "08-01-exploration-stable.png"],
+            ["一点变化", "低频尝试轻微变化。", "08-02-exploration-slight.png"],
+            ["偶尔给我灵感", "允许更明显的新鲜感。", "08-03-exploration-inspiration.png"],
+            ["大胆尝试", "提高探索频率，但仍保留避雷项。", "08-04-exploration-bold.png"]
+          ]
+        },
+        {
+          title: "09 / Avoid · 明确不喜欢的元素",
+          rule: "可多选，选择 0-11 个都可以。",
+          cols: 3,
+          selected: [],
+          items: [
+            ["不喜欢紧身", "选中后作为明确避雷项。", "09-01-avoid-tight.png"],
+            ["不喜欢高跟鞋", "选中后作为明确避雷项。", "09-02-avoid-heels.png"],
+            ["不喜欢短裙", "选中后作为明确避雷项。", "09-03-avoid-short-skirt.png"],
+            ["不喜欢无袖", "选中后作为明确避雷项。", "09-04-avoid-sleeveless.png"],
+            ["不喜欢大面积亮色", "选中后作为明确避雷项。", "09-05-avoid-bright-color.png"],
+            ["不喜欢复杂叠穿", "选中后作为明确避雷项。", "09-06-avoid-complex-layering.png"],
+            ["不喜欢露腰", "选中后作为明确避雷项。", "10-01-avoid-crop-waist.png"],
+            ["不喜欢大 logo", "选中后作为明确避雷项。", "10-02-avoid-logo.png"],
+            ["不喜欢帽子", "选中后作为明确避雷项。", "10-03-avoid-hat.png"],
+            ["不喜欢太正式", "选中后作为明确避雷项。", "10-04-avoid-formal.png"],
+            ["不喜欢太运动", "选中后作为明确避雷项。", "10-05-avoid-sporty.png"]
+          ]
+        }
+      ];
+
+      document.querySelector("#app").innerHTML = sections
+        .map((section) => {
+          const cards = section.items
+            .map(([title, description, file]) => {
+              const selected = section.selected.includes(title);
+              return `
+                <article class="card ${selected ? "selected" : ""}">
+                  <div class="visual ${section.compact ? "compact" : ""}">
+                    <img src="${base + file}" alt="${title} 示例" loading="lazy" />
+                  </div>
+                  <div class="copy">
+                    <div class="title-row"><strong>${title}</strong><span class="dot"></span></div>
+                    <p>${description}</p>
+                  </div>
+                </article>
+              `;
+            })
+            .join("");
+
+          return `
+            <section>
+              <h2>${section.title}</h2>
+              <p class="rule">${section.rule}</p>
+              <div class="grid ${section.cols === 4 ? "cols-4" : ""}">${cards}</div>
+            </section>
+          `;
+        })
+        .join("");
+    </script>
+  </body>
+</html>

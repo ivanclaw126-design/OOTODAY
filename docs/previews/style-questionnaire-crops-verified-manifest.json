@@ -1,0 +1,1354 @@
+[
+  {
+    "source": "style-questionnaire-images/01-scene.png",
+    "slug": "scene",
+    "title": "场景偏好",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      508,
+      515
+    ],
+    "row_separators": [
+      [
+        338,
+        343
+      ],
+      [
+        669,
+        673
+      ],
+      [
+        993,
+        998
+      ],
+      [
+        1288,
+        1292
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/scene-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          504,
+          334
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/scene-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          516,
+          4,
+          504,
+          334
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/scene-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          344,
+          504,
+          325
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/scene-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          516,
+          344,
+          504,
+          325
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/scene-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          674,
+          504,
+          319
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/scene-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          516,
+          674,
+          504,
+          319
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/scene-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          999,
+          504,
+          289
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/scene-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          516,
+          999,
+          504,
+          289
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/scene-r5-a.png",
+        "row": 5,
+        "variant": "A",
+        "crop": [
+          4,
+          1293,
+          504,
+          239
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/scene-r5-b.png",
+        "row": 5,
+        "variant": "B",
+        "crop": [
+          516,
+          1293,
+          504,
+          239
+        ]
+      }
+    ]
+  },
+  {
+    "source": "style-questionnaire-images/02-silhouette.png",
+    "slug": "silhouette",
+    "title": "轮廓偏好",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      510,
+      513
+    ],
+    "row_separators": [
+      [
+        352,
+        355
+      ],
+      [
+        699,
+        702
+      ],
+      [
+        1023,
+        1026
+      ],
+      [
+        1309,
+        1312
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          506,
+          348
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          514,
+          4,
+          506,
+          348
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          356,
+          506,
+          343
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          514,
+          356,
+          506,
+          343
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          703,
+          506,
+          320
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          514,
+          703,
+          506,
+          320
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          1027,
+          506,
+          282
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          514,
+          1027,
+          506,
+          282
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r5-a.png",
+        "row": 5,
+        "variant": "A",
+        "crop": [
+          4,
+          1313,
+          506,
+          219
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/silhouette-r5-b.png",
+        "row": 5,
+        "variant": "B",
+        "crop": [
+          514,
+          1313,
+          506,
+          219
+        ]
+      }
+    ]
+  },
+  {
+    "source": "style-questionnaire-images/03-color.png",
+    "slug": "color",
+    "title": "色彩偏好",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      510,
+      513
+    ],
+    "row_separators": [
+      [
+        346,
+        350
+      ],
+      [
+        679,
+        683
+      ],
+      [
+        992,
+        995
+      ],
+      [
+        1270,
+        1274
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/color-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          506,
+          342
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/color-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          514,
+          4,
+          506,
+          342
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/color-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          351,
+          506,
+          328
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/color-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          514,
+          351,
+          506,
+          328
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/color-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          684,
+          506,
+          308
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/color-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          514,
+          684,
+          506,
+          308
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/color-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          996,
+          506,
+          274
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/color-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          514,
+          996,
+          506,
+          274
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/color-r5-a.png",
+        "row": 5,
+        "variant": "A",
+        "crop": [
+          4,
+          1275,
+          506,
+          257
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/color-r5-b.png",
+        "row": 5,
+        "variant": "B",
+        "crop": [
+          514,
+          1275,
+          506,
+          257
+        ]
+      }
+    ]
+  },
+  {
+    "source": "style-questionnaire-images/04-layering.png",
+    "slug": "layering",
+    "title": "叠穿偏好",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      509,
+      514
+    ],
+    "row_separators": [
+      [
+        414,
+        418
+      ],
+      [
+        814,
+        818
+      ],
+      [
+        1184,
+        1187
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/layering-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          505,
+          410
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/layering-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          515,
+          4,
+          505,
+          410
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/layering-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          419,
+          505,
+          395
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/layering-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          515,
+          419,
+          505,
+          395
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/layering-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          819,
+          505,
+          365
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/layering-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          515,
+          819,
+          505,
+          365
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/layering-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          1188,
+          505,
+          344
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/layering-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          515,
+          1188,
+          505,
+          344
+        ]
+      }
+    ]
+  },
+  {
+    "source": "style-questionnaire-images/05-focal-point.png",
+    "slug": "focal",
+    "title": "视觉重点偏好",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      510,
+      513
+    ],
+    "row_separators": [
+      [
+        345,
+        348
+      ],
+      [
+        676,
+        678
+      ],
+      [
+        999,
+        1002
+      ],
+      [
+        1314,
+        1317
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/focal-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          506,
+          341
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/focal-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          514,
+          4,
+          506,
+          341
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/focal-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          349,
+          506,
+          327
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/focal-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          514,
+          349,
+          506,
+          327
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/focal-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          679,
+          506,
+          320
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/focal-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          514,
+          679,
+          506,
+          320
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/focal-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          1003,
+          506,
+          311
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/focal-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          514,
+          1003,
+          506,
+          311
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/focal-r5-a.png",
+        "row": 5,
+        "variant": "A",
+        "crop": [
+          4,
+          1318,
+          506,
+          214
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/focal-r5-b.png",
+        "row": 5,
+        "variant": "B",
+        "crop": [
+          514,
+          1318,
+          506,
+          214
+        ]
+      }
+    ]
+  },
+  {
+    "source": "style-questionnaire-images/06-practicality.png",
+    "slug": "practicality",
+    "title": "实用和造型取向",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      511,
+      512
+    ],
+    "row_separators": [
+      [
+        431,
+        431
+      ],
+      [
+        837,
+        837
+      ],
+      [
+        1236,
+        1237
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/practicality-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          507,
+          427
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/practicality-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          513,
+          4,
+          507,
+          427
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/practicality-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          432,
+          507,
+          405
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/practicality-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          513,
+          432,
+          507,
+          405
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/practicality-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          838,
+          507,
+          398
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/practicality-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          513,
+          838,
+          507,
+          398
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/practicality-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          1238,
+          507,
+          294
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/practicality-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          513,
+          1238,
+          507,
+          294
+        ]
+      }
+    ]
+  },
+  {
+    "source": "style-questionnaire-images/07-slot.png",
+    "slug": "slot",
+    "title": "推荐补齐项偏好",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      508,
+      513
+    ],
+    "row_separators": [
+      [
+        426,
+        429
+      ],
+      [
+        829,
+        832
+      ],
+      [
+        1214,
+        1218
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/slot-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          504,
+          422
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/slot-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          514,
+          4,
+          506,
+          422
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/slot-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          430,
+          504,
+          399
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/slot-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          514,
+          430,
+          506,
+          399
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/slot-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          833,
+          504,
+          381
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/slot-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          514,
+          833,
+          506,
+          381
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/slot-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          1219,
+          504,
+          313
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/slot-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          514,
+          1219,
+          506,
+          313
+        ]
+      }
+    ]
+  },
+  {
+    "source": "style-questionnaire-images/08-exploration.png",
+    "slug": "exploration",
+    "title": "探索程度偏好",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      510,
+      513
+    ],
+    "row_separators": [
+      [
+        429,
+        430
+      ],
+      [
+        833,
+        835
+      ],
+      [
+        1195,
+        1197
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/exploration-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          506,
+          425
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/exploration-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          514,
+          4,
+          506,
+          425
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/exploration-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          431,
+          506,
+          402
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/exploration-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          514,
+          431,
+          506,
+          402
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/exploration-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          836,
+          506,
+          359
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/exploration-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          514,
+          836,
+          506,
+          359
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/exploration-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          1198,
+          506,
+          334
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/exploration-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          514,
+          1198,
+          506,
+          334
+        ]
+      }
+    ]
+  },
+  {
+    "source": "style-questionnaire-images/09-hard-avoid-1.png",
+    "slug": "avoid1",
+    "title": "避雷项偏好 1",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      510,
+      512
+    ],
+    "row_separators": [
+      [
+        301,
+        303
+      ],
+      [
+        600,
+        602
+      ],
+      [
+        881,
+        883
+      ],
+      [
+        1146,
+        1147
+      ],
+      [
+        1365,
+        1366
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          506,
+          297
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          513,
+          4,
+          507,
+          297
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          304,
+          506,
+          296
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          513,
+          304,
+          507,
+          296
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          603,
+          506,
+          278
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          513,
+          603,
+          507,
+          278
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          884,
+          506,
+          262
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          513,
+          884,
+          507,
+          262
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r5-a.png",
+        "row": 5,
+        "variant": "A",
+        "crop": [
+          4,
+          1148,
+          506,
+          217
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r5-b.png",
+        "row": 5,
+        "variant": "B",
+        "crop": [
+          513,
+          1148,
+          507,
+          217
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r6-a.png",
+        "row": 6,
+        "variant": "A",
+        "crop": [
+          4,
+          1367,
+          506,
+          165
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid1-r6-b.png",
+        "row": 6,
+        "variant": "B",
+        "crop": [
+          513,
+          1367,
+          507,
+          165
+        ]
+      }
+    ]
+  },
+  {
+    "source": "style-questionnaire-images/10-hard-avoid-2.png",
+    "slug": "avoid2",
+    "title": "避雷项偏好 2",
+    "source_size": [
+      1024,
+      1536
+    ],
+    "column_separator": [
+      508,
+      515
+    ],
+    "row_separators": [
+      [
+        338,
+        344
+      ],
+      [
+        669,
+        674
+      ],
+      [
+        988,
+        994
+      ],
+      [
+        1277,
+        1282
+      ]
+    ],
+    "crops": [
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r1-a.png",
+        "row": 1,
+        "variant": "A",
+        "crop": [
+          4,
+          4,
+          504,
+          334
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r1-b.png",
+        "row": 1,
+        "variant": "B",
+        "crop": [
+          516,
+          4,
+          504,
+          334
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r2-a.png",
+        "row": 2,
+        "variant": "A",
+        "crop": [
+          4,
+          345,
+          504,
+          324
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r2-b.png",
+        "row": 2,
+        "variant": "B",
+        "crop": [
+          516,
+          345,
+          504,
+          324
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r3-a.png",
+        "row": 3,
+        "variant": "A",
+        "crop": [
+          4,
+          675,
+          504,
+          313
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r3-b.png",
+        "row": 3,
+        "variant": "B",
+        "crop": [
+          516,
+          675,
+          504,
+          313
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r4-a.png",
+        "row": 4,
+        "variant": "A",
+        "crop": [
+          4,
+          995,
+          504,
+          282
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r4-b.png",
+        "row": 4,
+        "variant": "B",
+        "crop": [
+          516,
+          995,
+          504,
+          282
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r5-a.png",
+        "row": 5,
+        "variant": "A",
+        "crop": [
+          4,
+          1283,
+          504,
+          249
+        ]
+      },
+      {
+        "file": "style-questionnaire-crops-verified/avoid2-r5-b.png",
+        "row": 5,
+        "variant": "B",
+        "crop": [
+          516,
+          1283,
+          504,
+          249
+        ]
+      }
+    ]
+  }
+]

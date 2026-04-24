@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OOTODAY 问卷最终选图核对</title>
+    <style>
+      :root {
+        --paper: #fbfaf7;
+        --panel: #fff;
+        --ink: #202629;
+        --muted: #687176;
+        --line: #d8dedb;
+        --accent: #8f6f3f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      }
+
+      main {
+        width: min(1240px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 28px 0 56px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(28px, 4vw, 44px);
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 840px;
+        margin: 0 0 22px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      section {
+        margin-top: 22px;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 22px;
+        letter-spacing: 0;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        background: #f4f2ed;
+      }
+
+      .body {
+        display: grid;
+        gap: 4px;
+        padding: 10px 12px 12px;
+      }
+
+      .body strong {
+        font-size: 15px;
+      }
+
+      .body span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .badge {
+        color: var(--accent);
+        font-weight: 800;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        main {
+          width: min(100vw - 20px, 1240px);
+          padding-top: 18px;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>问卷最终选图核对</h1>
+      <p class="lead">
+        这里是按你的反馈提取并处理后的 47 张 app-ready 图片。所有图片统一为 1280x720 横向卡片画布，只做等比缩放和居中铺底，不做拉伸；“工作日舒适，周末造型”使用新生成的 4 人图。
+      </p>
+      <div id="app"></div>
+    </main>
+
+    <script>
+      const sections = [
+        {
+          title: "1. 场景偏好",
+          items: [
+            ["通勤干净", "A", "01-01-scene-work.png"],
+            ["轻松日常", "A", "01-02-scene-casual.png"],
+            ["约会/聚会", "A", "01-03-scene-date.png"],
+            ["城市旅行", "A", "01-04-scene-travel.png"],
+            ["运动户外", "A", "01-05-scene-outdoor.png"]
+          ]
+        },
+        {
+          title: "2. 轮廓偏好",
+          items: [
+            ["上短下长", "B", "02-01-silhouette-short-top-high-waist.png"],
+            ["上松下窄", "B", "02-02-silhouette-loose-top-slim-bottom.png"],
+            ["上窄下宽", "B", "02-03-silhouette-fitted-top-wide-bottom.png"],
+            ["全身松弛", "B", "02-04-silhouette-relaxed-all.png"],
+            ["连衣裙/一体式", "A", "02-05-silhouette-one-piece.png"]
+          ]
+        },
+        {
+          title: "3. 色彩偏好",
+          items: [
+            ["黑白灰 / 米棕 / 藏青", "B", "03-01-color-neutral.png"],
+            ["同色系深浅", "B", "03-02-color-tonal.png"],
+            ["柔和低饱和", "B", "03-03-color-soft.png"],
+            ["基础色 + 一处亮色", "A", "03-04-color-one-accent.png"],
+            ["高对比 / 撞色", "B", "03-05-color-bold-contrast.png"]
+          ]
+        },
+        {
+          title: "4. 叠穿偏好",
+          items: [
+            ["简单两件", "A", "04-01-layering-simple.png"],
+            ["轻外套", "A", "04-02-layering-light-layer.png"],
+            ["三层叠穿", "B", "04-03-layering-three-layer.png"],
+            ["材质混搭", "A", "04-04-layering-texture-mix.png"]
+          ]
+        },
+        {
+          title: "5. 视觉重点偏好",
+          items: [
+            ["上半身 / 脸周围", "B", "05-01-focal-upper-body.png"],
+            ["腰线", "B", "05-02-focal-waist.png"],
+            ["鞋子", "B", "05-03-focal-shoes.png"],
+            ["包 / 配饰", "B", "05-04-focal-bag-accessory.png"],
+            ["整体低调", "A", "05-05-focal-subtle.png"]
+          ]
+        },
+        {
+          title: "6. 实用和造型取向",
+          items: [
+            ["舒适优先", "A", "06-01-practicality-comfort.png"],
+            ["均衡", "B", "06-02-practicality-balanced.png"],
+            ["造型优先", "B", "06-03-practicality-style.png"],
+            ["工作日舒适，周末造型", "新 4 人图", "06-04-practicality-weekday-weekend.png"]
+          ]
+        },
+        {
+          title: "7. 推荐补齐项偏好",
+          items: [
+            ["外套", "A", "07-01-slot-outerwear.png"],
+            ["鞋子", "A", "07-02-slot-shoes.png"],
+            ["包袋", "A", "07-03-slot-bag.png"],
+            ["配饰", "A", "07-04-slot-accessories.png"]
+          ]
+        },
+        {
+          title: "8. 探索程度偏好",
+          items: [
+            ["尽量稳定", "A", "08-01-exploration-stable.png"],
+            ["一点变化", "A", "08-02-exploration-slight.png"],
+            ["偶尔给我灵感", "B", "08-03-exploration-inspiration.png"],
+            ["大胆尝试", "B", "08-04-exploration-bold.png"]
+          ]
+        },
+        {
+          title: "9. 避雷项偏好（1/2）",
+          items: [
+            ["不喜欢紧身", "A", "09-01-avoid-tight.png"],
+            ["不喜欢高跟鞋", "A", "09-02-avoid-heels.png"],
+            ["不喜欢短裙", "A", "09-03-avoid-short-skirt.png"],
+            ["不喜欢无袖", "B", "09-04-avoid-sleeveless.png"],
+            ["不喜欢大面积亮色", "B", "09-05-avoid-bright-color.png"],
+            ["不喜欢复杂叠穿", "A", "09-06-avoid-complex-layering.png"]
+          ]
+        },
+        {
+          title: "10. 避雷项偏好（2/2）",
+          items: [
+            ["不喜欢露腰", "A", "10-01-avoid-crop-waist.png"],
+            ["不喜欢大 logo", "B", "10-02-avoid-logo.png"],
+            ["不喜欢帽子", "B", "10-03-avoid-hat.png"],
+            ["不喜欢太正式", "B", "10-04-avoid-formal.png"],
+            ["不喜欢太运动", "A", "10-05-avoid-sporty.png"]
+          ]
+        }
+      ];
+
+      const app = document.querySelector("#app");
+      app.innerHTML = sections
+        .map((section) => {
+          const cards = section.items
+            .map(([label, pick, file]) => {
+              return `
+                <article class="card">
+                  <img src="./style-questionnaire-app-assets/${file}" alt="${section.title} ${label}" loading="lazy" />
+                  <div class="body">
+                    <strong>${label}</strong>
+                    <span>选择：<span class="badge">${pick}</span></span>
+                  </div>
+                </article>
+              `;
+            })
+            .join("");
+
+          return `
+            <section>
+              <h2>${section.title}</h2>
+              <div class="grid">${cards}</div>
+            </section>
+          `;
+        })
+        .join("");
+    </script>
+  </body>
+</html>
