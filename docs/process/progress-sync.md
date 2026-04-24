@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-24
-- Branch / theme: `main` - beta convergence implementation and smoke QA
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-103131-beta-convergence-closeout.md`
-- Current blocker: deployment Auth QA before inviting beta testers; remote Supabase schema check is currently up to date
-- Next plan to read: `docs/superpowers/plans/2026-04-23-outfit-taxonomy-color-strategy.md`
-- Intended summary if `/context-save` fails: beta first-run loop is implemented and browser-smoke-tested; resume from `PROGRESS.md`, then verify deployed auth behavior, mobile beta handfeel, and Closet import-island bundle reduction
+- Branch / theme: `codex/recommendation-engine-phase-4-5` - Cross-page recommendation language QA Phase 8
+- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-181500-cross-page-recommendation-language-phase-8.md`
+- Current blocker: local Phase 8 work is not pushed; new CI/App Quality workflows have not run on GitHub yet; recommendation storage and closet algorithm metadata migrations are still unverified remotely
+- Next plan to read: `docs/recommendation-engine-handoff.md`
+- Intended summary if `/context-save` fails: Phase 8 added `lib/recommendation/copy.ts` and connected Today, Shop, Inspiration, Travel, and color strategy helpers to shared Chinese recommendation language for foundation colors, tonal depth, one accent, multiple competing accents, missing shoes/bags/accessories, and inspiration-attempt labeling. Targeted copy tests and lint passed; full test/build were rerun in-session.
 
 ## Snapshot Template
 

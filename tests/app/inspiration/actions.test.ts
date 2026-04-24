@@ -4,6 +4,7 @@ const getSession = vi.fn()
 const resolveInspirationInput = vi.fn()
 const analyzeInspirationImage = vi.fn()
 const getClosetView = vi.fn()
+const getPreferenceState = vi.fn()
 
 vi.mock('@/lib/auth/get-session', () => ({
   getSession
@@ -21,11 +22,16 @@ vi.mock('@/lib/closet/get-closet-view', () => ({
   getClosetView
 }))
 
+vi.mock('@/lib/recommendation/get-preference-state', () => ({
+  getPreferenceState
+}))
+
 afterEach(() => {
   getSession.mockReset()
   resolveInspirationInput.mockReset()
   analyzeInspirationImage.mockReset()
   getClosetView.mockReset()
+  getPreferenceState.mockReset()
   vi.resetModules()
 })
 
@@ -79,6 +85,7 @@ describe('analyzeInspirationAction', () => {
         }
       ]
     })
+    getPreferenceState.mockResolvedValue(null)
 
     const { analyzeInspirationAction } = await import('@/app/inspiration/actions')
     const result = await analyzeInspirationAction({ sourceUrl: 'https://example.com/inspiration.jpg' })
@@ -90,5 +97,6 @@ describe('analyzeInspirationAction', () => {
     expect(result.analysis?.remixPlan.title).toBe('我的版本怎么穿')
     expect(result.analysis?.remixPlan.coverageLabel).toBe('复刻完成度高')
     expect(result.analysis?.remixPlan.steps[0]?.note).toContain('黑色 西装外套')
+    expect(getPreferenceState).toHaveBeenCalledWith({ userId: 'user-1' })
   })
 })

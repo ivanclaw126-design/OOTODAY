@@ -26,13 +26,13 @@ export type TodayRecommendation = {
   bottom: TodayRecommendationItem | null
   dress: TodayRecommendationItem | null
   outerLayer: TodayRecommendationItem | null
-  shoes?: TodayRecommendationItem | null
-  bag?: TodayRecommendationItem | null
-  accessories?: TodayRecommendationItem[]
-  missingSlots?: TodayRecommendationMissingSlot[]
-  confidence?: number
-  componentScores?: ScoreWeights
-  mode?: TodayRecommendationMode
+  shoes: TodayRecommendationItem | null
+  bag: TodayRecommendationItem | null
+  accessories: TodayRecommendationItem[]
+  missingSlots: TodayRecommendationMissingSlot[]
+  confidence: number
+  componentScores: ScoreWeights
+  mode: TodayRecommendationMode
   inspirationReason?: string | null
   dailyDifference?: string | null
 }

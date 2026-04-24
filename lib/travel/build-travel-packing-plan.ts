@@ -1,5 +1,5 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
-import { buildPaletteColorStrategyNotes } from '@/lib/closet/color-strategy'
+import { buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
 import {
   isBagCategory,
   isBottomCategory,
@@ -9,6 +9,7 @@ import {
   isTopCategory
 } from '@/lib/closet/taxonomy'
 import type { TravelDailyPlanEntry, TravelPackingEntry, TravelPackingPlan, TravelPackingSlot, TravelPlannerInput, TravelScene } from '@/lib/travel/types'
+import type { PreferenceProfile } from '@/lib/recommendation/preference-types'
 
 function describeItem(item: ClosetItemCardData) {
   return [item.colorCategory, item.subCategory ?? item.category].filter(Boolean).join(' ')
@@ -33,9 +34,26 @@ function sortForTravel(left: ClosetItemCardData, right: ClosetItemCardData) {
   return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
 }
 
+function sortForComfortTravel(left: ClosetItemCardData, right: ClosetItemCardData) {
+  const leftComfort = left.algorithmMeta?.comfortLevel ?? (isComfortShoe(left) ? 4 : 2)
+  const rightComfort = right.algorithmMeta?.comfortLevel ?? (isComfortShoe(right) ? 4 : 2)
+
+  if (rightComfort !== leftComfort) {
+    return rightComfort - leftComfort
+  }
+
+  return sortForTravel(left, right)
+}
+
 function pickItems(items: ClosetItemCardData[], quantity: number) {
   return [...items]
     .sort(sortForTravel)
+    .slice(0, Math.max(0, quantity))
+}
+
+function pickComfortItems(items: ClosetItemCardData[], quantity: number) {
+  return [...items]
+    .sort(sortForComfortTravel)
     .slice(0, Math.max(0, quantity))
 }
 
@@ -191,6 +209,14 @@ function includesWalkingHeavyScene(scenes: TravelScene[], days: number) {
   return scenes.includes('户外') || scenes.includes('休闲') || days >= 4
 }
 
+function prefersLightPacking(profile: PreferenceProfile | null | undefined) {
+  return Boolean(profile && profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority && profile.layeringPreference.complexity <= 1)
+}
+
+function prefersCompleteStyling(profile: PreferenceProfile | null | undefined) {
+  return Boolean(profile && profile.practicalityPreference.stylePriority > profile.practicalityPreference.comfortPriority)
+}
+
 function isFormalShoe(item: ClosetItemCardData) {
   const text = itemSearchText(item)
   return ['正式', '通勤', '商务', '皮鞋', '乐福', '高跟', '短靴', '靴子', 'loaf', 'heel', 'boot'].some((token) => text.includes(token))
@@ -207,17 +233,7 @@ function isFormalBag(item: ClosetItemCardData) {
 }
 
 function buildColorStrategyNotes(items: ClosetItemCardData[]) {
-  return buildPaletteColorStrategyNotes(items.map((item) => item.colorCategory))
-    .map((note) =>
-      note
-        .replace('这套有基础色托底，所以整体看起来更稳、更容易穿进日常。', '这次打包有基础色托底，所以整体更适合少带多穿。')
-        .replace('这套主要靠同色系深浅变化成立，不是靠大撞色取胜。', '这次打包里有同色系深浅单品可轮换，旅行时更容易少带几件也保持层次。')
-        .replace('亮点色基本只保留在一处，所以视觉重点会更清楚。', '只带一处重点色最省心，其他单品用基础色托住就够了。')
-        .replace('重点色不止一处，使用时记得别让多个亮点同时抢戏。', '这次行程里的重点色不止一处，打包时记得别把所有亮色同时带上。')
-        .replace('基础色占比够高，更容易把少量单品反复穿出稳定组合。', '这次打包的基础色占比够高，更容易把少量单品反复穿出稳定组合。')
-        .replace('同色系单品之间能形成自然轮换，少带几件也不容易显乱。', '衣橱里有同色系深浅单品可轮换，旅行时更容易少带几件也保持层次。')
-    )
-    .slice(0, 4)
+  return buildRecommendationColorNotes(items.map((item) => item.colorCategory), 'travel')
 }
 
 export function buildTravelPackingPlan({
@@ -225,8 +241,14 @@ export function buildTravelPackingPlan({
   days,
   scenes,
   items,
-  weather
+  weather,
+  preferenceState
 }: TravelPlannerInput): TravelPackingPlan {
+  const profile = preferenceState?.profile
+  const lightPacking = prefersLightPacking(profile)
+  const completeStyling = prefersCompleteStyling(profile)
+  const dislikesComplexLayering = (profile?.layeringPreference.complexity ?? 1) === 0
+  const comfortLeads = Boolean(profile && profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority)
   const tops = items.filter((item) => isTopCategory(item.category))
   const bottoms = items.filter((item) => isBottomCategory(item.category))
   const dresses = items.filter((item) => isOnePieceCategory(item.category))
@@ -239,13 +261,15 @@ export function buildTravelPackingPlan({
   const comfortShoeCandidates = shoes.filter((item) => isComfortShoe(item) || !isFormalShoe(item))
   const formalBagCandidates = bags.filter(isFormalBag)
   const selectedFormalShoes = formalTrip ? pickItems(formalShoeCandidates, 1) : []
-  const selectedComfortShoes = walkingTrip || selectedFormalShoes.length === 0 ? pickItems(comfortShoeCandidates, 1) : []
+  const selectedComfortShoes = walkingTrip || comfortLeads || selectedFormalShoes.length === 0 ? pickComfortItems(comfortShoeCandidates, 1) : []
   const selectedShoeIds = new Set([...selectedFormalShoes, ...selectedComfortShoes].map((item) => item.id))
   const selectedBackupShoes =
-    shoes.length > selectedShoeIds.size && (days >= 4 || walkingTrip)
+    !lightPacking && shoes.length > selectedShoeIds.size && (days >= 4 || walkingTrip || completeStyling)
       ? pickItems(shoes.filter((item) => !selectedShoeIds.has(item.id)), 1)
       : []
-  const selectedBags = bags.length > 0 ? pickItems(formalTrip && formalBagCandidates.length > 0 ? formalBagCandidates : bags, 1) : []
+  const selectedBags = bags.length > 0 && (!lightPacking || formalTrip || completeStyling)
+    ? pickItems(formalTrip && formalBagCandidates.length > 0 ? formalBagCandidates : bags, 1)
+    : []
 
   const topQuantity = Math.max(2, Math.min(tops.length, Math.ceil(days / 2) + (includesFormalScene(scenes) ? 1 : 0)))
   const bottomQuantity = Math.max(1, Math.min(bottoms.length, Math.ceil(days / 3)))
@@ -254,7 +278,7 @@ export function buildTravelPackingPlan({
       ? Math.max(0, Math.min(dresses.length, Math.floor(days / 3)))
       : 0
   const outerwearQuantity =
-    outerwear.length > 0 && (weather?.isCold || includesFormalScene(scenes) || days >= 4)
+    outerwear.length > 0 && !dislikesComplexLayering && (weather?.isCold || includesFormalScene(scenes) || days >= 4)
       ? 1
       : 0
 
@@ -280,7 +304,7 @@ export function buildTravelPackingPlan({
   }
 
   if ((weather?.isCold || days >= 4) && outerwear.length === 0) {
-    missingHints.push('这趟更适合带一件外层，但当前衣橱里没有可直接打包的外层，冷天或长途温差会更难处理。')
+    missingHints.push(buildMissingSlotCopy('outerLayer', 'travel'))
   }
 
   if (includesFormalScene(scenes) && tops.length === 0) {
@@ -288,7 +312,7 @@ export function buildTravelPackingPlan({
   }
 
   if (shoes.length === 0) {
-    missingHints.push('当前衣橱里没有可打包鞋履，计划仍能生成，但实际出行前需要先补一双能覆盖主要行程的鞋。')
+    missingHints.push(buildMissingSlotCopy('shoes', 'travel'))
   } else {
     if (formalTrip && selectedFormalShoes.length === 0) {
       missingHints.push('行程包含通勤或正式场景，但现有鞋履正式度不够，会影响整体利落感和场景适配。')
@@ -300,7 +324,9 @@ export function buildTravelPackingPlan({
   }
 
   if (bags.length === 0) {
-    missingHints.push(formalTrip ? '通勤或正式场景缺少包袋，会影响电脑、证件携带和整套造型完整度。' : '当前衣橱里没有可打包包袋，每天随身物品和造型收尾都需要额外处理。')
+    missingHints.push(formalTrip ? '通勤或正式场景缺少包袋，会影响电脑、证件携带和整套造型完整度。' : buildMissingSlotCopy('bag', 'travel'))
+  } else if (lightPacking && selectedBags.length === 0) {
+    missingHints.push('你更偏轻装，这次先不强制带非必要包袋；如果有正式场景再补一只稳定包。')
   }
 
   const baseOutfitCount = dresses.length > 0 && includesLeisureScene(scenes) ? dressQuantity + Math.min(topQuantity, bottomQuantity) : Math.min(topQuantity, bottomQuantity)
@@ -324,7 +350,19 @@ export function buildTravelPackingPlan({
   }
 
   if (walkingTrip) {
-    notes.push('户外、步行或长途旅行先保住舒适鞋，再考虑造型变化。')
+    notes.push(comfortLeads ? '你的偏好更重视舒适度，户外、步行或长途旅行会优先把舒适鞋排到前面。' : '户外、步行或长途旅行先保住舒适鞋，再考虑造型变化。')
+  }
+
+  if (lightPacking) {
+    notes.push('你的偏好更接近轻装出行，备用鞋、非必要包袋和复杂配饰会被压低优先级。')
+  }
+
+  if (completeStyling && !lightPacking) {
+    notes.push('你的偏好更重视完整造型，鞋包这些收尾 slot 会尽量保留。')
+  }
+
+  if (dislikesComplexLayering) {
+    notes.push('你不喜欢复杂叠穿，这次会减少三层组合，只保留必要外层。')
   }
 
   const dailyPlan = buildDailyPlan({

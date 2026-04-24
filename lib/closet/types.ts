@@ -1,3 +1,27 @@
+export type ClosetAlgorithmSlot = 'top' | 'bottom' | 'onePiece' | 'outerwear' | 'shoes' | 'bag' | 'accessory'
+
+export type ClosetAlgorithmLayerRole = 'base' | 'mid' | 'outer' | 'statement' | 'support'
+
+export type ClosetAlgorithmScale = 0 | 1 | 2 | 3 | 4 | 5
+
+export type ClosetAlgorithmFabricWeight = 'light' | 'medium' | 'heavy'
+
+export type ClosetAlgorithmPattern = 'solid' | 'stripe' | 'check' | 'floral' | 'graphic' | 'logo' | 'other'
+
+export type ClosetAlgorithmMeta = {
+  slot?: ClosetAlgorithmSlot
+  layerRole?: ClosetAlgorithmLayerRole
+  silhouette?: string[]
+  length?: string
+  material?: string[]
+  fabricWeight?: ClosetAlgorithmFabricWeight
+  formality?: ClosetAlgorithmScale
+  warmthLevel?: ClosetAlgorithmScale
+  comfortLevel?: ClosetAlgorithmScale
+  visualWeight?: ClosetAlgorithmScale
+  pattern?: ClosetAlgorithmPattern
+}
+
 export type ClosetItemCardData = {
   id: string
   imageUrl: string | null
@@ -13,6 +37,7 @@ export type ClosetItemCardData = {
   purchasePrice?: number | null
   purchaseYear?: string | null
   itemCondition?: string | null
+  algorithmMeta?: ClosetAlgorithmMeta | null
   lastWornDate: string | null
   wearCount: number
   createdAt: string
@@ -23,6 +48,7 @@ export type ClosetAnalysisResult = {
   subCategory: string
   colorCategory: string
   styleTags: string[]
+  algorithmMeta?: ClosetAlgorithmMeta | null
 }
 
 export type ClosetAnalysisDraft = ClosetAnalysisResult & {

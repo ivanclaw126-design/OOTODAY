@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const getSession = vi.fn()
 const analyzeItemImage = vi.fn()
 const getClosetView = vi.fn()
+const getPreferenceState = vi.fn()
 const resolveShopInput = vi.fn()
 
 vi.mock('@/lib/auth/get-session', () => ({
@@ -17,6 +18,10 @@ vi.mock('@/lib/closet/get-closet-view', () => ({
   getClosetView
 }))
 
+vi.mock('@/lib/recommendation/get-preference-state', () => ({
+  getPreferenceState
+}))
+
 vi.mock('@/lib/shop/resolve-shop-input', () => ({
   resolveShopInput
 }))
@@ -25,6 +30,7 @@ afterEach(() => {
   getSession.mockReset()
   analyzeItemImage.mockReset()
   getClosetView.mockReset()
+  getPreferenceState.mockReset()
   resolveShopInput.mockReset()
   vi.resetModules()
 })
@@ -89,6 +95,7 @@ describe('analyzeShopCandidateAction', () => {
         }
       ]
     })
+    getPreferenceState.mockResolvedValue(null)
 
     const { analyzeShopCandidateAction } = await import('@/app/shop/actions')
 
@@ -100,6 +107,7 @@ describe('analyzeShopCandidateAction', () => {
     expect(result.analysis?.candidate.imageCandidates).toEqual(['https://example.com/item.jpg'])
     expect(result.analysis?.estimatedOutfitCount).toBe(1)
     expect(result.analysis?.recommendation).toBe('consider')
+    expect(getPreferenceState).toHaveBeenCalledWith({ userId: 'user-1' })
   })
 
   it('returns a category-fit error for non-fashion items', async () => {
@@ -121,6 +129,7 @@ describe('analyzeShopCandidateAction', () => {
       itemCount: 2,
       items: []
     })
+    getPreferenceState.mockResolvedValue(null)
 
     const { analyzeShopCandidateAction } = await import('@/app/shop/actions')
 
@@ -149,6 +158,7 @@ describe('analyzeShopCandidateAction', () => {
       itemCount: 1,
       items: []
     })
+    getPreferenceState.mockResolvedValue(null)
 
     const { analyzeShopCandidateAction } = await import('@/app/shop/actions')
 

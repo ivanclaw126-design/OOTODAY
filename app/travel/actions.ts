@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth/get-session'
 import { getClosetView } from '@/lib/closet/get-closet-view'
+import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 import { buildTravelPackingPlan } from '@/lib/travel/build-travel-packing-plan'
 import { deleteTravelPlan } from '@/lib/travel/delete-travel-plan'
 import { saveTravelPlan } from '@/lib/travel/save-travel-plan'
@@ -41,7 +42,10 @@ export async function saveTravelPlanAction(formData: FormData) {
 
   const normalizedDays = Math.min(Math.max(parsedDays, 1), 14)
   const normalizedCity = city.trim()
-  const closet = await getClosetView(session.user.id, { limit: 0 })
+  const [closet, preferenceState] = await Promise.all([
+    getClosetView(session.user.id, { limit: 0 }),
+    getPreferenceState({ userId: session.user.id })
+  ])
 
   if (closet.itemCount === 0) {
     throw new Error('衣橱还没有可用于旅行打包的单品')
@@ -52,7 +56,8 @@ export async function saveTravelPlanAction(formData: FormData) {
     days: normalizedDays,
     scenes,
     items: closet.items,
-    weather: await getWeather(normalizedCity)
+    weather: await getWeather(normalizedCity),
+    preferenceState
   })
 
   const savedPlan = await saveTravelPlan({

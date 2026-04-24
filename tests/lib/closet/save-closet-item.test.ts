@@ -37,6 +37,11 @@ describe('saveClosetItem', () => {
       sub_category: '衬衫',
       color_category: '蓝色',
       style_tags: ['通勤'],
+      algorithm_meta: expect.objectContaining({
+        slot: 'top',
+        layerRole: 'mid',
+        formality: 4
+      }),
       purchase_price: null,
       purchase_year: null,
       item_condition: null

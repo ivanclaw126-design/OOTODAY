@@ -28,6 +28,7 @@ export type ShopPurchaseAnalysis = {
   gapType: ShopWardrobeGapType
   missingCategoryHints: string[]
   colorStrategyHints: string[]
+  preferenceNotes?: string[]
   recommendation: ShopPurchaseRecommendation
   recommendationReason: string
 }

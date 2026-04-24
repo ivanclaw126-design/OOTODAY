@@ -1,3 +1,12 @@
+import type {
+  ClosetAlgorithmFabricWeight,
+  ClosetAlgorithmLayerRole,
+  ClosetAlgorithmMeta,
+  ClosetAlgorithmPattern,
+  ClosetAlgorithmScale,
+  ClosetAlgorithmSlot
+} from '@/lib/closet/types'
+
 type CategoryDefinition = {
   value: string
   label: string
@@ -353,6 +362,299 @@ export function normalizeClosetFields(input: {
     subCategory: normalizedSubCategory,
     colorCategory: normalizedColorCategory
   }
+}
+
+function normalizeStringArray(value: unknown, limit = 5) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, limit)
+}
+
+function normalizeAlgorithmScale(value: unknown): ClosetAlgorithmScale | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return undefined
+  }
+
+  const rounded = Math.round(value)
+
+  if (rounded < 0 || rounded > 5) {
+    return undefined
+  }
+
+  return rounded as ClosetAlgorithmScale
+}
+
+function normalizeAlgorithmSlot(value: unknown): ClosetAlgorithmSlot | undefined {
+  const normalized = normalizeInput(typeof value === 'string' ? value : null)
+
+  if (['top', 'tops', '上装', '上衣'].includes(normalized)) {
+    return 'top'
+  }
+
+  if (['bottom', 'bottoms', '下装', '裤装', '裙装'].includes(normalized)) {
+    return 'bottom'
+  }
+
+  if (['onepiece', 'one_piece', 'one-piece', 'dress', '连体', '连体/全身装', '全身装', '连衣裙'].includes(normalized)) {
+    return 'onePiece'
+  }
+
+  if (['outerwear', 'outerlayer', 'outer_layer', 'outer', '外层', '外套'].includes(normalized)) {
+    return 'outerwear'
+  }
+
+  if (['shoes', 'shoe', 'footwear', '鞋履', '鞋子'].includes(normalized)) {
+    return 'shoes'
+  }
+
+  if (['bag', 'bags', '包袋', '包'].includes(normalized)) {
+    return 'bag'
+  }
+
+  if (['accessory', 'accessories', '配饰', '首饰', '围巾', '腰带'].includes(normalized)) {
+    return 'accessory'
+  }
+
+  return undefined
+}
+
+function normalizeAlgorithmLayerRole(value: unknown): ClosetAlgorithmLayerRole | undefined {
+  const normalized = normalizeInput(typeof value === 'string' ? value : null)
+
+  if (['base', 'foundation', 'standalone', '基础', '主件'].includes(normalized)) {
+    return 'base'
+  }
+
+  if (['mid', 'middle', 'inner', '中层', '内搭'].includes(normalized)) {
+    return 'mid'
+  }
+
+  if (['outer', 'outerwear', '外层'].includes(normalized)) {
+    return 'outer'
+  }
+
+  if (['statement', 'accent', 'focus', 'visual_focus', '亮点', '重点'].includes(normalized)) {
+    return 'statement'
+  }
+
+  if (['support', 'finisher', 'finish', 'supporting', '收尾', '辅助'].includes(normalized)) {
+    return 'support'
+  }
+
+  return undefined
+}
+
+function normalizeFabricWeight(value: unknown): ClosetAlgorithmFabricWeight | undefined {
+  const normalized = normalizeInput(typeof value === 'string' ? value : null)
+
+  if (['light', 'thin', '轻薄', '薄'].includes(normalized)) {
+    return 'light'
+  }
+
+  if (['medium', 'mid', '适中', '中等'].includes(normalized)) {
+    return 'medium'
+  }
+
+  if (['heavy', 'thick', '厚', '厚重'].includes(normalized)) {
+    return 'heavy'
+  }
+
+  return undefined
+}
+
+function normalizePattern(value: unknown): ClosetAlgorithmPattern | undefined {
+  const normalized = normalizeInput(typeof value === 'string' ? value : null)
+
+  if (['solid', 'plain', '纯色', '净色'].includes(normalized)) {
+    return 'solid'
+  }
+
+  if (['stripe', 'striped', '条纹'].includes(normalized)) {
+    return 'stripe'
+  }
+
+  if (['check', 'checked', 'plaid', '格纹', '格子'].includes(normalized)) {
+    return 'check'
+  }
+
+  if (['floral', '花朵', '碎花', '印花花卉'].includes(normalized)) {
+    return 'floral'
+  }
+
+  if (['graphic', '图案', '印花'].includes(normalized)) {
+    return 'graphic'
+  }
+
+  if (['logo', '标志', '品牌标'].includes(normalized)) {
+    return 'logo'
+  }
+
+  if (['other', '其他'].includes(normalized)) {
+    return 'other'
+  }
+
+  return undefined
+}
+
+export function inferAlgorithmSlotFromCategory(category: string | null | undefined): ClosetAlgorithmSlot | undefined {
+  const normalizedCategory = normalizeCategoryOrSubCategoryValue(category)
+
+  if (normalizedCategory === TOP_CATEGORY) {
+    return 'top'
+  }
+
+  if (normalizedCategory === BOTTOM_CATEGORY) {
+    return 'bottom'
+  }
+
+  if (normalizedCategory === ONE_PIECE_CATEGORY) {
+    return 'onePiece'
+  }
+
+  if (normalizedCategory === OUTER_LAYER_CATEGORY) {
+    return 'outerwear'
+  }
+
+  if (normalizedCategory === SHOES_CATEGORY) {
+    return 'shoes'
+  }
+
+  if (normalizedCategory === BAG_CATEGORY) {
+    return 'bag'
+  }
+
+  if (normalizedCategory === ACCESSORY_CATEGORY) {
+    return 'accessory'
+  }
+
+  return undefined
+}
+
+function inferLayerRoleFromSlot(slot: ClosetAlgorithmSlot | undefined): ClosetAlgorithmLayerRole | undefined {
+  if (slot === 'outerwear') {
+    return 'outer'
+  }
+
+  if (slot === 'top') {
+    return 'mid'
+  }
+
+  if (slot === 'bottom' || slot === 'onePiece') {
+    return 'base'
+  }
+
+  if (slot === 'shoes' || slot === 'bag') {
+    return 'support'
+  }
+
+  if (slot === 'accessory') {
+    return 'statement'
+  }
+
+  return undefined
+}
+
+function inferSilhouetteFromText(text: string) {
+  const tokens = ['短款', '长款', '长线条', '直筒', '宽松', '修身', '高腰', '低腰', '硬挺', '垂坠', '收腰']
+  return tokens.filter((token) => text.includes(normalizeInput(token))).slice(0, 4)
+}
+
+function inferPatternFromText(text: string): ClosetAlgorithmPattern {
+  if (text.includes('条纹')) {
+    return 'stripe'
+  }
+
+  if (text.includes('格纹') || text.includes('格子')) {
+    return 'check'
+  }
+
+  if (text.includes('碎花') || text.includes('花朵')) {
+    return 'floral'
+  }
+
+  if (text.includes('logo')) {
+    return 'logo'
+  }
+
+  if (text.includes('印花') || text.includes('图案')) {
+    return 'graphic'
+  }
+
+  return 'solid'
+}
+
+export function inferClosetAlgorithmMeta(input: {
+  category: string | null | undefined
+  subCategory?: string | null | undefined
+  styleTags?: string[]
+}): ClosetAlgorithmMeta {
+  const slot = inferAlgorithmSlotFromCategory(input.category)
+  const text = normalizeInput([input.category, input.subCategory, ...(input.styleTags ?? [])].filter(Boolean).join(' '))
+  const isFormal = ['通勤', '正式', '西装', '衬衫', '高跟'].some((token) => text.includes(token))
+  const isCasual = ['休闲', '运动', '卫衣', 't恤', '牛仔'].some((token) => text.includes(normalizeInput(token)))
+  const isWarm = ['大衣', '羽绒', '棉服', '毛衣', '厚'].some((token) => text.includes(token))
+  const isLight = ['t恤', '衬衫', '薄', '凉鞋'].some((token) => text.includes(normalizeInput(token)))
+  const isComfortable = ['运动', '休闲', '宽松', '针织', '平底', '舒适'].some((token) => text.includes(token))
+  const isStatement = ['亮色', '印花', '图案', 'logo', '重点', '配饰'].some((token) => text.includes(token))
+
+  return {
+    slot,
+    layerRole: inferLayerRoleFromSlot(slot),
+    silhouette: inferSilhouetteFromText(text),
+    fabricWeight: isWarm ? 'heavy' : isLight ? 'light' : 'medium',
+    formality: isFormal ? 4 : isCasual ? 1 : 2,
+    warmthLevel: isWarm ? 4 : isLight ? 1 : 2,
+    comfortLevel: isComfortable ? 4 : 3,
+    visualWeight: isStatement || slot === 'accessory' ? 4 : slot === 'bag' || slot === 'shoes' ? 3 : 2,
+    pattern: inferPatternFromText(text)
+  }
+}
+
+export function normalizeClosetAlgorithmMeta(
+  value: unknown,
+  fallbackInput: {
+    category: string | null | undefined
+    subCategory?: string | null | undefined
+    styleTags?: string[]
+  }
+): ClosetAlgorithmMeta {
+  const fallback = inferClosetAlgorithmMeta(fallbackInput)
+
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return fallback
+  }
+
+  const record = value as Record<string, unknown>
+  const normalized: ClosetAlgorithmMeta = {
+    ...fallback,
+    slot: inferAlgorithmSlotFromCategory(fallbackInput.category) ?? normalizeAlgorithmSlot(record.slot) ?? fallback.slot,
+    layerRole: normalizeAlgorithmLayerRole(record.layerRole ?? record.layer_role) ?? fallback.layerRole,
+    silhouette: normalizeStringArray(record.silhouette).length > 0 ? normalizeStringArray(record.silhouette) : fallback.silhouette,
+    length: typeof record.length === 'string' && record.length.trim() ? record.length.trim() : fallback.length,
+    material: normalizeStringArray(record.material),
+    fabricWeight: normalizeFabricWeight(record.fabricWeight ?? record.fabric_weight) ?? fallback.fabricWeight,
+    formality: normalizeAlgorithmScale(record.formality) ?? fallback.formality,
+    warmthLevel: normalizeAlgorithmScale(record.warmthLevel ?? record.warmth_level) ?? fallback.warmthLevel,
+    comfortLevel: normalizeAlgorithmScale(record.comfortLevel ?? record.comfort_level) ?? fallback.comfortLevel,
+    visualWeight: normalizeAlgorithmScale(record.visualWeight ?? record.visual_weight) ?? fallback.visualWeight,
+    pattern: normalizePattern(record.pattern) ?? fallback.pattern
+  }
+
+  if (normalized.material?.length === 0) {
+    delete normalized.material
+  }
+
+  if (normalized.silhouette?.length === 0) {
+    delete normalized.silhouette
+  }
+
+  return normalized
 }
 
 export function isTopCategory(category: string | null | undefined) {

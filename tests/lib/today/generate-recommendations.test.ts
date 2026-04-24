@@ -72,8 +72,8 @@ const items = [
 ]
 
 describe('generateTodayRecommendations', () => {
-  it('returns 3 valid recommendations without weather', () => {
-    const recommendations = generateTodayRecommendations(items, null)
+  it('returns 3 valid recommendations from the object-parameter API', () => {
+    const recommendations = generateTodayRecommendations({ items, weather: null })
 
     expect(recommendations).toHaveLength(3)
     expect(recommendations[0]?.reason).toBeTruthy()
@@ -83,8 +83,8 @@ describe('generateTodayRecommendations', () => {
   })
 
   it('explains same-family and neutral-anchor color logic in more product-like language', () => {
-    const sameFamilyRecommendations = generateTodayRecommendations(
-      [
+    const sameFamilyRecommendations = generateTodayRecommendations({
+      items: [
         {
           id: 'top-blue',
           imageUrl: 'https://example.com/top-blue.jpg',
@@ -130,11 +130,11 @@ describe('generateTodayRecommendations', () => {
           createdAt: '2026-04-19T10:03:00Z'
         }
       ],
-      null
-    )
+      weather: null
+    })
 
-    const neutralAnchorRecommendations = generateTodayRecommendations(
-      [
+    const neutralAnchorRecommendations = generateTodayRecommendations({
+      items: [
         {
           id: 'top-red',
           imageUrl: 'https://example.com/top-red.jpg',
@@ -158,12 +158,12 @@ describe('generateTodayRecommendations', () => {
           createdAt: '2026-04-19T10:01:00Z'
         }
       ],
-      null
-    )
+      weather: null
+    })
 
-    expect(sameFamilyRecommendations.some((recommendation) => recommendation.reason.includes('同色系深浅搭配'))).toBe(true)
-    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('用基础色做主轴'))).toBe(true)
-    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('把亮色控制在一处'))).toBe(true)
+    expect(sameFamilyRecommendations.some((recommendation) => recommendation.reason.includes('同色系深浅让层次更自然'))).toBe(true)
+    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('基础色托底'))).toBe(true)
+    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('亮色只放在一处'))).toBe(true)
   })
 
   it('adds outer layers in cold weather when available', () => {
@@ -244,12 +244,22 @@ describe('generateTodayRecommendations', () => {
     expect(firstRecommendation?.componentScores?.completeness).toBe(100)
     expect(firstRecommendation?.componentScores?.colorHarmony).toBeGreaterThanOrEqual(0)
     expect(firstRecommendation?.componentScores?.colorHarmony).toBeLessThanOrEqual(100)
+    expect(Object.keys(firstRecommendation?.componentScores ?? {}).sort()).toEqual([
+      'colorHarmony',
+      'completeness',
+      'focalPoint',
+      'freshness',
+      'layering',
+      'sceneFit',
+      'silhouetteBalance',
+      'weatherComfort'
+    ])
     expect(firstRecommendation?.mode).toBe('daily')
   })
 
   it('keeps recommendations when shoes or bag are missing and lowers completeness', () => {
-    const recommendations = generateTodayRecommendations(
-      [
+    const recommendations = generateTodayRecommendations({
+      items: [
         {
           id: 'top-only-color',
           imageUrl: null,
@@ -273,14 +283,60 @@ describe('generateTodayRecommendations', () => {
           createdAt: '2026-04-19T10:01:00Z'
         }
       ],
-      null
-    )
+      weather: null
+    })
 
     expect(recommendations[0]?.top?.id).toBe('top-only-color')
     expect(recommendations[0]?.bottom?.id).toBe('bottom-only-color')
     expect(recommendations[0]?.missingSlots).toEqual(expect.arrayContaining(['shoes', 'bag']))
     expect(recommendations[0]?.componentScores?.completeness).toBeLessThan(100)
     expect(recommendations[0]?.confidence).toBeLessThan(90)
+    expect(recommendations[0]?.reason).toContain('未录入鞋履')
+    expect(recommendations[0]?.reason).toContain('未录入包袋')
+  })
+
+  it('keeps cold-weather recommendations without outerwear and marks the missing outer layer', () => {
+    const recommendations = generateTodayRecommendations({
+      items: [
+        {
+          id: 'top-cold',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '针织衫',
+          colorCategory: '米色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'bottom-cold',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '西裤',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:01:00Z'
+        }
+      ],
+      weather: {
+        city: 'Shanghai',
+        temperatureC: 6,
+        conditionLabel: '阴',
+        isWarm: false,
+        isCold: true
+      }
+    })
+
+    expect(recommendations).toHaveLength(3)
+    expect(recommendations[0]?.top?.id).toBe('top-cold')
+    expect(recommendations[0]?.bottom?.id).toBe('bottom-cold')
+    expect(recommendations[0]?.outerLayer).toBeNull()
+    expect(recommendations[0]?.missingSlots).toEqual(expect.arrayContaining(['outerLayer']))
+    expect(recommendations[0]?.componentScores?.weatherComfort).toBeLessThan(60)
+    expect(recommendations[0]?.reason).toContain('当前缺少外层')
   })
 
   it('uses final weights to change candidate ordering', () => {
@@ -473,8 +529,8 @@ describe('generateTodayRecommendations', () => {
   })
 
   it('falls back to single-item recommendations when the closet lacks full outfits', () => {
-    const recommendations = generateTodayRecommendations(
-      [
+    const recommendations = generateTodayRecommendations({
+      items: [
         {
           id: 'top-only-1',
           imageUrl: 'https://example.com/top-only-1.jpg',
@@ -498,8 +554,8 @@ describe('generateTodayRecommendations', () => {
           createdAt: '2026-04-19T10:01:00Z'
         }
       ],
-      null
-    )
+      weather: null
+    })
 
     expect(recommendations).toHaveLength(3)
     expect(recommendations.every((recommendation) => recommendation.top && !recommendation.bottom && !recommendation.dress)).toBe(
@@ -510,8 +566,8 @@ describe('generateTodayRecommendations', () => {
   })
 
   it('prioritizes items that have not been worn recently', () => {
-    const recommendations = generateTodayRecommendations(
-      [
+    const recommendations = generateTodayRecommendations({
+      items: [
         {
           id: 'top-fresh',
           imageUrl: 'https://example.com/top-fresh.jpg',
@@ -546,16 +602,16 @@ describe('generateTodayRecommendations', () => {
           createdAt: '2026-04-19T10:02:00Z'
         }
       ],
-      null
-    )
+      weather: null
+    })
 
     expect(recommendations[0]?.top?.id).toBe('top-fresh')
     expect(recommendations[0]?.bottom?.id).toBe('bottom-fresh')
   })
 
   it('returns a visibly different batch when offset increases', () => {
-    const firstBatch = generateTodayRecommendations(items, null, 0)
-    const secondBatch = generateTodayRecommendations(items, null, 1)
+    const firstBatch = generateTodayRecommendations({ items, weather: null, offset: 0 })
+    const secondBatch = generateTodayRecommendations({ items, weather: null, offset: 1 })
 
     expect(firstBatch).toHaveLength(3)
     expect(secondBatch).toHaveLength(3)

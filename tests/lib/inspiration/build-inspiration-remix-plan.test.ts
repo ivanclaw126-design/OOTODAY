@@ -19,9 +19,9 @@ describe('buildInspirationRemixPlan', () => {
             category: '外套',
             slot: 'outerLayer',
             colorHint: '黑色',
-            silhouette: '短款硬挺',
+            silhouette: ['短款', '硬挺'],
             layerRole: 'outer',
-            importance: 'high',
+            importance: 5,
             styleTags: ['通勤']
           },
           {
@@ -30,9 +30,9 @@ describe('buildInspirationRemixPlan', () => {
             category: '裤装',
             slot: 'bottom',
             colorHint: '灰色',
-            silhouette: '直筒',
+            silhouette: ['直筒'],
             layerRole: 'base',
-            importance: 'high',
+            importance: 5,
             styleTags: ['极简']
           }
         ],
@@ -47,9 +47,9 @@ describe('buildInspirationRemixPlan', () => {
             category: '外套',
             slot: 'outerLayer',
             colorHint: '黑色',
-            silhouette: '短款硬挺',
+            silhouette: ['短款', '硬挺'],
             layerRole: 'outer',
-            importance: 'high',
+            importance: 5,
             styleTags: ['通勤']
           },
           matchedItems: [
@@ -65,8 +65,19 @@ describe('buildInspirationRemixPlan', () => {
               createdAt: '2026-04-22T00:00:00Z'
             }
           ],
-          matchReason: '按类别/slot、颜色、轮廓、风格标签和层次角色综合排序。',
-          substituteSuggestion: null
+          matchReason: '同类替代：按类别 35%、slot 15%、颜色 20%、轮廓 15%、风格 10%、层次 5% 加权排序。',
+          substituteSuggestion: null,
+          preferenceNote: '这件保留了你偏好的低饱和/基础色方向。',
+          scoreBreakdown: {
+            total: 0.9,
+            categoryScore: 0.35,
+            slotScore: 0.15,
+            colorScore: 0.2,
+            silhouetteScore: 0.15,
+            styleScore: 0.0,
+            layerRoleScore: 0.05,
+            matchType: 'sameCategory'
+          }
         },
         {
           inspirationItem: {
@@ -75,9 +86,9 @@ describe('buildInspirationRemixPlan', () => {
             category: '裤装',
             slot: 'bottom',
             colorHint: '灰色',
-            silhouette: '直筒',
+            silhouette: ['直筒'],
             layerRole: 'base',
-            importance: 'high',
+            importance: 5,
             styleTags: ['极简']
           },
           matchedItems: [],
@@ -90,8 +101,14 @@ describe('buildInspirationRemixPlan', () => {
     expect(result.matchedCount).toBe(1)
     expect(result.totalCount).toBe(2)
     expect(result.coverageLabel).toContain('已经能穿出七成感觉')
+    expect(result.steps[0]?.note).toContain('同类替代')
     expect(result.steps[0]?.note).toContain('黑色 西装外套')
+    expect(result.steps[0]?.note).toContain('低饱和')
+    expect(result.summary).toContain('灵感尝试')
     expect(result.summary).toContain('短外套 + 直筒下装')
+    expect(result.summary).toContain('外短内长')
+    expect(result.summary).toContain('黑色西装外套')
+    expect(result.summary).toContain('低饱和')
     expect(result.steps[1]?.note).toContain('base')
     expect(result.missingItems).toHaveLength(1)
     expect(result.missingItems[0]?.label).toBe('直筒裤')

@@ -39,7 +39,7 @@ describe('buildInspirationColorStrategy', () => {
     })
 
     expect(notes.some((note) => note.includes('基础色托底'))).toBe(true)
-    expect(notes.some((note) => note.includes('亮点色基本只保留在一处'))).toBe(true)
+    expect(notes.some((note) => note.includes('一处亮色重点清楚'))).toBe(true)
     expect(notes.some((note) => note.includes('优先保住'))).toBe(true)
   })
 })

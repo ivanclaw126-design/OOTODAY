@@ -1,9 +1,9 @@
-import { buildPaletteColorStrategyNotes } from '@/lib/closet/color-strategy'
 import { getOutfitColorRole } from '@/lib/closet/taxonomy'
 import type { InspirationBreakdown } from '@/lib/inspiration/types'
+import { buildRecommendationColorNotes } from '@/lib/recommendation/copy'
 
 export function buildInspirationColorStrategy(breakdown: InspirationBreakdown) {
-  const notes = buildPaletteColorStrategyNotes(breakdown.keyItems.map((item) => item.colorHint))
+  const notes = buildRecommendationColorNotes(breakdown.keyItems.map((item) => item.colorHint), 'inspiration')
 
   const accentItem = breakdown.keyItems.find((item) => item.colorHint && getOutfitColorRole(item.colorHint) === 'accent')
 

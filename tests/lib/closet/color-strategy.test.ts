@@ -5,8 +5,8 @@ describe('closet color strategy helpers', () => {
   it('builds reusable palette strategy notes from a set of colors', () => {
     const notes = buildPaletteColorStrategyNotes(['黑色', '灰色', '红色'])
 
-    expect(notes.some((note) => note.includes('同色系深浅变化'))).toBe(true)
-    expect(notes.some((note) => note.includes('亮点色基本只保留在一处'))).toBe(true)
+    expect(notes.some((note) => note.includes('同色系深浅让层次自然'))).toBe(true)
+    expect(notes.some((note) => note.includes('一处亮色重点清楚'))).toBe(true)
   })
 
   it('builds closet-anchored hints for candidate analysis', () => {

@@ -5,11 +5,13 @@ import {
   getColorIntensity,
   getOutfitColorRole,
   hasSameColorFamily,
+  inferClosetAlgorithmMeta,
   isAccessoryCategory,
   isBagCategory,
   isRecommendableCategory,
   isShoesCategory,
   isVividColor,
+  normalizeClosetAlgorithmMeta,
   normalizeColorValue,
   SHOES_CATEGORY
 } from '@/lib/closet/taxonomy'
@@ -46,5 +48,60 @@ describe('closet taxonomy color helpers', () => {
     expect(isAccessoryCategory('scarf')).toBe(true)
     expect(isRecommendableCategory('鞋子')).toBe(true)
     expect(isRecommendableCategory('家居服')).toBe(false)
+  })
+
+  it('infers optional closet algorithm metadata from existing category and style fields', () => {
+    expect(
+      inferClosetAlgorithmMeta({
+        category: '外套',
+        subCategory: '长西装外套',
+        styleTags: ['通勤', '硬挺']
+      })
+    ).toMatchObject({
+      slot: 'outerwear',
+      layerRole: 'outer',
+      silhouette: ['硬挺'],
+      fabricWeight: 'medium',
+      formality: 4,
+      warmthLevel: 2,
+      comfortLevel: 3,
+      visualWeight: 2,
+      pattern: 'solid'
+    })
+  })
+
+  it('normalizes optional algorithm metadata while preserving fallback fields', () => {
+    expect(
+      normalizeClosetAlgorithmMeta(
+        {
+          slot: 'wrong',
+          layerRole: 'statement',
+          silhouette: [' 长线条 ', '', '硬挺'],
+          material: [' 羊毛 ', ''],
+          fabricWeight: 'heavy',
+          formality: 6,
+          warmthLevel: 4,
+          comfortLevel: 2,
+          visualWeight: 5,
+          pattern: 'stripe'
+        },
+        {
+          category: '外套',
+          subCategory: '大衣',
+          styleTags: ['通勤']
+        }
+      )
+    ).toMatchObject({
+      slot: 'outerwear',
+      layerRole: 'statement',
+      silhouette: ['长线条', '硬挺'],
+      material: ['羊毛'],
+      fabricWeight: 'heavy',
+      formality: 4,
+      warmthLevel: 4,
+      comfortLevel: 2,
+      visualWeight: 5,
+      pattern: 'stripe'
+    })
   })
 })

@@ -19,6 +19,8 @@ import {
   SHOES_CATEGORY,
   TOP_CATEGORY
 } from '@/lib/closet/taxonomy'
+import { buildMissingSlotCopy } from '@/lib/recommendation/copy'
+import type { RecommendationPreferenceState } from '@/lib/recommendation/preference-types'
 import type { ShopCandidateItem, ShopPurchaseAnalysis, ShopWardrobeGapType } from '@/lib/shop/types'
 
 export const supportedFashionCategories = [
@@ -78,6 +80,32 @@ function isAccessory(category: string) {
 
 function countSharedStyleTags(a: string[], b: string[]) {
   return a.filter((tag) => b.includes(tag)).length
+}
+
+function textForCandidate(candidate: ShopCandidateItem) {
+  return [candidate.category, candidate.subCategory, candidate.colorCategory, candidate.sourceTitle, ...candidate.styleTags]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
+function includesAny(text: string, values: string[]) {
+  return values.some((value) => {
+    const normalized = value.trim().toLowerCase()
+    return normalized.length > 0 && text.includes(normalized)
+  })
+}
+
+function isComfortCandidate(candidate: ShopCandidateItem) {
+  return includesAny(textForCandidate(candidate), ['舒适', '休闲', '运动', '平底', '宽松', '基础', '针织', 'sneaker', 'flat'])
+}
+
+function isLoudCandidate(candidate: ShopCandidateItem) {
+  return includesAny(textForCandidate(candidate), ['红色', '黄色', '橙色', '亮色', '高饱和', '撞色', 'logo', '大logo', '印花', '图案', '多焦点'])
+}
+
+function isVisualFocusCandidate(candidate: ShopCandidateItem) {
+  return isBag(candidate.category) || isAccessory(candidate.category) || includesAny(textForCandidate(candidate), ['亮点', '重点', '视觉中心', '配饰', '包'])
 }
 
 function hasGoodColorCall(candidate: ShopCandidateItem, outfit: CoreOutfit) {
@@ -256,15 +284,19 @@ function getMissingCategoryHints(candidate: ShopCandidateItem, closetItems: Clos
   }
 
   if (isShoes(candidate.category) && coreOutfits.length > 0 && shoes.length === 0) {
-    hints.push('衣橱里缺少能给核心搭配收尾的鞋履')
+    hints.push(buildMissingSlotCopy('shoes', 'shop'))
   }
 
   if (isBag(candidate.category) && coreOutfits.length > 0 && bags.length === 0) {
-    hints.push('衣橱里缺少能补场景完整度的包袋')
+    hints.push(buildMissingSlotCopy('bag', 'shop'))
   }
 
   if ((isBag(candidate.category) || isAccessory(candidate.category)) && coreOutfits.length === 0) {
     hints.push('先补出至少一套核心衣服组合，再看包袋和配饰收益会更准')
+  }
+
+  if (isAccessory(candidate.category) && coreOutfits.length > 0) {
+    hints.push(buildMissingSlotCopy('accessories', 'shop'))
   }
 
   return hints
@@ -384,9 +416,81 @@ function buildRecommendation(
   }
 }
 
+function applyPreferenceToRecommendation({
+  candidate,
+  recommendation,
+  recommendationReason,
+  preferenceState
+}: {
+  candidate: ShopCandidateItem
+  recommendation: 'buy' | 'consider' | 'skip'
+  recommendationReason: string
+  preferenceState?: RecommendationPreferenceState | null
+}) {
+  const profile = preferenceState?.profile
+
+  if (!profile) {
+    return { recommendation, recommendationReason, preferenceNotes: [] }
+  }
+
+  const notes: string[] = []
+  let nextRecommendation = recommendation
+  const candidateText = textForCandidate(candidate)
+
+  if (includesAny(candidateText, profile.hardAvoids)) {
+    notes.push('命中了你的 hard avoids，不建议购买。')
+    return {
+      recommendation: 'skip' as const,
+      recommendationReason: `${recommendationReason} 命中了你的 hard avoids，不建议购买。`,
+      preferenceNotes: notes
+    }
+  }
+
+  const comfortLeads = profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority
+  const styleLeads = profile.practicalityPreference.stylePriority > profile.practicalityPreference.comfortPriority
+  const lowKey =
+    profile.colorPreference.saturation === 'low' ||
+    profile.colorPreference.contrast === 'low' ||
+    profile.colorPreference.palette === 'neutral' ||
+    profile.colorPreference.accentTolerance === 0 ||
+    profile.focalPointPreference === 'subtle'
+
+  if (comfortLeads && (isShoes(candidate.category) || isComfortCandidate(candidate))) {
+    notes.push('你的偏好更重视舒适度，这件单品的舒适/基础属性会提高购买价值。')
+
+    if (nextRecommendation === 'consider') {
+      nextRecommendation = 'buy'
+    }
+  }
+
+  if (styleLeads && isVisualFocusCandidate(candidate)) {
+    notes.push('你的偏好更重视造型完成度，包袋/配饰/视觉中心的价值会被提高。')
+
+    if (nextRecommendation === 'consider') {
+      nextRecommendation = 'buy'
+    }
+  }
+
+  if (lowKey && isLoudCandidate(candidate)) {
+    notes.push('你的日常偏好更低调，这件的大面积亮色、logo 或多焦点会降低购买优先级。')
+    nextRecommendation = nextRecommendation === 'buy' ? 'consider' : 'skip'
+  }
+
+  if (notes.length === 0) {
+    return { recommendation: nextRecommendation, recommendationReason, preferenceNotes: notes }
+  }
+
+  return {
+    recommendation: nextRecommendation,
+    recommendationReason: `${recommendationReason} ${notes[0]}`,
+    preferenceNotes: notes
+  }
+}
+
 export function analyzePurchaseCandidate(
   candidate: ShopCandidateItem,
-  closetItems: ClosetItemCardData[]
+  closetItems: ClosetItemCardData[],
+  preferenceState?: RecommendationPreferenceState | null
 ): ShopPurchaseAnalysis {
   const duplicateItems = findDuplicateItems(candidate, closetItems)
   const duplicateRisk = getDuplicateRisk(candidate, duplicateItems)
@@ -397,7 +501,7 @@ export function analyzePurchaseCandidate(
   const fillsWardrobeGap = Boolean(gapType) && (estimatedOutfitCount > 0 || completesIncompleteOutfitCount > 0)
   const missingCategoryHints = getMissingCategoryHints(candidate, closetItems)
   const colorStrategyHints = buildClosetAnchoredColorHints(candidate.colorCategory, closetItems).map((hint) => hint.replace(/。$/u, ''))
-  const { recommendation, recommendationReason } = buildRecommendation(
+  const baseRecommendation = buildRecommendation(
     candidate,
     duplicateRisk,
     estimatedOutfitCount,
@@ -407,6 +511,11 @@ export function analyzePurchaseCandidate(
     gapType,
     completesIncompleteOutfitCount
   )
+  const { recommendation, recommendationReason, preferenceNotes } = applyPreferenceToRecommendation({
+    candidate,
+    ...baseRecommendation,
+    preferenceState
+  })
 
   return {
     candidate,
@@ -419,6 +528,7 @@ export function analyzePurchaseCandidate(
     gapType,
     missingCategoryHints,
     colorStrategyHints,
+    preferenceNotes,
     recommendation,
     recommendationReason
   }
