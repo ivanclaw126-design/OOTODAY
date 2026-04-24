@@ -144,6 +144,10 @@ function getWeatherMatchScore(item: ClosetItemCardData, weather: TodayWeather | 
     return hasAnyTextToken(item, ['靴', '皮鞋', '乐福', '厚', '保暖', '防风']) ? 5 : 0
   }
 
+  if (isMildCoolWeather(weather)) {
+    return hasAnyTextToken(item, ['开衫', '夹克', '冲锋衣', '风衣', '薄', '轻', '防风']) ? 7 : 0
+  }
+
   if (weather.isWarm) {
     return hasAnyTextToken(item, ['凉鞋', '帆布', '轻便', '草编', '薄']) ? 5 : 0
   }
@@ -195,7 +199,15 @@ function shouldUseOuterLayer(
     return false
   }
 
+  if (weather && isMildCoolWeather(weather)) {
+    return profile.slotPreference.outerwear
+  }
+
   return profile.slotPreference.outerwear && profile.layeringPreference.allowNonWeatherOuterwear && profile.layeringPreference.complexity >= 2
+}
+
+function isMildCoolWeather(weather: TodayWeather) {
+  return weather.temperatureC >= 13 && weather.temperatureC <= 18
 }
 
 function pickBestMatchingItem({
@@ -381,6 +393,10 @@ function scoreLayering(draft: OutfitDraft, weather: TodayWeather | null, profile
     return draft.outerLayer ? 94 : 42
   }
 
+  if (weather && isMildCoolWeather(weather)) {
+    return draft.outerLayer ? 88 : 52
+  }
+
   if (weather?.isWarm) {
     return draft.outerLayer ? 64 : 90
   }
@@ -443,6 +459,10 @@ function scoreWeatherComfort(draft: OutfitDraft, weather: TodayWeather | null) {
     return draft.outerLayer ? 92 : 45
   }
 
+  if (weather && isMildCoolWeather(weather)) {
+    return draft.outerLayer ? 88 : 62
+  }
+
   if (weather?.isWarm) {
     return draft.outerLayer ? 62 : 90
   }
@@ -501,6 +521,8 @@ function buildPairReason(draft: OutfitDraft, weather: TodayWeather | null) {
 
   if (weather?.isCold) {
     parts.push(draft.outerLayer ? '天气偏冷，已补上外层' : '天气偏冷，建议补一件外层')
+  } else if (weather && isMildCoolWeather(weather)) {
+    parts.push(draft.outerLayer ? '天气微凉，已补轻外层' : '天气微凉，建议补一件轻外层')
   }
 
   parts.push(...buildTodayColorNotes(getSelectedItems(draft).map((item) => item.colorCategory)))
@@ -565,6 +587,10 @@ function buildDressReason(draft: OutfitDraft, weather: TodayWeather | null) {
       ? draft.outerLayer
         ? '天气偏冷，用外层补足保暖'
         : '天气偏冷，建议补一件外层'
+      : weather && isMildCoolWeather(weather)
+        ? draft.outerLayer
+          ? '天气微凉，用轻外层处理温差'
+          : '天气微凉，建议补一件轻外层'
       : '一件完成主造型，省决策成本',
     draft.outerLayer && scoreColorCompatibility(dress.colorCategory, draft.outerLayer.colorCategory) >= 2 ? '外层和主件颜色衔接自然' : '',
     ...buildTodayColorNotes(getSelectedItems(draft).map((item) => item.colorCategory)),

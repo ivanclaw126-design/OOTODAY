@@ -6,6 +6,7 @@ import { analyzeItemImage } from '@/lib/closet/analyze-item-image'
 import { deleteClosetItem } from '@/lib/closet/delete-closet-item'
 import { getClosetItem } from '@/lib/closet/get-closet-item'
 import { importRemoteImageToStorage } from '@/lib/closet/import-remote-image-to-storage'
+import { replaceClosetItemImage } from '@/lib/closet/replace-closet-item-image'
 import { saveClosetItem } from '@/lib/closet/save-closet-item'
 import { setClosetItemImageFlip } from '@/lib/closet/set-closet-item-image-flip'
 import { normalizeClosetFields } from '@/lib/closet/taxonomy'
@@ -123,6 +124,31 @@ export async function updateClosetItemAction(input: { itemId: string; draft: Clo
 
   revalidatePath('/closet')
   revalidatePath('/today')
+
+  return data
+}
+
+export async function replaceClosetItemImageAction(input: { itemId: string; draft: ClosetAnalysisDraft }) {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  validateClosetImageUrlForSave(input.draft.imageUrl, session.user.id)
+
+  const data = await replaceClosetItemImage({
+    itemId: input.itemId,
+    userId: session.user.id,
+    ...input.draft,
+    ...normalizeClosetFields(input.draft)
+  })
+
+  revalidatePath('/closet')
+  revalidatePath('/today')
+  revalidatePath('/travel')
+  revalidatePath('/looks')
+  revalidatePath('/shop')
 
   return data
 }

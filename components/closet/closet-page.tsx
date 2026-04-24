@@ -17,6 +17,15 @@ type ClosetPageProps = {
   analyzeImportUrl: (input: { sourceUrl: string }) => Promise<{ error: string | null; draft: ClosetAnalysisDraft | null }>
   saveItem: (draft: ClosetAnalysisDraft) => Promise<void>
   updateItem: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<void>
+  replaceItemImage?: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<{
+    persisted: boolean
+    imageUrl?: string | null
+    imageFlipped?: boolean
+    imageOriginalUrl?: string | null
+    imageRotationQuarterTurns?: number
+    imageRestoreExpiresAt?: string | null
+    canRestoreOriginal?: boolean
+  }>
   reanalyzeItem: (input: { itemId: string }) => Promise<ClosetAnalysisDraft>
   deleteItem: (input: { itemId: string }) => Promise<void>
   updateImageRotation: (input: {
@@ -44,6 +53,9 @@ export function ClosetPage({
   analyzeImportUrl,
   saveItem,
   updateItem,
+  replaceItemImage = async () => {
+    throw new Error('图片替换暂不可用')
+  },
   reanalyzeItem,
   deleteItem,
   updateImageRotation
@@ -73,6 +85,7 @@ export function ClosetPage({
           analyzeImportUrl={analyzeImportUrl}
           saveItem={saveItem}
           updateItem={updateItem}
+          replaceItemImage={replaceItemImage}
           reanalyzeItem={reanalyzeItem}
           deleteItem={deleteItem}
           updateImageRotation={updateImageRotation}
