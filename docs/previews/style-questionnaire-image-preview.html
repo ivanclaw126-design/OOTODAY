@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OOTODAY 造型偏好问卷图片候选</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1f2528;
+        --muted: #687176;
+        --line: #d9dfdd;
+        --paper: #fbfaf7;
+        --panel: #ffffff;
+        --accent: #8f6f3f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        line-height: 1.5;
+      }
+
+      main {
+        width: min(1180px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0 56px;
+      }
+
+      header {
+        display: grid;
+        gap: 10px;
+        padding: 12px 0 24px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 44px);
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 760px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .section {
+        margin-top: 26px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: 0;
+      }
+
+      .meta {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .pick {
+        flex: 0 0 auto;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 12px;
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .matrix {
+        display: grid;
+        grid-template-columns: minmax(168px, 240px) minmax(0, 1fr);
+        gap: 12px;
+        align-items: stretch;
+      }
+
+      .labels {
+        display: grid;
+        gap: 8px;
+      }
+
+      .labels.rows-4 {
+        grid-template-rows: repeat(4, minmax(64px, 1fr));
+      }
+
+      .labels.rows-5 {
+        grid-template-rows: repeat(5, minmax(64px, 1fr));
+      }
+
+      .labels.rows-6 {
+        grid-template-rows: repeat(6, minmax(58px, 1fr));
+      }
+
+      .label {
+        display: grid;
+        align-content: center;
+        gap: 3px;
+        min-height: 64px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f6f4ef;
+      }
+
+      .label strong {
+        display: block;
+        font-size: 15px;
+        letter-spacing: 0;
+      }
+
+      .label span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .image-wrap {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f2f0eb;
+      }
+
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-bottom: 1px solid var(--line);
+        background: #ffffff;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .cols div {
+        padding: 8px;
+      }
+
+      .cols div + div {
+        border-left: 1px solid var(--line);
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      @media (max-width: 760px) {
+        main {
+          width: min(100vw - 20px, 1180px);
+          padding-top: 20px;
+        }
+
+        .section {
+          padding: 12px;
+        }
+
+        .section-head {
+          display: grid;
+        }
+
+        .matrix {
+          grid-template-columns: 1fr;
+        }
+
+        .labels,
+        .labels.rows-4,
+        .labels.rows-5,
+        .labels.rows-6 {
+          grid-template-rows: none;
+        }
+
+        .label {
+          min-height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>造型偏好问卷图片候选</h1>
+        <p class="lead">
+          每一题都按当前代码里的问卷选项生成。左侧是选项文案，右侧同一行对应两张候选图：候选 A 和候选 B。反馈时可以直接说“色彩偏好 / 基础色 + 一处亮色 / B 需要重做”。
+        </p>
+      </header>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>1. 场景偏好</h2>
+            <p class="meta">控制变量：同一摄影棚、同一全身距离、同一双人构图，只改变场景穿搭语义。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-5">
+            <div class="label"><strong>通勤干净</strong><span>场景适配、稳定完成度</span></div>
+            <div class="label"><strong>轻松日常</strong><span>舒适、好穿、可复穿</span></div>
+            <div class="label"><strong>约会/聚会</strong><span>更多视觉中心和造型感</span></div>
+            <div class="label"><strong>城市旅行</strong><span>天气舒适、少量单品成套</span></div>
+            <div class="label"><strong>运动户外</strong><span>天气和舒适权重更高</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/01-scene.png" alt="场景偏好图片候选" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>2. 轮廓偏好</h2>
+            <p class="meta">控制变量：人物、背景、正式度尽量统一，只改变上下身比例和松紧关系。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-5">
+            <div class="label"><strong>上短下长</strong><span>强调腰线和比例</span></div>
+            <div class="label"><strong>上松下窄</strong><span>上半身放松，下半身收住</span></div>
+            <div class="label"><strong>上窄下宽</strong><span>上身利落，下装有廓形</span></div>
+            <div class="label"><strong>全身松弛</strong><span>整体宽松、舒适优先</span></div>
+            <div class="label"><strong>连衣裙/一体式</strong><span>减少上下装搭配成本</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/02-silhouette.png" alt="轮廓偏好图片候选" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>3. 色彩偏好</h2>
+            <p class="meta">控制变量：同一穿搭复杂度和构图，只改变配色策略。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-5">
+            <div class="label"><strong>黑白灰 / 米棕 / 藏青</strong><span>低冲突、复穿稳定</span></div>
+            <div class="label"><strong>同色系深浅</strong><span>靠颜色层次建立完整感</span></div>
+            <div class="label"><strong>柔和低饱和</strong><span>保留颜色但降低存在感</span></div>
+            <div class="label"><strong>基础色 + 一处亮色</strong><span>用一个重点提神</span></div>
+            <div class="label"><strong>高对比 / 撞色</strong><span>接受更强视觉冲突</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/03-color.png" alt="色彩偏好图片候选" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>4. 叠穿偏好</h2>
+            <p class="meta">控制变量：基础场景统一，只改变层数、外层和材质复杂度。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-4">
+            <div class="label"><strong>简单两件</strong><span>尽量避免复杂叠穿</span></div>
+            <div class="label"><strong>轻外套</strong><span>接受轻量外层</span></div>
+            <div class="label"><strong>三层叠穿</strong><span>愿意用层次增强造型</span></div>
+            <div class="label"><strong>材质混搭</strong><span>更复杂的层次和材质变化</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/04-layering.png" alt="叠穿偏好图片候选" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>5. 视觉重点偏好</h2>
+            <p class="meta">控制变量：基础 outfit 尽量低调，只移动视觉重点的位置。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-5">
+            <div class="label"><strong>上半身 / 脸周围</strong><span>重点靠近上半身</span></div>
+            <div class="label"><strong>腰线</strong><span>比例和腰线</span></div>
+            <div class="label"><strong>鞋子</strong><span>鞋子成为视觉重点</span></div>
+            <div class="label"><strong>包 / 配饰</strong><span>包袋或配饰完成造型</span></div>
+            <div class="label"><strong>整体低调</strong><span>不强调单点抢眼</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/05-focal-point.png" alt="视觉重点偏好图片候选" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>6. 实用和造型取向</h2>
+            <p class="meta">控制变量：同一季节和构图，只改变舒适、实用、造型感的权重。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-4">
+            <div class="label"><strong>舒适优先</strong><span>天气舒适和实用性</span></div>
+            <div class="label"><strong>均衡</strong><span>保持默认平衡</span></div>
+            <div class="label"><strong>造型优先</strong><span>层次和视觉重点更高</span></div>
+            <div class="label"><strong>工作日舒适，周末造型</strong><span>舒适与造型之间略偏完整</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/06-practicality.png" alt="实用和造型取向图片候选" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>7. 推荐补齐项偏好</h2>
+            <p class="meta">控制变量：基础服装简单，只改变系统应优先补齐的 slot。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-4">
+            <div class="label"><strong>外套</strong><span>允许推荐外层</span></div>
+            <div class="label"><strong>鞋子</strong><span>推荐尽量补齐鞋履</span></div>
+            <div class="label"><strong>包袋</strong><span>用包袋补完整度和呼应</span></div>
+            <div class="label"><strong>配饰</strong><span>允许少量配饰成为细节</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/07-slot.png" alt="推荐补齐项偏好图片候选" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>8. 探索程度偏好</h2>
+            <p class="meta">控制变量：同一场景，只逐级增加新鲜感、造型风险和视觉表达。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-4">
+            <div class="label"><strong>尽量稳定</strong><span>几乎不插入灵感推荐</span></div>
+            <div class="label"><strong>一点变化</strong><span>低频尝试轻微变化</span></div>
+            <div class="label"><strong>偶尔给我灵感</strong><span>允许更明显的新鲜感</span></div>
+            <div class="label"><strong>大胆尝试</strong><span>提高探索频率，保留避雷项</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/08-exploration.png" alt="探索程度偏好图片候选" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>9. 避雷项偏好（1/2）</h2>
+            <p class="meta">这组展示“用户可能不想要的元素”，后续可决定是否真的放图，或改成更克制的图标/标签。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-6">
+            <div class="label"><strong>不喜欢紧身</strong><span>紧身版型</span></div>
+            <div class="label"><strong>不喜欢高跟鞋</strong><span>高跟或明显抬高鞋型</span></div>
+            <div class="label"><strong>不喜欢短裙</strong><span>短下装</span></div>
+            <div class="label"><strong>不喜欢无袖</strong><span>无袖或露手臂</span></div>
+            <div class="label"><strong>不喜欢大面积亮色</strong><span>大面积高饱和色</span></div>
+            <div class="label"><strong>不喜欢复杂叠穿</strong><span>多层复杂搭配</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/09-hard-avoid-1.png" alt="避雷项偏好第一组图片候选" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>10. 避雷项偏好（2/2）</h2>
+            <p class="meta">同上：如果视觉太负面，后续可以改成更抽象或更轻的表达。</p>
+          </div>
+          <div class="pick">每行选 A 或 B</div>
+        </div>
+        <div class="matrix">
+          <div class="labels rows-5">
+            <div class="label"><strong>不喜欢露腰</strong><span>露腰 / 短上衣</span></div>
+            <div class="label"><strong>不喜欢大 logo</strong><span>大标识感</span></div>
+            <div class="label"><strong>不喜欢帽子</strong><span>帽子成为明显元素</span></div>
+            <div class="label"><strong>不喜欢太正式</strong><span>明显正式商务/礼服感</span></div>
+            <div class="label"><strong>不喜欢太运动</strong><span>明显运动感</span></div>
+          </div>
+          <div class="image-wrap">
+            <div class="cols"><div>候选 A</div><div>候选 B</div></div>
+            <img src="./style-questionnaire-images/10-hard-avoid-2.png" alt="避雷项偏好第二组图片候选" />
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

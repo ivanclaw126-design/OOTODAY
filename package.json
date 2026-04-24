@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
+    "demo:magiclink": "node scripts/demo-account.mjs",
+    "demo:wardrobe:seed": "node scripts/seed-demo-wardrobe.mjs",
     "travel:db:check": "bash scripts/check-travel-plans-migration.sh"
   },
   "dependencies": {
