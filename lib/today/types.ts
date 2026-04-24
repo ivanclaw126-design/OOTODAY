@@ -72,6 +72,7 @@ export type TodayView = {
   accountEmail: string | null
   passwordBootstrapped: boolean
   passwordChangedAt: string | null
+  hasCompletedStyleQuestionnaire?: boolean
   weatherState: TodayWeatherState
   recommendations: TodayRecommendation[]
   recommendationError: boolean

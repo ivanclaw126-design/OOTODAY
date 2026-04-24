@@ -134,10 +134,12 @@ function SlotGlyph({ value }: { value: keyof PreferenceProfile['slotPreference']
 function Section({
   eyebrow,
   title,
+  selectionRule,
   children
 }: {
   eyebrow: string
   title: string
+  selectionRule: string
   children: ReactNode
 }) {
   return (
@@ -146,6 +148,7 @@ function Section({
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-neutral-dark)]">{eyebrow}</p>
           <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-[var(--color-primary)]">{title}</h2>
+          <p className="mt-2 text-sm font-medium leading-6 text-[var(--color-neutral-dark)]">{selectionRule}</p>
         </div>
         {children}
       </div>
@@ -245,23 +248,26 @@ export function StyleQuestionnairePage({
 
   return (
     <div className="space-y-5">
-      <Card className="bg-[linear-gradient(180deg,rgba(21,21,18,0.94)_0%,rgba(55,61,43,0.92)_100%)] text-white">
+      <section
+        className="relative overflow-hidden rounded-[1.9rem] border border-black/12 p-5 text-white shadow-[0_24px_54px_rgba(21,21,18,0.18)]"
+        style={{ background: 'linear-gradient(180deg, rgba(21,21,18,0.96) 0%, rgba(55,61,43,0.94) 100%)' }}
+      >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/52">Style profile</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">Style profile</p>
             <h2 className="text-3xl font-semibold tracking-[-0.05em]">让推荐先认识你的穿法</h2>
-            <p className="max-w-2xl text-sm leading-6 text-white/72">从日常场景、轮廓、颜色和避雷项开始，先建立一版稳定的个人风格底色。</p>
+            <p className="max-w-2xl text-sm leading-6 text-white/82">从日常场景、轮廓、颜色和避雷项开始，先建立一版稳定的个人风格底色。</p>
           </div>
           <Link
             href="/today"
-            className="inline-flex shrink-0 items-center justify-center rounded-full border border-white/18 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/16"
+            className="inline-flex shrink-0 items-center justify-center rounded-full border border-white/18 bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-primary)] shadow-[0_12px_28px_rgba(0,0,0,0.16)] hover:bg-[var(--color-accent)]"
           >
             回 Today
           </Link>
         </div>
-      </Card>
+      </section>
 
-      <Section eyebrow="01 / Scene" title="你最常需要穿搭服务的场景是什么？">
+      <Section eyebrow="01 / Scene" title="你最常需要穿搭服务的场景是什么？" selectionRule="至少选择 1 个，最多选择 2 个。">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SCENE_OPTIONS.map((option, index) => (
             <VisualChoiceCard
@@ -276,7 +282,7 @@ export function StyleQuestionnairePage({
         </div>
       </Section>
 
-      <Section eyebrow="02 / Silhouette" title="你更喜欢哪种全身轮廓？">
+      <Section eyebrow="02 / Silhouette" title="你更喜欢哪种全身轮廓？" selectionRule="可多选，选择 0-5 个都可以。">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SILHOUETTE_OPTIONS.map((option) => (
             <VisualChoiceCard
@@ -291,7 +297,7 @@ export function StyleQuestionnairePage({
         </div>
       </Section>
 
-      <Section eyebrow="03 / Color" title="你更喜欢哪种配色？">
+      <Section eyebrow="03 / Color" title="你更喜欢哪种配色？" selectionRule="单选，只能选择 1 个。">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {COLOR_PALETTE_OPTIONS.map((option) => (
             <VisualChoiceCard
@@ -306,7 +312,7 @@ export function StyleQuestionnairePage({
         </div>
       </Section>
 
-      <Section eyebrow="04 / Layering" title="你能接受多复杂的叠穿？">
+      <Section eyebrow="04 / Layering" title="你能接受多复杂的叠穿？" selectionRule="单选，只能选择 1 个。">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {LAYERING_OPTIONS.map((option) => (
             <VisualChoiceCard
@@ -321,7 +327,7 @@ export function StyleQuestionnairePage({
         </div>
       </Section>
 
-      <Section eyebrow="05 / Focus" title="你希望一套穿搭的视觉中心通常在哪里？">
+      <Section eyebrow="05 / Focus" title="你希望一套穿搭的视觉中心通常在哪里？" selectionRule="单选，只能选择 1 个。">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {FOCAL_POINT_OPTIONS.map((option) => (
             <VisualChoiceCard
@@ -336,7 +342,7 @@ export function StyleQuestionnairePage({
         </div>
       </Section>
 
-      <Section eyebrow="06 / Practicality" title="你更看重舒适实用，还是造型感？">
+      <Section eyebrow="06 / Practicality" title="你更看重舒适实用，还是造型感？" selectionRule="单选，只能选择 1 个。">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PRACTICALITY_OPTIONS.map((option) => (
             <VisualChoiceCard
@@ -351,7 +357,7 @@ export function StyleQuestionnairePage({
         </div>
       </Section>
 
-      <Section eyebrow="07 / Slots" title="你希望推荐包含哪些单品层级？">
+      <Section eyebrow="07 / Slots" title="你希望推荐包含哪些单品层级？" selectionRule="可多选，选择 0-4 个都可以。">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {SLOT_OPTIONS.map((option) => (
             <VisualChoiceCard
@@ -367,7 +373,7 @@ export function StyleQuestionnairePage({
         </div>
       </Section>
 
-      <Section eyebrow="08 / Explore" title="你愿意偶尔尝试和平时不同的风格吗？">
+      <Section eyebrow="08 / Explore" title="你愿意偶尔尝试和平时不同的风格吗？" selectionRule="单选，只能选择 1 个。">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {EXPLORATION_OPTIONS.map((option) => (
             <VisualChoiceCard
@@ -382,7 +388,7 @@ export function StyleQuestionnairePage({
         </div>
       </Section>
 
-      <Section eyebrow="09 / Avoid" title="明确不喜欢的元素">
+      <Section eyebrow="09 / Avoid" title="明确不喜欢的元素" selectionRule={`可多选，选择 0-${HARD_AVOID_OPTIONS.length} 个都可以。`}>
         <div className="flex flex-wrap gap-2">
           {HARD_AVOID_OPTIONS.map((option) => {
             const selected = hardAvoids.includes(option)
@@ -403,7 +409,26 @@ export function StyleQuestionnairePage({
       </Section>
 
       {error ? <StatusBanner message={error} /> : null}
-      {saved ? <StatusBanner message="风格问卷已保存" /> : null}
+      {saved ? (
+        <section
+          className="relative overflow-hidden rounded-[1.9rem] border border-black/10 p-5 text-white shadow-[0_24px_54px_rgba(21,21,18,0.18)]"
+          style={{ background: 'linear-gradient(135deg, rgba(21,21,18,0.96) 0%, rgba(63,74,60,0.94) 100%)' }}
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">Saved</p>
+              <h2 className="text-xl font-semibold tracking-[-0.04em]">风格问卷已保存</h2>
+              <p className="text-sm leading-6 text-white/82">回到 Today 后，推荐会按这版风格偏好重新排序。</p>
+            </div>
+            <Link
+              href="/today"
+              className="inline-flex shrink-0 items-center justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-primary)] shadow-[0_12px_28px_rgba(0,0,0,0.14)] hover:bg-[var(--color-accent)]"
+            >
+              回 Today 看新推荐
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       <Card className="sticky bottom-24 z-10 bg-white/86 backdrop-blur">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

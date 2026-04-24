@@ -161,6 +161,38 @@ describe('TodayPage', () => {
     expect(screen.getByRole('button', { name: '记为今日已穿并评分' })).toBeInTheDocument()
   })
 
+  it('invites users to fill the style questionnaire before it is completed', () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 3,
+          city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          hasCompletedStyleQuestionnaire: false,
+          weatherState: { status: 'not-set' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    const engineInvite = screen.getByText('先让 AI 认识你的穿法')
+    const statusHeading = screen.getByText('今日状态')
+    expect(engineInvite).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '填写风格问卷' })).toHaveAttribute('href', '/preferences')
+    expect(engineInvite.compareDocumentPosition(statusHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('renders full outfit slots and a gentle missing-slot hint', () => {
     render(
       <TodayPage

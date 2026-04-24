@@ -60,6 +60,7 @@ describe('preferences actions', () => {
       answers
     })
     expect(revalidatePath).toHaveBeenCalledWith('/preferences')
+    expect(revalidatePath).toHaveBeenCalledWith('/today')
   })
 
   it('throws when signed out', async () => {

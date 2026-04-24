@@ -27,6 +27,7 @@ export async function getTodayView({
     getRecentOotdHistory(userId),
     getPreferenceState({ userId })
   ])
+  const hasCompletedStyleQuestionnaire = preferenceState.hasQuestionnaireAnswers === true
 
   if (closet.itemCount === 0) {
     return {
@@ -35,6 +36,7 @@ export async function getTodayView({
       accountEmail,
       passwordBootstrapped,
       passwordChangedAt,
+      hasCompletedStyleQuestionnaire,
       weatherState: city ? { status: 'unavailable', city } : { status: 'not-set' },
       recommendations: [],
       recommendationError: false,
@@ -50,6 +52,7 @@ export async function getTodayView({
       accountEmail,
       passwordBootstrapped,
       passwordChangedAt,
+      hasCompletedStyleQuestionnaire,
       weatherState: { status: 'not-set' },
       recommendations: generateTodayRecommendations({
         items: closet.items,
@@ -72,6 +75,7 @@ export async function getTodayView({
       accountEmail,
       passwordBootstrapped,
       passwordChangedAt,
+      hasCompletedStyleQuestionnaire,
       weatherState: { status: 'unavailable', city },
       recommendations: generateTodayRecommendations({
         items: closet.items,
@@ -91,6 +95,7 @@ export async function getTodayView({
     accountEmail,
     passwordBootstrapped,
     passwordChangedAt,
+    hasCompletedStyleQuestionnaire,
     weatherState: { status: 'ready', weather },
     recommendations: generateTodayRecommendations({
       items: closet.items,

@@ -1,6 +1,7 @@
 import { OnboardingChecklist } from '@/components/beta/onboarding-checklist'
 import { PageViewTracker } from '@/components/beta/page-view-tracker'
 import { AppShell } from '@/components/app-shell'
+import Link from 'next/link'
 import { TodayInteractiveWorkspace } from '@/components/today/today-interactive-workspace'
 import { TodayStatusCard } from '@/components/today/today-status-card'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -28,6 +29,33 @@ export function TodayPage({
     <AppShell title="Today">
       <PageViewTracker event="today_viewed" surface="today" />
       <div className="space-y-4">
+        {!view.hasCompletedStyleQuestionnaire ? (
+          <div
+            className="relative overflow-hidden rounded-[1.7rem] border border-black/10 p-5 text-white shadow-[0_22px_50px_rgba(21,21,18,0.18)]"
+            style={{ background: 'radial-gradient(circle at 12% 20%, rgba(231,255,55,0.34), transparent 30%), linear-gradient(135deg, rgba(21,21,18,0.98) 0%, rgba(48,57,43,0.97) 56%, rgba(18,18,16,0.99) 100%)' }}
+          >
+            <div className="pointer-events-none absolute right-5 top-5 grid h-16 w-16 grid-cols-3 gap-1 opacity-45">
+              {Array.from({ length: 9 }, (_, index) => (
+                <span key={index} className={index % 2 === 0 ? 'rounded-full bg-white/22' : 'rounded-full bg-[var(--color-accent)]/82'} />
+              ))}
+            </div>
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-xl space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">AI recommendation engine</p>
+                <h2 className="text-2xl font-semibold tracking-[-0.05em]">先让 AI 认识你的穿法</h2>
+                <p className="text-sm leading-6 text-white/84">花一分钟填写风格问卷，Today 会用你的场景、轮廓和颜色偏好重新校准推荐。</p>
+              </div>
+              <Link
+                href="/preferences"
+                className="inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold shadow-[0_12px_28px_rgba(0,0,0,0.16)] hover:-translate-y-0.5"
+                style={{ background: '#ffffff', color: 'var(--color-primary)' }}
+              >
+                填写风格问卷
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
         <TodayStatusCard weatherState={view.weatherState} />
 
         {view.itemCount === 0 ? (

@@ -61,6 +61,8 @@ export type PreferenceProfile = {
 export type RecommendationPreferenceState = {
   version: number
   source: PreferenceSource
+  hasQuestionnaireAnswers?: boolean
+  questionnaireAnswers?: unknown | null
   defaultWeights: ScoreWeights
   questionnaireDelta: Partial<ScoreWeights>
   ratingDelta: Partial<ScoreWeights>

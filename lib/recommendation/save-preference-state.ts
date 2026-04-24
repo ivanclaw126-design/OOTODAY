@@ -5,7 +5,7 @@ import { resolveRecommendationSupabaseClient, type RecommendationSupabaseClientL
 export async function savePreferenceState({
   userId,
   state,
-  questionnaireAnswers = null,
+  questionnaireAnswers,
   supabase
 }: {
   userId: string

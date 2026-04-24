@@ -64,6 +64,7 @@ export async function applyFeedback({
   const nextState = {
     ...currentState,
     source: 'adaptive' as const,
+    hasQuestionnaireAnswers: currentState.hasQuestionnaireAnswers,
     ratingDelta,
     finalWeights,
     updatedAt: createdAt
@@ -72,6 +73,7 @@ export async function applyFeedback({
   await savePreferenceState({
     userId,
     state: nextState,
+    questionnaireAnswers: currentState.questionnaireAnswers,
     supabase: client
   })
 

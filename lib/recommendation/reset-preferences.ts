@@ -28,6 +28,8 @@ export function resetRecommendationPreferences(now = new Date()): Recommendation
   return {
     version: now.getTime(),
     source: 'default',
+    hasQuestionnaireAnswers: false,
+    questionnaireAnswers: null,
     defaultWeights,
     questionnaireDelta: {},
     ratingDelta: {},
