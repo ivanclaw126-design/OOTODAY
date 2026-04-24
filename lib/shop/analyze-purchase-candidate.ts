@@ -20,6 +20,8 @@ import {
   TOP_CATEGORY
 } from '@/lib/closet/taxonomy'
 import { buildMissingSlotCopy } from '@/lib/recommendation/copy'
+import { evaluateOutfit, getWeightedOutfitScore } from '@/lib/recommendation/outfit-evaluator'
+import { DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
 import type { RecommendationPreferenceState } from '@/lib/recommendation/preference-types'
 import type { ShopCandidateItem, ShopPurchaseAnalysis, ShopWardrobeGapType } from '@/lib/shop/types'
 
@@ -151,6 +153,63 @@ function buildCoreOutfits(closetItems: ClosetItemCardData[]): CoreOutfit[] {
   return outfits
 }
 
+function candidateToClosetItem(candidate: ShopCandidateItem): ClosetItemCardData {
+  return {
+    id: 'shop-candidate',
+    imageUrl: candidate.imageUrl,
+    category: candidate.category,
+    subCategory: candidate.subCategory,
+    colorCategory: candidate.colorCategory,
+    styleTags: candidate.styleTags,
+    algorithmMeta: candidate.algorithmMeta,
+    lastWornDate: null,
+    wearCount: 0,
+    createdAt: '9999-12-31T00:00:00.000Z'
+  }
+}
+
+function scoreCandidateOutfit({
+  candidateItem,
+  top,
+  bottom,
+  dress,
+  outerLayer,
+  shoes,
+  bag,
+  preferenceState
+}: {
+  candidateItem: ClosetItemCardData
+  top?: ClosetItemCardData | null
+  bottom?: ClosetItemCardData | null
+  dress?: ClosetItemCardData | null
+  outerLayer?: ClosetItemCardData | null
+  shoes?: ClosetItemCardData | null
+  bag?: ClosetItemCardData | null
+  preferenceState?: RecommendationPreferenceState | null
+}) {
+  const missingSlots = [
+    !dress && !top ? 'top' : null,
+    !dress && !bottom ? 'bottom' : null,
+    !shoes ? 'shoes' : null,
+    !bag ? 'bag' : null
+  ].filter((slot): slot is 'top' | 'bottom' | 'shoes' | 'bag' => Boolean(slot))
+  const componentScores = evaluateOutfit(
+    {
+      top,
+      bottom,
+      dress,
+      outerLayer,
+      shoes,
+      bag,
+      accessories: isAccessory(candidateItem.category) ? [candidateItem] : [],
+      missingSlots
+    },
+    { profile: preferenceState?.profile }
+  ).componentScores
+
+  return getWeightedOutfitScore(componentScores, preferenceState?.finalWeights ?? DEFAULT_RECOMMENDATION_WEIGHTS)
+}
+
 function findDuplicateItems(candidate: ShopCandidateItem, closetItems: ClosetItemCardData[]) {
   return closetItems.filter((item) => {
     const normalizedCategory = normalizeCategoryValue(item.category)
@@ -168,40 +227,82 @@ function findDuplicateItems(candidate: ShopCandidateItem, closetItems: ClosetIte
   })
 }
 
-function getEstimatedOutfitCount(candidate: ShopCandidateItem, closetItems: ClosetItemCardData[]) {
+function getEstimatedOutfitCount(
+  candidate: ShopCandidateItem,
+  closetItems: ClosetItemCardData[],
+  preferenceState?: RecommendationPreferenceState | null
+) {
   const tops = closetItems.filter((item) => isTop(item.category))
   const bottoms = closetItems.filter((item) => isBottom(item.category))
   const dresses = closetItems.filter((item) => isDress(item.category))
   const outerLayers = closetItems.filter((item) => isOuter(item.category))
+  const shoes = closetItems.filter((item) => isShoes(item.category))
+  const bags = closetItems.filter((item) => isBag(item.category))
   const coreOutfits = buildCoreOutfits(closetItems)
+  const candidateItem = candidateToClosetItem(candidate)
+  const countsAsOutfit = (score: number) => score >= 58
 
   if (isTop(candidate.category)) {
-    return bottoms.length
+    return bottoms.filter((bottom) => countsAsOutfit(scoreCandidateOutfit({ candidateItem, top: candidateItem, bottom, preferenceState }))).length
   }
 
   if (isBottom(candidate.category)) {
-    return tops.length
+    return tops.filter((top) => countsAsOutfit(scoreCandidateOutfit({ candidateItem, top, bottom: candidateItem, preferenceState }))).length
   }
 
   if (isDress(candidate.category)) {
-    return Math.max(1, 1 + outerLayers.length)
+    const selfCount = countsAsOutfit(scoreCandidateOutfit({ candidateItem, dress: candidateItem, preferenceState })) ? 1 : 0
+    const outerCount = outerLayers.filter((outerLayer) => countsAsOutfit(scoreCandidateOutfit({ candidateItem, dress: candidateItem, outerLayer, preferenceState }))).length
+    return Math.max(selfCount, selfCount + outerCount)
   }
 
   if (isOuter(candidate.category)) {
-    return dresses.length + Math.min(tops.length, bottoms.length)
+    const dressCount = dresses.filter((dress) => countsAsOutfit(scoreCandidateOutfit({ candidateItem, dress, outerLayer: candidateItem, preferenceState }))).length
+    const separateCount = tops.flatMap((top) => bottoms.map((bottom) => ({ top, bottom })))
+      .filter(({ top, bottom }) => countsAsOutfit(scoreCandidateOutfit({ candidateItem, top, bottom, outerLayer: candidateItem, preferenceState }))).length
+    return dressCount + separateCount
   }
 
   if (isShoes(candidate.category)) {
-    return coreOutfits.filter((outfit) => hasGoodColorCall(candidate, outfit) || hasSceneOrStyleCall(candidate, outfit)).length
+    return coreOutfits
+      .filter((outfit) => hasGoodColorCall(candidate, outfit) || hasSceneOrStyleCall(candidate, outfit))
+      .filter((outfit) => countsAsOutfit(scoreCandidateOutfit({
+        candidateItem,
+        top: outfit.items.find((item) => isTop(item.category)) ?? null,
+        bottom: outfit.items.find((item) => isBottom(item.category)) ?? null,
+        dress: outfit.items.find((item) => isDress(item.category)) ?? null,
+        shoes: candidateItem,
+        bag: bags[0] ?? null,
+        preferenceState
+      }))).length
   }
 
   if (isBag(candidate.category)) {
-    return coreOutfits.filter((outfit) => hasGoodColorCall(candidate, outfit) && hasSceneOrStyleCall(candidate, outfit)).length
+    return coreOutfits
+      .filter((outfit) => hasGoodColorCall(candidate, outfit) && hasSceneOrStyleCall(candidate, outfit))
+      .filter((outfit) => countsAsOutfit(scoreCandidateOutfit({
+        candidateItem,
+        top: outfit.items.find((item) => isTop(item.category)) ?? null,
+        bottom: outfit.items.find((item) => isBottom(item.category)) ?? null,
+        dress: outfit.items.find((item) => isDress(item.category)) ?? null,
+        shoes: shoes[0] ?? null,
+        bag: candidateItem,
+        preferenceState
+      }))).length
   }
 
   if (isAccessory(candidate.category)) {
-    const styleMatches = coreOutfits.filter((outfit) => hasSceneOrStyleCall(candidate, outfit)).length
-    const colorMatches = coreOutfits.filter((outfit) => hasGoodColorCall(candidate, outfit)).length
+    const scoredOutfits = coreOutfits.filter((outfit) => countsAsOutfit(scoreCandidateOutfit({
+      candidateItem,
+      top: outfit.items.find((item) => isTop(item.category)) ?? null,
+      bottom: outfit.items.find((item) => isBottom(item.category)) ?? null,
+      dress: outfit.items.find((item) => isDress(item.category)) ?? null,
+      shoes: shoes[0] ?? null,
+      bag: bags[0] ?? null,
+      preferenceState
+    })))
+    const styleMatches = scoredOutfits.filter((outfit) => hasSceneOrStyleCall(candidate, outfit)).length
+    const colorMatches = scoredOutfits.filter((outfit) => hasGoodColorCall(candidate, outfit)).length
     return Math.max(styleMatches, colorMatches >= 2 ? 1 : 0)
   }
 
@@ -494,7 +595,7 @@ export function analyzePurchaseCandidate(
 ): ShopPurchaseAnalysis {
   const duplicateItems = findDuplicateItems(candidate, closetItems)
   const duplicateRisk = getDuplicateRisk(candidate, duplicateItems)
-  const estimatedOutfitCount = getEstimatedOutfitCount(candidate, closetItems)
+  const estimatedOutfitCount = getEstimatedOutfitCount(candidate, closetItems, preferenceState)
   const unlocksOutfitCount = estimatedOutfitCount
   const completesIncompleteOutfitCount = getCompletesIncompleteOutfitCount(candidate, closetItems)
   const gapType = getGapType(candidate, closetItems, estimatedOutfitCount)

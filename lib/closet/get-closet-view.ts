@@ -14,6 +14,7 @@ type ClosetItemRow = {
   sub_category: string | null
   color_category: string | null
   style_tags: string[]
+  season_tags?: string[]
   algorithm_meta?: unknown
   purchase_price?: number | null
   purchase_year?: string | null
@@ -47,6 +48,7 @@ function mapClosetItems(data: ClosetItemRow[] | null | undefined): ClosetItemCar
       subCategory: normalized.subCategory,
       colorCategory: normalized.colorCategory,
       styleTags: item.style_tags,
+      seasonTags: item.season_tags ?? [],
       algorithmMeta: normalizeClosetAlgorithmMeta(item.algorithm_meta, {
         category: normalized.category,
         subCategory: normalized.subCategory,
@@ -69,7 +71,7 @@ export async function getClosetView(userId: string, options?: { limit?: number }
   const baseQueryWithFlip = supabase
     .from('items')
     .select(
-      'id, image_url, image_flipped, image_original_url, image_rotation_quarter_turns, image_restore_expires_at, category, sub_category, color_category, style_tags, algorithm_meta, purchase_price, purchase_year, item_condition, last_worn_date, wear_count, created_at'
+      'id, image_url, image_flipped, image_original_url, image_rotation_quarter_turns, image_restore_expires_at, category, sub_category, color_category, style_tags, season_tags, algorithm_meta, purchase_price, purchase_year, item_condition, last_worn_date, wear_count, created_at'
     )
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
@@ -80,7 +82,7 @@ export async function getClosetView(userId: string, options?: { limit?: number }
 
   if (
     error &&
-    /(image_flipped|image_original_url|image_rotation_quarter_turns|image_restore_expires_at|algorithm_meta|purchase_price|purchase_year|item_condition)/i.test(
+    /(image_flipped|image_original_url|image_rotation_quarter_turns|image_restore_expires_at|season_tags|algorithm_meta|purchase_price|purchase_year|item_condition)/i.test(
       error.message
     )
   ) {

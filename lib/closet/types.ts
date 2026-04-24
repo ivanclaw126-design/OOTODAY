@@ -34,6 +34,7 @@ export type ClosetItemCardData = {
   subCategory: string | null
   colorCategory: string | null
   styleTags: string[]
+  seasonTags?: string[]
   purchasePrice?: number | null
   purchaseYear?: string | null
   itemCondition?: string | null

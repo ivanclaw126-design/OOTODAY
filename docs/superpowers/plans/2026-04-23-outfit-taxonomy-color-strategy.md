@@ -49,19 +49,20 @@
 
 ## Task 3: Upgrade Today recommendation scoring
 
-- [ ] Add stable scoring dimensions for:
+- [x] Add stable scoring dimensions for:
   - base color anchor
   - color harmony
   - accent control
   - visual-weight balance
   - scene fit
-- [ ] Add default preference order:
+- [x] Add default preference order:
   - same-family colors
   - adjacent-family colors
   - neutral + single accent
   - controlled contrast last
 - [x] Add explanation copy that maps directly to these rules
 - [x] Migrate Today explanation generation onto the shared `lib/closet/color-strategy.ts` helper layer
+- [x] Move cross-page outfit scoring into `lib/recommendation/outfit-evaluator.ts`, including weather/season fallback, visual weight, warmth, formality, comfort, pattern, completeness, and `finalWeights`
 
 ## Task 4: Reuse the same rule language in Shop, Inspiration, and Travel
 
@@ -73,7 +74,7 @@
 
 - [x] Add focused tests for the new deterministic color logic
 - [x] Verify user-facing Chinese explanations stay concise and consistent across shared-helper integrations
-- [ ] QA at least one representative scenario for:
+- [x] QA at least one representative scenario for:
   - Today daily recommendation
   - Shop buy / no-buy explanation
   - Inspiration remake explanation
