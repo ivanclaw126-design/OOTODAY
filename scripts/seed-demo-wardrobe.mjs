@@ -319,7 +319,7 @@ const inserts = []
 for (const item of manifest.items) {
   const storagePath = normalizeStoragePath(user.id, item.slug)
   const svg = renderSvg(item)
-  const { error: uploadError } = await admin.storage.from(storageBucket).upload(storagePath, svg, {
+  const { error: uploadError } = await admin.storage.from(storageBucket).upload(storagePath, Buffer.from(svg, 'utf8'), {
     contentType: 'image/svg+xml; charset=utf-8',
     upsert: true
   })
