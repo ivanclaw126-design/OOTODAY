@@ -1,5 +1,39 @@
 import { describe, expect, it } from 'vitest'
 import { buildTravelPackingPlan } from '@/lib/travel/build-travel-packing-plan'
+import { DEFAULT_PREFERENCE_PROFILE, DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
+import type { RecommendationPreferenceState } from '@/lib/recommendation/preference-types'
+
+function preferenceState(overrides: Partial<RecommendationPreferenceState> = {}): RecommendationPreferenceState {
+  const { profile: profileOverride, ...stateOverrides } = overrides
+
+  return {
+    version: 1,
+    source: 'questionnaire',
+    defaultWeights: DEFAULT_RECOMMENDATION_WEIGHTS,
+    questionnaireDelta: {},
+    ratingDelta: {},
+    finalWeights: DEFAULT_RECOMMENDATION_WEIGHTS,
+    createdAt: '2026-04-24T00:00:00.000Z',
+    updatedAt: '2026-04-24T00:00:00.000Z',
+    ...stateOverrides,
+    profile: {
+      ...DEFAULT_PREFERENCE_PROFILE,
+      ...profileOverride,
+      layeringPreference: {
+        ...DEFAULT_PREFERENCE_PROFILE.layeringPreference,
+        ...profileOverride?.layeringPreference
+      },
+      practicalityPreference: {
+        ...DEFAULT_PREFERENCE_PROFILE.practicalityPreference,
+        ...profileOverride?.practicalityPreference
+      },
+      slotPreference: {
+        ...DEFAULT_PREFERENCE_PROFILE.slotPreference,
+        ...profileOverride?.slotPreference
+      }
+    }
+  }
+}
 
 describe('buildTravelPackingPlan', () => {
   it('builds a wardrobe-backed packing plan with hints and notes', () => {
@@ -67,10 +101,10 @@ describe('buildTravelPackingPlan', () => {
     expect(plan.entries.map((entry) => entry.categoryLabel)).toEqual(['上衣', '下装', '外层'])
     expect(plan.dailyPlan).toHaveLength(4)
     expect(plan.dailyPlan[0]?.dayLabel).toBe('第 1 天')
-    expect(plan.missingHints).toContain('当前衣橱里没有可打包鞋履，计划仍能生成，但实际出行前需要先补一双能覆盖主要行程的鞋。')
+    expect(plan.missingHints).toContain('当前衣橱里没有可打包鞋履，计划仍能生成，但出行前需要补一双能覆盖主要行程的鞋。')
     expect(plan.missingHints).toContain('通勤或正式场景缺少包袋，会影响电脑、证件携带和整套造型完整度。')
     expect(plan.notes.length).toBeGreaterThan(1)
-    expect(plan.notes.some((note) => note.includes('基础色占比够高'))).toBe(true)
+    expect(plan.notes.some((note) => note.includes('基础色托底'))).toBe(true)
   })
 
   it('selects formal, comfortable, backup shoes and a bag by travel scene', () => {
@@ -204,7 +238,7 @@ describe('buildTravelPackingPlan', () => {
     expect(plan.dailyPlan).toHaveLength(5)
     expect(plan.missingHints).toContain('当前衣橱里缺少稳定下装，这会让旅行搭配明显受限。')
     expect(plan.missingHints).toContain('这趟更适合带一件外层，但当前衣橱里没有可直接打包的外层，冷天或长途温差会更难处理。')
-    expect(plan.missingHints).toContain('当前衣橱里没有可打包鞋履，计划仍能生成，但实际出行前需要先补一双能覆盖主要行程的鞋。')
+    expect(plan.missingHints).toContain('当前衣橱里没有可打包鞋履，计划仍能生成，但出行前需要补一双能覆盖主要行程的鞋。')
     expect(plan.missingHints).toContain('通勤或正式场景缺少包袋，会影响电脑、证件携带和整套造型完整度。')
   })
 
@@ -310,7 +344,227 @@ describe('buildTravelPackingPlan', () => {
       ]
     })
 
-    expect(plan.notes.some((note) => note.includes('基础色占比够高'))).toBe(true)
-    expect(plan.notes.some((note) => note.includes('只带一处重点色'))).toBe(true)
+    expect(plan.notes.some((note) => note.includes('基础色托底'))).toBe(true)
+    expect(plan.notes.some((note) => note.includes('只带一处亮色重点'))).toBe(true)
+  })
+
+  it('reduces backup shoes and non-essential bags for light packers', () => {
+    const plan = buildTravelPackingPlan({
+      destinationCity: '伦敦',
+      days: 5,
+      scenes: ['休闲'],
+      weather: null,
+      preferenceState: preferenceState({
+        profile: {
+          ...DEFAULT_PREFERENCE_PROFILE,
+          layeringPreference: { complexity: 0, allowNonWeatherOuterwear: false },
+          practicalityPreference: { comfortPriority: 3, stylePriority: 1 },
+          slotPreference: {
+            outerwear: true,
+            shoes: true,
+            bag: false,
+            accessories: false
+          }
+        }
+      }),
+      items: [
+        {
+          id: 'top-1',
+          imageUrl: null,
+          category: '上衣',
+          subCategory: 'T恤',
+          colorCategory: '白色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-01T00:00:00Z'
+        },
+        {
+          id: 'bottom-1',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '牛仔裤',
+          colorCategory: '蓝色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-01T00:00:00Z'
+        },
+        {
+          id: 'shoe-1',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '运动鞋',
+          colorCategory: '白色',
+          styleTags: ['舒适'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-01T00:00:00Z'
+        },
+        {
+          id: 'shoe-2',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '靴子',
+          colorCategory: '黑色',
+          styleTags: ['防雨'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-02T00:00:00Z'
+        },
+        {
+          id: 'bag-1',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '托特包',
+          colorCategory: '黑色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-03T00:00:00Z'
+        }
+      ]
+    })
+
+    expect(plan.entries.map((entry) => entry.categoryLabel)).not.toContain('备用鞋')
+    expect(plan.entries.map((entry) => entry.categoryLabel)).not.toContain('包袋')
+    expect(plan.notes.some((note) => note.includes('轻装出行'))).toBe(true)
+    expect(plan.notes.some((note) => note.includes('减少三层组合'))).toBe(true)
+  })
+
+  it('keeps shoe and bag slots for complete-styling users', () => {
+    const plan = buildTravelPackingPlan({
+      destinationCity: '巴黎',
+      days: 3,
+      scenes: ['约会'],
+      weather: null,
+      preferenceState: preferenceState({
+        profile: {
+          ...DEFAULT_PREFERENCE_PROFILE,
+          practicalityPreference: { comfortPriority: 1, stylePriority: 3 },
+          slotPreference: {
+            outerwear: true,
+            shoes: true,
+            bag: true,
+            accessories: true
+          }
+        }
+      }),
+      items: [
+        {
+          id: 'top-1',
+          imageUrl: null,
+          category: '上衣',
+          subCategory: '衬衫',
+          colorCategory: '白色',
+          styleTags: ['约会'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-01T00:00:00Z'
+        },
+        {
+          id: 'bottom-1',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '西裤',
+          colorCategory: '黑色',
+          styleTags: ['约会'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-01T00:00:00Z'
+        },
+        {
+          id: 'shoe-1',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '乐福鞋',
+          colorCategory: '黑色',
+          styleTags: ['约会'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-02T00:00:00Z'
+        },
+        {
+          id: 'bag-1',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '单肩包',
+          colorCategory: '黑色',
+          styleTags: ['约会'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-03T00:00:00Z'
+        }
+      ]
+    })
+
+    expect(plan.entries.map((entry) => entry.categoryLabel)).toEqual(expect.arrayContaining(['备用鞋', '包袋']))
+    expect(plan.notes.some((note) => note.includes('完整造型'))).toBe(true)
+  })
+
+  it('comfort-first users rank comfortable shoes higher for walking trips', () => {
+    const plan = buildTravelPackingPlan({
+      destinationCity: '京都',
+      days: 4,
+      scenes: ['户外'],
+      weather: null,
+      preferenceState: preferenceState({
+        profile: {
+          ...DEFAULT_PREFERENCE_PROFILE,
+          practicalityPreference: { comfortPriority: 3, stylePriority: 1 }
+        }
+      }),
+      items: [
+        {
+          id: 'top-1',
+          imageUrl: null,
+          category: '上衣',
+          subCategory: 'T恤',
+          colorCategory: '白色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-01T00:00:00Z'
+        },
+        {
+          id: 'bottom-1',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '短裤',
+          colorCategory: '黑色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-01T00:00:00Z'
+        },
+        {
+          id: 'shoe-low-comfort',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '乐福鞋',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          algorithmMeta: { comfortLevel: 1 },
+          lastWornDate: null,
+          wearCount: 9,
+          createdAt: '2026-04-02T00:00:00Z'
+        },
+        {
+          id: 'shoe-high-comfort',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '运动鞋',
+          colorCategory: '白色',
+          styleTags: ['舒适'],
+          algorithmMeta: { comfortLevel: 5 },
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-03T00:00:00Z'
+        }
+      ]
+    })
+
+    expect(plan.entries.find((entry) => entry.categoryLabel === '舒适鞋')?.selectedItems[0]?.id).toBe('shoe-high-comfort')
+    expect(plan.notes.some((note) => note.includes('更重视舒适度'))).toBe(true)
   })
 })

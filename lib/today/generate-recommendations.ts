@@ -1,5 +1,4 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
-import { buildPaletteColorStrategyNotes } from '@/lib/closet/color-strategy'
 import {
   isAccessoryCategory,
   isBagCategory,
@@ -12,6 +11,7 @@ import {
   isVividColor,
   scoreColorCompatibility
 } from '@/lib/closet/taxonomy'
+import { buildInspirationAttemptLabel, buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
 import { DEFAULT_PREFERENCE_PROFILE, DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
 import { isGoodInspirationCandidate, pickDeterministicInspirationCandidate, shouldShowInspiration } from '@/lib/recommendation/exploration'
 import type { InspirationCandidateSignals, PreferenceProfile, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
@@ -73,16 +73,7 @@ function clampScore(score: number) {
 }
 
 function buildTodayColorNotes(colors: Array<string | null | undefined>) {
-  return buildPaletteColorStrategyNotes(colors).map((note) =>
-    note
-      .replace('这套主要靠同色系深浅变化成立，不是靠大撞色取胜。', '同色系深浅搭配，层次更自然')
-      .replace('这套有基础色托底，所以整体看起来更稳、更容易穿进日常。', '用基础色做主轴，整套更稳')
-      .replace('基础色占比够高，更容易把少量单品反复穿出稳定组合。', '基础色比例稳，重复穿也不容易乱')
-      .replace('同色系单品之间能形成自然轮换，少带几件也不容易显乱。', '同色系轮换更自然，整套层次会更顺')
-      .replace('亮点色基本只保留在一处，所以视觉重点会更清楚。', '把亮色控制在一处，重点更清楚')
-      .replace('重点色不止一处，使用时记得别让多个亮点同时抢戏。', '重点不止一处，记得别让多个亮点同时抢戏')
-      .replace(/。$/, '')
-  )
+  return buildRecommendationColorNotes(colors, 'today').map((note) => note.replace(/。$/u, ''))
 }
 
 function compareWearPriority(a: ClosetItemCardData, b: ClosetItemCardData) {
@@ -544,19 +535,19 @@ function buildMissingSlotReason(draft: OutfitDraft) {
   const parts: string[] = []
 
   if (missingFinishers.includes('shoes') && missingFinishers.includes('bag')) {
-    parts.push('未录入鞋履/包袋，本次未纳入完整收尾评分')
+    parts.push(`${buildMissingSlotCopy('shoes', 'today')} ${buildMissingSlotCopy('bag', 'today')}`)
   } else if (missingFinishers.includes('shoes')) {
-    parts.push('未录入鞋履，本次鞋履收尾评分会降低')
+    parts.push(buildMissingSlotCopy('shoes', 'today'))
   } else if (missingFinishers.includes('bag')) {
-    parts.push('未录入包袋，本次场景完整度评分会降低')
+    parts.push(buildMissingSlotCopy('bag', 'today'))
   }
 
   if (missingFinishers.includes('accessories')) {
-    parts.push('未录入配饰，本次少量视觉中心会先留空')
+    parts.push(buildMissingSlotCopy('accessories', 'today'))
   }
 
   if (draft.missingSlots.includes('outerLayer')) {
-    parts.push('当前缺少外层，冷天保暖和层次评分会降低')
+    parts.push(buildMissingSlotCopy('outerLayer', 'today'))
   }
 
   return parts
@@ -811,7 +802,7 @@ function toInspirationRecommendation(candidate: RecommendationCandidate, profile
     ...candidate.recommendation,
     id: `inspiration-${candidate.recommendation.id}`,
     mode: 'inspiration',
-    inspirationReason: '低频灵感尝试',
+    inspirationReason: `低频${buildInspirationAttemptLabel()}`,
     dailyDifference: buildInspirationDifference(candidate, profile)
   }
 }

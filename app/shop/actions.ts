@@ -3,6 +3,7 @@
 import { getSession } from '@/lib/auth/get-session'
 import { analyzeItemImage } from '@/lib/closet/analyze-item-image'
 import { getClosetView } from '@/lib/closet/get-closet-view'
+import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 import { analyzePurchaseCandidate, getUnsupportedShopCategoryMessage } from '@/lib/shop/analyze-purchase-candidate'
 import { resolveShopInput } from '@/lib/shop/resolve-shop-input'
 
@@ -30,9 +31,10 @@ export async function analyzeShopCandidateAction({
     }
   }
 
-  const [candidate, closet] = await Promise.all([
+  const [candidate, closet, preferenceState] = await Promise.all([
     analyzeItemImage(resolved.imageUrl),
-    getClosetView(session.user.id)
+    getClosetView(session.user.id),
+    getPreferenceState({ userId: session.user.id })
   ])
 
   const unsupportedCategoryMessage = getUnsupportedShopCategoryMessage(candidate.category)
@@ -54,7 +56,8 @@ export async function analyzeShopCandidateAction({
         sourceUrl: resolved.sourceUrl,
         sourceTitle: resolved.sourceTitle
       },
-      closet.items
+      closet.items,
+      preferenceState
     )
   }
 }

@@ -104,6 +104,7 @@ describe('buildInspirationRemixPlan', () => {
     expect(result.steps[0]?.note).toContain('同类替代')
     expect(result.steps[0]?.note).toContain('黑色 西装外套')
     expect(result.steps[0]?.note).toContain('低饱和')
+    expect(result.summary).toContain('灵感尝试')
     expect(result.summary).toContain('短外套 + 直筒下装')
     expect(result.summary).toContain('外短内长')
     expect(result.summary).toContain('黑色西装外套')

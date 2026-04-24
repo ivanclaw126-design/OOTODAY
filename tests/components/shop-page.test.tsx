@@ -131,7 +131,7 @@ describe('ShopPage', () => {
         completesIncompleteOutfitCount: 3,
         fillsWardrobeGap: true,
         gapType: 'sceneBag',
-        missingCategoryHints: ['衣橱里缺少能补场景完整度的包袋'],
+        missingCategoryHints: ['衣橱里缺少能补场景完整度的包袋，购买包袋时要看它能否承接通勤、出行或随身物品。'],
         colorStrategyHints: [],
         recommendation: 'buy',
         recommendationReason: '它能补足 2 套搭配的场景完整度，颜色也能和衣橱形成呼应。'
@@ -150,7 +150,7 @@ describe('ShopPage', () => {
     expect(screen.getByText('包袋场景缺口')).toBeInTheDocument()
     expect(screen.getByText('解锁搭配')).toBeInTheDocument()
     expect(screen.getByText('补完整套')).toBeInTheDocument()
-    expect(screen.getByText('衣橱里缺少能补场景完整度的包袋')).toBeInTheDocument()
+    expect(screen.getByText('衣橱里缺少能补场景完整度的包袋，购买包袋时要看它能否承接通勤、出行或随身物品。')).toBeInTheDocument()
   })
 
   it('uploads a local image and analyzes the uploaded public url', async () => {

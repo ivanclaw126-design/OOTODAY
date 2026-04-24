@@ -1,5 +1,39 @@
 import { describe, expect, it } from 'vitest'
 import { analyzePurchaseCandidate, getUnsupportedShopCategoryMessage, supportedFashionCategories } from '@/lib/shop/analyze-purchase-candidate'
+import { DEFAULT_PREFERENCE_PROFILE, DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
+import type { RecommendationPreferenceState } from '@/lib/recommendation/preference-types'
+
+function preferenceState(overrides: Partial<RecommendationPreferenceState> = {}): RecommendationPreferenceState {
+  const { profile: profileOverride, ...stateOverrides } = overrides
+
+  return {
+    version: 1,
+    source: 'questionnaire',
+    defaultWeights: DEFAULT_RECOMMENDATION_WEIGHTS,
+    questionnaireDelta: {},
+    ratingDelta: {},
+    finalWeights: DEFAULT_RECOMMENDATION_WEIGHTS,
+    createdAt: '2026-04-24T00:00:00.000Z',
+    updatedAt: '2026-04-24T00:00:00.000Z',
+    ...stateOverrides,
+    profile: {
+      ...DEFAULT_PREFERENCE_PROFILE,
+      ...profileOverride,
+      colorPreference: {
+        ...DEFAULT_PREFERENCE_PROFILE.colorPreference,
+        ...profileOverride?.colorPreference
+      },
+      practicalityPreference: {
+        ...DEFAULT_PREFERENCE_PROFILE.practicalityPreference,
+        ...profileOverride?.practicalityPreference
+      },
+      exploration: {
+        ...DEFAULT_PREFERENCE_PROFILE.exploration,
+        ...profileOverride?.exploration
+      }
+    }
+  }
+}
 
 const closetItems = [
   {
@@ -196,5 +230,112 @@ describe('analyzePurchaseCandidate', () => {
     expect(analysis.gapType).toBe('visualFocus')
     expect(analysis.recommendationReason).toContain('视觉中心')
     expect(analysis.recommendationReason).toContain('不是简单增加可搭套数')
+  })
+
+  it('raises comfortable basics for comfort-first users', () => {
+    const analysis = analyzePurchaseCandidate(
+      {
+        imageUrl: 'https://example.com/shoes.jpg',
+        imageCandidates: ['https://example.com/shoes.jpg'],
+        sourceUrl: 'https://example.com/shoes',
+        sourceTitle: '舒适白色运动鞋',
+        category: '鞋履',
+        subCategory: '运动鞋',
+        colorCategory: '白色',
+        styleTags: ['舒适', '基础']
+      },
+      closetItems,
+      preferenceState({
+        profile: {
+          ...DEFAULT_PREFERENCE_PROFILE,
+          practicalityPreference: { comfortPriority: 3, stylePriority: 1 }
+        }
+      })
+    )
+
+    expect(analysis.recommendation).toBe('buy')
+    expect(analysis.preferenceNotes?.[0]).toContain('舒适度')
+    expect(analysis.recommendationReason).toContain('舒适')
+  })
+
+  it('raises bags and accessories for styling-first users', () => {
+    const analysis = analyzePurchaseCandidate(
+      {
+        imageUrl: 'https://example.com/bag.jpg',
+        imageCandidates: ['https://example.com/bag.jpg'],
+        sourceUrl: 'https://example.com/bag',
+        sourceTitle: '造型感黑色包袋',
+        category: '包袋',
+        subCategory: '单肩包',
+        colorCategory: '黑色',
+        styleTags: ['造型']
+      },
+      closetItems,
+      preferenceState({
+        profile: {
+          ...DEFAULT_PREFERENCE_PROFILE,
+          practicalityPreference: { comfortPriority: 1, stylePriority: 3 }
+        }
+      })
+    )
+
+    expect(analysis.recommendation).toBe('buy')
+    expect(analysis.preferenceNotes?.[0]).toContain('造型完成度')
+  })
+
+  it('low-key users get a lower recommendation for loud logo or vivid items', () => {
+    const analysis = analyzePurchaseCandidate(
+      {
+        imageUrl: 'https://example.com/logo-top.jpg',
+        imageCandidates: ['https://example.com/logo-top.jpg'],
+        sourceUrl: 'https://example.com/logo-top',
+        sourceTitle: '大 Logo 红色针织衫',
+        category: '上衣',
+        subCategory: '针织衫',
+        colorCategory: '红色',
+        styleTags: ['logo']
+      },
+      closetItems,
+      preferenceState({
+        profile: {
+          ...DEFAULT_PREFERENCE_PROFILE,
+          colorPreference: {
+            saturation: 'low',
+            contrast: 'low',
+            palette: 'neutral',
+            accentTolerance: 0
+          },
+          focalPointPreference: 'subtle'
+        }
+      })
+    )
+
+    expect(analysis.recommendation).toBe('skip')
+    expect(analysis.recommendationReason).toContain('低调')
+  })
+
+  it('hardAvoids force a skip with a clear reason', () => {
+    const analysis = analyzePurchaseCandidate(
+      {
+        imageUrl: 'https://example.com/heels.jpg',
+        imageCandidates: ['https://example.com/heels.jpg'],
+        sourceUrl: 'https://example.com/heels',
+        sourceTitle: '黑色高跟鞋',
+        category: '鞋履',
+        subCategory: '高跟鞋',
+        colorCategory: '黑色',
+        styleTags: ['高跟']
+      },
+      closetItems,
+      preferenceState({
+        profile: {
+          ...DEFAULT_PREFERENCE_PROFILE,
+          hardAvoids: ['高跟']
+        }
+      })
+    )
+
+    expect(analysis.recommendation).toBe('skip')
+    expect(analysis.preferenceNotes?.[0]).toContain('hard avoids')
   })
 })

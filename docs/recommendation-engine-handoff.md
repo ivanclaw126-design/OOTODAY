@@ -2,11 +2,104 @@
 
 ## Current Phase Completed
 
+Phase 8 cross-page recommendation language QA completed on 2026-04-24.
+
+Today / Shop / Inspiration / Travel now share recommendation copy for foundation colors, tonal palettes, single accents, multiple accents, missing shoes, missing bags, missing accessories, missing outer layers, and inspiration-attempt labeling. Page-specific wording remains intact for Today completion, Shop purchase value, Travel packing completeness, and Inspiration remix guidance.
+
+## Phase 8 Cross-Page Recommendation Language QA
+
+### Files Changed
+
+- `lib/recommendation/copy.ts`
+  - Adds shared builders for color notes, missing-slot copy, and the `灵感尝试` label.
+  - Treats black/white/gray, beige/brown, and navy as foundation colors with stable daily-use language.
+  - Uses one shared meaning for tonal depth, one accent, and multiple competing accents.
+- `lib/closet/color-strategy.ts`
+  - Delegates palette notes to the shared recommendation copy builder.
+  - Keeps closet-anchored purchase color hints aligned with one-accent / visual-center language.
+- `lib/today/generate-recommendations.ts`
+  - Uses shared Today color notes and missing-slot copy.
+  - Keeps inspiration recommendations explicitly labeled as low-frequency `灵感尝试`.
+- `lib/shop/analyze-purchase-candidate.ts`
+  - Uses shared missing shoe, bag, and accessory copy in purchase gap hints.
+- `lib/inspiration/build-inspiration-color-strategy.ts`
+  - Uses Inspiration-specific shared color notes.
+- `lib/inspiration/build-inspiration-remix-plan.ts`
+  - Prefixes remix summaries with `灵感尝试`.
+  - Uses shared missing-slot wording for missing inspiration substitutes where applicable.
+- `lib/travel/build-travel-packing-plan.ts`
+  - Uses shared Travel color notes and missing shoe/bag/outer-layer copy.
+- Tests updated under `tests/lib/recommendation`, `tests/lib/closet`, `tests/lib/today`, `tests/lib/shop`, `tests/lib/inspiration`, `tests/lib/travel`, and related component tests.
+
+### Phase 8 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- Targeted Phase 8 tests passed: 11 test files, 64 tests.
+- `npm test` passed: 60 test files, 256 tests.
+- `npm run build` passed, including `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
+
+### Phase 8 Remaining Issues
+
+- This phase unifies language at helper/generator level; it does not add visual regression screenshots for every copy state.
+- GitHub CI/App Quality workflows have not run on GitHub in this session.
+- Remote Supabase migration status is still unverified in this session.
+
+## Phase 7 Shop and Travel Preference Awareness
+
+Phase 7 Shop and Travel preference-aware scoring completed on 2026-04-24.
+
+Shop purchase analysis and Travel packing now accept optional `RecommendationPreferenceState`. Preference logic remains optional and falls back to deterministic metadata-based behavior when absent. Shop uses preference profile for comfort, styling, low-key color/focal preferences, and hard avoids. Travel uses preference profile to adjust light packing, complete styling, layering complexity, and comfort-shoe priority while preserving missing-shoe/bag fallback behavior.
+
+
+### Files Changed
+
+- `lib/shop/analyze-purchase-candidate.ts`
+  - Adds optional `preferenceState` to `analyzePurchaseCandidate(candidate, closetItems, preferenceState?)`.
+  - Raises comfortable shoes/basic reusable items for comfort-first users.
+  - Raises bags/accessories/visual-focus items for styling-first users.
+  - Lowers large bright colors, large logo, and multi-focus items for low-key users.
+  - Forces `skip` with clear copy when candidate text matches `profile.hardAvoids`.
+  - Adds preference-aware notes into `recommendationReason`.
+- `lib/shop/types.ts`
+  - Adds optional `preferenceNotes` to `ShopPurchaseAnalysis`.
+- `app/shop/actions.ts`
+  - Reads `getPreferenceState({ userId })` and passes it into `analyzePurchaseCandidate`.
+- `lib/travel/build-travel-packing-plan.ts`
+  - Accepts `preferenceState` via `TravelPlannerInput`.
+  - Light-packing users get reduced backup shoes, non-essential bags, and complex layering.
+  - Complete-styling users preserve shoe/bag finishing slots.
+  - Comfort-first users get comfort shoes prioritized for walking/outdoor/long trips.
+  - Missing shoe/bag hints still generate when data is absent.
+- `lib/travel/types.ts`
+  - Adds optional `preferenceState` to `TravelPlannerInput`.
+- `app/travel/actions.ts`
+  - Reads preference state and passes it into `buildTravelPackingPlan`.
+- `tests/lib/shop/analyze-purchase-candidate.test.ts`
+  - Covers comfort-first, styling-first, low-key, and hard-avoid purchase adjustments.
+- `tests/lib/travel/build-travel-packing-plan.test.ts`
+  - Covers light packing, complete styling, and comfort-first shoe ranking.
+- `tests/app/shop/actions.test.ts` and `tests/app/travel/actions.test.ts`
+  - Cover preference-state loading and forwarding.
+
+### Phase 7 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm test` passed on rerun: 59 test files, 253 tests.
+- `npm run build` passed, including `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
+
+### Phase 7 Remaining Issues
+
+- Preference-aware Shop/Travel scoring is deterministic and profile-based; it does not yet learn from Shop/Travel-specific feedback.
+- Travel still does not use external calendar/itinerary data.
+- New CI/App Quality workflows have not run on GitHub in this session.
+- Remote Supabase migration status is still unverified in this session.
+
+## Phase 6 Optional Closet Algorithm Metadata
+
 Phase 6 optional Closet algorithm metadata fields completed on 2026-04-24.
 
 Closet items now have optional algorithm metadata support through `algorithm_meta jsonb`. Existing wardrobe data remains valid, save/read paths infer fallback metadata from category/subcategory/style tags, AI analysis can optionally return richer metadata, and recommendation surfaces can continue falling back to existing fields when metadata is missing.
 
-## Phase 6 Optional Closet Algorithm Metadata
 
 ### Files Changed
 
@@ -332,7 +425,7 @@ Inspiration now moves beyond simple same-category matching. The AI breakdown ext
 - `tests/components/inspiration-page.test.tsx`
   - Covers formula display, key-item metadata, alternatives, and match explanations.
 
-Phase 7 changes are also present in the current worktree:
+Earlier Today exploration changes are also present in the current branch:
 
 - `lib/recommendation/exploration.ts`
 - `lib/today/types.ts`
@@ -355,13 +448,13 @@ Phase 7 changes are also present in the current worktree:
 - Shop APIs:
   - `supportedFashionCategories`
   - `getUnsupportedShopCategoryMessage(category)`
-  - `analyzePurchaseCandidate(candidate, closetItems)`
+  - `analyzePurchaseCandidate(candidate, closetItems, preferenceState?)`
 - Inspiration APIs:
   - `analyzeInspirationImage(imageUrl)`
   - `matchClosetToInspiration(breakdown, closetItems, preferenceState?)`
   - `buildInspirationRemixPlan(breakdown, closetMatches)`
 - Travel APIs:
-  - `buildTravelPackingPlan({ destinationCity, days, scenes, items, weather })`
+  - `buildTravelPackingPlan({ destinationCity, days, scenes, items, weather, preferenceState? })`
   - `TravelPackingEntry.slot`
   - `TravelDailyPlanEntry.shoeSummary`
   - `TravelDailyPlanEntry.bagSummary`
@@ -392,12 +485,15 @@ Phase 7 changes are also present in the current worktree:
 - Shop shoes estimate how many core outfits they can finish.
 - Shop bags evaluate scenario completeness and color/style echo.
 - Shop accessories are treated as visual focus or style reinforcement rather than direct outfit-count unlocks.
+- Shop purchase analysis reads preference state when available and explains comfort, styling, low-key color/focal, and hard-avoid impacts in the recommendation reason.
 - Travel keeps generating a plan without shoe or bag data.
 - Travel commute/formal scenes prioritize formal shoes and bags when available.
 - Travel outdoor, walking-heavy, or longer trips prioritize comfortable shoes.
 - Travel long trips can add backup shoes when there is another available pair.
 - Travel cold-weather and long-trip plans still preserve outerwear handling.
 - Travel missing hints explicitly explain missing shoes, bags, and outerwear impact.
+- Travel packing reads preference state when available and adjusts light packing, complete styling, layering complexity, and comfort-shoe priority.
+- Today / Shop / Inspiration / Travel share the same core language for foundation colors, tonal depth, single accent, multiple accent competition, missing shoes, missing bags, missing accessories, and inspiration-attempt labeling.
 - Inspiration AI output includes outfit formulas: color, silhouette, layering, and focal point.
 - Inspiration key items can carry slot, silhouette, layer role, importance, and alternatives.
 - Inspiration closet matching is formula-weighted instead of category-only.
@@ -418,6 +514,21 @@ Phase 7 changes are also present in the current worktree:
   - algorithm metadata fallback inference from existing category/subcategory/style tags
   - optional AI `algorithm_meta` parsing
   - `algorithm_meta` persistence payload
+- Shop preference tests cover:
+  - comfort-first purchase boosts
+  - styling-first bag/accessory boosts
+  - low-key preference downgrade for loud items
+  - hard-avoid purchase blocking
+- Travel preference tests cover:
+  - light-packing reduction of backup shoes/non-essential bags
+  - complete-styling retention of shoe/bag slots
+  - comfort-first shoe ranking for walking-heavy trips
+- Shared recommendation copy tests cover:
+  - black/white/gray, beige/brown, and navy foundation-color language
+  - tonal-depth language
+  - one-accent and multiple-accent visual-center language
+  - non-blocking missing shoe/bag/accessory copy
+  - inspiration-attempt labeling
 - Phase 8B Travel tests remain:
   - no-shoe/no-bag fallback plan generation
   - formal shoes for commute/formal trips
@@ -439,17 +550,18 @@ Phase 7 changes are also present in the current worktree:
 Verification:
 
 - `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
-- `npm test` passed: 59 test files, 246 tests.
+- `npm test` passed: 60 test files, 256 tests.
 - `npm run build` passed, with `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
 
 ## Known Limitations
 
 - The new CI/App Quality GitHub Actions workflows have not run on GitHub in this session.
 - The Supabase migration for recommendation storage still has not been pushed/applied remotely in this phase.
-- Shop accessory analysis is still deterministic and rule-based; it does not yet use learned user preference weights.
+- Shop accessory analysis is still deterministic and profile-weighted; it does not yet learn from Shop-specific feedback events.
 - Bag and accessory scoring uses existing closet metadata only; it does not yet infer detailed occasion constraints from calendars, travel plans, or OOTD history.
+- Cross-page language now shares helper copy, but page-level visual QA screenshots were not added in this phase.
 - Accessories still share the old `estimatedOutfitCount` display slot for compatibility, even though the recommendation reason frames them as visual/style reinforcement.
-- Travel shoe and bag selection is still deterministic and metadata-based; it does not yet use learned recommendation preference weights.
+- Travel shoe and bag selection now uses preference state when available, but it is still deterministic and does not yet learn from Travel-specific feedback.
 - Travel scenes do not yet include explicit `步行` or `旅行` options, so the algorithm treats `户外`, `休闲`, and longer trips as walking-heavy signals.
 - Inspiration formula matching still depends on image-analysis metadata quality; weak AI output falls back to generic formula text.
 - Closet items do not yet store explicit silhouette/layer-role fields, so the matcher infers them from category, subcategory, and style tags.

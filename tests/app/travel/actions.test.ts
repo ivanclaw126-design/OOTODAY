@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getSession = vi.fn()
 const getClosetView = vi.fn()
+const getPreferenceState = vi.fn()
 const buildTravelPackingPlan = vi.fn()
 const getWeather = vi.fn()
 const saveTravelPlan = vi.fn()
@@ -15,6 +16,10 @@ vi.mock('@/lib/auth/get-session', () => ({
 
 vi.mock('@/lib/closet/get-closet-view', () => ({
   getClosetView
+}))
+
+vi.mock('@/lib/recommendation/get-preference-state', () => ({
+  getPreferenceState
 }))
 
 vi.mock('@/lib/travel/build-travel-packing-plan', () => ({
@@ -45,6 +50,7 @@ describe('travel actions', () => {
   beforeEach(() => {
     getSession.mockReset()
     getClosetView.mockReset()
+    getPreferenceState.mockReset()
     buildTravelPackingPlan.mockReset()
     getWeather.mockReset()
     saveTravelPlan.mockReset()
@@ -56,6 +62,7 @@ describe('travel actions', () => {
   it('saves the signed-in user travel plan and redirects back to the planner', async () => {
     getSession.mockResolvedValue({ user: { id: 'user-1' } })
     getClosetView.mockResolvedValue({ itemCount: 2, items: [{ id: 'item-1' }] })
+    getPreferenceState.mockResolvedValue(null)
     getWeather.mockResolvedValue({ city: 'Shanghai', temperatureC: 18, conditionLabel: 'cloudy', isWarm: false, isCold: false })
     buildTravelPackingPlan.mockReturnValue({
       destinationCity: '上海',
@@ -85,7 +92,8 @@ describe('travel actions', () => {
       days: 4,
       scenes: ['通勤', '休闲'],
       items: [{ id: 'item-1' }],
-      weather: { city: 'Shanghai', temperatureC: 18, conditionLabel: 'cloudy', isWarm: false, isCold: false }
+      weather: { city: 'Shanghai', temperatureC: 18, conditionLabel: 'cloudy', isWarm: false, isCold: false },
+      preferenceState: null
     })
     expect(saveTravelPlan).toHaveBeenCalledWith({
       userId: 'user-1',
@@ -105,6 +113,7 @@ describe('travel actions', () => {
   it('updates the current saved travel plan instead of creating a new one', async () => {
     getSession.mockResolvedValue({ user: { id: 'user-1' } })
     getClosetView.mockResolvedValue({ itemCount: 2, items: [{ id: 'item-1' }, { id: 'item-2' }] })
+    getPreferenceState.mockResolvedValue(null)
     getWeather.mockResolvedValue(null)
     buildTravelPackingPlan.mockReturnValue({
       destinationCity: '东京',

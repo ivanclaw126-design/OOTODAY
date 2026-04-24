@@ -161,9 +161,9 @@ describe('generateTodayRecommendations', () => {
       weather: null
     })
 
-    expect(sameFamilyRecommendations.some((recommendation) => recommendation.reason.includes('同色系深浅搭配'))).toBe(true)
-    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('用基础色做主轴'))).toBe(true)
-    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('把亮色控制在一处'))).toBe(true)
+    expect(sameFamilyRecommendations.some((recommendation) => recommendation.reason.includes('同色系深浅让层次更自然'))).toBe(true)
+    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('基础色托底'))).toBe(true)
+    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('亮色只放在一处'))).toBe(true)
   })
 
   it('adds outer layers in cold weather when available', () => {
@@ -291,7 +291,8 @@ describe('generateTodayRecommendations', () => {
     expect(recommendations[0]?.missingSlots).toEqual(expect.arrayContaining(['shoes', 'bag']))
     expect(recommendations[0]?.componentScores?.completeness).toBeLessThan(100)
     expect(recommendations[0]?.confidence).toBeLessThan(90)
-    expect(recommendations[0]?.reason).toContain('未录入鞋履/包袋')
+    expect(recommendations[0]?.reason).toContain('未录入鞋履')
+    expect(recommendations[0]?.reason).toContain('未录入包袋')
   })
 
   it('keeps cold-weather recommendations without outerwear and marks the missing outer layer', () => {

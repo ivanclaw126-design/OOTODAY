@@ -1,4 +1,5 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import type { RecommendationPreferenceState } from '@/lib/recommendation/preference-types'
 import type { TodayWeather } from '@/lib/today/types'
 
 export type TravelScene = '通勤' | '休闲' | '正式' | '约会' | '户外'
@@ -98,4 +99,5 @@ export type TravelPlannerInput = {
   scenes: TravelScene[]
   items: ClosetItemCardData[]
   weather: TodayWeather | null
+  preferenceState?: RecommendationPreferenceState | null
 }

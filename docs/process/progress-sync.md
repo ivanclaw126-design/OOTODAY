@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-24
-- Branch / theme: `codex/recommendation-engine-phase-4-5` - Closet algorithm metadata Phase 6
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-180100-closet-algorithm-meta-phase-6.md`
-- Current blocker: local Phase 6 work is not pushed; new CI/App Quality workflows have not run on GitHub yet; recommendation storage and closet algorithm metadata migrations are still unverified remotely
+- Branch / theme: `codex/recommendation-engine-phase-4-5` - Cross-page recommendation language QA Phase 8
+- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-181500-cross-page-recommendation-language-phase-8.md`
+- Current blocker: local Phase 8 work is not pushed; new CI/App Quality workflows have not run on GitHub yet; recommendation storage and closet algorithm metadata migrations are still unverified remotely
 - Next plan to read: `docs/recommendation-engine-handoff.md`
-- Intended summary if `/context-save` fails: Phase 6 added optional Closet algorithm metadata via `items.algorithm_meta jsonb`, `ClosetAlgorithmMeta` types, fallback inference/normalization, AI optional parsing, save/update/read preservation with old-schema fallbacks, and tests for inference/parsing/persistence; local `npm run lint`, `npm test`, and `npm run build` passed
+- Intended summary if `/context-save` fails: Phase 8 added `lib/recommendation/copy.ts` and connected Today, Shop, Inspiration, Travel, and color strategy helpers to shared Chinese recommendation language for foundation colors, tonal depth, one accent, multiple competing accents, missing shoes/bags/accessories, and inspiration-attempt labeling. Targeted copy tests and lint passed; full test/build were rerun in-session.
 
 ## Snapshot Template
 
