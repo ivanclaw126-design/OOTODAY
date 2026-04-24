@@ -92,23 +92,26 @@ export type StyleQuestionnaireAnswers = {
   hardAvoids: string[]
 }
 
-export type TodayFeedbackReasonTag =
-  | 'like_color'
-  | 'like_silhouette'
-  | 'like_layering'
-  | 'like_shoes_bag'
-  | 'like_scene_fit'
-  | 'like_comfort'
-  | 'like_freshness'
-  | 'dislike_color'
-  | 'dislike_silhouette'
-  | 'dislike_too_complex'
-  | 'dislike_too_plain'
-  | 'dislike_too_bold'
-  | 'dislike_shoes'
-  | 'dislike_scene_fit'
-  | 'dislike_comfort'
-  | 'dislike_item'
+export const TODAY_FEEDBACK_REASON_TAGS = [
+  'like_color',
+  'like_silhouette',
+  'like_layering',
+  'like_shoes_bag',
+  'like_scene_fit',
+  'like_comfort',
+  'like_freshness',
+  'dislike_color',
+  'dislike_silhouette',
+  'dislike_too_complex',
+  'dislike_too_plain',
+  'dislike_too_bold',
+  'dislike_shoes',
+  'dislike_scene_fit',
+  'dislike_comfort',
+  'dislike_item'
+] as const
+
+export type TodayFeedbackReasonTag = (typeof TODAY_FEEDBACK_REASON_TAGS)[number]
 
 export type InspirationCandidateSignals = {
   id: string

@@ -8,10 +8,29 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { applyFeedback } from '@/lib/recommendation/apply-feedback'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
+import { TODAY_FEEDBACK_REASON_TAGS, type TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { saveTodayOotdFeedback } from '@/lib/today/save-today-ootd-feedback'
 import { getWeather } from '@/lib/today/get-weather'
 import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayOotdHistoryEntry } from '@/lib/today/types'
+
+const todayFeedbackReasonTagSet = new Set<string>(TODAY_FEEDBACK_REASON_TAGS)
+
+function normalizeTodayFeedbackReasonTags(value: unknown): TodayFeedbackReasonTag[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const normalized: TodayFeedbackReasonTag[] = []
+
+  value.forEach((tag) => {
+    if (typeof tag === 'string' && todayFeedbackReasonTagSet.has(tag) && !normalized.includes(tag as TodayFeedbackReasonTag)) {
+      normalized.push(tag as TodayFeedbackReasonTag)
+    }
+  })
+
+  return normalized
+}
 
 export async function updateTodayCityAction({ city }: { city: string }) {
   const session = await getSession()
@@ -54,6 +73,8 @@ export async function submitTodayOotdAction({
     throw new Error('Unauthorized')
   }
 
+  const normalizedReasonTags = normalizeTodayFeedbackReasonTags(reasonTags)
+
   const result = await saveTodayOotdFeedback({
     userId: session.user.id,
     recommendation,
@@ -65,7 +86,7 @@ export async function submitTodayOotdAction({
       await applyFeedback({
         userId: session.user.id,
         rating: satisfactionScore,
-        reasonTags,
+        reasonTags: normalizedReasonTags,
         recommendationId: recommendation.id,
         recommendationSnapshot: recommendation,
         componentScores: recommendation.componentScores ?? null,
@@ -79,7 +100,7 @@ export async function submitTodayOotdAction({
         recoverable: true,
         context: {
           recommendationId: recommendation.id,
-          reasonTagCount: reasonTags.length
+          reasonTagCount: normalizedReasonTags.length
         }
       })
     }
@@ -90,8 +111,8 @@ export async function submitTodayOotdAction({
       userId: session.user.id,
       metadata: {
         satisfactionScore,
-        reasonTags: reasonTags.join('|'),
-        reasonTagCount: reasonTags.length
+        reasonTags: normalizedReasonTags.join('|'),
+        reasonTagCount: normalizedReasonTags.length
       }
     })
     revalidatePath('/today')

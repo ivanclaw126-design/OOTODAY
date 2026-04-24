@@ -19,6 +19,8 @@ const updateUser = vi.fn(() => Promise.resolve({ error: null }))
 const getUser = vi.fn(() => Promise.resolve({ data: { user: { user_metadata: {} } } }))
 const createSupabaseServerClient = vi.fn(async () => ({ from, auth: { updateUser, getUser } }))
 const revalidatePath = vi.fn()
+const reportBetaIssue = vi.fn()
+const trackBetaEvent = vi.fn()
 const saveTodayOotdFeedback = vi.fn()
 const applyFeedback = vi.fn()
 const getPreferenceState = vi.fn()
@@ -32,6 +34,11 @@ vi.mock('@/lib/auth/get-session', () => ({
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient
+}))
+
+vi.mock('@/lib/beta/telemetry', () => ({
+  reportBetaIssue,
+  trackBetaEvent
 }))
 
 vi.mock('@/lib/today/save-today-ootd-feedback', () => ({
@@ -76,6 +83,10 @@ describe('today actions', () => {
     updateUser.mockResolvedValue({ error: null })
     getUser.mockReset()
     getUser.mockResolvedValue({ data: { user: { user_metadata: {} } } })
+    reportBetaIssue.mockReset()
+    reportBetaIssue.mockResolvedValue(undefined)
+    trackBetaEvent.mockReset()
+    trackBetaEvent.mockResolvedValue(undefined)
     revalidatePath.mockReset()
     saveTodayOotdFeedback.mockReset()
     applyFeedback.mockReset()
@@ -164,6 +175,82 @@ describe('today actions', () => {
       context: 'today'
     })
     expect(revalidatePath).toHaveBeenCalledWith('/today')
+  })
+
+  it('sanitizes malformed reason tags before preference learning and telemetry', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    saveTodayOotdFeedback.mockResolvedValue({
+      error: null,
+      wornAt: '2026-04-21T09:00:00.000Z'
+    })
+
+    const recommendation = {
+      id: 'rec-1',
+      reason: '基础组合稳定不出错',
+      top: null,
+      bottom: null,
+      dress: null,
+      outerLayer: null
+    }
+
+    const { submitTodayOotdAction } = await import('@/app/today/actions')
+
+    await expect(submitTodayOotdAction({
+      recommendation,
+      satisfactionScore: 5,
+      reasonTags: ['like_color', 'unknown_reason', 'like_color', 42, 'dislike_comfort']
+    } as unknown as Parameters<typeof submitTodayOotdAction>[0])).resolves.toEqual({
+      error: null,
+      wornAt: '2026-04-21T09:00:00.000Z'
+    })
+
+    expect(applyFeedback).toHaveBeenCalledWith(expect.objectContaining({
+      reasonTags: ['like_color', 'dislike_comfort']
+    }))
+    expect(trackBetaEvent).toHaveBeenCalledWith(expect.objectContaining({
+      metadata: expect.objectContaining({
+        reasonTags: 'like_color|dislike_comfort',
+        reasonTagCount: 2
+      })
+    }))
+  })
+
+  it('treats non-array reason tags as empty input', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    saveTodayOotdFeedback.mockResolvedValue({
+      error: null,
+      wornAt: '2026-04-21T09:00:00.000Z'
+    })
+
+    const recommendation = {
+      id: 'rec-1',
+      reason: '基础组合稳定不出错',
+      top: null,
+      bottom: null,
+      dress: null,
+      outerLayer: null
+    }
+
+    const { submitTodayOotdAction } = await import('@/app/today/actions')
+
+    await expect(submitTodayOotdAction({
+      recommendation,
+      satisfactionScore: 4,
+      reasonTags: 'like_color'
+    } as unknown as Parameters<typeof submitTodayOotdAction>[0])).resolves.toEqual({
+      error: null,
+      wornAt: '2026-04-21T09:00:00.000Z'
+    })
+
+    expect(applyFeedback).toHaveBeenCalledWith(expect.objectContaining({
+      reasonTags: []
+    }))
+    expect(trackBetaEvent).toHaveBeenCalledWith(expect.objectContaining({
+      metadata: expect.objectContaining({
+        reasonTags: '',
+        reasonTagCount: 0
+      })
+    }))
   })
 
   it('keeps a saved ootd successful when preference learning fails', async () => {
