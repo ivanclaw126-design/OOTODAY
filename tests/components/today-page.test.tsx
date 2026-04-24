@@ -87,6 +87,7 @@ const inspirationRecommendation = {
 
 describe('TodayPage', () => {
   beforeEach(() => {
+    updateCity.mockClear()
     submitOotd.mockReset()
     refreshRecommendations.mockReset()
     refreshRecommendations.mockResolvedValue({ recommendations: [] })
@@ -237,6 +238,38 @@ describe('TodayPage', () => {
     expect(screen.queryByText('穿搭重点')).not.toBeInTheDocument()
     expect(screen.queryByText('接下来 1-3 天可以先这样用')).not.toBeInTheDocument()
     expect(screen.queryByText('用于判断外层、材质和鞋履舒适度。')).not.toBeInTheDocument()
+  })
+
+  it('opens the city form directly under the city button', () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 3,
+          city: '上海',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: '上海' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    const cityButton = screen.getByRole('button', { name: '修改城市' })
+    fireEvent.click(cityButton)
+
+    const cityInput = screen.getByRole('textbox', { name: '常住城市' })
+    expect(cityInput).toBeInTheDocument()
+    expect(cityButton.compareDocumentPosition(cityInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('renders full outfit slots and a gentle missing-slot hint', () => {
