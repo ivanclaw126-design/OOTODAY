@@ -70,4 +70,4 @@
 ## Follow-up
 
 - [x] Add a repo-local remote migration readiness check via `npm run travel:db:check`
-- [ ] Run the actual `travel_plans` remote push once the current environment can reach Supabase Postgres
+- [x] Verify the linked remote schema is reachable and already up to date via `npm run travel:db:check`

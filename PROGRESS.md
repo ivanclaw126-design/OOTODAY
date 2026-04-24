@@ -89,8 +89,7 @@
 
 ## 当前风险 / 待验证
 
-- `travel_plans` 远端表仍需在可连通 Supabase Postgres 的环境里执行迁移，当前线上仍可能走 fallback。
-- `items.image_flipped` 远端列也仍需正式推上远端库；当前兼容兜底能防止报错，但不是最终持久化状态。
+- 远端 Supabase schema 已通过 `npm run travel:db:check` 验证为 reachable 且 up to date；后续若新增 migration，再按同一路径复核。
 - Closet 的右转 90° 需要在旧库环境里再点一轮真实浏览器确认，确保不再触发 node/server action 报错。
 - Closet 仍是客户端体积重点：当前导入、远程链接、拼图与编辑能力集中在同一交互岛里，下一轮若继续压包，应优先把低频导入/图片处理路径懒加载。
 - 移动端底部导航在 full-page 截图里会覆盖部分中段内容；实际滚动底部已有 padding，但 beta 前仍建议再做一次手感微调。
@@ -124,7 +123,7 @@
 
 ## 下一步
 
-1. 在可连通远端 Supabase Postgres 的环境里执行迁移，补上 `travel_plans`、`items.image_flipped` 与 beta 衣物元数据字段的正式远端落库。
+1. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
 2. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
-3. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
-4. 对 Today、Shop、Looks、Travel 做一轮跨页面语言一致性 QA，重点检查共享颜色解释层和 beta extension 提示。
+3. 对 Today、Shop、Looks、Travel 做一轮跨页面语言一致性 QA，重点检查共享颜色解释层。
+4. 做一轮移动端 beta 手感 QA，重点看底部导航覆盖感、Closet 浏览区和导入确认表单。

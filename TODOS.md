@@ -2,33 +2,36 @@
 
 Deferred work from `/plan-eng-review` on 2026-04-19.
 
-## V2 Features
+## Shipped MVP Scope
 
 ### 拼图导入
-**What:** Split collage images into individual items, auto-remove background, color correction, merge multi-angle photos.
-**Why:** Key differentiator from competitors. Reduces upload friction for users who screenshot outfit collages.
-**Pros:** Faster wardrobe building, unique feature.
-**Cons:** Requires specialized models (image segmentation, background removal). Maintenance overhead.
-**Context:** Design doc lists as "特色能力". Deferred due to ML complexity beyond GPT-4V.
-**Depends on:** V1 validation (50 users), decision to invest in specialized CV pipeline.
+**Status:** First version shipped.
+**Current scope:** Users can split collage images into individual item candidates and feed them into the Closet import queue.
+**Still deferred:** automatic background removal, color correction, and multi-angle merge remain specialized CV work.
+**Depends on:** beta import usage data before investing in a heavier CV pipeline.
 
 ### 购买分析
-**What:** Import product URL → analyze compatibility with wardrobe → suggest buy/don't-buy.
-**Why:** Monetization path (affiliate commissions). Completes "decide what to buy" loop.
-**Pros:** Revenue potential, high-value feature for purchase-decision users.
-**Cons:** Requires e-commerce integration maintenance. Affiliate partnerships needed.
-**Context:** Moved from V1 MVP during `/office-hours` scope reduction.
-**Depends on:** V1 validation, affiliate partnership negotiation.
+**Status:** First version shipped.
+**Current scope:** Shop supports product links, image URLs, and local images, then returns repeat risk, outfit count, and buy / consider / pause guidance.
+**Still deferred:** affiliate partnerships, deeper e-commerce integrations, and broader non-core-fashion categories.
+**Depends on:** beta validation of purchase-decision demand.
 
 ## Maintenance
 
 ### 淘宝/小红书/抖音 Scraper Maintenance
-**What:** Maintain product scrapers for Chinese e-commerce platforms. Anti-scraping walls require ongoing work.
+**What:** Maintain deeper product / inspiration extraction for Chinese platforms. Anti-scraping walls require ongoing work.
 **Why:** Chinese users expect these platforms. Link import is key input method.
 **Pros:** Larger addressable market (China-first UX).
 **Cons:** Weekly maintenance, CAPTCHA handling, potential legal concerns.
-**Context:** Outside voice flagged aggressive anti-scraping. V1 gracefully handles failures, but full support requires maintenance team/process.
+**Context:** Current MVP gracefully handles failures and extracts some supported product/image inputs, but full support requires maintenance team/process.
 **Depends on:** Decision to invest in China market vs. global.
+
+### Closet Import Performance
+**What:** Split low-frequency import and image-processing paths into lazy client modules.
+**Why:** Closet remains the largest high-frequency client island because upload, link import, collage splitting, edit, and reanalysis live close together.
+**Pros:** Lighter first render for beta users who mostly browse existing wardrobe.
+**Cons:** More component boundaries and loading states to maintain.
+**Depends on:** beta usage data and bundle budget after first tester round.
 
 ## Post-Validation
 
@@ -47,6 +50,20 @@ Deferred work from `/plan-eng-review` on 2026-04-19.
 **Cons:** Permission prompt friction, privacy concerns, mobile-first feature.
 **Context:** V1 uses manual city input to avoid browser permission friction.
 **Depends on:** Mobile app implementation.
+
+### Deployment Auth QA
+**What:** Verify deployed magic link, default password login, changed password login, and bootstrap route splitting.
+**Why:** Local and automated auth coverage exists, but provider email and deployed callback URLs are environment-sensitive.
+**Pros:** Catches the main production-only beta risk before inviting testers.
+**Cons:** Requires deployed environment and real inbox checks.
+**Depends on:** active deployment URL and test account access.
+
+### Cross-Page Language QA
+**What:** Review Today, Shop, Looks, and Travel color-strategy explanations for consistent wording.
+**Why:** Shared deterministic helpers are wired, but user-facing language still needs a coherent product voice pass.
+**Pros:** Better perceived intelligence and less duplicated explanation language.
+**Cons:** Manual QA pass across representative scenarios.
+**Depends on:** stable taxonomy / color rule layer.
 
 ## V3 Features
 
