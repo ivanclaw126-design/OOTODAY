@@ -6,6 +6,31 @@ Phase 8 cross-page recommendation language QA completed on 2026-04-24.
 
 Today / Shop / Inspiration / Travel now share recommendation copy for foundation colors, tonal palettes, single accents, multiple accents, missing shoes, missing bags, missing accessories, missing outer layers, and inspiration-attempt labeling. Page-specific wording remains intact for Today completion, Shop purchase value, Travel packing completeness, and Inspiration remix guidance.
 
+## Supabase Remote Reconciliation
+
+Remote Supabase schema reconciliation completed on 2026-04-24.
+
+### Files Changed
+
+- `supabase/migrations/20260424183000_reconcile_recommendation_remote_schema.sql`
+  - Adds `items.algorithm_meta` if the remote database missed the Phase 6 migration.
+  - Aligns `outfit_feedback_events.context` default to `today`.
+  - Adds the missing `outfit_feedback_events(user_id, context, created_at desc)` and `recommendation_preferences(updated_at)` indexes.
+  - Repoints `recommendation_preferences.user_id` and `outfit_feedback_events.user_id` foreign keys to `auth.users(id)` to match the repository migration and current recommendation storage contract.
+
+### Supabase Verification
+
+- `scripts/supabase-db-push-ipv4.sh` applied:
+  - `20260424175500_add_items_algorithm_meta.sql`
+  - `20260424183000_reconcile_recommendation_remote_schema.sql`
+- `supabase db push --dry-run --include-all` reported `Remote database is up to date.`
+- A fresh public schema dump confirmed:
+  - `items.algorithm_meta jsonb not null default '{}'::jsonb`
+  - `outfit_feedback_events.context default 'today'`
+  - `outfit_feedback_events_user_id_context_created_at_idx`
+  - `recommendation_preferences_updated_at_idx`
+  - recommendation preference and feedback event foreign keys reference `auth.users(id)`.
+
 ## Phase 8 Cross-Page Recommendation Language QA
 
 ### Files Changed
@@ -42,7 +67,6 @@ Today / Shop / Inspiration / Travel now share recommendation copy for foundation
 
 - This phase unifies language at helper/generator level; it does not add visual regression screenshots for every copy state.
 - GitHub CI/App Quality workflows have not run on GitHub in this session.
-- Remote Supabase migration status is still unverified in this session.
 
 ## Phase 7 Shop and Travel Preference Awareness
 

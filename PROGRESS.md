@@ -94,11 +94,11 @@
 
 ## 当前风险 / 待验证
 
-- 远端 Supabase schema 上次已通过 `npm run travel:db:check` 验证为 reachable；本轮新增/修正的 recommendation storage migration 和 `items.algorithm_meta` migration 仍需单独确认已 applied 到远端。
+- 远端 Supabase schema 已完成 recommendation storage 与 `items.algorithm_meta` reconciliation；`supabase db push --dry-run --include-all` 已确认 remote database up to date。
 - Closet 的右转 90° 需要在旧库环境里再点一轮真实浏览器确认，确保不再触发 node/server action 报错。
 - Closet 仍是客户端体积重点：当前导入、远程链接、拼图与编辑能力集中在同一交互岛里，下一轮若继续压包，应优先把低频导入/图片处理路径懒加载。
 - 移动端底部导航在 full-page 截图里会覆盖部分中段内容；实际滚动底部已有 padding，但 beta 前仍建议再做一次手感微调。
-- Today、Shop、Looks、Travel 已接入共享颜色规则层，但还缺一轮更系统的跨页面语言一致性 QA。
+- Today、Shop、Looks、Travel 已完成一轮跨页面语言一致性 QA；后续仍可补视觉回归截图覆盖更多文案状态。
 - Auth 还需要一轮真实邮箱与部署环境验证，覆盖“默认密码直登”和“改密后使用其他密码”两个分支。
 - Shop 对淘宝 / 得物的商品图兼容仍有继续提升空间，但当前先保持核心服饰范围，不扩品类。
 
@@ -130,5 +130,5 @@
 
 1. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
 2. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
-3. 对 Today、Shop、Looks、Travel 做一轮跨页面语言一致性 QA，重点检查共享颜色解释层。
+3. 为 Today、Shop、Looks、Travel 的关键推荐文案状态补视觉回归截图或手动截图 QA。
 4. 做一轮移动端 beta 手感 QA，重点看底部导航覆盖感、Closet 浏览区和导入确认表单。
