@@ -8,6 +8,7 @@ const analyzeImportUrl = vi.fn()
 const saveItem = vi.fn()
 const deleteItem = vi.fn()
 const updateItem = vi.fn()
+const replaceItemImage = vi.fn()
 const reanalyzeItem = vi.fn()
 const updateImageRotation = vi.fn()
 
@@ -401,6 +402,86 @@ describe('ClosetPage', () => {
     expect(dialog.className).toContain('overflow-hidden')
     expect(screen.getByLabelText('分类')).toHaveValue('上装')
     expect(screen.getByLabelText('子分类')).toHaveValue('衬衫')
+  })
+
+  it('replaces an existing item image from a product link after confirmation', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
+    analyzeImportUrl.mockResolvedValueOnce({
+      error: null,
+      draft: {
+        imageUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/new-top.jpg',
+        category: '外套',
+        subCategory: '西装外套',
+        colorCategory: '卡其色',
+        styleTags: ['通勤']
+      }
+    })
+    replaceItemImage.mockResolvedValueOnce({
+      persisted: true,
+      imageUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/new-top.jpg',
+      imageOriginalUrl: 'https://example.com/top.jpg',
+      imageRotationQuarterTurns: 1,
+      imageRestoreExpiresAt: '2099-04-24T12:30:00Z',
+      canRestoreOriginal: true
+    })
+
+    render(
+      <ClosetPage
+        userId="user-1"
+        itemCount={1}
+        items={[
+          {
+            id: 'item-1',
+            imageUrl: 'https://example.com/top.jpg',
+            category: '上衣',
+            subCategory: '衬衫',
+            colorCategory: '蓝色',
+            styleTags: ['通勤'],
+            lastWornDate: null,
+            wearCount: 0,
+            createdAt: '2026-04-19T12:00:00Z'
+          }
+        ]}
+        insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+        updateItem={updateItem}
+        replaceItemImage={replaceItemImage}
+        reanalyzeItem={reanalyzeItem}
+        deleteItem={deleteItem}
+        updateImageRotation={updateImageRotation}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '全部衣物' }))
+    fireEvent.click(screen.getByRole('button', { name: '编辑识别结果' }))
+    fireEvent.change(screen.getByLabelText('更换图片链接'), {
+      target: { value: 'https://shop.example.com/item/1' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: '从链接更换' }))
+
+    await waitFor(() => {
+      expect(analyzeImportUrl).toHaveBeenCalledWith({ sourceUrl: 'https://shop.example.com/item/1' })
+      expect(confirm).toHaveBeenCalled()
+      expect(replaceItemImage).toHaveBeenCalledWith({
+        itemId: 'item-1',
+        draft: {
+          imageUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/new-top.jpg',
+          category: '外套',
+          subCategory: '西装外套',
+          colorCategory: '卡其色',
+          styleTags: ['通勤'],
+          purchasePrice: null,
+          purchaseYear: null,
+          itemCondition: null
+        }
+      })
+      expect(screen.getByText('图片已替换。卡片上的“恢复原图”可撤销本次更换。')).toBeInTheDocument()
+    })
+
+    confirm.mockRestore()
   })
 
   it('shows the refreshed draft in the edit panel after reanalyzing', async () => {

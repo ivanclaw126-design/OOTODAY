@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { type ChangeEvent, type DragEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ClosetInsightsPanel } from '@/components/closet/closet-insights'
 import { ClosetItemGrid } from '@/components/closet/closet-item-grid'
@@ -10,11 +10,22 @@ import { ClosetUploadCard } from '@/components/closet/closet-upload-card'
 import { ClosetUploadForm } from '@/components/closet/closet-upload-form'
 import { buildClosetBrowseGroups, ClosetGroupBrowser, type ClosetBrowseMode } from '@/components/closet/closet-group-browser'
 import { Card } from '@/components/ui/card'
+import { buildClosetUploadPath } from '@/lib/closet/build-upload-path'
 import { isRestoreWindowActive, normalizeQuarterTurns } from '@/lib/closet/image-rotation'
 import { isBottomCategory, isOuterwearCategory, isTopCategory } from '@/lib/closet/taxonomy'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult, ClosetInsights, ClosetItemCardData } from '@/lib/closet/types'
 
 type UsageView = 'all' | 'most-worn' | 'least-recently-worn'
+type ImageUpdateResult = {
+  persisted: boolean
+  imageUrl?: string | null
+  imageFlipped?: boolean
+  imageOriginalUrl?: string | null
+  imageRotationQuarterTurns?: number
+  imageRestoreExpiresAt?: string | null
+  canRestoreOriginal?: boolean
+}
 
 export function ClosetWorkspace({
   userId,
@@ -26,6 +37,7 @@ export function ClosetWorkspace({
   analyzeImportUrl,
   saveItem,
   updateItem,
+  replaceItemImage,
   reanalyzeItem,
   deleteItem,
   updateImageRotation
@@ -39,21 +51,15 @@ export function ClosetWorkspace({
   analyzeImportUrl: (input: { sourceUrl: string }) => Promise<{ error: string | null; draft: ClosetAnalysisDraft | null }>
   saveItem: (draft: ClosetAnalysisDraft) => Promise<void>
   updateItem: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<void>
+  replaceItemImage: (input: { itemId: string; draft: ClosetAnalysisDraft }) => Promise<ImageUpdateResult>
   reanalyzeItem: (input: { itemId: string }) => Promise<ClosetAnalysisDraft>
   deleteItem: (input: { itemId: string }) => Promise<void>
   updateImageRotation: (input: {
     itemId: string
     operation: 'rotate-right-90' | 'restore-original'
-  }) => Promise<{
-    persisted: boolean
-    imageUrl?: string | null
-    imageFlipped?: boolean
-    imageOriginalUrl?: string | null
-    imageRotationQuarterTurns?: number
-    imageRestoreExpiresAt?: string | null
-    canRestoreOriginal?: boolean
-  }>
+  }) => Promise<ImageUpdateResult>
 }) {
+  const supabase = createSupabaseBrowserClient()
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
   const [reanalyzingItemId, setReanalyzingItemId] = useState<string | null>(null)
@@ -61,6 +67,11 @@ export function ClosetWorkspace({
   const [editingDraft, setEditingDraft] = useState<ClosetAnalysisDraft | null>(null)
   const [editingError, setEditingError] = useState<string | null>(null)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [isReplacingImage, setIsReplacingImage] = useState(false)
+  const [replaceImageSourceUrl, setReplaceImageSourceUrl] = useState('')
+  const [replaceImageError, setReplaceImageError] = useState<string | null>(null)
+  const [replaceImageNotice, setReplaceImageNotice] = useState<string | null>(null)
+  const [isReplaceDragActive, setIsReplaceDragActive] = useState(false)
   const [browseMode, setBrowseMode] = useState<'all' | ClosetBrowseMode>('category')
   const [activeBrowseGroupValue, setActiveBrowseGroupValue] = useState<string | null>(null)
   const [usageView, setUsageView] = useState<UsageView>('all')
@@ -316,6 +327,10 @@ export function ClosetWorkspace({
     setEditingItemId(null)
     setEditingDraft(null)
     setEditingError(null)
+    setReplaceImageSourceUrl('')
+    setReplaceImageError(null)
+    setReplaceImageNotice(null)
+    setIsReplaceDragActive(false)
   }
 
   function handleBrowseModeChange(nextMode: 'all' | ClosetBrowseMode) {
@@ -397,6 +412,132 @@ export function ClosetWorkspace({
     } finally {
       setFlippingItemId(null)
     }
+  }
+
+  function applyImageResult(item: ClosetItemCardData, result: ImageUpdateResult) {
+    setImageOverrides((current) => ({
+      ...current,
+      [item.id]: {
+        imageFlipped: result.imageFlipped ?? Boolean(result.imageOriginalUrl),
+        imageUrl: result.imageUrl ?? item.imageUrl,
+        imageOriginalUrl: result.imageOriginalUrl ?? item.imageUrl,
+        imageRotationQuarterTurns: result.imageRotationQuarterTurns ?? (result.imageOriginalUrl ? 1 : 0),
+        imageRestoreExpiresAt: result.imageRestoreExpiresAt ?? null,
+        canRestoreOriginal: result.canRestoreOriginal ?? Boolean(result.imageOriginalUrl)
+      }
+    }))
+  }
+
+  function mergeReplacementDraft(nextDraft: ClosetAnalysisDraft): ClosetAnalysisDraft {
+    return {
+      ...nextDraft,
+      purchasePrice: editingDraft?.purchasePrice ?? currentEditingItem?.purchasePrice ?? null,
+      purchaseYear: editingDraft?.purchaseYear ?? currentEditingItem?.purchaseYear ?? null,
+      itemCondition: editingDraft?.itemCondition ?? currentEditingItem?.itemCondition ?? null
+    }
+  }
+
+  async function persistReplacementDraft(nextDraft: ClosetAnalysisDraft) {
+    if (!currentEditingItem) {
+      return
+    }
+
+    const confirmed = window.confirm('确认用这张新图片替换当前衣物图片吗？替换后可以在卡片上撤销本次更换。')
+
+    if (!confirmed) {
+      return
+    }
+
+    setIsReplacingImage(true)
+    setReplaceImageError(null)
+    setReplaceImageNotice(null)
+
+    try {
+      const draftWithExistingMeta = mergeReplacementDraft(nextDraft)
+      const result = await replaceItemImage({
+        itemId: currentEditingItem.id,
+        draft: draftWithExistingMeta
+      })
+      setEditingDraft(draftWithExistingMeta)
+      applyImageResult(currentEditingItem, result)
+      setReplaceImageSourceUrl('')
+      setReplaceImageNotice('图片已替换。卡片上的“恢复原图”可撤销本次更换。')
+
+      if (result.persisted) {
+        router.refresh()
+      }
+    } catch (error) {
+      setReplaceImageError(error instanceof Error ? error.message : '图片替换失败，请稍后再试')
+    } finally {
+      setIsReplacingImage(false)
+    }
+  }
+
+  async function handleReplaceImageFile(file: File | null | undefined) {
+    if (!file || isReplacingImage) {
+      return
+    }
+
+    setIsReplacingImage(true)
+    setReplaceImageError(null)
+    setReplaceImageNotice(null)
+
+    try {
+      const path = buildClosetUploadPath(userId, file.name)
+      const { error } = await supabase.storage.from(storageBucket).upload(path, file)
+
+      if (error) {
+        throw new Error('图片上传失败，请重试')
+      }
+
+      const { data } = supabase.storage.from(storageBucket).getPublicUrl(path)
+      const analysis = await analyzeUpload({ imageUrl: data.publicUrl })
+      await persistReplacementDraft({
+        imageUrl: data.publicUrl,
+        ...analysis
+      })
+    } catch (error) {
+      setReplaceImageError(error instanceof Error ? error.message : '图片替换失败，请稍后再试')
+    } finally {
+      setIsReplacingImage(false)
+    }
+  }
+
+  async function handleReplaceImageFromUrl() {
+    if (!replaceImageSourceUrl.trim() || isReplacingImage) {
+      return
+    }
+
+    setIsReplacingImage(true)
+    setReplaceImageError(null)
+    setReplaceImageNotice(null)
+
+    try {
+      const result = await analyzeImportUrl({ sourceUrl: replaceImageSourceUrl.trim() })
+
+      if (result.error || !result.draft) {
+        throw new Error(result.error ?? '导入失败，请换一个链接试试')
+      }
+
+      await persistReplacementDraft(result.draft)
+    } catch (error) {
+      setReplaceImageError(error instanceof Error ? error.message : '图片替换失败，请稍后再试')
+    } finally {
+      setIsReplacingImage(false)
+    }
+  }
+
+  function handleReplaceFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const [file] = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    void handleReplaceImageFile(file)
+  }
+
+  function handleReplaceDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    setIsReplaceDragActive(false)
+    const [file] = Array.from(event.dataTransfer.files ?? []).filter((candidate) => candidate.type.startsWith('image/'))
+    void handleReplaceImageFile(file)
   }
 
   function handleEditItem(item: ClosetItemCardData) {
@@ -702,6 +843,78 @@ export function ClosetWorkspace({
                       {reanalyzingItemId === currentEditingItem.id ? (
                         <span className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-white">重新识别中…</span>
                       ) : null}
+                    </div>
+                  ) : null}
+
+                  {currentEditingItem ? (
+                    <div className="grid gap-3 rounded-[1.1rem] border border-[var(--color-line)] bg-white/70 p-3">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--color-primary)]">更换衣物图片</p>
+                          <p className="text-xs leading-5 text-[var(--color-neutral-dark)]">
+                            支持重新上传、拖拽图片，或粘贴商品链接。替换前会二次确认。
+                          </p>
+                        </div>
+                        {currentEditingItem.canRestoreOriginal ? (
+                          <button
+                            type="button"
+                            className="rounded-full border border-[var(--color-line)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary)]"
+                            onClick={() => void handleRestoreOriginalImage(currentEditingItem)}
+                            disabled={isReplacingImage || flippingItemId === currentEditingItem.id}
+                          >
+                            撤销本次更换
+                          </button>
+                        ) : null}
+                      </div>
+
+                      <div
+                        className={`rounded-[1rem] border border-dashed p-4 text-center transition ${
+                          isReplaceDragActive
+                            ? 'border-[var(--color-primary)] bg-[var(--color-secondary)]'
+                            : 'border-[var(--color-neutral-mid)] bg-white/68'
+                        }`}
+                        onDragOver={(event) => {
+                          event.preventDefault()
+                          setIsReplaceDragActive(true)
+                        }}
+                        onDragLeave={() => setIsReplaceDragActive(false)}
+                        onDrop={handleReplaceDrop}
+                      >
+                        <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white">
+                          {isReplacingImage ? '处理中…' : '上传新图片'}
+                          <input
+                            className="sr-only"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleReplaceFileChange}
+                            disabled={isReplacingImage}
+                            aria-label="更换衣物图片"
+                          />
+                        </label>
+                        <p className="mt-2 text-xs text-[var(--color-neutral-dark)]">也可以把图片拖到这里。</p>
+                      </div>
+
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <input
+                          className="min-w-0 flex-1 rounded-full border border-[var(--color-line)] bg-white px-4 py-2 text-sm outline-none"
+                          value={replaceImageSourceUrl}
+                          onChange={(event) => setReplaceImageSourceUrl(event.target.value)}
+                          placeholder="粘贴商品链接或图片链接"
+                          disabled={isReplacingImage}
+                          aria-label="更换图片链接"
+                        />
+                        <button
+                          type="button"
+                          className="rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          onClick={() => void handleReplaceImageFromUrl()}
+                          disabled={isReplacingImage || !replaceImageSourceUrl.trim()}
+                        >
+                          {isReplacingImage ? '导入中…' : '从链接更换'}
+                        </button>
+                      </div>
+
+                      {replaceImageNotice ? <p className="text-sm text-[var(--color-primary)]">{replaceImageNotice}</p> : null}
+                      {replaceImageError ? <p className="text-sm text-red-600">{replaceImageError}</p> : null}
                     </div>
                   ) : null}
 

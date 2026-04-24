@@ -13,6 +13,7 @@ import {
   analyzeClosetUploadAction,
   deleteClosetItemAction,
   reanalyzeClosetItemAction,
+  replaceClosetItemImageAction,
   saveClosetItemAction,
   updateClosetItemImageRotationAction,
   updateClosetItemAction
@@ -62,6 +63,12 @@ async function ClosetRouteContent({
     await updateClosetItemAction(input)
   }
 
+  async function replaceItemImage(input: { itemId: string; draft: ClosetAnalysisDraft }) {
+    'use server'
+
+    return replaceClosetItemImageAction(input)
+  }
+
   async function reanalyzeItem(input: { itemId: string }): Promise<ClosetAnalysisDraft> {
     'use server'
 
@@ -96,6 +103,7 @@ async function ClosetRouteContent({
       analyzeImportUrl={analyzeImportUrl}
       saveItem={saveItem}
       updateItem={updateItem}
+      replaceItemImage={replaceItemImage}
       reanalyzeItem={reanalyzeItem}
       deleteItem={deleteItem}
       updateImageRotation={updateImageRotation}

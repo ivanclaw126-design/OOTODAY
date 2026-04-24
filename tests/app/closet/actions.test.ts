@@ -5,6 +5,7 @@ const analyzeItemImage = vi.fn()
 const saveClosetItem = vi.fn()
 const deleteClosetItem = vi.fn()
 const importRemoteImageToStorage = vi.fn()
+const replaceClosetItemImage = vi.fn()
 const resolveShopInput = vi.fn()
 const revalidatePath = vi.fn()
 const setClosetItemImageFlip = vi.fn()
@@ -31,6 +32,10 @@ vi.mock('@/lib/shop/resolve-shop-input', () => ({
 
 vi.mock('@/lib/closet/save-closet-item', () => ({
   saveClosetItem
+}))
+
+vi.mock('@/lib/closet/replace-closet-item-image', () => ({
+  replaceClosetItemImage
 }))
 
 vi.mock('@/lib/closet/set-closet-item-image-flip', () => ({
@@ -62,6 +67,7 @@ afterEach(() => {
   saveClosetItem.mockReset()
   deleteClosetItem.mockReset()
   importRemoteImageToStorage.mockReset()
+  replaceClosetItemImage.mockReset()
   resolveShopInput.mockReset()
   setClosetItemImageFlip.mockReset()
   revalidatePath.mockReset()
@@ -307,5 +313,62 @@ describe('updateClosetItemImageRotationAction', () => {
     expect(revalidatePath).toHaveBeenCalledWith('/travel')
     expect(revalidatePath).toHaveBeenCalledWith('/looks')
     expect(revalidatePath).toHaveBeenCalledWith('/shop')
+  })
+})
+
+describe('replaceClosetItemImageAction', () => {
+  it('replaces the current user item image and revalidates dependent pages', async () => {
+    stubClosetEnv()
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    replaceClosetItemImage.mockResolvedValue({
+      id: 'item-1',
+      imageUrl: validImageUrl,
+      imageOriginalUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/old.jpg',
+      imageRotationQuarterTurns: 1,
+      imageRestoreExpiresAt: '2099-04-24T12:30:00Z',
+      canRestoreOriginal: true,
+      persisted: true
+    })
+
+    const { replaceClosetItemImageAction } = await import('@/app/closet/actions')
+
+    await expect(replaceClosetItemImageAction({ itemId: 'item-1', draft: validDraft })).resolves.toEqual({
+      id: 'item-1',
+      imageUrl: validImageUrl,
+      imageOriginalUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/old.jpg',
+      imageRotationQuarterTurns: 1,
+      imageRestoreExpiresAt: '2099-04-24T12:30:00Z',
+      canRestoreOriginal: true,
+      persisted: true
+    })
+    expect(replaceClosetItemImage).toHaveBeenCalledWith({
+      ...validDraft,
+      category: '上装',
+      userId: 'user-1',
+      itemId: 'item-1'
+    })
+    expect(revalidatePath).toHaveBeenCalledWith('/closet')
+    expect(revalidatePath).toHaveBeenCalledWith('/today')
+    expect(revalidatePath).toHaveBeenCalledWith('/travel')
+    expect(revalidatePath).toHaveBeenCalledWith('/looks')
+    expect(revalidatePath).toHaveBeenCalledWith('/shop')
+  })
+
+  it('rejects replacement image urls outside the current user bucket path', async () => {
+    stubClosetEnv()
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+
+    const { replaceClosetItemImageAction } = await import('@/app/closet/actions')
+
+    await expect(
+      replaceClosetItemImageAction({
+        itemId: 'item-1',
+        draft: {
+          ...validDraft,
+          imageUrl: 'https://cdn.example.com/item.jpg'
+        }
+      })
+    ).rejects.toThrow('Invalid closet upload URL')
+    expect(replaceClosetItemImage).not.toHaveBeenCalled()
   })
 })

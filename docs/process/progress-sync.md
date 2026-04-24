@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-24
-- Branch / theme: `main` - Phase 9 beta readiness QA checklist
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-181500-cross-page-recommendation-language-phase-8.md`
-- Current blocker: beta checklist execution is not complete on the deployed environment; Vercel verification is blocked locally by missing CLI / connector 403; real-email Auth and mobile touch QA still need target-environment evidence.
-- Next plan to read: `docs/beta-readiness-checklist.md`
-- Intended summary if `/context-save` fails: Phase 9 created the beta readiness QA checklist, updated project progress/TODOs, verified GitHub Actions latest pushed main, confirmed Supabase remote schema up to date through the IPv4 transaction-pooler path, and fixed `scripts/check-travel-plans-migration.sh` so repeat checks disable statement cache and detect the migration version correctly.
+- Branch / theme: `codex/closet-image-replace` - saved Closet item image replacement
+- Latest checkpoint: `~/.gstack/projects/ivanclaw126-design-OOTODAY/checkpoints/20260424-235434-closet-image-replace.md`
+- Current blocker: no product blocker; branch is implemented and verified locally, but not committed/pushed yet.
+- Next plan to read: none for this branch; review the changed Closet files and tests directly.
+- Intended summary if `/context-save` fails: Saved Closet items can now replace their image from upload, drag/drop, or product/image link after confirmation; replacement persists through a new server action and can be undone through the existing restore-original window.
 
 ## Snapshot Template
 
