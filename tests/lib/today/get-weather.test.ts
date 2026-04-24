@@ -27,10 +27,12 @@ describe('getWeather', () => {
     await expect(getWeather('Shanghai')).resolves.toEqual({
       city: 'Shanghai',
       temperatureC: 18,
-      conditionLabel: 'broken clouds',
+      conditionLabel: '多云',
       isWarm: false,
       isCold: false
     })
+
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('lang=zh_cn'), { cache: 'no-store' })
   })
 
   it('returns null when the weather request fails', async () => {
@@ -72,7 +74,7 @@ describe('getWeather', () => {
     await expect(getWeather('上海')).resolves.toEqual({
       city: 'Shanghai',
       temperatureC: 18,
-      conditionLabel: 'mist',
+      conditionLabel: '薄雾',
       isWarm: false,
       isCold: false
     })
@@ -81,6 +83,29 @@ describe('getWeather', () => {
     expect(fetchMock.mock.calls[1]?.[0]).toContain('geo/1.0/direct')
     expect(fetchMock.mock.calls[2]?.[0]).toContain('lat=31.2222')
     expect(fetchMock.mock.calls[2]?.[0]).toContain('lon=121.4581')
+    expect(fetchMock.mock.calls[2]?.[0]).toContain('lang=zh_cn')
+  })
+
+  it('keeps already localized weather descriptions unchanged', async () => {
+    vi.stubEnv('WEATHER_API_KEY', 'weather-key')
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          name: 'Shanghai',
+          weather: [{ main: 'Clear', description: '晴' }],
+          main: { temp: 16.2 }
+        })
+      }) as unknown as typeof fetch
+    )
+
+    const { getWeather } = await import('@/lib/today/get-weather')
+
+    await expect(getWeather('上海')).resolves.toMatchObject({
+      conditionLabel: '晴'
+    })
   })
 
   it('returns null when weather config is missing', async () => {

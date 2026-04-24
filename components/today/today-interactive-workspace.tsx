@@ -153,14 +153,6 @@ export function TodayInteractiveWorkspace({
 
       {!view.city ? <TodayCityPromptCard /> : null}
 
-      {isEditingCity ? (
-        <TodayCityForm
-          initialCity={view.city ?? ''}
-          onSubmit={updateCity}
-          onCancel={() => setIsEditingCity(false)}
-        />
-      ) : null}
-
       <TodayRecommendationList
         recommendations={recommendations}
         recommendationError={view.recommendationError}
@@ -173,9 +165,18 @@ export function TodayInteractiveWorkspace({
         <SecondaryButton type="button" onClick={() => void handleRefreshRecommendations()} disabled={isRefreshingRecommendations}>
           {isRefreshingRecommendations ? '正在整理新推荐...' : '换一批推荐'}
         </SecondaryButton>
-        <SecondaryButton type="button" onClick={() => setIsEditingCity(true)}>
-          {view.city ? '修改城市' : '设置城市'}
-        </SecondaryButton>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[18rem]">
+          <SecondaryButton type="button" onClick={() => setIsEditingCity(true)}>
+            {view.city ? '修改城市' : '设置城市'}
+          </SecondaryButton>
+          {isEditingCity ? (
+            <TodayCityForm
+              initialCity={view.city ?? ''}
+              onSubmit={updateCity}
+              onCancel={() => setIsEditingCity(false)}
+            />
+          ) : null}
+        </div>
       </div>
 
       <TodayOotdHistory entries={historyEntries} onUpdateEntry={handleUpdateHistoryEntry} onDeleteEntry={handleDeleteHistoryEntry} />
