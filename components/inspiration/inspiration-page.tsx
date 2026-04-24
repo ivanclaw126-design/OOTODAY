@@ -170,7 +170,7 @@ export function InspirationPage({
             <div className="flex flex-col gap-4">
               <div>
                 <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/70">Input</p>
-                <p className="mt-2 text-sm text-white/82">本地图适合随手拆解，图片链接适合直接粘贴小红书、截图图床或灵感合集里的单张图。</p>
+                <p className="mt-2 text-sm text-white/82">上传截图或粘贴图片链接，我会先拆出整套穿搭公式，再用你的衣橱找可复刻的版本。</p>
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">

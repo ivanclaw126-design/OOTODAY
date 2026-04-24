@@ -65,7 +65,7 @@ export function TodayPage({
           <div className="space-y-4">
             <EmptyState
               title="你的衣橱还是空的"
-              description="先上传几件常穿的单品，Today 才能给出真实推荐。"
+              description="先上传 5-10 件常穿的单品，Today 才能给出真实推荐。"
               action={<PrimaryLink href="/closet?onboarding=1">去上传衣物</PrimaryLink>}
             />
             <OnboardingChecklist

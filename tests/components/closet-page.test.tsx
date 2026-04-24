@@ -53,10 +53,13 @@ describe('ClosetPage', () => {
       />
     )
 
-    expect(screen.getByText('先把第一件衣物放进来')).toBeInTheDocument()
+    const demoPrompt = screen.getByText('想先快速体验？')
+    const uploadSectionTitle = screen.getByText('导入衣物')
+    expect(uploadSectionTitle).toBeInTheDocument()
     expect(screen.getByLabelText('选择衣物图片')).toBeInTheDocument()
-    expect(screen.getByText('想先快速体验？')).toBeInTheDocument()
+    expect(demoPrompt.compareDocumentPosition(uploadSectionTitle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByText(/体验后可在顶部「AI 造型引擎」中清空本地衣橱/)).toBeInTheDocument()
+    expect(screen.queryByText('Next step')).not.toBeInTheDocument()
   })
 
   it('copies a selected demo closet from the empty closet prompt', async () => {
@@ -132,7 +135,9 @@ describe('ClosetPage', () => {
     )
 
     expect(screen.getByText('先在 Closet 完成第一步')).toBeInTheDocument()
-    expect(screen.getByText('先把这轮 beta 要用的几件衣物放进来')).toBeInTheDocument()
+    expect(screen.getByText('导入 5-10 件常穿衣服')).toBeInTheDocument()
+    expect(screen.getByText('先放进 5-10 件最常穿的，跑通 Today 后再继续补。')).toBeInTheDocument()
+    expect(screen.queryByText(/朋友 beta 先别急/)).not.toBeInTheDocument()
   })
 
   it('shows recent saved items when items exist', () => {

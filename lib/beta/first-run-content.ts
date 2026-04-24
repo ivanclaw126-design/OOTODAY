@@ -9,7 +9,7 @@ export const firstRunSteps: FirstRunStep[] = [
   {
     id: 'import',
     step: '01',
-    label: '导入 3-5 件常穿衣服',
+    label: '导入 5-10 件常穿衣服',
     detail: '先用最常穿、最能代表你的单品把衣橱起起来。'
   },
   {
