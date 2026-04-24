@@ -67,6 +67,7 @@ describe('buildInspirationRemixPlan', () => {
           ],
           matchReason: '同类替代：按类别 35%、slot 15%、颜色 20%、轮廓 15%、风格 10%、层次 5% 加权排序。',
           substituteSuggestion: null,
+          preferenceNote: '这件保留了你偏好的低饱和/基础色方向。',
           scoreBreakdown: {
             total: 0.9,
             categoryScore: 0.35,
@@ -102,9 +103,11 @@ describe('buildInspirationRemixPlan', () => {
     expect(result.coverageLabel).toContain('已经能穿出七成感觉')
     expect(result.steps[0]?.note).toContain('同类替代')
     expect(result.steps[0]?.note).toContain('黑色 西装外套')
+    expect(result.steps[0]?.note).toContain('低饱和')
     expect(result.summary).toContain('短外套 + 直筒下装')
     expect(result.summary).toContain('外短内长')
     expect(result.summary).toContain('黑色西装外套')
+    expect(result.summary).toContain('低饱和')
     expect(result.steps[1]?.note).toContain('base')
     expect(result.missingItems).toHaveLength(1)
     expect(result.missingItems[0]?.label).toBe('直筒裤')

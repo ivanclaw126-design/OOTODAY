@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-24
-- Branch / theme: `main` - Recommendation Engine Supabase migration alignment Phase 3
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-174000-recommendation-storage-migration-phase-3.md`
-- Current blocker: recommendation storage migration is aligned locally but remote Supabase application is still unverified; App Quality workflow has not run on GitHub yet
+- Branch / theme: `main` - Recommendation Engine preference-aware Inspiration Phase 5 / 8D
+- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-175100-preference-aware-inspiration-phase-5.md`
+- Current blocker: local work is not pushed; new CI/App Quality workflows have not run on GitHub yet; recommendation storage migration remote application is still unverified
 - Next plan to read: `docs/recommendation-engine-handoff.md`
-- Intended summary if `/context-save` fails: Phase 3 aligned `20260424143000_add_recommendation_preferences_feedback.sql` with recommendation read/write code, using `auth.users` FKs, `today` feedback context default, RLS own-row policies, and required feedback indexes; `types/database.ts` now reflects feedback id default; local `npm run lint`, `npm test`, and `npm run build` passed
+- Intended summary if `/context-save` fails: Phase 5 implemented preference-aware Inspiration matching: `matchClosetToInspiration` accepts optional preference state, filters hard avoids, nudges formula weights with finalWeights, uses profile color/silhouette/layering/focal/practicality preferences for ranking and explanations, keeps medium-distance substitutes allowed, and updates remix copy/UI; local `npm run lint`, `npm test`, and `npm run build` passed
 
 ## Snapshot Template
 

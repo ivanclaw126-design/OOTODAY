@@ -2,11 +2,88 @@
 
 ## Current Phase Completed
 
+Phase 5 / Phase 8D Preference-aware Inspiration formula matching completed on 2026-04-24.
+
+Inspiration matching now reads the user's `RecommendationPreferenceState` and uses profile/final weights to gently adjust formula matching without turning Looks into a conservative daily-only recommender. Hard avoids are strictly filtered, final weights only nudge formula weights, medium-distance substitutes remain allowed, and remix copy explains when a look fits the user's preferences or is better treated as an inspiration attempt.
+
+## Phase 5 / Phase 8D Preference-Aware Inspiration Matching
+
+### Files Changed
+
+- `lib/inspiration/match-closet-to-inspiration.ts`
+  - Adds optional `preferenceState` to `matchClosetToInspiration(breakdown, closetItems, preferenceState?)`.
+  - Uses `profile.colorPreference` to lower bold color substitutes for low-risk color users and boost low-saturation/basic-color options.
+  - Uses `profile.silhouettePreference` to nudge silhouette matches.
+  - Uses `profile.layeringPreference.complexity` to make multi-layer substitutes easier or harder to accept.
+  - Uses `profile.focalPointPreference` to explain visual-center fit or expansion.
+  - Uses `profile.practicalityPreference` to nudge comfort-vs-styling choices.
+  - Applies `profile.hardAvoids` as strict filtering for disliked style/item terms.
+  - Uses `profile.exploration.maxDistanceFromDailyStyle` to downgrade overly distant matches to inspiration reference rather than daily remix.
+  - Uses `finalWeights` only as small nudges to color, silhouette, layering, focal-point/style, and slot-coverage weights.
+- `lib/inspiration/types.ts`
+  - Adds optional `preferenceNote` on closet matches.
+  - Adds optional `preferenceAdjustment`, `distanceFromDailyStyle`, and `blockedByHardAvoid` fields on score breakdowns.
+- `lib/inspiration/build-inspiration-remix-plan.ts`
+  - Carries preference-aware notes into remix step and summary copy.
+- `app/inspiration/actions.ts`
+  - Reads `getPreferenceState({ userId })` and passes it into `matchClosetToInspiration`.
+- `components/inspiration/inspiration-page.tsx`
+  - Displays preference-aware explanation text returned by the matcher.
+- `tests/lib/inspiration/match-closet-to-inspiration.test.ts`
+  - Covers low color-risk ordering, high layering complexity, hard avoids, and medium-distance substitutes.
+- `tests/lib/inspiration/build-inspiration-remix-plan.test.ts`
+  - Covers preference-aware remix copy.
+- `tests/app/inspiration/actions.test.ts`
+  - Covers that Inspiration action reads preference state before matching.
+
+### Phase 5 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm test` passed: 59 test files, 243 tests.
+- `npm run build` passed, including `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
+
+### Phase 5 Remaining Issues
+
+- Preference-aware Inspiration matching still infers silhouette/layer-role from existing closet metadata; there are no explicit closet silhouette/layer-role columns yet.
+- Distance-from-daily-style is a deterministic heuristic, not learned from Inspiration-specific feedback.
+- New CI workflow and App Quality workflow are present locally but have not run on GitHub in this session.
+- Recommendation storage migration remote status is still unverified in this session.
+
+## Phase 4 GitHub Actions CI
+
+Phase 4 GitHub Actions CI addition completed on 2026-04-24.
+
+The repository now has a dedicated `.github/workflows/ci.yml` workflow for push-to-main and pull request quality gates. It installs with `npm ci` on Node 22 and runs lint, tests, and production build with safe dummy public Supabase/storage env values. Existing `pages.yml` was not changed.
+
+
+### Files Changed
+
+- `.github/workflows/ci.yml`
+  - Runs on `push` to `main` and on `pull_request`.
+  - Uses `ubuntu-latest`.
+  - Uses `actions/checkout@v4`.
+  - Uses `actions/setup-node@v4` with Node 22 and npm cache.
+  - Runs `npm ci`, `npm run lint`, `npm test`, and `npm run build`.
+  - Provides safe dummy values for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_STORAGE_BUCKET` so `next build` can evaluate protected routes without real secrets.
+- Existing `.github/workflows/pages.yml` was left unchanged.
+
+### Phase 4 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm test` passed: 59 test files, 239 tests.
+- `npm run build` passed, including `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
+
+### Phase 4 Remaining Issues
+
+- The new CI workflow is present locally but has not run on GitHub in this session.
+- Recommendation storage migration remote status is still unverified in this session.
+
+## Phase 3 Supabase Migration Alignment
+
 Phase 3 Supabase recommendation storage migration alignment completed on 2026-04-24.
 
 The local Supabase migration for recommendation preferences and outfit feedback events now matches the app's actual read/write paths. It creates both tables, references `auth.users(id)`, sets the feedback context default to `today`, enables RLS, restricts user access to own rows, and includes the required feedback indexes. Remote application is not verified in this session.
 
-## Phase 3 Supabase Migration Alignment
 
 ### Files Changed
 
@@ -147,9 +224,10 @@ Today now exposes the object-parameter recommendation generator contract as the 
 
 ### D. CI
 
-- `.github/workflows/app-quality.yml` exists in the current worktree and runs `npm run lint`, `npm test`, and `npm run build`.
+- `.github/workflows/ci.yml` exists in the current worktree and runs `npm ci`, `npm run lint`, `npm test`, and `npm run build` on push to `main` and pull requests.
+- `.github/workflows/app-quality.yml` also exists from the earlier landing-audit work and runs the same app quality commands.
 - `.github/workflows/pages.yml` remains Pages-only and does not cover app quality, which is fine now that App Quality exists separately.
-- P0 blocker: none in the current worktree. If auditing only pushed `origin/main`, the App Quality workflow still needs to be committed/pushed and observed on GitHub.
+- P0 blocker: none in the current worktree. The CI workflow still needs to be committed/pushed and observed on GitHub before claiming remote CI green.
 
 ### E. Handoff
 
@@ -228,7 +306,7 @@ Phase 7 changes are also present in the current worktree:
   - `analyzePurchaseCandidate(candidate, closetItems)`
 - Inspiration APIs:
   - `analyzeInspirationImage(imageUrl)`
-  - `matchClosetToInspiration(breakdown, closetItems)`
+  - `matchClosetToInspiration(breakdown, closetItems, preferenceState?)`
   - `buildInspirationRemixPlan(breakdown, closetMatches)`
 - Travel APIs:
   - `buildTravelPackingPlan({ destinationCity, days, scenes, items, weather })`
@@ -272,6 +350,7 @@ Phase 7 changes are also present in the current worktree:
 - Inspiration key items can carry slot, silhouette, layer role, importance, and alternatives.
 - Inspiration closet matching is formula-weighted instead of category-only.
 - Inspiration can recommend substitutes when no same-category closet item exists.
+- Inspiration matching reads preference state, strictly filters hard avoids, and gently nudges formula matching with `finalWeights` without blocking medium-distance inspiration substitutes.
 
 ## Tests Added Or Updated
 
@@ -279,6 +358,7 @@ Phase 7 changes are also present in the current worktree:
   - AI parsing for formula fields and key-item metadata
   - weighted formula matching by category/slot/color/silhouette/style/layer
   - substitute suggestions when no same-category item exists
+  - preference-aware color risk, layering complexity, hard avoids, and medium-distance substitutes
   - remix summary copy based on formulas
   - formula and substitute UI rendering
 - Phase 8B Travel tests remain:
@@ -302,12 +382,12 @@ Phase 7 changes are also present in the current worktree:
 Verification:
 
 - `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
-- `npm test` passed: 59 test files, 239 tests.
+- `npm test` passed: 59 test files, 243 tests.
 - `npm run build` passed, with `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
 
 ## Known Limitations
 
-- The new App Quality GitHub Actions workflow has not run on GitHub in this session.
+- The new CI/App Quality GitHub Actions workflows have not run on GitHub in this session.
 - The Supabase migration for recommendation storage still has not been pushed/applied remotely in this phase.
 - Shop accessory analysis is still deterministic and rule-based; it does not yet use learned user preference weights.
 - Bag and accessory scoring uses existing closet metadata only; it does not yet infer detailed occasion constraints from calendars, travel plans, or OOTD history.
@@ -316,7 +396,8 @@ Verification:
 - Travel scenes do not yet include explicit `步行` or `旅行` options, so the algorithm treats `户外`, `休闲`, and longer trips as walking-heavy signals.
 - Inspiration formula matching still depends on image-analysis metadata quality; weak AI output falls back to generic formula text.
 - Closet items do not yet store explicit silhouette/layer-role fields, so the matcher infers them from category, subcategory, and style tags.
+- Inspiration preference distance is still a deterministic heuristic and does not yet learn from Looks-specific feedback.
 
 ## Recommended Next Prompt
 
-Continue the Recommendation Engine landing audit with the next non-8D phase: verify remote Supabase migration status for `recommendation_preferences` and `outfit_feedback_events`, confirm the new App Quality workflow on GitHub after push, and then clean up stale project-status wording such as the old Shop core-clothing limitation in `PROGRESS.md`.
+Next phase: push the local Recommendation Engine commits, verify GitHub CI/App Quality runs on GitHub, and verify remote Supabase has `recommendation_preferences` and `outfit_feedback_events` applied. Do not start another recommendation feature until remote CI and migration status are confirmed.

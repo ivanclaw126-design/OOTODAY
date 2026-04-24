@@ -37,6 +37,7 @@ export type InspirationClosetMatch = {
   matchedItems: ClosetItemCardData[]
   matchReason: string
   substituteSuggestion: string | null
+  preferenceNote?: string | null
   scoreBreakdown?: InspirationMatchScoreBreakdown
 }
 
@@ -48,6 +49,9 @@ export type InspirationMatchScoreBreakdown = {
   silhouetteScore: number
   styleScore: number
   layerRoleScore: number
+  preferenceAdjustment?: number
+  distanceFromDailyStyle?: number
+  blockedByHardAvoid?: boolean
   matchType: 'sameCategory' | 'formulaSubstitute' | 'missing'
 }
 

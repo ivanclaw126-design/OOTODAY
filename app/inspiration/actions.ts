@@ -6,6 +6,7 @@ import { analyzeInspirationImage } from '@/lib/inspiration/analyze-inspiration-i
 import { buildInspirationRemixPlan } from '@/lib/inspiration/build-inspiration-remix-plan'
 import { matchClosetToInspiration } from '@/lib/inspiration/match-closet-to-inspiration'
 import { resolveInspirationInput } from '@/lib/inspiration/resolve-inspiration-input'
+import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 
 export async function analyzeInspirationAction({ sourceUrl }: { sourceUrl: string }) {
   const session = await getSession()
@@ -23,11 +24,12 @@ export async function analyzeInspirationAction({ sourceUrl }: { sourceUrl: strin
     }
   }
 
-  const [breakdown, closet] = await Promise.all([
+  const [breakdown, closet, preferenceState] = await Promise.all([
     analyzeInspirationImage(resolved.imageUrl),
-    getClosetView(session.user.id)
+    getClosetView(session.user.id),
+    getPreferenceState({ userId: session.user.id })
   ])
-  const closetMatches = matchClosetToInspiration(breakdown, closet.items)
+  const closetMatches = matchClosetToInspiration(breakdown, closet.items, preferenceState)
 
   return {
     error: null,
