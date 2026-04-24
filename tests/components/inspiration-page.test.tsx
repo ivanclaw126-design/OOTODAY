@@ -76,13 +76,22 @@ describe('InspirationPage', () => {
           summary: '极简通勤感很强的一套黑白配色',
           scene: '工作日通勤',
           vibe: '克制、利落',
+          colorFormula: '黑白基础色 + 灰色过渡',
+          silhouetteFormula: '短外套 + 直筒下装',
+          layeringFormula: '外短内长',
+          focalPoint: '黑色西装外套',
           keyItems: [
             {
               id: 'item-1',
               label: '西装外套',
               category: '外套',
+              slot: 'outerLayer',
               colorHint: '黑色',
-              styleTags: ['通勤']
+              silhouette: '短款硬挺',
+              layerRole: 'outer',
+              importance: 'high',
+              styleTags: ['通勤'],
+              alternatives: ['短夹克']
             }
           ],
           stylingTips: ['保持线条干净'],
@@ -94,8 +103,13 @@ describe('InspirationPage', () => {
               id: 'item-1',
               label: '西装外套',
               category: '外套',
+              slot: 'outerLayer',
               colorHint: '黑色',
-              styleTags: ['通勤']
+              silhouette: '短款硬挺',
+              layerRole: 'outer',
+              importance: 'high',
+              styleTags: ['通勤'],
+              alternatives: ['短夹克']
             },
             matchedItems: [
               {
@@ -109,7 +123,9 @@ describe('InspirationPage', () => {
                 wearCount: 0,
                 createdAt: '2026-04-22T00:00:00Z'
               }
-            ]
+            ],
+            matchReason: '按类别/slot、颜色、轮廓、风格标签和层次角色综合排序。',
+            substituteSuggestion: null
           }
         ],
         remixPlan: {
@@ -124,8 +140,13 @@ describe('InspirationPage', () => {
                 id: 'item-1',
                 label: '西装外套',
                 category: '外套',
+                slot: 'outerLayer',
                 colorHint: '黑色',
-                styleTags: ['通勤']
+                silhouette: '短款硬挺',
+                layerRole: 'outer',
+                importance: 'high',
+                styleTags: ['通勤'],
+                alternatives: ['短夹克']
               },
               matchedItem: {
                 id: 'coat-1',
@@ -167,7 +188,12 @@ describe('InspirationPage', () => {
     })
 
     expect(screen.getByText('极简通勤感很强的一套黑白配色')).toBeInTheDocument()
+    expect(screen.getByText('色彩公式 · 黑白基础色 + 灰色过渡')).toBeInTheDocument()
+    expect(screen.getByText('轮廓公式 · 短外套 + 直筒下装')).toBeInTheDocument()
     expect(screen.getByText('西装外套 · 外套')).toBeInTheDocument()
+    expect(screen.getByText(/外套 · outerLayer · 黑色 · 短款硬挺/)).toBeInTheDocument()
+    expect(screen.getByText('可替代：短夹克')).toBeInTheDocument()
+    expect(screen.getByText('按类别/slot、颜色、轮廓、风格标签和层次角色综合排序。')).toBeInTheDocument()
     expect(screen.getByText('保持线条干净')).toBeInTheDocument()
     expect(screen.getByText('我的版本怎么穿')).toBeInTheDocument()
     expect(screen.getByText('完成度：1/1')).toBeInTheDocument()
@@ -189,6 +215,10 @@ describe('InspirationPage', () => {
           summary: '干净利落的通勤 look',
           scene: '通勤',
           vibe: '利落',
+          colorFormula: '黑白基础色',
+          silhouetteFormula: '利落直线',
+          layeringFormula: '轻外层',
+          focalPoint: '肩线',
           keyItems: [],
           stylingTips: [],
           colorStrategyNotes: []

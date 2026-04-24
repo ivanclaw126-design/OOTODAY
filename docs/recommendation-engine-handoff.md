@@ -2,52 +2,33 @@
 
 ## Current Phase Completed
 
-Phase 8A Shop accessory-category purchase analysis is implemented.
+Phase 8C Inspiration formula-based matching is implemented.
 
-Shop now supports purchase analysis for the full recommendable fashion category set:
-
-- `上装`
-- `下装`
-- `连体/全身装`
-- `外层`
-- `鞋履`
-- `包袋`
-- `配饰`
-
-The old Shop result surface still displays `recommendation`, `duplicateRisk`, `estimatedOutfitCount`, and `missingCategoryHints`. Phase 8A adds slot-aware fields so shoes, bags, and accessories are not judged by the same logic as tops/bottoms.
+Inspiration now moves beyond simple same-category matching. The AI breakdown extracts outfit formulas, key items carry slot/shape/layer metadata, closet matching uses a weighted formula score, and the UI can explain substitutes when the closet has no same-category item.
 
 ## Files Changed
 
-- `lib/shop/types.ts`
-  - Adds `ShopWardrobeGapType`.
-  - Extends `ShopPurchaseAnalysis` with:
-    - `unlocksOutfitCount`
-    - `completesIncompleteOutfitCount`
-    - `fillsWardrobeGap`
-    - `gapType`
-- `lib/shop/analyze-purchase-candidate.ts`
-  - Exports `supportedFashionCategories` covering core clothing plus shoes, bags, and accessories.
-  - Updates unsupported-category copy for the broader fashion item set.
-  - Keeps core clothing logic compatible with previous behavior.
-  - Adds shoe logic: estimates how many existing core outfits the shoes can finish.
-  - Adds bag logic: evaluates scene completeness plus color/style echo.
-  - Adds accessory logic: treats accessories as visual focus or style reinforcement, not a simple outfit-count multiplier.
-  - Adds wardrobe gap classification:
-    - `coreOutfit`
-    - `shoeFinisher`
-    - `sceneBag`
-    - `visualFocus`
-    - `styleReinforcement`
-- `components/shop/shop-page.tsx`
-  - Keeps the existing recommendation / duplicate-risk / yield / missing-hints layout.
-  - Shows slot-aware labels such as `收尾套数`, `场景补全`, and `强化套数`.
-  - Adds optional gap metric cards for wardrobe gap type, unlock count, and completion count.
-- `tests/lib/shop/analyze-purchase-candidate.test.ts`
-  - Covers supported categories, shoes, bags, and accessories.
-- `tests/components/shop-page.test.tsx`
-  - Covers the new slot-aware gap metrics in the UI.
-- `tests/app/shop/actions.test.ts`
-  - Updates unsupported-category copy.
+- `lib/inspiration/types.ts`
+  - Adds `colorFormula`, `silhouetteFormula`, `layeringFormula`, and `focalPoint` to `InspirationBreakdown`.
+  - Extends `InspirationKeyItem` with optional `slot`, `silhouette`, `layerRole`, `importance`, and `alternatives`.
+  - Extends closet matches with `matchReason` and `substituteSuggestion`.
+- `lib/inspiration/analyze-inspiration-image.ts`
+  - Updates the AI prompt to request scene, color formula, silhouette formula, layering formula, focal point, key items, and substitute options.
+  - Parses the new formula and key-item metadata with fallbacks for incomplete AI output.
+- `lib/inspiration/match-closet-to-inspiration.ts`
+  - Replaces category-only filtering with weighted scoring across category, slot, color compatibility, silhouette tokens, style tags, and layer role.
+  - Returns formula-based substitutes when no same-category closet item exists.
+- `lib/inspiration/build-inspiration-remix-plan.ts`
+  - Uses formula fields in the summary.
+  - Explains when a matched item is a formula substitute rather than a same-category replacement.
+- `components/inspiration/inspiration-page.tsx`
+  - Shows color, silhouette, layering, and focal-point formulas.
+  - Shows key-item slot/shape/layer/importance metadata and alternatives.
+  - Shows match reasons and substitute suggestions.
+- `tests/lib/inspiration/*.test.ts`
+  - Covers AI parsing, formula scoring, substitute suggestions, remix copy, and color strategy compatibility.
+- `tests/components/inspiration-page.test.tsx`
+  - Covers formula display, key-item metadata, alternatives, and match explanations.
 
 Phase 7 changes are also present in the current worktree:
 
@@ -73,6 +54,15 @@ Phase 7 changes are also present in the current worktree:
   - `supportedFashionCategories`
   - `getUnsupportedShopCategoryMessage(category)`
   - `analyzePurchaseCandidate(candidate, closetItems)`
+- Inspiration APIs:
+  - `analyzeInspirationImage(imageUrl)`
+  - `matchClosetToInspiration(breakdown, closetItems)`
+  - `buildInspirationRemixPlan(breakdown, closetMatches)`
+- Travel APIs:
+  - `buildTravelPackingPlan({ destinationCity, days, scenes, items, weather })`
+  - `TravelPackingEntry.slot`
+  - `TravelDailyPlanEntry.shoeSummary`
+  - `TravelDailyPlanEntry.bagSummary`
 - Storage APIs:
   - `getPreferenceState({ userId, now?, supabase? })`
   - `savePreferenceState({ userId, state, questionnaireAnswers?, supabase? })`
@@ -100,16 +90,38 @@ Phase 7 changes are also present in the current worktree:
 - Shop shoes estimate how many core outfits they can finish.
 - Shop bags evaluate scenario completeness and color/style echo.
 - Shop accessories are treated as visual focus or style reinforcement rather than direct outfit-count unlocks.
+- Travel keeps generating a plan without shoe or bag data.
+- Travel commute/formal scenes prioritize formal shoes and bags when available.
+- Travel outdoor, walking-heavy, or longer trips prioritize comfortable shoes.
+- Travel long trips can add backup shoes when there is another available pair.
+- Travel cold-weather and long-trip plans still preserve outerwear handling.
+- Travel missing hints explicitly explain missing shoes, bags, and outerwear impact.
+- Inspiration AI output includes outfit formulas: color, silhouette, layering, and focal point.
+- Inspiration key items can carry slot, silhouette, layer role, importance, and alternatives.
+- Inspiration closet matching is formula-weighted instead of category-only.
+- Inspiration can recommend substitutes when no same-category closet item exists.
 
 ## Tests Added Or Updated
 
-- Shop analyzer tests cover:
+- Inspiration tests cover:
+  - AI parsing for formula fields and key-item metadata
+  - weighted formula matching by category/slot/color/silhouette/style/layer
+  - substitute suggestions when no same-category item exists
+  - remix summary copy based on formulas
+  - formula and substitute UI rendering
+- Phase 8B Travel tests remain:
+  - no-shoe/no-bag fallback plan generation
+  - formal shoes for commute/formal trips
+  - comfortable shoes for outdoor/walking-heavy trips
+  - backup shoes for longer trips
+  - bag selection for commute/formal scenarios
+  - missing hints for shoes, bags, and outerwear
+- Travel component tests cover shoe/bag packing entries and daily chips.
+- Phase 8A Shop tests remain:
   - expanded supported category set
   - shoes as outfit finishers
   - bags as scene/color completion
   - accessories as visual focus / style reinforcement
-- Shop component tests cover slot-aware wardrobe gap metrics.
-- Shop action tests cover the updated unsupported-category copy.
 - Phase 7 tests remain:
   - deterministic exploration helpers
   - Today inspiration insertion / no insertion when rate is 0
@@ -118,8 +130,8 @@ Phase 7 changes are also present in the current worktree:
 Verification:
 
 - `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
-- `npm test` passed: 59 test files, 231 tests.
-- `npm run build` passed, with `/preferences`, `/settings`, `/shop`, and `/today` in the route list.
+- `npm test` passed: 59 test files, 233 tests.
+- `npm run build` passed, with `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
 
 ## Known Limitations
 
@@ -127,7 +139,11 @@ Verification:
 - Shop accessory analysis is still deterministic and rule-based; it does not yet use learned user preference weights.
 - Bag and accessory scoring uses existing closet metadata only; it does not yet infer detailed occasion constraints from calendars, travel plans, or OOTD history.
 - Accessories still share the old `estimatedOutfitCount` display slot for compatibility, even though the recommendation reason frames them as visual/style reinforcement.
+- Travel shoe and bag selection is still deterministic and metadata-based; it does not yet use learned recommendation preference weights.
+- Travel scenes do not yet include explicit `步行` or `旅行` options, so the algorithm treats `户外`, `休闲`, and longer trips as walking-heavy signals.
+- Inspiration formula matching still depends on image-analysis metadata quality; weak AI output falls back to generic formula text.
+- Closet items do not yet store explicit silhouette/layer-role fields, so the matcher infers them from category, subcategory, and style tags.
 
 ## Recommended Next Prompt
 
-Implement Phase 8B preference-aware Shop ranking. Use recommendation preference weights and Today feedback signals to adjust Shop purchase recommendations, especially for shoes, bags, and accessories, while keeping the expanded slot-aware fields from Phase 8A.
+Implement Phase 8D: make Inspiration formula matching preference-aware. Use recommendation preference weights and Today feedback signals to adjust formula priorities, especially focal point, color risk, layering complexity, comfort vs styling, and exploration tolerance.

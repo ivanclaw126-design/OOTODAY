@@ -1,15 +1,21 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import { buildPaletteColorStrategyNotes } from '@/lib/closet/color-strategy'
 import {
+  isBagCategory,
   isBottomCategory,
   isOnePieceCategory,
   isOuterwearCategory,
+  isShoesCategory,
   isTopCategory
 } from '@/lib/closet/taxonomy'
-import type { TravelDailyPlanEntry, TravelPackingEntry, TravelPackingPlan, TravelPlannerInput, TravelScene } from '@/lib/travel/types'
+import type { TravelDailyPlanEntry, TravelPackingEntry, TravelPackingPlan, TravelPackingSlot, TravelPlannerInput, TravelScene } from '@/lib/travel/types'
 
 function describeItem(item: ClosetItemCardData) {
   return [item.colorCategory, item.subCategory ?? item.category].filter(Boolean).join(' ')
+}
+
+function itemSearchText(item: ClosetItemCardData) {
+  return [item.category, item.subCategory, item.colorCategory, ...item.styleTags].filter(Boolean).join(' ').toLowerCase()
 }
 
 function sortForTravel(left: ClosetItemCardData, right: ClosetItemCardData) {
@@ -33,7 +39,14 @@ function pickItems(items: ClosetItemCardData[], quantity: number) {
     .slice(0, Math.max(0, quantity))
 }
 
-function buildEntry(id: string, categoryLabel: string, quantity: number, items: ClosetItemCardData[], reason: string): TravelPackingEntry | null {
+function buildEntry(
+  id: string,
+  categoryLabel: string,
+  quantity: number,
+  items: ClosetItemCardData[],
+  reason: string,
+  slot?: TravelPackingSlot
+): TravelPackingEntry | null {
   const selected = pickItems(items, quantity)
 
   if (selected.length === 0) {
@@ -42,6 +55,7 @@ function buildEntry(id: string, categoryLabel: string, quantity: number, items: 
 
   return {
     id,
+    slot,
     categoryLabel,
     quantity: Math.min(quantity, selected.length),
     itemLabels: selected.map((item) => describeItem(item) || item.category),
@@ -50,12 +64,50 @@ function buildEntry(id: string, categoryLabel: string, quantity: number, items: 
   }
 }
 
+function buildSelectedEntry(
+  id: string,
+  categoryLabel: string,
+  selected: ClosetItemCardData[],
+  reason: string,
+  slot: TravelPackingSlot
+): TravelPackingEntry | null {
+  if (selected.length === 0) {
+    return null
+  }
+
+  return {
+    id,
+    slot,
+    categoryLabel,
+    quantity: selected.length,
+    itemLabels: selected.map((item) => describeItem(item) || item.category),
+    selectedItems: selected,
+    reason
+  }
+}
+
+function uniqueItems(items: ClosetItemCardData[]) {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    if (seen.has(item.id)) {
+      return false
+    }
+
+    seen.add(item.id)
+    return true
+  })
+}
+
 function buildDailyPlan({
   days,
   tops,
   bottoms,
   dresses,
   outerwear,
+  formalShoes,
+  comfortShoes,
+  backupShoes,
+  bags,
   scenes
 }: {
   days: number
@@ -63,36 +115,66 @@ function buildDailyPlan({
   bottoms: ClosetItemCardData[]
   dresses: ClosetItemCardData[]
   outerwear: ClosetItemCardData[]
+  formalShoes: ClosetItemCardData[]
+  comfortShoes: ClosetItemCardData[]
+  backupShoes: ClosetItemCardData[]
+  bags: ClosetItemCardData[]
   scenes: TravelScene[]
 }): TravelDailyPlanEntry[] {
   const rankedTops = [...tops].sort(sortForTravel)
   const rankedBottoms = [...bottoms].sort(sortForTravel)
   const rankedDresses = [...dresses].sort(sortForTravel)
   const rankedOuterwear = [...outerwear].sort(sortForTravel)
+  const rankedFormalShoes = [...formalShoes].sort(sortForTravel)
+  const rankedComfortShoes = [...comfortShoes].sort(sortForTravel)
+  const rankedBackupShoes = [...backupShoes].sort(sortForTravel)
+  const rankedBags = [...bags].sort(sortForTravel)
+  const formalTrip = includesFormalScene(scenes)
+  const walkingTrip = includesWalkingHeavyScene(scenes, days)
 
   return Array.from({ length: days }, (_, index) => {
     const top = rankedTops.length > 0 ? rankedTops[index % rankedTops.length] : null
     const bottom = rankedBottoms.length > 0 ? rankedBottoms[index % rankedBottoms.length] : null
     const dress = rankedDresses.length > 0 && includesLeisureScene(scenes) && index % 3 === 2 ? rankedDresses[0] : null
     const layer = rankedOuterwear[0] ?? null
+    const shoe =
+      formalTrip && index === 0 && rankedFormalShoes.length > 0
+        ? rankedFormalShoes[0]
+        : walkingTrip && rankedComfortShoes.length > 0
+          ? rankedComfortShoes[index % rankedComfortShoes.length]
+          : rankedFormalShoes[0] ?? rankedComfortShoes[0] ?? rankedBackupShoes[0] ?? null
+    const backupShoe = rankedBackupShoes.length > 0 && days >= 4 && index === days - 1 ? rankedBackupShoes[0] : null
+    const bag = rankedBags[0] ?? null
+    const shoeForSummary = backupShoe ?? shoe
     const focus =
       index === 0
-        ? '先用最稳的一套开局，减少到达当天的决策负担。'
+        ? formalTrip && (shoeForSummary || bag)
+          ? '先用正式度更稳的鞋包开局，减少到达当天的决策负担。'
+          : '先用最稳的一套开局，减少到达当天的决策负担。'
         : index % 2 === 1
-          ? '这一天优先复穿下装，只换上衣，让行李体积真正降下来。'
-          : '这一天保留基础轮廓，靠上衣或场景切换做变化。'
+          ? walkingTrip && shoeForSummary
+            ? '这一天优先照顾步行舒适度，上下装复穿也不会影响落地执行。'
+            : '这一天优先复穿下装，只换上衣，让行李体积真正降下来。'
+          : backupShoe
+            ? '最后一天用备用鞋降低连续穿同一双的疲劳感。'
+            : '这一天保留基础轮廓，靠上衣或场景切换做变化。'
 
-    const outfitSummary = dress
+    const coreSummary = dress
       ? `${describeItem(dress) || '连衣裙'}${layer ? ` + ${describeItem(layer) || '外层'}` : ''}`
       : [top ? describeItem(top) || '上衣' : '待补上衣', bottom ? describeItem(bottom) || '下装' : '待补下装', layer ? describeItem(layer) || '外层' : null]
           .filter(Boolean)
           .join(' + ')
+    const shoeSummary = shoeForSummary ? describeItem(shoeForSummary) || '鞋履' : null
+    const bagSummary = bag ? describeItem(bag) || '包袋' : null
+    const outfitSummary = [coreSummary, shoeSummary, bagSummary].filter(Boolean).join(' + ')
 
     return {
       dayLabel: `第 ${index + 1} 天`,
       outfitSummary,
+      shoeSummary,
+      bagSummary,
       focus,
-      selectedItems: [dress, top, bottom, layer].filter((item): item is ClosetItemCardData => item !== null)
+      selectedItems: uniqueItems([dress, top, bottom, layer, shoeForSummary, bag].filter((item): item is ClosetItemCardData => item !== null))
     }
   })
 }
@@ -103,6 +185,25 @@ function includesFormalScene(scenes: TravelScene[]) {
 
 function includesLeisureScene(scenes: TravelScene[]) {
   return scenes.includes('休闲') || scenes.includes('约会') || scenes.includes('户外')
+}
+
+function includesWalkingHeavyScene(scenes: TravelScene[], days: number) {
+  return scenes.includes('户外') || scenes.includes('休闲') || days >= 4
+}
+
+function isFormalShoe(item: ClosetItemCardData) {
+  const text = itemSearchText(item)
+  return ['正式', '通勤', '商务', '皮鞋', '乐福', '高跟', '短靴', '靴子', 'loaf', 'heel', 'boot'].some((token) => text.includes(token))
+}
+
+function isComfortShoe(item: ClosetItemCardData) {
+  const text = itemSearchText(item)
+  return ['舒适', '休闲', '运动', '平底', '凉鞋', '拖鞋', '户外', '徒步', 'sneaker', 'walking', 'flat', 'sandal'].some((token) => text.includes(token))
+}
+
+function isFormalBag(item: ClosetItemCardData) {
+  const text = itemSearchText(item)
+  return ['正式', '通勤', '商务', '托特', '单肩', '手提', '电脑', 'tote', 'work'].some((token) => text.includes(token))
 }
 
 function buildColorStrategyNotes(items: ClosetItemCardData[]) {
@@ -130,6 +231,21 @@ export function buildTravelPackingPlan({
   const bottoms = items.filter((item) => isBottomCategory(item.category))
   const dresses = items.filter((item) => isOnePieceCategory(item.category))
   const outerwear = items.filter((item) => isOuterwearCategory(item.category))
+  const shoes = items.filter((item) => isShoesCategory(item.category))
+  const bags = items.filter((item) => isBagCategory(item.category))
+  const formalTrip = includesFormalScene(scenes)
+  const walkingTrip = includesWalkingHeavyScene(scenes, days)
+  const formalShoeCandidates = shoes.filter(isFormalShoe)
+  const comfortShoeCandidates = shoes.filter((item) => isComfortShoe(item) || !isFormalShoe(item))
+  const formalBagCandidates = bags.filter(isFormalBag)
+  const selectedFormalShoes = formalTrip ? pickItems(formalShoeCandidates, 1) : []
+  const selectedComfortShoes = walkingTrip || selectedFormalShoes.length === 0 ? pickItems(comfortShoeCandidates, 1) : []
+  const selectedShoeIds = new Set([...selectedFormalShoes, ...selectedComfortShoes].map((item) => item.id))
+  const selectedBackupShoes =
+    shoes.length > selectedShoeIds.size && (days >= 4 || walkingTrip)
+      ? pickItems(shoes.filter((item) => !selectedShoeIds.has(item.id)), 1)
+      : []
+  const selectedBags = bags.length > 0 ? pickItems(formalTrip && formalBagCandidates.length > 0 ? formalBagCandidates : bags, 1) : []
 
   const topQuantity = Math.max(2, Math.min(tops.length, Math.ceil(days / 2) + (includesFormalScene(scenes) ? 1 : 0)))
   const bottomQuantity = Math.max(1, Math.min(bottoms.length, Math.ceil(days / 3)))
@@ -143,10 +259,14 @@ export function buildTravelPackingPlan({
       : 0
 
   const entries = [
-    buildEntry('tops', '上衣', topQuantity, tops, '上衣按 2 天左右轮换一次来带，能兼顾体积和变化。'),
-    buildEntry('bottoms', '下装', bottomQuantity, bottoms, '下装复穿频率可以更高，优先带最稳的基础款。'),
-    buildEntry('dresses', '连体/全身装', dressQuantity, dresses, '如果行程里有休闲或约会场景，带一件连体/全身装能快速起完整造型。'),
-    buildEntry('outerwear', '外层', outerwearQuantity, outerwear, '外层主要承担温差和正式感，带 1 件最稳的就够。')
+    buildEntry('tops', '上衣', topQuantity, tops, '上衣按 2 天左右轮换一次来带，能兼顾体积和变化。', 'tops'),
+    buildEntry('bottoms', '下装', bottomQuantity, bottoms, '下装复穿频率可以更高，优先带最稳的基础款。', 'bottoms'),
+    buildEntry('dresses', '连体/全身装', dressQuantity, dresses, '如果行程里有休闲或约会场景，带一件连体/全身装能快速起完整造型。', 'dresses'),
+    buildEntry('outerwear', '外层', outerwearQuantity, outerwear, '外层主要承担温差和正式感，带 1 件最稳的就够。', 'outerwear'),
+    buildSelectedEntry('formal-shoes', '正式鞋', selectedFormalShoes, '通勤或正式场景先放一双正式度更稳的鞋，整体完成度会更可靠。', 'formalShoes'),
+    buildSelectedEntry('comfort-shoes', '舒适鞋', selectedComfortShoes, '户外、步行或长途旅行优先保证脚感，一双舒适鞋比多带一件上衣更关键。', 'comfortShoes'),
+    buildSelectedEntry('backup-shoes', '备用鞋', selectedBackupShoes, '行程较长时准备一双备用鞋，能降低连续穿同一双的疲劳和天气风险。', 'backupShoes'),
+    buildSelectedEntry('bags', '包袋', selectedBags, formalTrip ? '通勤或正式场景需要包袋承接电脑、证件和整体正式感。' : '带一只颜色稳定的包袋，能把每日组合收完整。', 'bags')
   ].filter((entry): entry is TravelPackingEntry => entry !== null)
 
   const missingHints: string[] = []
@@ -160,11 +280,27 @@ export function buildTravelPackingPlan({
   }
 
   if ((weather?.isCold || days >= 4) && outerwear.length === 0) {
-    missingHints.push('这趟更适合带一件外层，但当前衣橱里没有可直接打包的外层。')
+    missingHints.push('这趟更适合带一件外层，但当前衣橱里没有可直接打包的外层，冷天或长途温差会更难处理。')
   }
 
   if (includesFormalScene(scenes) && tops.length === 0) {
     missingHints.push('行程包含通勤或正式场景，但衣橱里缺少足够稳的正式上衣。')
+  }
+
+  if (shoes.length === 0) {
+    missingHints.push('当前衣橱里没有可打包鞋履，计划仍能生成，但实际出行前需要先补一双能覆盖主要行程的鞋。')
+  } else {
+    if (formalTrip && selectedFormalShoes.length === 0) {
+      missingHints.push('行程包含通勤或正式场景，但现有鞋履正式度不够，会影响整体利落感和场景适配。')
+    }
+
+    if (walkingTrip && selectedComfortShoes.length === 0) {
+      missingHints.push('这趟包含户外、步行或长途场景，但缺少舒适鞋，会影响全天行走体验。')
+    }
+  }
+
+  if (bags.length === 0) {
+    missingHints.push(formalTrip ? '通勤或正式场景缺少包袋，会影响电脑、证件携带和整套造型完整度。' : '当前衣橱里没有可打包包袋，每天随身物品和造型收尾都需要额外处理。')
   }
 
   const baseOutfitCount = dresses.length > 0 && includesLeisureScene(scenes) ? dressQuantity + Math.min(topQuantity, bottomQuantity) : Math.min(topQuantity, bottomQuantity)
@@ -181,10 +317,14 @@ export function buildTravelPackingPlan({
       : '天气数据暂时不可用，这份清单先按衣橱稳定度和场景覆盖来排。'
   ]
 
-  notes.push(...buildColorStrategyNotes([...tops, ...bottoms, ...dresses, ...outerwear]))
+  notes.push(...buildColorStrategyNotes([...tops, ...bottoms, ...dresses, ...outerwear, ...shoes, ...bags]))
 
   if (includesFormalScene(scenes)) {
-    notes.push('正式或通勤场景优先靠深色下装和一件外层稳住，不需要每一天都完全换新。')
+    notes.push('正式或通勤场景优先靠深色下装、外层、正式鞋和包袋稳住，不需要每一天都完全换新。')
+  }
+
+  if (walkingTrip) {
+    notes.push('户外、步行或长途旅行先保住舒适鞋，再考虑造型变化。')
   }
 
   const dailyPlan = buildDailyPlan({
@@ -193,6 +333,10 @@ export function buildTravelPackingPlan({
     bottoms,
     dresses,
     outerwear,
+    formalShoes: selectedFormalShoes,
+    comfortShoes: selectedComfortShoes,
+    backupShoes: selectedBackupShoes,
+    bags: selectedBags,
     scenes
   })
 

@@ -360,6 +360,20 @@ export function TravelPage({
                   <div key={entry.dayLabel} className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.68)] p-4">
                     <p className="text-sm font-medium">{entry.dayLabel}</p>
                     <p className="mt-1 text-sm">{entry.outfitSummary}</p>
+                    {entry.shoeSummary || entry.bagSummary ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {entry.shoeSummary ? (
+                          <span className="rounded-full border border-[var(--color-line)] bg-white/70 px-3 py-1 text-xs text-[var(--color-neutral-dark)]">
+                            鞋履：{entry.shoeSummary}
+                          </span>
+                        ) : null}
+                        {entry.bagSummary ? (
+                          <span className="rounded-full border border-[var(--color-line)] bg-white/70 px-3 py-1 text-xs text-[var(--color-neutral-dark)]">
+                            包袋：{entry.bagSummary}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <p className="mt-2 text-sm leading-6 text-[var(--color-neutral-dark)]">{entry.focus}</p>
                     {(entry.selectedItems ?? []).length > 0 ? (
                       <div className="mt-3">
