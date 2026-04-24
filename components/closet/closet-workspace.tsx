@@ -72,6 +72,7 @@ export function ClosetWorkspace({
   const [replaceImageError, setReplaceImageError] = useState<string | null>(null)
   const [replaceImageNotice, setReplaceImageNotice] = useState<string | null>(null)
   const [isReplaceDragActive, setIsReplaceDragActive] = useState(false)
+  const [isReplaceImageExpanded, setIsReplaceImageExpanded] = useState(false)
   const [browseMode, setBrowseMode] = useState<'all' | ClosetBrowseMode>('category')
   const [activeBrowseGroupValue, setActiveBrowseGroupValue] = useState<string | null>(null)
   const [usageView, setUsageView] = useState<UsageView>('all')
@@ -331,6 +332,7 @@ export function ClosetWorkspace({
     setReplaceImageError(null)
     setReplaceImageNotice(null)
     setIsReplaceDragActive(false)
+    setIsReplaceImageExpanded(false)
   }
 
   function handleBrowseModeChange(nextMode: 'all' | ClosetBrowseMode) {
@@ -543,6 +545,10 @@ export function ClosetWorkspace({
   function handleEditItem(item: ClosetItemCardData) {
     setEditingItemId(item.id)
     setEditingError(null)
+    setReplaceImageSourceUrl('')
+    setReplaceImageError(null)
+    setReplaceImageNotice(null)
+    setIsReplaceImageExpanded(false)
     setEditingDraft({
       imageUrl: item.imageUrl ?? '',
       category: item.category,
@@ -557,6 +563,7 @@ export function ClosetWorkspace({
   }
 
   async function handleReanalyzeItem(item: ClosetItemCardData) {
+    setIsReplaceImageExpanded(false)
     setEditingItemId(item.id)
     setEditingDraft({
       imageUrl: item.imageUrl ?? '',
@@ -847,74 +854,96 @@ export function ClosetWorkspace({
                   ) : null}
 
                   {currentEditingItem ? (
-                    <div className="grid gap-3 rounded-[1.1rem] border border-[var(--color-line)] bg-white/70 p-3">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
+                    <div className="grid gap-2 rounded-[1.1rem] border border-[var(--color-line)] bg-white/70 p-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0">
                           <p className="text-sm font-semibold text-[var(--color-primary)]">更换衣物图片</p>
                           <p className="text-xs leading-5 text-[var(--color-neutral-dark)]">
-                            支持重新上传、拖拽图片，或粘贴商品链接。替换前会二次确认。
+                            上传、拖拽或粘贴链接，替换前会二次确认。
                           </p>
                         </div>
-                        {currentEditingItem.canRestoreOriginal ? (
+                        <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
-                            className="rounded-full border border-[var(--color-line)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary)]"
-                            onClick={() => void handleRestoreOriginalImage(currentEditingItem)}
-                            disabled={isReplacingImage || flippingItemId === currentEditingItem.id}
+                            className="rounded-full border border-[var(--color-line)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-primary)]"
+                            onClick={() => void handleReanalyzeItem(currentEditingItem)}
+                            disabled={reanalyzingItemId === currentEditingItem.id || isReplacingImage}
                           >
-                            撤销本次更换
+                            {reanalyzingItemId === currentEditingItem.id ? '重新识别中…' : '再次识别当前图片'}
                           </button>
-                        ) : null}
+                          {currentEditingItem.canRestoreOriginal ? (
+                            <button
+                              type="button"
+                              className="rounded-full border border-[var(--color-line)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-primary)]"
+                              onClick={() => void handleRestoreOriginalImage(currentEditingItem)}
+                              disabled={isReplacingImage || flippingItemId === currentEditingItem.id}
+                            >
+                              撤销本次更换
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="rounded-full bg-[var(--color-primary)] px-3 py-1.5 text-xs font-semibold text-white"
+                            onClick={() => setIsReplaceImageExpanded((current) => !current)}
+                            aria-expanded={isReplaceImageExpanded}
+                          >
+                            {isReplaceImageExpanded ? '收起' : '展开'}
+                          </button>
+                        </div>
                       </div>
 
-                      <div
-                        className={`rounded-[1rem] border border-dashed p-4 text-center transition ${
-                          isReplaceDragActive
-                            ? 'border-[var(--color-primary)] bg-[var(--color-secondary)]'
-                            : 'border-[var(--color-neutral-mid)] bg-white/68'
-                        }`}
-                        onDragOver={(event) => {
-                          event.preventDefault()
-                          setIsReplaceDragActive(true)
-                        }}
-                        onDragLeave={() => setIsReplaceDragActive(false)}
-                        onDrop={handleReplaceDrop}
-                      >
-                        <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white">
-                          {isReplacingImage ? '处理中…' : '上传新图片'}
-                          <input
-                            className="sr-only"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleReplaceFileChange}
-                            disabled={isReplacingImage}
-                            aria-label="更换衣物图片"
-                          />
-                        </label>
-                        <p className="mt-2 text-xs text-[var(--color-neutral-dark)]">也可以把图片拖到这里。</p>
-                      </div>
+                      {isReplaceImageExpanded ? (
+                        <div className="grid gap-3 pt-1">
+                          <div
+                            className={`rounded-[1rem] border border-dashed p-4 text-center transition ${
+                              isReplaceDragActive
+                                ? 'border-[var(--color-primary)] bg-[var(--color-secondary)]'
+                                : 'border-[var(--color-neutral-mid)] bg-white/68'
+                            }`}
+                            onDragOver={(event) => {
+                              event.preventDefault()
+                              setIsReplaceDragActive(true)
+                            }}
+                            onDragLeave={() => setIsReplaceDragActive(false)}
+                            onDrop={handleReplaceDrop}
+                          >
+                            <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white">
+                              {isReplacingImage ? '处理中…' : '上传新图片'}
+                              <input
+                                className="sr-only"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleReplaceFileChange}
+                                disabled={isReplacingImage}
+                                aria-label="更换衣物图片"
+                              />
+                            </label>
+                            <p className="mt-2 text-xs text-[var(--color-neutral-dark)]">也可以把图片拖到这里。</p>
+                          </div>
 
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <input
-                          className="min-w-0 flex-1 rounded-full border border-[var(--color-line)] bg-white px-4 py-2 text-sm outline-none"
-                          value={replaceImageSourceUrl}
-                          onChange={(event) => setReplaceImageSourceUrl(event.target.value)}
-                          placeholder="粘贴商品链接或图片链接"
-                          disabled={isReplacingImage}
-                          aria-label="更换图片链接"
-                        />
-                        <button
-                          type="button"
-                          className="rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                          onClick={() => void handleReplaceImageFromUrl()}
-                          disabled={isReplacingImage || !replaceImageSourceUrl.trim()}
-                        >
-                          {isReplacingImage ? '导入中…' : '从链接更换'}
-                        </button>
-                      </div>
+                          <div className="flex flex-col gap-2 sm:flex-row">
+                            <input
+                              className="min-w-0 flex-1 rounded-full border border-[var(--color-line)] bg-white px-4 py-2 text-sm outline-none"
+                              value={replaceImageSourceUrl}
+                              onChange={(event) => setReplaceImageSourceUrl(event.target.value)}
+                              placeholder="粘贴商品链接或图片链接"
+                              disabled={isReplacingImage}
+                              aria-label="更换图片链接"
+                            />
+                            <button
+                              type="button"
+                              className="rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                              onClick={() => void handleReplaceImageFromUrl()}
+                              disabled={isReplacingImage || !replaceImageSourceUrl.trim()}
+                            >
+                              {isReplacingImage ? '导入中…' : '从链接更换'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
 
-                      {replaceImageNotice ? <p className="text-sm text-[var(--color-primary)]">{replaceImageNotice}</p> : null}
-                      {replaceImageError ? <p className="text-sm text-red-600">{replaceImageError}</p> : null}
+                      {replaceImageNotice ? <p className="px-1 text-sm text-[var(--color-primary)]">{replaceImageNotice}</p> : null}
+                      {replaceImageError ? <p className="px-1 text-sm text-red-600">{replaceImageError}</p> : null}
                     </div>
                   ) : null}
 
@@ -922,19 +951,7 @@ export function ClosetWorkspace({
 
                   {editingError ? <p className="text-sm text-red-600">{editingError}</p> : null}
 
-                  {currentEditingItem ? (
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <button
-                        type="button"
-                        className="text-sm font-medium text-[var(--color-primary)] underline underline-offset-2"
-                        onClick={() => void handleReanalyzeItem(currentEditingItem)}
-                        disabled={reanalyzingItemId === currentEditingItem.id}
-                      >
-                        {reanalyzingItemId === currentEditingItem.id ? '重新识别中…' : '再次识别当前图片'}
-                      </button>
-                      <p className="text-xs text-[var(--color-neutral-dark)]">保存后会立刻刷新衣橱卡片和 Today 相关数据。</p>
-                    </div>
-                  ) : null}
+                  <p className="text-xs text-[var(--color-neutral-dark)]">保存后会立刻刷新衣橱卡片和 Today 相关数据。</p>
                 </div>
               </div>
             </Card>

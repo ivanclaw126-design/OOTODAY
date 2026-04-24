@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { waitFor } from '@testing-library/react'
 import { ClosetPage } from '@/components/closet/closet-page'
@@ -457,10 +457,13 @@ describe('ClosetPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '全部衣物' }))
     fireEvent.click(screen.getByRole('button', { name: '编辑识别结果' }))
-    fireEvent.change(screen.getByLabelText('更换图片链接'), {
+    const dialog = screen.getByRole('dialog', { name: '编辑识别结果' })
+    expect(within(dialog).queryByLabelText('更换图片链接')).not.toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: '展开' }))
+    fireEvent.change(within(dialog).getByLabelText('更换图片链接'), {
       target: { value: 'https://shop.example.com/item/1' }
     })
-    fireEvent.click(screen.getByRole('button', { name: '从链接更换' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '从链接更换' }))
 
     await waitFor(() => {
       expect(analyzeImportUrl).toHaveBeenCalledWith({ sourceUrl: 'https://shop.example.com/item/1' })
