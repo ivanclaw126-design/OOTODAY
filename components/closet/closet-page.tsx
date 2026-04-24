@@ -3,7 +3,9 @@ import { AppShell } from '@/components/app-shell'
 import { ClosetSection } from '@/components/closet/closet-section'
 import { ClosetUploadCard } from '@/components/closet/closet-upload-card'
 import { ClosetWorkspace } from '@/components/closet/closet-workspace'
+import { DemoClosetImportPrompt } from '@/components/closet/demo-closet-import-prompt'
 import { EmptyState } from '@/components/ui/empty-state'
+import type { DemoClosetAudience } from '@/lib/demo/demo-closet'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult, ClosetInsights, ClosetItemCardData } from '@/lib/closet/types'
 
 type ClosetPageProps = {
@@ -28,6 +30,7 @@ type ClosetPageProps = {
   }>
   reanalyzeItem: (input: { itemId: string }) => Promise<ClosetAnalysisDraft>
   deleteItem: (input: { itemId: string }) => Promise<void>
+  copyDemoCloset?: (audience: DemoClosetAudience) => Promise<{ error: string | null; copiedCount: number }>
   updateImageRotation: (input: {
     itemId: string
     operation: 'rotate-right-90' | 'restore-original'
@@ -58,6 +61,7 @@ export function ClosetPage({
   },
   reanalyzeItem,
   deleteItem,
+  copyDemoCloset = async () => ({ error: '演示衣橱导入暂不可用', copiedCount: 0 }),
   updateImageRotation
 }: ClosetPageProps) {
   return (
@@ -88,6 +92,7 @@ export function ClosetPage({
           replaceItemImage={replaceItemImage}
           reanalyzeItem={reanalyzeItem}
           deleteItem={deleteItem}
+          copyDemoCloset={copyDemoCloset}
           updateImageRotation={updateImageRotation}
         />
       ) : (
@@ -106,12 +111,15 @@ export function ClosetPage({
             description={onboardingMode ? '先放进 3-5 件最常穿的，跑通 Today 后再继续补。' : '先放进第一件，后面就能开始整理。'}
           >
             <ClosetUploadCard
-                userId={userId}
-                storageBucket={storageBucket}
-                analyzeUpload={analyzeUpload}
-                analyzeImportUrl={analyzeImportUrl}
-                saveItem={saveItem}
-              />
+              userId={userId}
+              storageBucket={storageBucket}
+              analyzeUpload={analyzeUpload}
+              analyzeImportUrl={analyzeImportUrl}
+              saveItem={saveItem}
+            />
+            <div className="mt-4">
+              <DemoClosetImportPrompt copyDemoCloset={copyDemoCloset} />
+            </div>
           </ClosetSection>
 
           <EmptyState

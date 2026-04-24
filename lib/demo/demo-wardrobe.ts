@@ -1,4 +1,5 @@
 import demoWardrobe from '@/data/demo-wardrobe.json'
+import demoWardrobeMen from '@/data/demo-wardrobe-men.json'
 import type { ClosetAlgorithmMeta } from '@/lib/closet/types'
 
 export type DemoWardrobeItem = {
@@ -27,4 +28,5 @@ export type DemoWardrobeManifest = {
 export const DEMO_WARDROBE = demoWardrobe as DemoWardrobeManifest
 export const DEMO_WARDROBE_ITEMS = DEMO_WARDROBE.items
 export const DEMO_WARDROBE_BRAND = DEMO_WARDROBE.brand
-
+export const DEMO_WARDROBE_MEN = demoWardrobeMen as DemoWardrobeManifest
+export const DEMO_WARDROBE_MEN_ITEMS = DEMO_WARDROBE_MEN.items

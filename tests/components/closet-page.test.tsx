@@ -11,6 +11,7 @@ const updateItem = vi.fn()
 const replaceItemImage = vi.fn()
 const reanalyzeItem = vi.fn()
 const updateImageRotation = vi.fn()
+const copyDemoCloset = vi.fn()
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
@@ -31,6 +32,7 @@ vi.mock('next/navigation', () => ({
 describe('ClosetPage', () => {
   afterEach(() => {
     cleanup()
+    copyDemoCloset.mockReset()
   })
 
   it('shows the upload entry when no items exist', () => {
@@ -53,6 +55,61 @@ describe('ClosetPage', () => {
 
     expect(screen.getByText('先把第一件衣物放进来')).toBeInTheDocument()
     expect(screen.getByLabelText('选择衣物图片')).toBeInTheDocument()
+    expect(screen.getByText('想先快速体验？')).toBeInTheDocument()
+    expect(screen.getByText(/体验后可在顶部「AI 造型引擎」中清空本地衣橱/)).toBeInTheDocument()
+  })
+
+  it('copies a selected demo closet from the empty closet prompt', async () => {
+    copyDemoCloset.mockResolvedValue({ error: null, copiedCount: 46 })
+
+    render(
+      <ClosetPage
+        userId="user-1"
+        itemCount={0}
+        items={[]}
+        insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
+        deleteItem={deleteItem}
+        copyDemoCloset={copyDemoCloset}
+        updateImageRotation={updateImageRotation}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '导入演示衣橱' }))
+    expect(screen.getByRole('button', { name: /女装演示衣橱/ })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /导入男装衣橱/ }))
+
+    await waitFor(() => {
+      expect(copyDemoCloset).toHaveBeenCalledWith('mens')
+    })
+    expect(screen.getByText('已导入 46 件男装演示衣物')).toBeInTheDocument()
+  })
+
+  it('can hide the demo closet prompt', () => {
+    render(
+      <ClosetPage
+        userId="user-1"
+        itemCount={0}
+        items={[]}
+        insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
+        deleteItem={deleteItem}
+        updateImageRotation={updateImageRotation}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '关闭演示衣橱提示' }))
+    expect(screen.queryByText('想先快速体验？')).not.toBeInTheDocument()
   })
 
   it('shows beta onboarding guidance when opened from the first-run redirect', () => {

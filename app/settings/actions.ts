@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { clearUserCloset, copyDemoClosetToUser } from '@/lib/demo/demo-closet'
+import { clearUserCloset, copyDemoClosetToUser, type DemoClosetAudience } from '@/lib/demo/demo-closet'
 import { getSession } from '@/lib/auth/get-session'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 import { resetRecommendationPreferences } from '@/lib/recommendation/reset-preferences'
@@ -62,7 +62,7 @@ export async function restartStyleQuestionnaireAction() {
   redirect('/preferences')
 }
 
-export async function copyDemoClosetAction() {
+export async function copyDemoClosetAction(audience: DemoClosetAudience = 'womens') {
   const session = await getSession()
 
   if (!session) {
@@ -72,7 +72,7 @@ export async function copyDemoClosetAction() {
   await ensureProfile(session.user.id)
 
   try {
-    const result = await copyDemoClosetToUser(session.user.id)
+    const result = await copyDemoClosetToUser(session.user.id, audience)
 
     if (result.error) {
       return { error: result.error, copiedCount: 0 }

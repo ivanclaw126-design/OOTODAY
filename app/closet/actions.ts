@@ -11,6 +11,7 @@ import { saveClosetItem } from '@/lib/closet/save-closet-item'
 import { setClosetItemImageFlip } from '@/lib/closet/set-closet-item-image-flip'
 import { normalizeClosetFields } from '@/lib/closet/taxonomy'
 import { updateClosetItem } from '@/lib/closet/update-closet-item'
+import { copyDemoClosetToUser, type DemoClosetAudience } from '@/lib/demo/demo-closet'
 import { getEnv } from '@/lib/env'
 import { resolveShopInput } from '@/lib/shop/resolve-shop-input'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
@@ -217,4 +218,26 @@ export async function updateClosetItemImageRotationAction(input: {
   revalidatePath('/shop')
 
   return data
+}
+
+export async function copyDemoClosetAction(audience: DemoClosetAudience = 'womens') {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  const result = await copyDemoClosetToUser(session.user.id, audience)
+
+  if (result.error) {
+    return { error: result.error, copiedCount: 0 }
+  }
+
+  revalidatePath('/closet')
+  revalidatePath('/today')
+  revalidatePath('/travel')
+  revalidatePath('/looks')
+  revalidatePath('/shop')
+
+  return { error: null, copiedCount: result.copiedCount }
 }
