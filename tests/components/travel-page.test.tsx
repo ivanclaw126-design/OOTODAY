@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TravelPage } from '@/components/travel/travel-page'
 
 vi.mock('next/navigation', () => ({
@@ -141,7 +141,10 @@ describe('TravelPage', () => {
       'href',
       '/travel?savedPlanId=travel-1&city=%E4%B8%8A%E6%B5%B7&days=4&scene=%E9%80%9A%E5%8B%A4&scene=%E4%BC%91%E9%97%B2'
     )
-    fireEvent.click(screen.getByRole('button', { name: '删除这份方案' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '删除这份方案' }))
+    })
+
     expect(confirm).toHaveBeenCalled()
     await waitFor(() => {
       expect(deleteSavedPlan).toHaveBeenCalledWith({
@@ -149,7 +152,11 @@ describe('TravelPage', () => {
         source: 'travel_plans'
       })
     })
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '删除这份方案' })).not.toBeDisabled()
+    })
     expect(screen.getByText('风险与缺口')).toBeInTheDocument()
+    confirm.mockRestore()
   })
 
   it('submits the latest draft inputs when saving an edited plan', () => {
