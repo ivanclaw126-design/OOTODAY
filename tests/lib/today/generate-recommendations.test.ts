@@ -82,7 +82,7 @@ describe('generateTodayRecommendations', () => {
     ).toBe(true)
   })
 
-  it('explains same-family and neutral-anchor color logic in more product-like language', () => {
+  it('explains recommendation reasons through scored highlights instead of repeated boilerplate', () => {
     const sameFamilyRecommendations = generateTodayRecommendations({
       items: [
         {
@@ -161,9 +161,9 @@ describe('generateTodayRecommendations', () => {
       weather: null
     })
 
-    expect(sameFamilyRecommendations.some((recommendation) => recommendation.reason.includes('同色系深浅让层次更自然'))).toBe(true)
-    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('基础色托底'))).toBe(true)
-    expect(neutralAnchorRecommendations.some((recommendation) => recommendation.reason.includes('亮色只放在一处'))).toBe(true)
+    expect(sameFamilyRecommendations.some((recommendation) => /配色 \d+：/u.test(recommendation.reason))).toBe(true)
+    expect(neutralAnchorRecommendations.some((recommendation) => /配色 \d+：/u.test(recommendation.reason))).toBe(true)
+    expect(neutralAnchorRecommendations.some((recommendation) => /视觉重点 \d+：|完整度 \d+：/u.test(recommendation.reason))).toBe(true)
   })
 
   it('adds outer layers in cold weather when available', () => {
@@ -241,7 +241,8 @@ describe('generateTodayRecommendations', () => {
     })
 
     expect(recommendations[0]?.outerLayer?.id).toBe('outer-light')
-    expect(recommendations[0]?.reason).toContain('天气微凉，已补轻外层')
+    expect(recommendations[0]?.reason).toContain('层次')
+    expect(recommendations[0]?.reason).toContain('开衫')
     expect(recommendations[0]?.componentScores?.weatherComfort).toBeGreaterThan(80)
   })
 
@@ -633,9 +634,11 @@ describe('generateTodayRecommendations', () => {
     const inspirationRecommendations = recommendations.filter((recommendation) => recommendation.mode === 'inspiration')
 
     expect(recommendations).toHaveLength(3)
+    expect(recommendations[2]?.mode).toBe('inspiration')
     expect(inspirationRecommendations).toHaveLength(1)
     expect(inspirationRecommendations[0]?.id).toMatch(/^inspiration-/u)
-    expect(inspirationRecommendations[0]?.dailyDifference).toContain('日常')
+    expect(inspirationRecommendations[0]?.inspirationReason).toBe('灵感套装')
+    expect(inspirationRecommendations[0]?.dailyDifference).toContain('前两套')
     expect(recommendations.filter((recommendation) => recommendation.mode === 'daily')).toHaveLength(2)
   })
 

@@ -42,7 +42,7 @@
 - Latest checkpoint: not written in-session; use this snapshot if native Gstack context is missing.
 - Current blocker: no code blocker; local implementation, tests, lint, and build pass. Browser visual regression screenshots are still a follow-up.
 - Next plan to read: `docs/superpowers/plans/2026-04-23-outfit-taxonomy-color-strategy.md`
-- Intended summary if `/context-save` fails: Added `lib/recommendation/outfit-evaluator.ts` and wired Today, Shop, Inspiration, and Travel to shared scoring. The evaluator uses colors, tonal clusters, visual weight, silhouette, layer role, warmth, fabric weight, formality, comfort, pattern, scene, weather, completeness, freshness, `seasonTags`, and `algorithmMeta`, with category/subcategory/style fallback. Today and Travel now avoid 15-degree shorts/sandals when alternatives exist; Shop counts purchase value through scored outfit drafts; Inspiration reads metadata and nudges formula matching with `finalWeights`.
+- Intended summary if `/context-save` fails: Added `lib/recommendation/outfit-evaluator.ts` and wired Today, Shop, Inspiration, and Travel to shared scoring. The evaluator uses colors, tonal clusters, visual weight, silhouette, layer role, warmth, fabric weight, formality, comfort, pattern, scene, weather, completeness, freshness, `seasonTags`, and `algorithmMeta`, with category/subcategory/style fallback. Today and Travel now avoid 15-degree shorts/sandals when alternatives exist; Shop counts purchase value through scored outfit drafts; Inspiration reads metadata and nudges formula matching with `finalWeights`. Follow-up refined Today so recommendation reasons show highest scoring points and card 3 becomes a safe, diverse `灵感套装` when exploration is enabled.
 
 ## Snapshot Template
 
