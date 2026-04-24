@@ -11,6 +11,10 @@ vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient
 }))
 
+function buildFormBody(values: Record<string, string>) {
+  return new URLSearchParams(values).toString()
+}
+
 describe('auth login route', () => {
   beforeEach(() => {
     signInWithOtp.mockReset()
@@ -26,7 +30,7 @@ describe('auth login route', () => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({ email: 'user@example.com' })
+      body: buildFormBody({ email: 'user@example.com' })
     })
 
     const response = await POST(request)
@@ -53,7 +57,7 @@ describe('auth login route', () => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({ email: 'user@example.com' })
+      body: buildFormBody({ email: 'user@example.com' })
     })
 
     const response = await POST(request)

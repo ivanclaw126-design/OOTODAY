@@ -21,6 +21,10 @@ vi.mock('@/lib/beta/bootstrap', () => ({
   getBetaBootstrapState
 }))
 
+function buildFormBody(values: Record<string, string>) {
+  return new URLSearchParams(values).toString()
+}
+
 describe('auth password login route', () => {
   beforeEach(() => {
     signInWithPassword.mockReset()
@@ -44,7 +48,7 @@ describe('auth password login route', () => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({ email: 'ivanwuyh@163.com' })
+      body: buildFormBody({ email: 'ivanwuyh@163.com' })
     })
 
     const response = await POST(request)
@@ -75,7 +79,7 @@ describe('auth password login route', () => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({ email: 'ivanwuyh@163.com' })
+      body: buildFormBody({ email: 'ivanwuyh@163.com' })
     })
 
     const response = await POST(request)
@@ -96,7 +100,7 @@ describe('auth password login route', () => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({ email: 'ivanwuyh@163.com' })
+      body: buildFormBody({ email: 'ivanwuyh@163.com' })
     })
 
     const response = await POST(request)
