@@ -2,6 +2,95 @@
 
 ## Current Phase Completed
 
+Phase 1 Today recommendation generator contract fix completed on 2026-04-24.
+
+Today now exposes the object-parameter recommendation generator contract as the public API, returns the complete recommendation shape required by the Preference Engine and Today UI, and keeps complete outfit scoring active for top/bottom, dress, optional outerLayer, shoes, bag, and accessories.
+
+## Phase 1 Today Contract Fix
+
+### Files Changed
+
+- `lib/today/generate-recommendations.ts`
+  - Makes `generateTodayRecommendations({ items, weather, offset, preferenceState, explorationSeed })` the only exported call signature.
+  - Exports `GenerateTodayRecommendationsParams`.
+  - Keeps full outfit candidate generation for separates, one-piece/dress, optional outer layer, shoes, bag, and up to two accessories.
+  - Uses `preferenceState.finalWeights` for final scoring, falling back to default weights when preference state is missing.
+  - Adds rough scene/weather matching signals for shoes, bags, and outer layers.
+  - Adds missing-slot reason copy for missing shoes, bags, accessories, and cold-weather outer layers.
+- `lib/today/types.ts`
+  - Makes the expanded `TodayRecommendation` contract required: `mode`, `shoes`, `bag`, `accessories`, `missingSlots`, `confidence`, and `componentScores`.
+- `tests/lib/today/generate-recommendations.test.ts`
+  - Moves generator tests to the object-parameter API.
+  - Covers full shoes/bag/accessories output, all component score keys, missing shoes/bags, cold weather without outerwear, final-weight ordering, exploration rate 0, and max-one inspiration recommendation.
+
+### Phase 1 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm test` passed: 59 test files, 237 tests.
+- `npm run build` passed, including `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
+
+### Phase 1 Remaining Issues
+
+- App Quality workflow has not run on GitHub in this session.
+- Recommendation storage migration remote status is not verified in this session.
+- `PROGRESS.md` still has stale Shop scope wording, but that is project-status drift rather than a Today generator blocker.
+
+## Landing Audit
+
+### A. Today
+
+- `lib/today/generate-recommendations.ts` exports overloads:
+  - `generateTodayRecommendations(params: { items, weather, offset?, preferenceState?, explorationSeed? }): TodayRecommendation[]`
+- Legacy array-parameter overload removed in Phase 1.
+- `app/today/actions.ts` and `lib/today/get-today-view.ts` call the object-parameter form when preference state is needed.
+- `TodayRecommendation` includes required `shoes`, `bag`, `accessories`, `missingSlots`, `confidence`, `componentScores`, and `mode: 'daily' | 'inspiration'`.
+- `tests/lib/today/generate-recommendations.test.ts` expects the expanded fields, missing-slot fallback behavior, final-weight ordering, and deterministic inspiration insertion.
+- P0 blocker: none found for Today.
+
+### B. Inspiration
+
+- `lib/inspiration/types.ts` includes `colorFormula`, `silhouetteFormula`, `layeringFormula`, and `focalPoint`.
+- `InspirationKeyItem` includes `slot`, `silhouette`, `layerRole`, `importance`, and `alternatives`.
+- `lib/inspiration/match-closet-to-inspiration.ts` is not category-only. It scores category, slot, color compatibility, silhouette tokens, shared style tags, layer role, and importance-weighted color.
+- `tests/lib/inspiration/*.test.ts` and `tests/components/inspiration-page.test.tsx` expect the formula fields, key-item metadata, match reasons, and substitute suggestions.
+- P0 blocker: none found for Inspiration. The Phase 8C completion claim matches current code.
+
+### C. Supabase
+
+- `types/database.ts` declares `recommendation_preferences` and `outfit_feedback_events`.
+- `supabase/migrations/20260424143000_add_recommendation_preferences_feedback.sql` creates both tables, index, RLS, and policies.
+- Code reads/writes both tables through `lib/recommendation/get-preference-state.ts`, `save-preference-state.ts`, and `apply-feedback.ts`.
+- P0 blocker: none found locally. Remote application is still unverified and remains a landing risk.
+
+### D. CI
+
+- `.github/workflows/app-quality.yml` exists in the current worktree and runs `npm run lint`, `npm test`, and `npm run build`.
+- `.github/workflows/pages.yml` remains Pages-only and does not cover app quality, which is fine now that App Quality exists separately.
+- P0 blocker: none in the current worktree. If auditing only pushed `origin/main`, the App Quality workflow still needs to be committed/pushed and observed on GitHub.
+
+### E. Handoff
+
+- The handoff is no longer ahead of the Today/Inspiration/Supabase code for the checked areas.
+- The prior stale test count was corrected to 59 files / 237 tests.
+- The old recommendation to start Phase 8D was replaced with a landing-audit continuation prompt.
+- P0 blocker: none found in `docs/recommendation-engine-handoff.md` after this audit update.
+
+### P0 Blockers
+
+- None in the current local worktree.
+
+### Remaining Landing Risks
+
+- App Quality workflow has not run on GitHub in this session.
+- Recommendation storage migration remote status is not verified in this session.
+- `PROGRESS.md` still has stale Shop scope wording, but that is project-status drift rather than a Recommendation Engine P0 blocker.
+
+### Phase 0 Modified Files
+
+- `docs/recommendation-engine-handoff.md`
+
+## Previous Completed Implementation
+
 Phase 8C Inspiration formula-based matching is implemented.
 
 Inspiration now moves beyond simple same-category matching. The AI breakdown extracts outfit formulas, key items carry slot/shape/layer metadata, closet matching uses a weighted formula score, and the UI can explain substitutes when the closet has no same-category item.
@@ -130,11 +219,12 @@ Phase 7 changes are also present in the current worktree:
 Verification:
 
 - `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
-- `npm test` passed: 59 test files, 233 tests.
+- `npm test` passed: 59 test files, 237 tests.
 - `npm run build` passed, with `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
 
 ## Known Limitations
 
+- The new App Quality GitHub Actions workflow has not run on GitHub in this session.
 - The Supabase migration for recommendation storage still has not been pushed/applied remotely in this phase.
 - Shop accessory analysis is still deterministic and rule-based; it does not yet use learned user preference weights.
 - Bag and accessory scoring uses existing closet metadata only; it does not yet infer detailed occasion constraints from calendars, travel plans, or OOTD history.
@@ -146,4 +236,4 @@ Verification:
 
 ## Recommended Next Prompt
 
-Implement Phase 8D: make Inspiration formula matching preference-aware. Use recommendation preference weights and Today feedback signals to adjust formula priorities, especially focal point, color risk, layering complexity, comfort vs styling, and exploration tolerance.
+Continue the Recommendation Engine landing audit with the next non-8D phase: verify remote Supabase migration status for `recommendation_preferences` and `outfit_feedback_events`, confirm the new App Quality workflow on GitHub after push, and then clean up stale project-status wording such as the old Shop core-clothing limitation in `PROGRESS.md`.

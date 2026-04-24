@@ -29,7 +29,7 @@ type RecommendationCandidate = {
   draft: OutfitDraft
 }
 
-type GenerateTodayRecommendationsParams = {
+export type GenerateTodayRecommendationsParams = {
   items: ClosetItemCardData[]
   weather: TodayWeather | null
   offset?: number
@@ -117,6 +117,49 @@ function countSharedStyleTags(a: string[], b: string[]) {
   return a.filter((tag) => b.includes(tag)).length
 }
 
+function itemSearchText(item: ClosetItemCardData) {
+  return [item.category, item.subCategory, item.colorCategory, ...item.styleTags].filter(Boolean).join(' ').toLowerCase()
+}
+
+function hasAnyTextToken(item: ClosetItemCardData, tokens: string[]) {
+  const text = itemSearchText(item)
+  return tokens.some((token) => text.includes(token))
+}
+
+function getSceneMatchScore(item: ClosetItemCardData, profile: PreferenceProfile) {
+  const sceneTags: Record<PreferenceProfile['preferredScenes'][number], string[]> = {
+    work: ['通勤', '正式', '商务', '乐福', '皮鞋', '托特', '电脑'],
+    casual: ['休闲', '基础', '极简', '帆布', '运动'],
+    date: ['约会', '优雅', '甜美', '小包', '单肩'],
+    travel: ['旅行', '轻便', '舒适', '双肩', '斜挎'],
+    outdoor: ['户外', '运动', '防风', '徒步', '防水'],
+    party: ['派对', '亮片', '华丽', '金属']
+  }
+  const wantedTokens = profile.preferredScenes.flatMap((scene) => sceneTags[scene] ?? [])
+
+  if (wantedTokens.length === 0) {
+    return 0
+  }
+
+  return hasAnyTextToken(item, wantedTokens) ? 6 : 0
+}
+
+function getWeatherMatchScore(item: ClosetItemCardData, weather: TodayWeather | null) {
+  if (!weather) {
+    return 0
+  }
+
+  if (weather.isCold) {
+    return hasAnyTextToken(item, ['靴', '皮鞋', '乐福', '厚', '保暖', '防风']) ? 5 : 0
+  }
+
+  if (weather.isWarm) {
+    return hasAnyTextToken(item, ['凉鞋', '帆布', '轻便', '草编', '薄']) ? 5 : 0
+  }
+
+  return 0
+}
+
 function getWearFreshnessScore(item: ClosetItemCardData) {
   let score = 0
 
@@ -164,10 +207,21 @@ function shouldUseOuterLayer(
   return profile.slotPreference.outerwear && profile.layeringPreference.allowNonWeatherOuterwear && profile.layeringPreference.complexity >= 2
 }
 
-function pickBestMatchingItem(
-  referenceItems: ClosetItemCardData[],
+function pickBestMatchingItem({
+  referenceItems,
+  candidates,
+  profile,
+  weather,
+  includeScene = false,
+  includeWeather = false
+}: {
+  referenceItems: ClosetItemCardData[]
   candidates: ClosetItemCardData[]
-) {
+  profile: PreferenceProfile
+  weather: TodayWeather | null
+  includeScene?: boolean
+  includeWeather?: boolean
+}) {
   if (candidates.length === 0) {
     return null
   }
@@ -176,7 +230,9 @@ function pickBestMatchingItem(
     const scoreItem = (item: ClosetItemCardData) => {
       const colorScore = average(referenceItems.map((reference) => scoreColorCompatibility(item.colorCategory, reference.colorCategory))) * 4
       const styleScore = average(referenceItems.map((reference) => countSharedStyleTags(item.styleTags, reference.styleTags))) * 3
-      return colorScore + styleScore + getWearFreshnessScore(item)
+      const sceneScore = includeScene ? getSceneMatchScore(item, profile) : 0
+      const weatherScore = includeWeather ? getWeatherMatchScore(item, weather) : 0
+      return colorScore + styleScore + sceneScore + weatherScore + getWearFreshnessScore(item)
     }
     const scoreDelta = scoreItem(right) - scoreItem(left)
 
@@ -231,7 +287,14 @@ function addCompletionSlots({
   const wantsOuterLayer = shouldUseOuterLayer(weather, profile)
 
   if (wantsOuterLayer) {
-    draft.outerLayer = pickBestMatchingItem(coreItems, outerLayers)
+    draft.outerLayer = pickBestMatchingItem({
+      referenceItems: coreItems,
+      candidates: outerLayers,
+      profile,
+      weather,
+      includeScene: true,
+      includeWeather: true
+    })
 
     if (!draft.outerLayer) {
       draft.missingSlots.push('outerLayer')
@@ -241,7 +304,14 @@ function addCompletionSlots({
   const referenceItems = [...coreItems, draft.outerLayer].filter((item): item is ClosetItemCardData => item !== null)
 
   if (profile.slotPreference.shoes) {
-    draft.shoes = pickBestMatchingItem(referenceItems, shoes)
+    draft.shoes = pickBestMatchingItem({
+      referenceItems,
+      candidates: shoes,
+      profile,
+      weather,
+      includeScene: true,
+      includeWeather: true
+    })
 
     if (!draft.shoes) {
       draft.missingSlots.push('shoes')
@@ -249,7 +319,13 @@ function addCompletionSlots({
   }
 
   if (profile.slotPreference.bag) {
-    draft.bag = pickBestMatchingItem(referenceItems, bags)
+    draft.bag = pickBestMatchingItem({
+      referenceItems,
+      candidates: bags,
+      profile,
+      weather,
+      includeScene: true
+    })
 
     if (!draft.bag) {
       draft.missingSlots.push('bag')
@@ -463,6 +539,29 @@ function buildPairReason(draft: OutfitDraft, weather: TodayWeather | null) {
   return buildReason(parts)
 }
 
+function buildMissingSlotReason(draft: OutfitDraft) {
+  const missingFinishers = draft.missingSlots.filter((slot) => slot === 'shoes' || slot === 'bag' || slot === 'accessories')
+  const parts: string[] = []
+
+  if (missingFinishers.includes('shoes') && missingFinishers.includes('bag')) {
+    parts.push('未录入鞋履/包袋，本次未纳入完整收尾评分')
+  } else if (missingFinishers.includes('shoes')) {
+    parts.push('未录入鞋履，本次鞋履收尾评分会降低')
+  } else if (missingFinishers.includes('bag')) {
+    parts.push('未录入包袋，本次场景完整度评分会降低')
+  }
+
+  if (missingFinishers.includes('accessories')) {
+    parts.push('未录入配饰，本次少量视觉中心会先留空')
+  }
+
+  if (draft.missingSlots.includes('outerLayer')) {
+    parts.push('当前缺少外层，冷天保暖和层次评分会降低')
+  }
+
+  return parts
+}
+
 function buildDressReason(draft: OutfitDraft, weather: TodayWeather | null) {
   const dress = draft.dress
 
@@ -488,10 +587,11 @@ function buildDressReason(draft: OutfitDraft, weather: TodayWeather | null) {
 
 function toRecommendation(draft: OutfitDraft, componentScores: ScoreWeights, score: number, weather: TodayWeather | null): TodayRecommendation {
   const confidence = clampScore(componentScores.completeness * 0.52 + score * 0.48)
+  const coreReason = draft.outfitKind === 'onePiece' ? buildDressReason(draft, weather) : buildPairReason(draft, weather)
 
   return {
     id: draft.id,
-    reason: draft.outfitKind === 'onePiece' ? buildDressReason(draft, weather) : buildPairReason(draft, weather),
+    reason: buildReason([coreReason, ...buildMissingSlotReason(draft)]),
     top: draft.top ? toRecommendationItem(draft.top) : null,
     bottom: draft.bottom ? toRecommendationItem(draft.bottom) : null,
     dress: draft.dress ? toRecommendationItem(draft.dress) : null,
@@ -813,22 +913,9 @@ function maybeInsertInspirationRecommendation({
 
 export function generateTodayRecommendations(
   params: GenerateTodayRecommendationsParams
-): TodayRecommendation[]
-export function generateTodayRecommendations(
-  items: ClosetItemCardData[],
-  weather: TodayWeather | null,
-  offset?: number
-): TodayRecommendation[]
-export function generateTodayRecommendations(
-  input: ClosetItemCardData[] | GenerateTodayRecommendationsParams,
-  weatherArg: TodayWeather | null = null,
-  offsetArg = 0
 ): TodayRecommendation[] {
-  const items = Array.isArray(input) ? input : input.items
-  const weather = Array.isArray(input) ? weatherArg : input.weather
-  const offset = Array.isArray(input) ? offsetArg : input.offset ?? 0
-  const preferenceState = Array.isArray(input) ? undefined : input.preferenceState
-  const explorationSeed = Array.isArray(input) ? undefined : input.explorationSeed
+  const { items, weather, preferenceState, explorationSeed } = params
+  const offset = params.offset ?? 0
   const candidates = buildRecommendationCandidates(items, weather, preferenceState)
   const recommendations = buildRecommendationBatch(candidates, offset)
 

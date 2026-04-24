@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-24
-- Branch / theme: `main` - beta convergence implementation and smoke QA
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-103131-beta-convergence-closeout.md`
-- Current blocker: deployment Auth QA before inviting beta testers; remote Supabase schema check is currently up to date
-- Next plan to read: `docs/superpowers/plans/2026-04-23-outfit-taxonomy-color-strategy.md`
-- Intended summary if `/context-save` fails: beta first-run loop is implemented and browser-smoke-tested; resume from `PROGRESS.md`, then verify deployed auth behavior, mobile beta handfeel, and Closet import-island bundle reduction
+- Branch / theme: `main` - Recommendation Engine Today generator contract Phase 1
+- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-172605-today-generator-contract-phase-1.md`
+- Current blocker: App Quality workflow has not run on GitHub yet; recommendation storage migration remote status is still unverified
+- Next plan to read: `docs/recommendation-engine-handoff.md`
+- Intended summary if `/context-save` fails: Phase 1 tightened `generateTodayRecommendations` to the object-parameter API, made the expanded `TodayRecommendation` fields required, added scene/weather finisher scoring plus missing-slot reason copy, and raised Today generator tests to 13 cases; local `npm run lint`, `npm test`, and `npm run build` passed
 
 ## Snapshot Template
 
