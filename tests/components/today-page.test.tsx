@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { TodayPage } from '@/components/today/today-page'
 
+const refresh = vi.fn()
 const updateCity = vi.fn().mockResolvedValue({ error: null })
 const refreshRecommendations = vi.fn().mockResolvedValue({ recommendations: [] })
 const submitOotd = vi.fn()
@@ -10,6 +11,12 @@ const changePassword = vi.fn().mockResolvedValue({ error: null })
 const signOut = vi.fn().mockResolvedValue(undefined)
 const updateHistoryEntry = vi.fn()
 const deleteHistoryEntry = vi.fn()
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh
+  })
+}))
 
 const recommendation = {
   id: 'rec-1',
@@ -88,6 +95,7 @@ const inspirationRecommendation = {
 
 describe('TodayPage', () => {
   beforeEach(() => {
+    refresh.mockReset()
     updateCity.mockClear()
     submitOotd.mockReset()
     refreshRecommendations.mockReset()
@@ -137,6 +145,7 @@ describe('TodayPage', () => {
 
     expect(screen.getByText('你的衣橱还是空的')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '去上传衣物' })).toHaveAttribute('href', '/closet?onboarding=1')
+    expect(screen.getByRole('button', { name: '设置' })).toBeInTheDocument()
   })
 
   it('shows the record CTA on a recommendation card before submission', () => {
@@ -165,6 +174,38 @@ describe('TodayPage', () => {
     )
 
     expect(screen.getByRole('button', { name: '记为今日已穿并评分' })).toBeInTheDocument()
+  })
+
+  it('lets the user dismiss the first loop card', () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 3,
+          city: '上海',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: '上海' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    expect(screen.getByText('先在今天完成第一次推荐闭环')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '关闭 first loop 提示' }))
+
+    expect(screen.queryByText('先在今天完成第一次推荐闭环')).not.toBeInTheDocument()
+    expect(window.localStorage.getItem('ootoday-today-first-loop-dismissed')).toBe('1')
   })
 
   it('invites users to fill the style questionnaire before it is completed', () => {
@@ -278,6 +319,43 @@ describe('TodayPage', () => {
     const cityInput = screen.getByRole('textbox', { name: '常住城市' })
     expect(cityInput).toBeInTheDocument()
     expect(cityButton.compareDocumentPosition(cityInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('opens the city form from the city weather prompt and hides the prompt after save', async () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 3,
+          city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'not-set' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    expect(screen.getByText('填写常住城市，可获得更准推荐')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '修改城市' }))
+    fireEvent.change(screen.getByRole('textbox', { name: '常住城市' }), { target: { value: '上海' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存城市' }))
+
+    await waitFor(() => {
+      expect(updateCity).toHaveBeenCalledWith({ city: '上海' })
+    })
+    expect(screen.queryByText('填写常住城市，可获得更准推荐')).not.toBeInTheDocument()
+    expect(refresh).toHaveBeenCalled()
   })
 
   it('renders full outfit slots and a gentle missing-slot hint', () => {
