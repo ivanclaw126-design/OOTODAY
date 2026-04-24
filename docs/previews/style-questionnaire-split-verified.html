@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OOTODAY 问卷图片拆分核对</title>
+    <style>
+      :root {
+        --paper: #fbfaf7;
+        --panel: #fff;
+        --ink: #202629;
+        --muted: #697277;
+        --line: #d8dedb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      }
+
+      main {
+        width: min(1240px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 28px 0 56px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(28px, 4vw, 44px);
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 820px;
+        margin: 0 0 22px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      section {
+        margin-top: 22px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      h2 {
+        margin: 0 0 6px;
+        font-size: 22px;
+        letter-spacing: 0;
+      }
+
+      .meta {
+        margin: 0 0 16px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: minmax(160px, 220px) repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        align-items: start;
+        padding: 14px 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .row:first-of-type {
+        border-top: 0;
+      }
+
+      .label {
+        display: grid;
+        gap: 4px;
+        padding: 10px 0;
+      }
+
+      .label strong {
+        font-size: 16px;
+      }
+
+      .label span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      figure {
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f4f2ed;
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      figcaption {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 10px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      @media (max-width: 820px) {
+        main {
+          width: min(100vw - 20px, 1240px);
+          padding-top: 18px;
+        }
+
+        section {
+          padding: 12px;
+        }
+
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>问卷图片拆分核对</h1>
+      <p class="lead">
+        这里展示从 10 张原始候选板按真实分隔边界拆出的 94 张单图。每一行对应一个问卷选项，右侧是候选 A / B。拆分使用图像中的实际白色分隔线坐标，不再使用数学等分裁切。
+      </p>
+      <div id="app"></div>
+    </main>
+
+    <script>
+      const sections = [
+        {
+          title: "1. 场景偏好",
+          slug: "scene",
+          rows: [
+            ["通勤干净", "场景适配、稳定完成度"],
+            ["轻松日常", "舒适、好穿、可复穿"],
+            ["约会/聚会", "更多视觉中心和造型感"],
+            ["城市旅行", "天气舒适、少量单品成套"],
+            ["运动户外", "天气和舒适度权重更高"]
+          ]
+        },
+        {
+          title: "2. 轮廓偏好",
+          slug: "silhouette",
+          rows: [
+            ["上短下长", "强调腰线和比例"],
+            ["上松下窄", "上半身放松，下半身收住"],
+            ["上窄下宽", "上身利落，下装更有廓形"],
+            ["全身松弛", "整体宽松、舒适优先"],
+            ["连衣裙/一体式", "减少上下装搭配成本"]
+          ]
+        },
+        {
+          title: "3. 色彩偏好",
+          slug: "color",
+          rows: [
+            ["黑白灰 / 米棕 / 藏青", "低冲突、复穿稳定"],
+            ["同色系深浅", "靠颜色层次建立完整感"],
+            ["柔和低饱和", "保留颜色但降低存在感"],
+            ["基础色 + 一处亮色", "用一个重点提神"],
+            ["高对比 / 撞色", "接受更强视觉冲突"]
+          ]
+        },
+        {
+          title: "4. 叠穿偏好",
+          slug: "layering",
+          rows: [
+            ["简单两件", "尽量避免复杂叠穿"],
+            ["轻外套", "接受轻量外层"],
+            ["三层叠穿", "愿意用层次增强造型"],
+            ["材质混搭", "更复杂的层次和材质变化"]
+          ]
+        },
+        {
+          title: "5. 视觉重点偏好",
+          slug: "focal",
+          rows: [
+            ["上半身 / 脸周围", "重点靠近上半身"],
+            ["腰线", "比例和腰线"],
+            ["鞋子", "鞋子成为视觉重点"],
+            ["包 / 配饰", "包袋或配饰完成造型"],
+            ["整体低调", "不强调单点抢眼"]
+          ]
+        },
+        {
+          title: "6. 实用和造型取向",
+          slug: "practicality",
+          rows: [
+            ["舒适优先", "天气舒适和实用性"],
+            ["均衡", "保持默认平衡"],
+            ["造型优先", "层次和视觉重点更高"],
+            ["工作日舒适，周末造型", "原候选都不合适，最终页使用新 4 人图"]
+          ]
+        },
+        {
+          title: "7. 推荐补齐项偏好",
+          slug: "slot",
+          rows: [
+            ["外套", "允许推荐外层"],
+            ["鞋子", "推荐尽量补齐鞋履"],
+            ["包袋", "用包袋补完整度和呼应"],
+            ["配饰", "允许少量配饰成为细节"]
+          ]
+        },
+        {
+          title: "8. 探索程度偏好",
+          slug: "exploration",
+          rows: [
+            ["尽量稳定", "几乎不插入灵感推荐"],
+            ["一点变化", "低频尝试轻微变化"],
+            ["偶尔给我灵感", "允许更明显的新鲜感"],
+            ["大胆尝试", "提高探索频率，保留避雷项"]
+          ]
+        },
+        {
+          title: "9. 避雷项偏好（1/2）",
+          slug: "avoid1",
+          rows: [
+            ["不喜欢紧身", "紧身版型"],
+            ["不喜欢高跟鞋", "高跟或明显抬高鞋型"],
+            ["不喜欢短裙", "短下装"],
+            ["不喜欢无袖", "无袖或露手臂"],
+            ["不喜欢大面积亮色", "大面积高饱和色"],
+            ["不喜欢复杂叠穿", "多层复杂搭配"]
+          ]
+        },
+        {
+          title: "10. 避雷项偏好（2/2）",
+          slug: "avoid2",
+          rows: [
+            ["不喜欢露腰", "露腰 / 短上衣"],
+            ["不喜欢大 logo", "大标识感"],
+            ["不喜欢帽子", "帽子成为明显元素"],
+            ["不喜欢太正式", "正式商务/礼服感"],
+            ["不喜欢太运动", "明显运动感"]
+          ]
+        }
+      ];
+
+      const app = document.querySelector("#app");
+
+      app.innerHTML = sections
+        .map((section) => {
+          const rows = section.rows
+            .map((row, index) => {
+              const rowNumber = index + 1;
+              return `
+                <div class="row">
+                  <div class="label"><strong>${row[0]}</strong><span>${row[1]}</span></div>
+                  ${["a", "b"]
+                    .map((variant) => {
+                      const label = variant.toUpperCase();
+                      const src = `./style-questionnaire-crops-verified/${section.slug}-r${rowNumber}-${variant}.png`;
+                      return `
+                        <figure>
+                          <img src="${src}" alt="${section.title} ${row[0]} 候选 ${label}" loading="lazy" />
+                          <figcaption><span>候选 ${label}</span><span>${section.slug}-r${rowNumber}-${variant}</span></figcaption>
+                        </figure>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              `;
+            })
+            .join("");
+
+          return `
+            <section>
+              <h2>${section.title}</h2>
+              <p class="meta">${section.rows.length} 个选项，${section.rows.length * 2} 张拆分图。</p>
+              ${rows}
+            </section>
+          `;
+        })
+        .join("");
+    </script>
+  </body>
+</html>

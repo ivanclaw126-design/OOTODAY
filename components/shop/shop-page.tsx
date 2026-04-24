@@ -224,7 +224,7 @@ export function ShopPage({
       <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
         <div className="flex flex-col gap-5">
           <div className="space-y-2">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Buy Before You Buy</p>
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[var(--color-neutral-dark)]">Think Before You Buy</p>
             <div className="space-y-2">
               <p className="text-xl font-semibold tracking-[-0.03em] text-[var(--color-primary)]">先判断它值不值得进衣橱</p>
               <p className="max-w-2xl text-sm text-[var(--color-neutral-dark)]">给我链接或图片，我会直接判断值不值、会不会重复、能接上多少套。</p>

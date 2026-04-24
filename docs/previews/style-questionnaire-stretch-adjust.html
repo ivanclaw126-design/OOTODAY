@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OOTODAY 问卷图片纵向拉伸修正</title>
+    <style>
+      :root {
+        --paper: #fbfaf7;
+        --panel: #fff;
+        --ink: #202629;
+        --muted: #687176;
+        --line: #d8dedb;
+        --soft: #f4f2ed;
+        --accent: #8f6f3f;
+        --accent-soft: #efe5d4;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      }
+
+      main {
+        width: min(1280px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 28px 0 64px;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        margin: 0 -16px 22px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        background: color-mix(in srgb, var(--paper) 94%, transparent);
+        backdrop-filter: blur(12px);
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(28px, 4vw, 44px);
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 900px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      button {
+        min-height: 38px;
+        border: 1px solid var(--ink);
+        border-radius: 8px;
+        padding: 0 13px;
+        background: var(--ink);
+        color: #fff;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        border-color: var(--line);
+        background: #fff;
+        color: var(--ink);
+      }
+
+      .count {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      section {
+        margin-top: 28px;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 22px;
+        letter-spacing: 0;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        align-items: start;
+      }
+
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .stage {
+        position: relative;
+        min-height: 120px;
+        background: var(--soft);
+        transition: height 120ms ease;
+      }
+
+      .stage img {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        display: block;
+        width: 100%;
+        height: auto;
+        transform: translateY(-50%) scaleY(var(--scale-y));
+        transform-origin: center;
+        user-select: none;
+      }
+
+      .body {
+        display: grid;
+        gap: 8px;
+        padding: 10px 12px 12px;
+        border-top: 1px solid var(--line);
+      }
+
+      .title-line {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .title-line strong {
+        font-size: 15px;
+        line-height: 1.35;
+      }
+
+      .badge {
+        flex: 0 0 auto;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .file {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+        overflow-wrap: anywhere;
+      }
+
+      .control {
+        display: grid;
+        gap: 8px;
+      }
+
+      .range-line {
+        display: grid;
+        grid-template-columns: 1fr 4.8rem;
+        gap: 8px;
+        align-items: center;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        accent-color: var(--accent);
+      }
+
+      input[type="number"] {
+        width: 100%;
+        min-height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 8px;
+        color: var(--ink);
+        font: inherit;
+        font-size: 13px;
+      }
+
+      .mini-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .mini-actions button {
+        min-height: 30px;
+        padding: 0 9px;
+        border-color: var(--line);
+        background: #fff;
+        color: var(--ink);
+        font-size: 12px;
+      }
+
+      .changed {
+        box-shadow: 0 0 0 4px var(--accent-soft);
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 210px;
+        margin-top: 16px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        resize: vertical;
+      }
+
+      @media (max-width: 980px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        main {
+          width: min(100vw - 20px, 1280px);
+          padding-top: 18px;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="topbar">
+        <h1>问卷图片纵向拉伸修正</h1>
+        <p class="lead">
+          这里使用基于边界坐标拆出的 47 张正确图，不使用统一 1280x720 版本。每张图只做纵向非等比拉伸预览，横向不变；数值会保存在当前浏览器。调完后点“复制修正参数”发给我，我再按这些参数导出最终图片。
+        </p>
+        <div class="actions">
+          <button type="button" id="copy">复制修正参数</button>
+          <button type="button" class="secondary" id="resetChanged">重置已修改</button>
+          <button type="button" class="secondary" id="resetAll">全部恢复 1.00</button>
+          <span class="count" id="count">已修改 0 / 47</span>
+        </div>
+      </div>
+
+      <div id="app"></div>
+      <textarea id="summary" readonly placeholder="调节滑杆后，这里会生成可复制的修正参数。"></textarea>
+    </main>
+
+    <script>
+      const sections = [
+        {
+          title: "1. 场景偏好",
+          items: [
+            ["通勤干净", "A", "01-01-scene-work.png"],
+            ["轻松日常", "A", "01-02-scene-casual.png"],
+            ["约会/聚会", "A", "01-03-scene-date.png"],
+            ["城市旅行", "A", "01-04-scene-travel.png"],
+            ["运动户外", "A", "01-05-scene-outdoor.png"]
+          ]
+        },
+        {
+          title: "2. 轮廓偏好",
+          items: [
+            ["上短下长", "B", "02-01-silhouette-short-top-high-waist.png"],
+            ["上松下窄", "B", "02-02-silhouette-loose-top-slim-bottom.png"],
+            ["上窄下宽", "B", "02-03-silhouette-fitted-top-wide-bottom.png"],
+            ["全身松弛", "B", "02-04-silhouette-relaxed-all.png"],
+            ["连衣裙/一体式", "A", "02-05-silhouette-one-piece.png"]
+          ]
+        },
+        {
+          title: "3. 色彩偏好",
+          items: [
+            ["黑白灰 / 米棕 / 藏青", "B", "03-01-color-neutral.png"],
+            ["同色系深浅", "B", "03-02-color-tonal.png"],
+            ["柔和低饱和", "B", "03-03-color-soft.png"],
+            ["基础色 + 一处亮色", "A", "03-04-color-one-accent.png"],
+            ["高对比 / 撞色", "B", "03-05-color-bold-contrast.png"]
+          ]
+        },
+        {
+          title: "4. 叠穿偏好",
+          items: [
+            ["简单两件", "A", "04-01-layering-simple.png"],
+            ["轻外套", "A", "04-02-layering-light-layer.png"],
+            ["三层叠穿", "B", "04-03-layering-three-layer.png"],
+            ["材质混搭", "A", "04-04-layering-texture-mix.png"]
+          ]
+        },
+        {
+          title: "5. 视觉重点偏好",
+          items: [
+            ["上半身 / 脸周围", "B", "05-01-focal-upper-body.png"],
+            ["腰线", "B", "05-02-focal-waist.png"],
+            ["鞋子", "B", "05-03-focal-shoes.png"],
+            ["包 / 配饰", "B", "05-04-focal-bag-accessory.png"],
+            ["整体低调", "A", "05-05-focal-subtle.png"]
+          ]
+        },
+        {
+          title: "6. 实用和造型取向",
+          items: [
+            ["舒适优先", "A", "06-01-practicality-comfort.png"],
+            ["均衡", "B", "06-02-practicality-balanced.png"],
+            ["造型优先", "B", "06-03-practicality-style.png"],
+            ["工作日舒适，周末造型", "新 4 人图", "06-04-practicality-weekday-weekend.png"]
+          ]
+        },
+        {
+          title: "7. 推荐补齐项偏好",
+          items: [
+            ["外套", "A", "07-01-slot-outerwear.png"],
+            ["鞋子", "A", "07-02-slot-shoes.png"],
+            ["包袋", "A", "07-03-slot-bag.png"],
+            ["配饰", "A", "07-04-slot-accessories.png"]
+          ]
+        },
+        {
+          title: "8. 探索程度偏好",
+          items: [
+            ["尽量稳定", "A", "08-01-exploration-stable.png"],
+            ["一点变化", "A", "08-02-exploration-slight.png"],
+            ["偶尔给我灵感", "B", "08-03-exploration-inspiration.png"],
+            ["大胆尝试", "B", "08-04-exploration-bold.png"]
+          ]
+        },
+        {
+          title: "9. 避雷项偏好（1/2）",
+          items: [
+            ["不喜欢紧身", "A", "09-01-avoid-tight.png"],
+            ["不喜欢高跟鞋", "A", "09-02-avoid-heels.png"],
+            ["不喜欢短裙", "A", "09-03-avoid-short-skirt.png"],
+            ["不喜欢无袖", "B", "09-04-avoid-sleeveless.png"],
+            ["不喜欢大面积亮色", "B", "09-05-avoid-bright-color.png"],
+            ["不喜欢复杂叠穿", "A", "09-06-avoid-complex-layering.png"]
+          ]
+        },
+        {
+          title: "10. 避雷项偏好（2/2）",
+          items: [
+            ["不喜欢露腰", "A", "10-01-avoid-crop-waist.png"],
+            ["不喜欢大 logo", "B", "10-02-avoid-logo.png"],
+            ["不喜欢帽子", "B", "10-03-avoid-hat.png"],
+            ["不喜欢太正式", "B", "10-04-avoid-formal.png"],
+            ["不喜欢太运动", "A", "10-05-avoid-sporty.png"]
+          ]
+        }
+      ];
+
+      const storageKey = "ootoday-style-questionnaire-stretch-v1";
+      const app = document.querySelector("#app");
+      const summary = document.querySelector("#summary");
+      const count = document.querySelector("#count");
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      const allItems = sections.flatMap((section) => section.items.map((item) => ({ section: section.title, item })));
+
+      function clampScale(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return 1;
+        return Math.min(1.8, Math.max(0.65, number));
+      }
+
+      function getScale(file) {
+        return clampScale(saved[file] ?? 1);
+      }
+
+      function setStageHeight(card) {
+        const stage = card.querySelector(".stage");
+        const img = card.querySelector("img");
+        if (!stage || !img || !img.naturalWidth || !stage.clientWidth) return;
+        const baseHeight = (stage.clientWidth * img.naturalHeight) / img.naturalWidth;
+        const scale = getScale(card.dataset.file);
+        stage.style.height = `${Math.ceil(baseHeight * scale)}px`;
+      }
+
+      function applyScale(card, value) {
+        const file = card.dataset.file;
+        const scale = clampScale(value);
+        saved[file] = Number(scale.toFixed(2));
+        card.style.setProperty("--scale-y", saved[file]);
+        card.classList.toggle("changed", Math.abs(saved[file] - 1) >= 0.005);
+        card.querySelector("input[type='range']").value = saved[file];
+        card.querySelector("input[type='number']").value = saved[file].toFixed(2);
+        setStageHeight(card);
+        saveAndSummarize();
+      }
+
+      function saveAndSummarize() {
+        localStorage.setItem(storageKey, JSON.stringify(saved));
+        const changed = Object.entries(saved)
+          .filter(([, scale]) => Math.abs(Number(scale) - 1) >= 0.005)
+          .sort(([a], [b]) => a.localeCompare(b));
+
+        count.textContent = `已修改 ${changed.length} / ${allItems.length}`;
+
+        const lines = ["OOTODAY 问卷图片纵向拉伸修正参数：", ""];
+        if (changed.length === 0) {
+          lines.push("暂无修改，全部为 scaleY=1.00。");
+        } else {
+          changed.forEach(([file, scale]) => {
+            const match = allItems.find(({ item }) => item[2] === file);
+            const label = match ? `${match.section} / ${match.item[0]}` : file;
+            lines.push(`- ${label}：${Number(scale).toFixed(2)} (${file})`);
+          });
+        }
+        lines.push("");
+        lines.push("JSON:");
+        lines.push(JSON.stringify(Object.fromEntries(changed.map(([file, scale]) => [file, Number(Number(scale).toFixed(2))])), null, 2));
+        summary.value = lines.join("\\n");
+      }
+
+      function render() {
+        app.innerHTML = sections
+          .map((section) => {
+            const cards = section.items
+              .map(([label, pick, file]) => {
+                const scale = getScale(file);
+                return `
+                  <article class="card ${Math.abs(scale - 1) >= 0.005 ? "changed" : ""}" data-file="${file}" style="--scale-y: ${scale}">
+                    <div class="stage">
+                      <img src="./style-questionnaire-picked-verified/${file}" alt="${section.title} ${label}" loading="lazy" />
+                    </div>
+                    <div class="body">
+                      <div class="title-line">
+                        <strong>${label}</strong>
+                        <span class="badge">${pick}</span>
+                      </div>
+                      <div class="file">${file}</div>
+                      <div class="control">
+                        <div class="range-line">
+                          <input type="range" min="0.65" max="1.8" step="0.01" value="${scale}" aria-label="${label} 纵向拉伸" />
+                          <input type="number" min="0.65" max="1.8" step="0.01" value="${scale.toFixed(2)}" aria-label="${label} 拉伸数值" />
+                        </div>
+                        <div class="mini-actions">
+                          <button type="button" data-delta="-0.05">-0.05</button>
+                          <button type="button" data-delta="0.05">+0.05</button>
+                          <button type="button" data-reset>恢复 1.00</button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                `;
+              })
+              .join("");
+
+            return `
+              <section>
+                <h2>${section.title}</h2>
+                <div class="grid">${cards}</div>
+              </section>
+            `;
+          })
+          .join("");
+
+        document.querySelectorAll(".card img").forEach((img) => {
+          const card = img.closest(".card");
+          if (img.complete) {
+            setStageHeight(card);
+          } else {
+            img.addEventListener("load", () => setStageHeight(card), { once: true });
+          }
+        });
+      }
+
+      app.addEventListener("input", (event) => {
+        const card = event.target.closest(".card");
+        if (!card) return;
+        if (event.target.matches("input[type='range'], input[type='number']")) {
+          applyScale(card, event.target.value);
+        }
+      });
+
+      app.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        const card = button.closest(".card");
+        if (!card) return;
+        if (button.hasAttribute("data-reset")) {
+          applyScale(card, 1);
+          return;
+        }
+        if (button.dataset.delta) {
+          applyScale(card, getScale(card.dataset.file) + Number(button.dataset.delta));
+        }
+      });
+
+      document.querySelector("#copy").addEventListener("click", async () => {
+        saveAndSummarize();
+        await navigator.clipboard.writeText(summary.value);
+      });
+
+      document.querySelector("#resetChanged").addEventListener("click", () => {
+        Object.keys(saved).forEach((file) => {
+          if (Math.abs(Number(saved[file]) - 1) >= 0.005) {
+            saved[file] = 1;
+          }
+        });
+        document.querySelectorAll(".card").forEach((card) => applyScale(card, getScale(card.dataset.file)));
+      });
+
+      document.querySelector("#resetAll").addEventListener("click", () => {
+        Object.keys(saved).forEach((file) => {
+          saved[file] = 1;
+        });
+        allItems.forEach(({ item }) => {
+          saved[item[2]] = 1;
+        });
+        document.querySelectorAll(".card").forEach((card) => applyScale(card, 1));
+      });
+
+      window.addEventListener("resize", () => {
+        document.querySelectorAll(".card").forEach((card) => setStageHeight(card));
+      });
+
+      render();
+      saveAndSummarize();
+    </script>
+  </body>
+</html>

@@ -418,7 +418,7 @@
         const body =
           variant === "none"
             ? `<div class="reject">都不合适<br><small>需要重做这一组选项图</small></div>`
-            : `<img class="thumb" src="./style-questionnaire-crops/${section.slug}-r${optionIndex + 1}-${variant.toLowerCase()}.png" alt="${section.title} ${option[0]} 候选 ${variant}" loading="lazy" />`;
+            : `<img class="thumb" src="./style-questionnaire-crops-verified/${section.slug}-r${optionIndex + 1}-${variant.toLowerCase()}.png" alt="${section.title} ${option[0]} 候选 ${variant}" loading="lazy" />`;
 
         return `
           <label class="choice">

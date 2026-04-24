@@ -6,6 +6,7 @@ out/
 dist/
 coverage/
 .cache/
+tmp/
 .vercel/
 .claude/
 .worktrees/
