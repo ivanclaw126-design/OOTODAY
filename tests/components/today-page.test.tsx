@@ -451,6 +451,11 @@ describe('TodayPage', () => {
     expect(screen.getByRole('button', { name: '颜色好看' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '层次太复杂' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '提交今日记录' })).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button', { name: '4 分' }))
+
+    expect(screen.getByRole('button', { name: '4 分' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '提交今日记录' })).not.toBeDisabled()
   })
 
   it('switches the page into recorded state after a successful submit', async () => {
