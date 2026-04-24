@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-24
-- Branch / theme: `main` - Recommendation Engine preference-aware Inspiration Phase 5 / 8D
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-175100-preference-aware-inspiration-phase-5.md`
-- Current blocker: local work is not pushed; new CI/App Quality workflows have not run on GitHub yet; recommendation storage migration remote application is still unverified
+- Branch / theme: `codex/recommendation-engine-phase-4-5` - Closet algorithm metadata Phase 6
+- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-180100-closet-algorithm-meta-phase-6.md`
+- Current blocker: local Phase 6 work is not pushed; new CI/App Quality workflows have not run on GitHub yet; recommendation storage and closet algorithm metadata migrations are still unverified remotely
 - Next plan to read: `docs/recommendation-engine-handoff.md`
-- Intended summary if `/context-save` fails: Phase 5 implemented preference-aware Inspiration matching: `matchClosetToInspiration` accepts optional preference state, filters hard avoids, nudges formula weights with finalWeights, uses profile color/silhouette/layering/focal/practicality preferences for ranking and explanations, keeps medium-distance substitutes allowed, and updates remix copy/UI; local `npm run lint`, `npm test`, and `npm run build` passed
+- Intended summary if `/context-save` fails: Phase 6 added optional Closet algorithm metadata via `items.algorithm_meta jsonb`, `ClosetAlgorithmMeta` types, fallback inference/normalization, AI optional parsing, save/update/read preservation with old-schema fallbacks, and tests for inference/parsing/persistence; local `npm run lint`, `npm test`, and `npm run build` passed
 
 ## Snapshot Template
 

@@ -195,4 +195,61 @@ describe('analyzeItemImage', () => {
       styleTags: ['通勤', '简约', '基础款', '日常', 'clean']
     })
   })
+
+  it('parses optional algorithm metadata when the model provides it', async () => {
+    vi.stubEnv('OPENAI_API_KEY', 'test-key')
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                category: '外套',
+                sub_category: '大衣',
+                color_category: '黑色',
+                style_tags: ['通勤'],
+                algorithm_meta: {
+                  slot: 'outerwear',
+                  layerRole: 'outer',
+                  silhouette: ['长线条'],
+                  material: ['羊毛'],
+                  fabricWeight: 'heavy',
+                  formality: 4,
+                  warmthLevel: 5,
+                  comfortLevel: 3,
+                  visualWeight: 4,
+                  pattern: 'solid'
+                }
+              })
+            }
+          }
+        ]
+      })
+    })
+
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch)
+
+    const { analyzeItemImage } = await import('@/lib/closet/analyze-item-image')
+
+    await expect(analyzeItemImage('https://example.com/coat.jpg')).resolves.toMatchObject({
+      category: '外层',
+      subCategory: '大衣',
+      colorCategory: '黑色',
+      styleTags: ['通勤'],
+      algorithmMeta: {
+        slot: 'outerwear',
+        layerRole: 'outer',
+        silhouette: ['长线条'],
+        material: ['羊毛'],
+        fabricWeight: 'heavy',
+        formality: 4,
+        warmthLevel: 5,
+        comfortLevel: 3,
+        visualWeight: 4,
+        pattern: 'solid'
+      }
+    })
+  })
 })

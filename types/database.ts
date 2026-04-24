@@ -32,6 +32,7 @@ export type Database = {
           sub_category: string | null
           color_category: string | null
           style_tags: string[]
+          algorithm_meta: Json
           season_tags: string[]
           brand: string | null
           last_worn_date: string | null
@@ -47,6 +48,7 @@ export type Database = {
           sub_category?: string | null
           color_category?: string | null
           style_tags?: string[]
+          algorithm_meta?: Json
           season_tags?: string[]
           brand?: string | null
           last_worn_date?: string | null

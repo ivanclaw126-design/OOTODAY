@@ -71,7 +71,8 @@ export async function analyzeClosetImportUrlAction({ sourceUrl }: { sourceUrl: s
       draft: {
         imageUrl: importedImage.imageUrl,
         ...normalized,
-        styleTags: analysis.styleTags
+        styleTags: analysis.styleTags,
+        algorithmMeta: analysis.algorithmMeta
       } satisfies ClosetAnalysisDraft
     }
   } catch (error) {
@@ -147,7 +148,8 @@ export async function reanalyzeClosetItemAction(input: { itemId: string }): Prom
   return {
     imageUrl: item.image_url,
     ...normalized,
-    styleTags: analysis.styleTags
+    styleTags: analysis.styleTags,
+    algorithmMeta: analysis.algorithmMeta
   }
 }
 

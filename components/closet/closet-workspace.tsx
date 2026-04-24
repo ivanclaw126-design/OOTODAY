@@ -408,6 +408,7 @@ export function ClosetWorkspace({
       subCategory: item.subCategory ?? '未知类型请手动选择',
       colorCategory: item.colorCategory ?? '未知颜色请手动选择',
       styleTags: item.styleTags,
+      algorithmMeta: item.algorithmMeta,
       purchasePrice: item.purchasePrice ?? null,
       purchaseYear: item.purchaseYear ?? null,
       itemCondition: item.itemCondition ?? null
@@ -422,6 +423,7 @@ export function ClosetWorkspace({
       subCategory: item.subCategory ?? '未知类型请手动选择',
       colorCategory: item.colorCategory ?? '未知颜色请手动选择',
       styleTags: item.styleTags,
+      algorithmMeta: item.algorithmMeta,
       purchasePrice: item.purchasePrice ?? null,
       purchaseYear: item.purchaseYear ?? null,
       itemCondition: item.itemCondition ?? null

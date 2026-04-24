@@ -2,11 +2,63 @@
 
 ## Current Phase Completed
 
+Phase 6 optional Closet algorithm metadata fields completed on 2026-04-24.
+
+Closet items now have optional algorithm metadata support through `algorithm_meta jsonb`. Existing wardrobe data remains valid, save/read paths infer fallback metadata from category/subcategory/style tags, AI analysis can optionally return richer metadata, and recommendation surfaces can continue falling back to existing fields when metadata is missing.
+
+## Phase 6 Optional Closet Algorithm Metadata
+
+### Files Changed
+
+- `supabase/migrations/20260424175500_add_items_algorithm_meta.sql`
+  - Adds `items.algorithm_meta jsonb not null default '{}'::jsonb`.
+- `types/database.ts`
+  - Adds `algorithm_meta` to `items.Row`, `items.Insert`, and `items.Update`.
+- `lib/closet/types.ts`
+  - Adds optional `ClosetAlgorithmMeta` and supporting union types for slot, layer role, fabric weight, pattern, and 0-5 scale fields.
+  - Adds optional `algorithmMeta` to `ClosetItemCardData` and `ClosetAnalysisResult`.
+- `lib/closet/taxonomy.ts`
+  - Adds `inferClosetAlgorithmMeta()` fallback inference from category/subcategory/style tags.
+  - Adds `normalizeClosetAlgorithmMeta()` to safely normalize AI/user-provided metadata while preserving category-derived slot fallback.
+- `lib/closet/analyze-item-image.ts`
+  - Updates the AI prompt to allow optional `algorithm_meta`.
+  - Parses and normalizes optional AI metadata without requiring it.
+- `lib/closet/save-closet-item.ts`
+  - Saves normalized/inferred `algorithm_meta`.
+  - Keeps fallback insert behavior for databases where the new column is not applied yet.
+- `lib/closet/update-closet-item.ts`
+  - Updates normalized/inferred `algorithm_meta`.
+  - Keeps fallback update behavior for databases where the new column is not applied yet.
+- `lib/closet/get-closet-view.ts`
+  - Selects and maps `algorithm_meta`, falling back to inferred metadata when missing or when the column is unavailable.
+- `app/closet/actions.ts` and `components/closet/closet-workspace.tsx`
+  - Preserve algorithm metadata through import, reanalysis, and edit flows without exposing every field in UI.
+- `tests/lib/closet/taxonomy.test.ts`
+  - Covers fallback inference and optional metadata normalization.
+- `tests/lib/closet/analyze-item-image.test.ts`
+  - Covers optional AI `algorithm_meta` parsing.
+- `tests/lib/closet/save-closet-item.test.ts`
+  - Covers `algorithm_meta` insert payload.
+
+### Phase 6 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm test` passed: 59 test files, 246 tests.
+- `npm run build` passed, including `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
+
+### Phase 6 Remaining Issues
+
+- The new `items.algorithm_meta` migration exists locally but has not been verified as applied on the remote Supabase project in this session.
+- UI preserves algorithm metadata but does not expose the full metadata editor yet.
+- Today / Travel / Shop / Inspiration still need separate phases to consume `algorithmMeta` directly; they continue to work through existing category/subcategory/style tag fallback.
+- New CI/App Quality workflows have not run on GitHub in this session.
+
+## Phase 5 / Phase 8D Preference-Aware Inspiration Matching
+
 Phase 5 / Phase 8D Preference-aware Inspiration formula matching completed on 2026-04-24.
 
 Inspiration matching now reads the user's `RecommendationPreferenceState` and uses profile/final weights to gently adjust formula matching without turning Looks into a conservative daily-only recommender. Hard avoids are strictly filtered, final weights only nudge formula weights, medium-distance substitutes remain allowed, and remix copy explains when a look fits the user's preferences or is better treated as an inspiration attempt.
 
-## Phase 5 / Phase 8D Preference-Aware Inspiration Matching
 
 ### Files Changed
 
@@ -351,6 +403,7 @@ Phase 7 changes are also present in the current worktree:
 - Inspiration closet matching is formula-weighted instead of category-only.
 - Inspiration can recommend substitutes when no same-category closet item exists.
 - Inspiration matching reads preference state, strictly filters hard avoids, and gently nudges formula matching with `finalWeights` without blocking medium-distance inspiration substitutes.
+- Closet items can carry optional `algorithmMeta` for slot, layer role, silhouette, length, material, fabric weight, formality, warmth, comfort, visual weight, and pattern; existing algorithms still fall back to category/subcategory/style tags.
 
 ## Tests Added Or Updated
 
@@ -361,6 +414,10 @@ Phase 7 changes are also present in the current worktree:
   - preference-aware color risk, layering complexity, hard avoids, and medium-distance substitutes
   - remix summary copy based on formulas
   - formula and substitute UI rendering
+- Closet metadata tests cover:
+  - algorithm metadata fallback inference from existing category/subcategory/style tags
+  - optional AI `algorithm_meta` parsing
+  - `algorithm_meta` persistence payload
 - Phase 8B Travel tests remain:
   - no-shoe/no-bag fallback plan generation
   - formal shoes for commute/formal trips
@@ -382,7 +439,7 @@ Phase 7 changes are also present in the current worktree:
 Verification:
 
 - `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
-- `npm test` passed: 59 test files, 243 tests.
+- `npm test` passed: 59 test files, 246 tests.
 - `npm run build` passed, with `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
 
 ## Known Limitations
@@ -396,8 +453,9 @@ Verification:
 - Travel scenes do not yet include explicit `步行` or `旅行` options, so the algorithm treats `户外`, `休闲`, and longer trips as walking-heavy signals.
 - Inspiration formula matching still depends on image-analysis metadata quality; weak AI output falls back to generic formula text.
 - Closet items do not yet store explicit silhouette/layer-role fields, so the matcher infers them from category, subcategory, and style tags.
+- Closet algorithm metadata is stored as JSON and preserved, but recommendation modules have not yet been refactored to consume it directly.
 - Inspiration preference distance is still a deterministic heuristic and does not yet learn from Looks-specific feedback.
 
 ## Recommended Next Prompt
 
-Next phase: push the local Recommendation Engine commits, verify GitHub CI/App Quality runs on GitHub, and verify remote Supabase has `recommendation_preferences` and `outfit_feedback_events` applied. Do not start another recommendation feature until remote CI and migration status are confirmed.
+Next phase: push the local Recommendation Engine branch, verify GitHub CI/App Quality runs on GitHub, and verify remote Supabase has both recommendation storage migrations and `items.algorithm_meta` applied. Do not start another recommendation feature until remote CI and migration status are confirmed.

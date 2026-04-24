@@ -6,7 +6,7 @@
 ## 当前状态
 
 - App shell + Supabase foundation 已完成并在主线可用：Landing、Today、Closet、Shop、Looks、Travel 页面都已有可运行骨架与受保护路由。
-- Closet 已具备第一阶段低成本导入闭环：本地图片上传、相册批量导入、商品链接或图片链接导入、拼图拆分导入，以及保存后继续浏览和编辑。
+- Closet 已具备第一阶段低成本导入闭环：本地图片上传、相册批量导入、商品链接或图片链接导入、拼图拆分导入，以及保存后继续浏览和编辑；单品还支持可选 `algorithm_meta`，用于后续更准确判断 slot、层次角色、轮廓、材质重量、正式度、保暖度、舒适度、视觉重量和图案。
 - Closet 已具备第一阶段整理能力：重复提醒、闲置提醒、基础缺口、优先动作清单、按类型/按颜色分组浏览、编辑识别结果、重新识别、删除、图片右转 90°。
 - Today + OOTD 已形成主链路：基于衣橱生成规则型推荐，支持天气增强、城市保存、换一批推荐、记录今日已穿、满意度反馈、最近历史查看与编辑/删除。
 - 推荐偏好引擎已完成前七阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序，以及低频 deterministic “灵感尝试”推荐。
@@ -37,6 +37,7 @@
 - 已完成第一版整理建议：重复、闲置、缺口与优先动作清单。
 - 已补 beta 期高价值衣物元数据入口：导入/编辑时可填写购买价格、购买年份与当前状态，并对未完成远端迁移的旧库保留兼容式读写回退。
 - 已完成衣橱分类字典 v2：核心服装主类收敛为上装 / 下装 / 连体/全身装 / 外层，旧的上衣 / 裤装 / 全身装 / 外套 / 乐福鞋等历史值会在读取与编辑时自动归一到新字典。
+- 已新增可选算法 metadata：`items.algorithm_meta` 以 JSON 存储，不破坏旧数据；保存/读取会从现有 category / subCategory / styleTags 推断 fallback，AI 识别可选返回更细的算法字段。
 - 已完成一二级类图标的真实组件接入，上传确认表单现在支持分类与子分类的图标快选。
 - 已完成组件测试与多轮浏览器验证；旧库未加 `image_flipped` 列时，读取与写入都有兼容兜底。
 
@@ -92,7 +93,7 @@
 
 ## 当前风险 / 待验证
 
-- 远端 Supabase schema 上次已通过 `npm run travel:db:check` 验证为 reachable；本轮新增/修正的 recommendation storage migration 仍需单独确认已 applied 到远端。
+- 远端 Supabase schema 上次已通过 `npm run travel:db:check` 验证为 reachable；本轮新增/修正的 recommendation storage migration 和 `items.algorithm_meta` migration 仍需单独确认已 applied 到远端。
 - Closet 的右转 90° 需要在旧库环境里再点一轮真实浏览器确认，确保不再触发 node/server action 报错。
 - Closet 仍是客户端体积重点：当前导入、远程链接、拼图与编辑能力集中在同一交互岛里，下一轮若继续压包，应优先把低频导入/图片处理路径懒加载。
 - 移动端底部导航在 full-page 截图里会覆盖部分中段内容；实际滚动底部已有 padding，但 beta 前仍建议再做一次手感微调。
