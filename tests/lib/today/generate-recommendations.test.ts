@@ -182,6 +182,69 @@ describe('generateTodayRecommendations', () => {
     expect(recommendations.some((recommendation) => recommendation.outerLayer)).toBe(true)
   })
 
+  it('adds light outer layers in mild cool weather', () => {
+    const recommendations = generateTodayRecommendations({
+      items: [
+        {
+          id: 'top-mild',
+          imageUrl: null,
+          category: '上装',
+          subCategory: 'T恤',
+          colorCategory: '白色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'bottom-mild',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '休闲裤',
+          colorCategory: '黑色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:01:00Z'
+        },
+        {
+          id: 'outer-light',
+          imageUrl: null,
+          category: '外层',
+          subCategory: '开衫',
+          colorCategory: '浅灰色',
+          styleTags: ['休闲', '轻薄'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:02:00Z'
+        },
+        {
+          id: 'outer-heavy',
+          imageUrl: null,
+          category: '外层',
+          subCategory: '大衣',
+          colorCategory: '黑色',
+          styleTags: ['保暖'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:03:00Z'
+        }
+      ],
+      weather: {
+        city: 'Shanghai',
+        temperatureC: 16,
+        conditionLabel: '晴',
+        isWarm: false,
+        isCold: false
+      },
+      preferenceState: resetRecommendationPreferences()
+    })
+
+    expect(recommendations[0]?.outerLayer?.id).toBe('outer-light')
+    expect(recommendations[0]?.reason).toContain('天气微凉，已补轻外层')
+    expect(recommendations[0]?.componentScores?.weatherComfort).toBeGreaterThan(80)
+  })
+
   it('adds shoes, bag, accessories, confidence, and component scores when available', () => {
     const preferenceState = resetRecommendationPreferences()
     const recommendations = generateTodayRecommendations({
