@@ -17,8 +17,12 @@ const from = vi.fn((table: string) => {
 })
 const updateUser = vi.fn(() => Promise.resolve({ error: null }))
 const getUser = vi.fn(() => Promise.resolve({ data: { user: { user_metadata: {} } } }))
-const createSupabaseServerClient = vi.fn(async () => ({ from, auth: { updateUser, getUser } }))
+const signOut = vi.fn(() => Promise.resolve({ error: null }))
+const createSupabaseServerClient = vi.fn(async () => ({ from, auth: { updateUser, getUser, signOut } }))
 const revalidatePath = vi.fn()
+const redirect = vi.fn((path: string) => {
+  throw new Error(`redirect:${path}`)
+})
 const reportBetaIssue = vi.fn()
 const trackBetaEvent = vi.fn()
 const saveTodayOotdFeedback = vi.fn()
@@ -69,6 +73,10 @@ vi.mock('next/cache', () => ({
   revalidatePath
 }))
 
+vi.mock('next/navigation', () => ({
+  redirect
+}))
+
 describe('today actions', () => {
   beforeEach(() => {
     getSession.mockReset()
@@ -83,6 +91,12 @@ describe('today actions', () => {
     updateUser.mockResolvedValue({ error: null })
     getUser.mockReset()
     getUser.mockResolvedValue({ data: { user: { user_metadata: {} } } })
+    signOut.mockReset()
+    signOut.mockResolvedValue({ error: null })
+    redirect.mockReset()
+    redirect.mockImplementation((path: string) => {
+      throw new Error(`redirect:${path}`)
+    })
     reportBetaIssue.mockReset()
     reportBetaIssue.mockResolvedValue(undefined)
     trackBetaEvent.mockReset()
@@ -358,5 +372,15 @@ describe('today actions', () => {
       })
     )
     expect(revalidatePath).toHaveBeenCalledWith('/today')
+  })
+
+  it('signs out the current user and redirects to landing', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+
+    const { signOutTodayAction } = await import('@/app/today/actions')
+
+    await expect(signOutTodayAction()).rejects.toThrow('redirect:/')
+    expect(signOut).toHaveBeenCalled()
+    expect(redirect).toHaveBeenCalledWith('/')
   })
 })

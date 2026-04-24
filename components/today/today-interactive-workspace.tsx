@@ -45,6 +45,7 @@ export function TodayInteractiveWorkspace({
   submitOotd,
   refreshRecommendations,
   changePassword,
+  signOut,
   updateHistoryEntry,
   deleteHistoryEntry
 }: {
@@ -53,6 +54,7 @@ export function TodayInteractiveWorkspace({
   submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
   refreshRecommendations: (input: { offset: number }) => Promise<{ recommendations: TodayRecommendation[] }>
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
+  signOut: () => Promise<void>
   updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>
   deleteHistoryEntry: (input: { ootdId: string }) => Promise<{ error: string | null }>
 }) {
@@ -222,6 +224,7 @@ export function TodayInteractiveWorkspace({
                   passwordBootstrapped={view.passwordBootstrapped}
                   passwordChangedAt={view.passwordChangedAt}
                   changePassword={changePassword}
+                  signOut={signOut}
                 />
               </div>
             </div>

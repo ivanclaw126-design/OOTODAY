@@ -5,12 +5,18 @@ import { SettingsPage } from '@/components/settings/settings-page'
 describe('SettingsPage', () => {
   const resetPreferences = vi.fn()
   const restartQuestionnaire = vi.fn()
+  const copyDemoCloset = vi.fn()
+  const clearCloset = vi.fn()
 
   beforeEach(() => {
     resetPreferences.mockReset()
     restartQuestionnaire.mockReset()
+    copyDemoCloset.mockReset()
+    clearCloset.mockReset()
     resetPreferences.mockResolvedValue({ error: null })
     restartQuestionnaire.mockResolvedValue({ error: null })
+    copyDemoCloset.mockResolvedValue({ error: null, copiedCount: 12 })
+    clearCloset.mockResolvedValue({ error: null })
   })
 
   afterEach(() => {
@@ -24,6 +30,8 @@ describe('SettingsPage', () => {
         updatedAt="2026-04-24T06:00:00.000Z"
         resetPreferences={resetPreferences}
         restartQuestionnaire={restartQuestionnaire}
+        copyDemoCloset={copyDemoCloset}
+        clearCloset={clearCloset}
       />
     )
 
@@ -38,6 +46,8 @@ describe('SettingsPage', () => {
         updatedAt="2026-04-24T06:00:00.000Z"
         resetPreferences={resetPreferences}
         restartQuestionnaire={restartQuestionnaire}
+        copyDemoCloset={copyDemoCloset}
+        clearCloset={clearCloset}
       />
     )
 
@@ -59,6 +69,8 @@ describe('SettingsPage', () => {
         updatedAt="2026-04-24T06:00:00.000Z"
         resetPreferences={resetPreferences}
         restartQuestionnaire={restartQuestionnaire}
+        copyDemoCloset={copyDemoCloset}
+        clearCloset={clearCloset}
       />
     )
 
@@ -80,6 +92,8 @@ describe('SettingsPage', () => {
         updatedAt="2026-04-24T06:00:00.000Z"
         resetPreferences={resetPreferences}
         restartQuestionnaire={restartQuestionnaire}
+        copyDemoCloset={copyDemoCloset}
+        clearCloset={clearCloset}
       />
     )
 
@@ -87,5 +101,49 @@ describe('SettingsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '确认重置推荐权重' }))
 
     expect(await screen.findByText('推荐权重重置失败，请稍后重试')).toBeInTheDocument()
+  })
+
+  it('confirms before copying the demo closet', async () => {
+    render(
+      <SettingsPage
+        source="default"
+        updatedAt="2026-04-24T06:00:00.000Z"
+        resetPreferences={resetPreferences}
+        restartQuestionnaire={restartQuestionnaire}
+        copyDemoCloset={copyDemoCloset}
+        clearCloset={clearCloset}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '复制演示衣橱' }))
+    expect(copyDemoCloset).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '确认复制' }))
+
+    await waitFor(() => {
+      expect(copyDemoCloset).toHaveBeenCalled()
+    })
+    expect(screen.getByText('已复制 12 件演示衣物')).toBeInTheDocument()
+  })
+
+  it('confirms before clearing the current closet', async () => {
+    render(
+      <SettingsPage
+        source="default"
+        updatedAt="2026-04-24T06:00:00.000Z"
+        resetPreferences={resetPreferences}
+        restartQuestionnaire={restartQuestionnaire}
+        copyDemoCloset={copyDemoCloset}
+        clearCloset={clearCloset}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '清空我的衣橱' }))
+    expect(clearCloset).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '确认清空' }))
+
+    await waitFor(() => {
+      expect(clearCloset).toHaveBeenCalled()
+    })
+    expect(screen.getByText('衣橱已清空')).toBeInTheDocument()
   })
 })

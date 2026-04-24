@@ -28,6 +28,9 @@ export type Database = {
           user_id: string
           image_url: string | null
           image_flipped: boolean
+          image_original_url: string | null
+          image_rotation_quarter_turns: number
+          image_restore_expires_at: string | null
           category: string
           sub_category: string | null
           color_category: string | null
@@ -35,6 +38,9 @@ export type Database = {
           algorithm_meta: Json
           season_tags: string[]
           brand: string | null
+          purchase_price: number | null
+          purchase_year: string | null
+          item_condition: string | null
           last_worn_date: string | null
           wear_count: number
           created_at: string
@@ -45,12 +51,18 @@ export type Database = {
           category: string
           image_url?: string | null
           image_flipped?: boolean
+          image_original_url?: string | null
+          image_rotation_quarter_turns?: number
+          image_restore_expires_at?: string | null
           sub_category?: string | null
           color_category?: string | null
           style_tags?: string[]
           algorithm_meta?: Json
           season_tags?: string[]
           brand?: string | null
+          purchase_price?: number | null
+          purchase_year?: string | null
+          item_condition?: string | null
           last_worn_date?: string | null
           wear_count?: number
         }

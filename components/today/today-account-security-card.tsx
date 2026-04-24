@@ -10,12 +10,14 @@ export function TodayAccountSecurityCard({
   email,
   passwordBootstrapped,
   passwordChangedAt,
-  changePassword
+  changePassword,
+  signOut
 }: {
   email: string | null
   passwordBootstrapped: boolean
   passwordChangedAt: string | null
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
+  signOut: () => Promise<void>
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [password, setPassword] = useState('')
@@ -23,6 +25,7 @@ export function TodayAccountSecurityCard({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -45,6 +48,11 @@ export function TodayAccountSecurityCard({
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  async function handleSignOut() {
+    setIsSigningOut(true)
+    await signOut()
   }
 
   return (
@@ -122,6 +130,12 @@ export function TodayAccountSecurityCard({
 
       {errorMessage ? <p className="mt-3 text-sm text-red-600">{errorMessage}</p> : null}
       {successMessage ? <p className="mt-3 text-sm text-[var(--color-accent)]">{successMessage}</p> : null}
+
+      <div className="mt-5 border-t border-[var(--color-line)] pt-4">
+        <SecondaryButton type="button" className="w-full sm:w-auto" disabled={isSigningOut} onClick={() => void handleSignOut()}>
+          {isSigningOut ? '正在退出…' : '退出当前登录账号'}
+        </SecondaryButton>
+      </div>
     </Card>
   )
 }

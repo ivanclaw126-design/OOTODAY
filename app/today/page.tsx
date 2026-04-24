@@ -7,6 +7,7 @@ import {
   changeTodayPasswordAction,
   deleteTodayHistoryEntryAction,
   refreshTodayRecommendationsAction,
+  signOutTodayAction,
   submitTodayOotdAction,
   updateTodayHistoryEntryAction,
   updateTodayCityAction
@@ -73,6 +74,12 @@ async function TodayRouteContent({
     return changeTodayPasswordAction(input)
   }
 
+  async function signOut() {
+    'use server'
+
+    return signOutTodayAction()
+  }
+
   async function updateHistoryEntry(input: TodayHistoryUpdateInput) {
     'use server'
 
@@ -92,6 +99,7 @@ async function TodayRouteContent({
       submitOotd={submitOotd}
       refreshRecommendations={refreshRecommendations}
       changePassword={changePassword}
+      signOut={signOut}
       updateHistoryEntry={updateHistoryEntry}
       deleteHistoryEntry={deleteHistoryEntry}
     />

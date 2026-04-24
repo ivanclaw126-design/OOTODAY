@@ -14,6 +14,7 @@ export function TodayPage({
   submitOotd,
   refreshRecommendations,
   changePassword,
+  signOut,
   updateHistoryEntry,
   deleteHistoryEntry
 }: {
@@ -22,6 +23,7 @@ export function TodayPage({
   submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
   refreshRecommendations: (input: { offset: number }) => Promise<{ recommendations: TodayRecommendation[] }>
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
+  signOut: () => Promise<void>
   updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>
   deleteHistoryEntry: (input: { ootdId: string }) => Promise<{ error: string | null }>
 }) {
@@ -78,6 +80,7 @@ export function TodayPage({
             submitOotd={submitOotd}
             refreshRecommendations={refreshRecommendations}
             changePassword={changePassword}
+            signOut={signOut}
             updateHistoryEntry={updateHistoryEntry}
             deleteHistoryEntry={deleteHistoryEntry}
           />

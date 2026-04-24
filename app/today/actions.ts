@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth/get-session'
 import { reportBetaIssue, trackBetaEvent } from '@/lib/beta/telemetry'
 import { validatePassword } from '@/lib/auth/password'
@@ -204,6 +205,19 @@ export async function changeTodayPasswordAction({
 
   revalidatePath('/today')
   return { error: null }
+}
+
+export async function signOutTodayAction() {
+  const session = await getSession()
+
+  if (!session) {
+    redirect('/')
+  }
+
+  const supabase = await createSupabaseServerClient()
+  await supabase.auth.signOut()
+
+  redirect('/')
 }
 
 export async function updateTodayHistoryEntryAction({

@@ -91,6 +91,7 @@
 - Travel / Shop / Looks 已补 beta extension 提示，明确它们在这一轮主要是扩展能力，不抢 `Closet -> Today` 主路径叙事。
 - 密码登录、magic-link callback 与登录后首页都已统一走 bootstrap 分流：空衣橱进入 `/closet?onboarding=1`，已有衣橱进入 `/today`。
 - 已新增朋友 beta QA 清单与 runbook，覆盖邀请、成功标准、反馈收集、stop/go 阈值和两条 smoke flow。
+- Settings 已新增 demo seed 衣橱体验入口：`test@test.com` 用于女装演示衣橱，`test-men@test.com` 用于男装演示衣橱；真实用户可复制演示衣橱到自己的账号，也可一键清空当前账号的衣橱、OOTD、保存搭配和旅行方案；`npm run demo:magiclink` 可创建/确认 seed 账号并生成维护用 magic link。
 
 ## 当前风险 / 待验证
 
@@ -131,6 +132,7 @@
 ## 下一步
 
 1. 按 `docs/beta-readiness-checklist.md` 跑目标环境 beta go/no-go：优先 Auth、推荐偏好、Today、移动端和 CI/部署。
-2. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
-3. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
-4. 为 Today、Shop、Looks、Travel 的关键推荐文案状态补视觉回归截图或手动截图 QA。
+2. 用 `test@test.com` 维护女装 demo 图片衣橱，用 `test-men@test.com` 维护男装 demo 图片衣橱，并在部署环境验证“复制演示衣橱”和“清空我的衣橱”两条 Settings 路径。
+3. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
+4. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
+5. 为 Today、Shop、Looks、Travel 的关键推荐文案状态补视觉回归截图或手动截图 QA。

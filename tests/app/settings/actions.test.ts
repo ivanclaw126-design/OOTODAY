@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const getSession = vi.fn()
 const ensureProfile = vi.fn()
 const savePreferenceState = vi.fn()
+const copyDemoClosetToUser = vi.fn()
+const clearUserCloset = vi.fn()
 const revalidatePath = vi.fn()
 const redirect = vi.fn((path: string) => {
   throw new Error(`redirect:${path}`)
@@ -20,6 +22,11 @@ vi.mock('@/lib/recommendation/save-preference-state', () => ({
   savePreferenceState
 }))
 
+vi.mock('@/lib/demo/demo-closet', () => ({
+  copyDemoClosetToUser,
+  clearUserCloset
+}))
+
 vi.mock('next/cache', () => ({
   revalidatePath
 }))
@@ -33,6 +40,8 @@ describe('settings actions', () => {
     getSession.mockReset()
     ensureProfile.mockReset()
     savePreferenceState.mockReset()
+    copyDemoClosetToUser.mockReset()
+    clearUserCloset.mockReset()
     revalidatePath.mockReset()
     redirect.mockReset()
     redirect.mockImplementation((path: string) => {
@@ -100,5 +109,43 @@ describe('settings actions', () => {
       error: '进入风格问卷失败，请稍后重试'
     })
     expect(redirect).not.toHaveBeenCalled()
+  })
+
+  it('copies the demo closet for the signed-in user', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    copyDemoClosetToUser.mockResolvedValue({ error: null, copiedCount: 8 })
+
+    const { copyDemoClosetAction } = await import('@/app/settings/actions')
+
+    await expect(copyDemoClosetAction()).resolves.toEqual({ error: null, copiedCount: 8 })
+    expect(ensureProfile).toHaveBeenCalledWith('user-1')
+    expect(copyDemoClosetToUser).toHaveBeenCalledWith('user-1')
+    expect(revalidatePath).toHaveBeenCalledWith('/closet')
+    expect(revalidatePath).toHaveBeenCalledWith('/today')
+  })
+
+  it('returns copy errors from the demo closet helper', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    copyDemoClosetToUser.mockResolvedValue({ error: '演示账号衣橱还是空的', copiedCount: 0 })
+
+    const { copyDemoClosetAction } = await import('@/app/settings/actions')
+
+    await expect(copyDemoClosetAction()).resolves.toEqual({
+      error: '演示账号衣橱还是空的',
+      copiedCount: 0
+    })
+  })
+
+  it('clears the current user closet', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    clearUserCloset.mockResolvedValue({ deletedImageCount: 3 })
+
+    const { clearClosetAction } = await import('@/app/settings/actions')
+
+    await expect(clearClosetAction()).resolves.toEqual({ error: null })
+    expect(ensureProfile).toHaveBeenCalledWith('user-1')
+    expect(clearUserCloset).toHaveBeenCalledWith('user-1')
+    expect(revalidatePath).toHaveBeenCalledWith('/closet')
+    expect(revalidatePath).toHaveBeenCalledWith('/today')
   })
 })

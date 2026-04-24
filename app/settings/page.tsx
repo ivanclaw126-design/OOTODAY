@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/app-shell'
 import { SettingsPage } from '@/components/settings/settings-page'
 import {
+  clearClosetAction,
+  copyDemoClosetAction,
   resetRecommendationPreferencesAction,
   restartStyleQuestionnaireAction
 } from '@/app/settings/actions'
@@ -34,6 +36,18 @@ export default async function SettingsRoute() {
     return restartStyleQuestionnaireAction()
   }
 
+  async function copyDemoCloset() {
+    'use server'
+
+    return copyDemoClosetAction()
+  }
+
+  async function clearCloset() {
+    'use server'
+
+    return clearClosetAction()
+  }
+
   return (
     <AppShell title="AI 造型引擎">
       <SettingsPage
@@ -41,6 +55,8 @@ export default async function SettingsRoute() {
         updatedAt={preferenceState.updatedAt}
         resetPreferences={resetPreferences}
         restartQuestionnaire={restartQuestionnaire}
+        copyDemoCloset={copyDemoCloset}
+        clearCloset={clearCloset}
       />
     </AppShell>
   )

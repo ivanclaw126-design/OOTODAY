@@ -7,6 +7,7 @@ const updateCity = vi.fn().mockResolvedValue({ error: null })
 const refreshRecommendations = vi.fn().mockResolvedValue({ recommendations: [] })
 const submitOotd = vi.fn()
 const changePassword = vi.fn().mockResolvedValue({ error: null })
+const signOut = vi.fn().mockResolvedValue(undefined)
 const updateHistoryEntry = vi.fn()
 const deleteHistoryEntry = vi.fn()
 
@@ -93,6 +94,8 @@ describe('TodayPage', () => {
     refreshRecommendations.mockResolvedValue({ recommendations: [] })
     changePassword.mockReset()
     changePassword.mockResolvedValue({ error: null })
+    signOut.mockReset()
+    signOut.mockResolvedValue(undefined)
     updateHistoryEntry.mockReset()
     updateHistoryEntry.mockResolvedValue({ error: null, entry: null })
     deleteHistoryEntry.mockReset()
@@ -126,6 +129,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -154,6 +158,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -182,6 +187,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -222,6 +228,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -259,6 +266,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -291,6 +299,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -323,6 +332,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -352,6 +362,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -389,6 +400,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -437,6 +449,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -472,6 +485,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -510,6 +524,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -543,6 +558,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -578,6 +594,7 @@ describe('TodayPage', () => {
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
+        signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
         deleteHistoryEntry={deleteHistoryEntry}
       />
@@ -595,6 +612,42 @@ describe('TodayPage', () => {
         password: 'betterpass123',
         confirmPassword: 'betterpass123'
       })
+    })
+  })
+
+  it('lets the user sign out from Today settings', async () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 2,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: {
+            status: 'recorded',
+            wornAt: '2026-04-21T08:00:00.000Z'
+          },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }))
+    fireEvent.click(screen.getByRole('button', { name: '退出当前登录账号' }))
+
+    await waitFor(() => {
+      expect(signOut).toHaveBeenCalled()
     })
   })
 
@@ -618,6 +671,7 @@ describe('TodayPage', () => {
           submitOotd={submitOotd}
           refreshRecommendations={refreshRecommendations}
           changePassword={changePassword}
+          signOut={signOut}
           updateHistoryEntry={updateHistoryEntry}
           deleteHistoryEntry={deleteHistoryEntry}
         />
