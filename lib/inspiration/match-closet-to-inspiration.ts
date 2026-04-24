@@ -744,6 +744,18 @@ function buildSubstituteSuggestion(inspirationItem: InspirationKeyItem, matchedI
   return `没有同类单品，也没有足够接近的替代；先记住它承担的是“${inspirationItem.layerRole ?? inspirationItem.slot ?? inspirationItem.category}”角色。${preferenceNote ? ` ${preferenceNote}` : ''}${alternativeText}`.trim()
 }
 
+function canUseFormulaSubstitute(inspirationSlot: InspirationOutfitSlot | 'unknown', entry: ScoredClosetItem) {
+  if (entry.exactCategory || entry.sameSlot) {
+    return true
+  }
+
+  if (inspirationSlot === 'accessory') {
+    return true
+  }
+
+  return inspirationSlot === 'unknown'
+}
+
 export function matchClosetToInspiration(
   breakdown: InspirationBreakdown,
   closetItems: ClosetItemCardData[],
@@ -753,6 +765,7 @@ export function matchClosetToInspiration(
 
   return breakdown.keyItems.map((inspirationItem) => {
     const normalizedCategory = normalizeCategoryValue(inspirationItem.category)
+    const inspirationSlot = normalizeSlot(inspirationItem.slot, inspirationItem.category)
     const scoredItems = closetItems
       .map((item) => scoreClosetItem(inspirationItem, item, context))
       .sort((left, right) => {
@@ -787,6 +800,7 @@ export function matchClosetToInspiration(
     const matchedEntries = scoredItems
       .filter((entry) => !entry.blockedByHardAvoid)
       .filter((entry) => !entry.tooFarForDaily)
+      .filter((entry) => canUseFormulaSubstitute(inspirationSlot, entry))
       .filter((entry) => entry.score >= (hasExactCategory ? 0.32 : 0.22))
       .slice(0, 2)
     const matchedItems = matchedEntries
