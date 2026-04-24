@@ -307,16 +307,21 @@ export function TodayRecommendationCard({
               <p className="text-sm text-[var(--color-neutral-dark)]">选 1-5 分后提交，系统会把它记成今天的记录。</p>
             </div>
             <div className="grid grid-cols-5 gap-2">
-              {[1, 2, 3, 4, 5].map((score) => (
-                <SecondaryButton
-                  key={score}
-                  type="button"
-                  aria-pressed={selectedScore === score}
-                  onClick={() => setSelectedScore(score)}
-                >
-                  {score} 分
-                </SecondaryButton>
-              ))}
+              {[1, 2, 3, 4, 5].map((score) => {
+                const selected = selectedScore === score
+
+                return (
+                  <SecondaryButton
+                    key={score}
+                    type="button"
+                    aria-pressed={selected}
+                    className={selected ? 'border-[var(--color-primary)] bg-[var(--color-accent)] text-[var(--color-primary)]' : ''}
+                    onClick={() => setSelectedScore(score)}
+                  >
+                    {score} 分
+                  </SecondaryButton>
+                )
+              })}
             </div>
             <div className="space-y-4 rounded-[1.1rem] border border-[var(--color-line)] bg-white/62 p-3">
               {renderReasonGroup('喜欢原因', likeReasonTags)}
