@@ -8,7 +8,7 @@ build_transaction_pooler_url() {
   ROOT_DIR_FOR_PY="$ROOT_DIR" python3 - <<'PY'
 from pathlib import Path
 import os
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 
 def parse_env_file(path: Path) -> dict[str, str]:
@@ -51,6 +51,13 @@ def derive_transaction_pooler(url: str | None) -> str | None:
     return urlunparse(parsed._replace(netloc=f"{auth}@{parsed.hostname}:6543"))
 
 
+def disable_statement_cache(url: str) -> str:
+    parsed = urlparse(url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query["statement_cache_capacity"] = "0"
+    return urlunparse(parsed._replace(query=urlencode(query)))
+
+
 root = Path(os.environ["ROOT_DIR_FOR_PY"])
 env_values: dict[str, str] = {}
 for env_file in (root / ".env.local", root / ".env"):
@@ -63,7 +70,7 @@ candidate = transaction_url or derive_transaction_pooler(session_url)
 if not candidate:
     raise SystemExit(1)
 
-print(candidate)
+print(disable_statement_cache(candidate))
 PY
 }
 
@@ -95,7 +102,7 @@ echo "[supabase-ipv4-push] Using transaction pooler URL:"
 mask_db_url "$DB_URL"
 
 echo "[supabase-ipv4-push] Dry run..."
-supabase db push --db-url "$DB_URL" --dry-run
+supabase db push --workdir "$ROOT_DIR" --db-url "$DB_URL" --dry-run --include-all
 
 echo "[supabase-ipv4-push] Applying remote migrations..."
-supabase db push --db-url "$DB_URL"
+supabase db push --workdir "$ROOT_DIR" --db-url "$DB_URL" --include-all --yes
