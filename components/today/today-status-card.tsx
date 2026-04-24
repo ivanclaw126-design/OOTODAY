@@ -1,21 +1,27 @@
 import { Card } from '@/components/ui/card'
 import type { TodayWeatherState } from '@/lib/today/types'
 
-export function TodayStatusCard({ weatherState }: { weatherState: TodayWeatherState }) {
+export function TodayStatusCard({ city, weatherState }: { city: string | null; weatherState: TodayWeatherState }) {
   const todayLabel = new Intl.DateTimeFormat('zh-CN', {
     month: 'numeric',
     day: 'numeric',
     weekday: 'long'
   }).format(new Date())
 
-  let summary = '未设置常住城市'
+  let temperatureLabel = '待设置'
+  let locationLabel = '未设置'
+  let weatherLabel = '待设置'
 
   if (weatherState.status === 'ready') {
-    summary = `${weatherState.weather.city} · ${weatherState.weather.temperatureC}°C · ${weatherState.weather.conditionLabel}`
+    temperatureLabel = `${weatherState.weather.temperatureC}°C`
+    locationLabel = city ?? weatherState.weather.city
+    weatherLabel = weatherState.weather.conditionLabel
   }
 
   if (weatherState.status === 'unavailable') {
-    summary = `${weatherState.city} · 天气暂时不可用`
+    temperatureLabel = '待更新'
+    locationLabel = city ?? weatherState.city
+    weatherLabel = '暂不可用'
   }
 
   return (
@@ -32,23 +38,24 @@ export function TodayStatusCard({ weatherState }: { weatherState: TodayWeatherSt
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[2rem] bg-[#111111] text-white shadow-[var(--shadow-strong)]">
-          <div className="space-y-2 p-4 sm:p-6">
+        <div className="overflow-hidden rounded-[1.6rem] bg-[#111111] text-white shadow-[var(--shadow-strong)]">
+          <div className="space-y-2 px-4 py-4 sm:px-5 sm:py-5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/68">今日引擎</p>
-            <p className="max-w-[11ch] text-[1.56rem] leading-[0.95] font-semibold tracking-[-0.05em] sm:max-w-lg sm:text-[2rem]">今天穿什么，先用一眼能做决定的方式告诉你。</p>
-            <p className="max-w-xl text-sm leading-6 text-white/84 sm:text-sm sm:leading-6">{summary}</p>
+            <p className="max-w-[13ch] text-[1.35rem] leading-[0.98] font-semibold tracking-[-0.05em] sm:max-w-lg sm:text-[1.75rem]">今天穿什么，先用一眼能做决定的方式告诉你。</p>
           </div>
 
-          <div className="grid gap-px bg-white/10 sm:grid-cols-[1.1fr_0.9fr]">
-            <div className="bg-white/5 px-4 py-4 sm:px-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">匹配度</p>
-              <p className="mt-3 text-[3.25rem] font-semibold tracking-[-0.08em] text-[var(--color-accent)] sm:text-5xl">94%</p>
-              <p className="mt-2 text-sm leading-6 text-white/82">根据衣橱完整度和当前天气估算，这一轮推荐已经足够直接拿来做决定。</p>
+          <div className="grid grid-cols-3 gap-px bg-white/10">
+            <div className="min-w-0 bg-white/5 px-3 py-3 sm:px-5 sm:py-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/62">温度</p>
+              <p className="mt-2 truncate text-[1.35rem] font-semibold tracking-[-0.06em] text-[var(--color-accent)] sm:text-3xl">{temperatureLabel}</p>
             </div>
-            <div className="bg-white/6 px-4 py-4 sm:px-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">穿搭重点</p>
-              <p className="mt-3 text-base font-semibold tracking-[-0.03em] sm:text-lg">少一点解释，多一点可执行建议。</p>
-              <p className="mt-2 text-sm leading-6 text-white/82">下面的推荐会优先保留最容易直接穿出门的组合，不让你在细节里反复犹豫。</p>
+            <div className="min-w-0 bg-white/6 px-3 py-3 sm:px-5 sm:py-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/62">地点</p>
+              <p className="mt-2 truncate text-base font-semibold tracking-[-0.03em] text-white sm:text-xl">{locationLabel}</p>
+            </div>
+            <div className="min-w-0 bg-white/6 px-3 py-3 sm:px-5 sm:py-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/62">天气</p>
+              <p className="mt-2 truncate text-base font-semibold tracking-[-0.03em] text-white sm:text-xl">{weatherLabel}</p>
             </div>
           </div>
         </div>

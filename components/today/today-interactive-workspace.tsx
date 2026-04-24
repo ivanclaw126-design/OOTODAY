@@ -151,25 +151,6 @@ export function TodayInteractiveWorkspace({
         </Card>
       ) : null}
 
-      <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.78)_0%,rgba(241,235,226,0.94)_100%)]">
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">1-3 day preview</p>
-            <h2 className="text-xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">接下来 1-3 天可以先这样用</h2>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {['明天', '后天', '第 3 天'].map((label) => (
-              <div key={label} className="rounded-[1.35rem] border border-[var(--color-line)] bg-white/75 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-primary)]">{label}</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--color-neutral-dark)]">
-                  先沿用今天最顺手的一套思路，再根据天气和是否出门微调，不用每天都从零开始想。
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Card>
-
       {!view.city ? <TodayCityPromptCard /> : null}
 
       {isEditingCity ? (
