@@ -18,7 +18,13 @@ async function withStorageRetry(label, operation) {
 
   for (let attempt = 1; attempt <= STORAGE_RETRY_ATTEMPTS; attempt += 1) {
     try {
-      return await operation()
+      const result = await operation()
+
+      if (result?.error) {
+        throw result.error
+      }
+
+      return result
     } catch (error) {
       lastError = error
 
@@ -115,16 +121,12 @@ async function listStoragePaths(admin, bucket, folder) {
   const paths = []
 
   async function walk(currentFolder) {
-    const { data, error } = await withStorageRetry(`List storage ${currentFolder}`, () =>
+    const { data } = await withStorageRetry(`List storage ${currentFolder}`, () =>
       admin.storage.from(bucket).list(currentFolder, {
         limit: 1000,
         sortBy: { column: 'name', order: 'asc' }
       })
     )
-
-    if (error) {
-      throw error
-    }
 
     for (const entry of data ?? []) {
       const entryPath = `${currentFolder}/${entry.name}`
@@ -347,13 +349,9 @@ const existingPaths = await listStoragePaths(admin, storageBucket, storageFolder
 })
 
 if (existingPaths.length > 0) {
-  const { error } = await withStorageRetry(`Remove ${existingPaths.length} storage objects`, () =>
+  await withStorageRetry(`Remove ${existingPaths.length} storage objects`, () =>
     admin.storage.from(storageBucket).remove(existingPaths)
   )
-
-  if (error) {
-    throw error
-  }
 }
 
 const { error: deleteError } = await admin
@@ -373,16 +371,12 @@ for (const item of manifest.items) {
   const storagePath = normalizeStoragePath(user.id, item.slug, imageAsset?.extension)
   const imageBody = imageAsset ? readFileSync(imageAsset.path) : Buffer.from(renderSvg(item), 'utf8')
   const contentType = imageAsset?.contentType ?? 'image/svg+xml; charset=utf-8'
-  const { error: uploadError } = await withStorageRetry(`Upload ${storagePath}`, () =>
+  await withStorageRetry(`Upload ${storagePath}`, () =>
     admin.storage.from(storageBucket).upload(storagePath, imageBody, {
       contentType,
       upsert: true
     })
   )
-
-  if (uploadError) {
-    throw uploadError
-  }
 
   const { data } = admin.storage.from(storageBucket).getPublicUrl(storagePath)
   inserts.push(toInsertPayload(item, user.id, data.publicUrl))
