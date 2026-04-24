@@ -1,14 +1,20 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
 
+export type InspirationOutfitSlot = 'top' | 'bottom' | 'onePiece' | 'outerLayer' | 'shoes' | 'bag' | 'accessory'
+
+export type InspirationLayerRole = 'base' | 'mid' | 'outer' | 'statement' | 'support'
+
+export type InspirationImportance = 1 | 2 | 3 | 4 | 5
+
 export type InspirationKeyItem = {
   id: string
   label: string
   category: string
-  slot?: string | null
+  slot?: InspirationOutfitSlot | null
   colorHint: string | null
-  silhouette?: string | null
-  layerRole?: string | null
-  importance?: string | null
+  silhouette?: string[]
+  layerRole?: InspirationLayerRole | null
+  importance?: InspirationImportance | null
   styleTags: string[]
   alternatives?: string[]
 }
@@ -31,6 +37,18 @@ export type InspirationClosetMatch = {
   matchedItems: ClosetItemCardData[]
   matchReason: string
   substituteSuggestion: string | null
+  scoreBreakdown?: InspirationMatchScoreBreakdown
+}
+
+export type InspirationMatchScoreBreakdown = {
+  total: number
+  categoryScore: number
+  slotScore: number
+  colorScore: number
+  silhouetteScore: number
+  styleScore: number
+  layerRoleScore: number
+  matchType: 'sameCategory' | 'formulaSubstitute' | 'missing'
 }
 
 export type InspirationRemixStep = {

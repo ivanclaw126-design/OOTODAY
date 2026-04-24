@@ -2,11 +2,93 @@
 
 ## Current Phase Completed
 
+Phase 3 Supabase recommendation storage migration alignment completed on 2026-04-24.
+
+The local Supabase migration for recommendation preferences and outfit feedback events now matches the app's actual read/write paths. It creates both tables, references `auth.users(id)`, sets the feedback context default to `today`, enables RLS, restricts user access to own rows, and includes the required feedback indexes. Remote application is not verified in this session.
+
+## Phase 3 Supabase Migration Alignment
+
+### Files Changed
+
+- `supabase/migrations/20260424143000_add_recommendation_preferences_feedback.sql`
+  - Creates `recommendation_preferences` with `user_id uuid primary key references auth.users(id) on delete cascade`.
+  - Creates `outfit_feedback_events` with `user_id uuid not null references auth.users(id) on delete cascade`.
+  - Sets `outfit_feedback_events.context` default to `today`.
+  - Enables RLS on both tables.
+  - Allows users to select/insert/update only their own `recommendation_preferences` rows.
+  - Allows users to select/insert only their own `outfit_feedback_events` rows.
+  - Does not open feedback update/delete policies.
+  - Adds indexes for `outfit_feedback_events(user_id, created_at desc)`, `outfit_feedback_events(user_id, context, created_at desc)`, and `recommendation_preferences(updated_at)`.
+- `types/database.ts`
+  - Confirms both table shapes match the migration and current `lib/recommendation/*` read/write fields.
+  - Adds optional `id` to `outfit_feedback_events.Insert` to reflect the `gen_random_uuid()` default.
+
+### Phase 3 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm test` passed: 59 test files, 239 tests.
+- `npm run build` passed, including `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
+
+### Phase 3 Remaining Issues
+
+- The migration is present and aligned locally, but has not been verified as applied on the remote Supabase project in this session.
+- App Quality workflow has not run on GitHub in this session.
+
+## Phase 2 Inspiration Formula Matching Fix
+
+Phase 2 Inspiration formula-based matching fix completed on 2026-04-24.
+
+Inspiration Phase 8C is now actually landed in code, tests, UI, and handoff. The AI breakdown contract includes formula fields, parser fallbacks tolerate incomplete AI output, closet matching uses formula-weighted scoring instead of category-only filtering, substitutes can be recommended when the same category is missing, and the UI shows formula metadata, match reasons, score breakdowns, and substitute guidance.
+
+
+### Files Changed
+
+- `lib/inspiration/types.ts`
+  - Adds explicit inspiration slot, layer-role, importance, and match-score breakdown types.
+  - Keeps formula fields on `InspirationBreakdown`.
+  - Extends closet matches with `scoreBreakdown`.
+- `lib/inspiration/analyze-inspiration-image.ts`
+  - Updates the AI prompt to request `scene`, `vibe`, `colorFormula`, `silhouetteFormula`, `layeringFormula`, `focalPoint`, key-item metadata, styling tips, and color strategy notes.
+  - Supports camelCase and snake_case AI fields.
+  - Adds conservative fallbacks for missing formula fields and incomplete key-item metadata.
+- `lib/inspiration/match-closet-to-inspiration.ts`
+  - Implements formula-weighted scoring: category 0.35, slot 0.15, color 0.20, silhouette 0.15, style 0.10, layer role 0.05.
+  - Uses exact color as the strongest color match, then falls back to existing color compatibility.
+  - Returns same-category matches first when strong enough, and formula substitutes when no same-category item exists.
+  - Returns `matchReason`, `substituteSuggestion`, and score breakdown data for UI/explanation.
+- `lib/inspiration/build-inspiration-remix-plan.ts`
+  - Explains color, silhouette, layering, and focal-point formulas in the remix summary.
+  - Labels same-category replacements separately from formula substitutes.
+- `components/inspiration/inspiration-page.tsx`
+  - Displays formula fields, key-item slot/silhouette/layer/importance metadata, alternatives, match reasons, score breakdowns, and substitute suggestions.
+- `tests/lib/inspiration/analyze-inspiration-image.test.ts`
+  - Covers formula parsing and missing-field fallback.
+- `tests/lib/inspiration/match-closet-to-inspiration.test.ts`
+  - Covers weighted matching, same-category ranking, formula substitutes, and long dark coat to long dark blazer substitution.
+- `tests/lib/inspiration/build-inspiration-remix-plan.test.ts`
+  - Covers formula-aware remix copy and same-category/substitute labeling.
+- `tests/components/inspiration-page.test.tsx`
+  - Covers UI display of formula fields, key-item metadata, alternatives, match reasons, substitute suggestions, and score breakdowns.
+
+### Phase 2 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm test` passed: 59 test files, 239 tests.
+- `npm run build` passed, including `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
+
+### Phase 2 Remaining Issues
+
+- App Quality workflow has not run on GitHub in this session.
+- Recommendation storage migration remote status is not verified in this session.
+- Inspiration formula matching still depends on image-analysis metadata quality; weak AI output falls back to conservative formula text.
+- Closet items do not yet store explicit silhouette/layer-role fields, so formula matching infers them from category, subcategory, color, and style tags.
+
+## Phase 1 Today Contract Fix
+
 Phase 1 Today recommendation generator contract fix completed on 2026-04-24.
 
 Today now exposes the object-parameter recommendation generator contract as the public API, returns the complete recommendation shape required by the Preference Engine and Today UI, and keeps complete outfit scoring active for top/bottom, dress, optional outerLayer, shoes, bag, and accessories.
 
-## Phase 1 Today Contract Fix
 
 ### Files Changed
 
@@ -51,14 +133,15 @@ Today now exposes the object-parameter recommendation generator contract as the 
 
 - `lib/inspiration/types.ts` includes `colorFormula`, `silhouetteFormula`, `layeringFormula`, and `focalPoint`.
 - `InspirationKeyItem` includes `slot`, `silhouette`, `layerRole`, `importance`, and `alternatives`.
-- `lib/inspiration/match-closet-to-inspiration.ts` is not category-only. It scores category, slot, color compatibility, silhouette tokens, shared style tags, layer role, and importance-weighted color.
+- `lib/inspiration/match-closet-to-inspiration.ts` is not category-only. It scores category, slot, color compatibility, silhouette tokens, shared style tags, and layer role with explicit score breakdowns.
 - `tests/lib/inspiration/*.test.ts` and `tests/components/inspiration-page.test.tsx` expect the formula fields, key-item metadata, match reasons, and substitute suggestions.
 - P0 blocker: none found for Inspiration. The Phase 8C completion claim matches current code.
 
 ### C. Supabase
 
 - `types/database.ts` declares `recommendation_preferences` and `outfit_feedback_events`.
-- `supabase/migrations/20260424143000_add_recommendation_preferences_feedback.sql` creates both tables, index, RLS, and policies.
+- `supabase/migrations/20260424143000_add_recommendation_preferences_feedback.sql` creates both tables, required indexes, RLS, and own-row policies.
+- The local migration now references `auth.users(id)` for both tables and defaults feedback `context` to `today`.
 - Code reads/writes both tables through `lib/recommendation/get-preference-state.ts`, `save-preference-state.ts`, and `apply-feedback.ts`.
 - P0 blocker: none found locally. Remote application is still unverified and remains a landing risk.
 
@@ -219,7 +302,7 @@ Phase 7 changes are also present in the current worktree:
 Verification:
 
 - `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
-- `npm test` passed: 59 test files, 237 tests.
+- `npm test` passed: 59 test files, 239 tests.
 - `npm run build` passed, with `/inspiration`, `/preferences`, `/settings`, `/shop`, `/today`, and `/travel` in the route list.
 
 ## Known Limitations

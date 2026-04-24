@@ -189,6 +189,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          id?: string
           user_id: string
           recommendation_id?: string | null
           preference_version?: number | null

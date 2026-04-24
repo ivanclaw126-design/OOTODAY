@@ -311,7 +311,7 @@ export function InspirationPage({
                       {item.category}
                       {item.slot ? ` · ${item.slot}` : ''}
                       {item.colorHint ? ` · ${item.colorHint}` : ''}
-                      {item.silhouette ? ` · ${item.silhouette}` : ''}
+                      {(item.silhouette ?? []).length > 0 ? ` · ${(item.silhouette ?? []).join(' / ')}` : ''}
                       {item.layerRole ? ` · ${item.layerRole}` : ''}
                       {item.importance ? ` · ${item.importance}` : ''}
                       {item.styleTags.length > 0 ? ` · ${item.styleTags.join(' / ')}` : ''}
@@ -358,6 +358,11 @@ export function InspirationPage({
                     {group.inspirationItem.label} · {group.inspirationItem.category}
                   </p>
                   <p className="text-sm text-[var(--color-neutral-dark)]">{group.matchReason}</p>
+                  {group.scoreBreakdown ? (
+                    <p className="text-xs text-[var(--color-neutral-dark)]">
+                      匹配分 {Math.round(group.scoreBreakdown.total * 100)} · 类别 {Math.round(group.scoreBreakdown.categoryScore * 100)} / slot {Math.round(group.scoreBreakdown.slotScore * 100)} / 颜色 {Math.round(group.scoreBreakdown.colorScore * 100)} / 轮廓 {Math.round(group.scoreBreakdown.silhouetteScore * 100)} / 风格 {Math.round(group.scoreBreakdown.styleScore * 100)} / 层次 {Math.round(group.scoreBreakdown.layerRoleScore * 100)}
+                    </p>
+                  ) : null}
                   {group.substituteSuggestion ? (
                     <p className="text-sm text-[var(--color-neutral-dark)]">{group.substituteSuggestion}</p>
                   ) : null}

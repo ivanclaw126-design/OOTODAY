@@ -92,7 +92,7 @@
 
 ## 当前风险 / 待验证
 
-- 远端 Supabase schema 已通过 `npm run travel:db:check` 验证为 reachable 且 up to date；后续若新增 migration，再按同一路径复核。
+- 远端 Supabase schema 上次已通过 `npm run travel:db:check` 验证为 reachable；本轮新增/修正的 recommendation storage migration 仍需单独确认已 applied 到远端。
 - Closet 的右转 90° 需要在旧库环境里再点一轮真实浏览器确认，确保不再触发 node/server action 报错。
 - Closet 仍是客户端体积重点：当前导入、远程链接、拼图与编辑能力集中在同一交互岛里，下一轮若继续压包，应优先把低频导入/图片处理路径懒加载。
 - 移动端底部导航在 full-page 截图里会覆盖部分中段内容；实际滚动底部已有 padding，但 beta 前仍建议再做一次手感微调。

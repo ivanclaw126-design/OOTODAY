@@ -87,9 +87,9 @@ describe('InspirationPage', () => {
               category: '外套',
               slot: 'outerLayer',
               colorHint: '黑色',
-              silhouette: '短款硬挺',
+              silhouette: ['短款', '硬挺'],
               layerRole: 'outer',
-              importance: 'high',
+              importance: 5,
               styleTags: ['通勤'],
               alternatives: ['短夹克']
             }
@@ -105,9 +105,9 @@ describe('InspirationPage', () => {
               category: '外套',
               slot: 'outerLayer',
               colorHint: '黑色',
-              silhouette: '短款硬挺',
+              silhouette: ['短款', '硬挺'],
               layerRole: 'outer',
-              importance: 'high',
+              importance: 5,
               styleTags: ['通勤'],
               alternatives: ['短夹克']
             },
@@ -124,8 +124,18 @@ describe('InspirationPage', () => {
                 createdAt: '2026-04-22T00:00:00Z'
               }
             ],
-            matchReason: '按类别/slot、颜色、轮廓、风格标签和层次角色综合排序。',
-            substituteSuggestion: null
+            matchReason: '同类替代：按类别 35%、slot 15%、颜色 20%、轮廓 15%、风格 10%、层次 5% 加权排序。',
+            substituteSuggestion: null,
+            scoreBreakdown: {
+              total: 0.9,
+              categoryScore: 0.35,
+              slotScore: 0.15,
+              colorScore: 0.2,
+              silhouetteScore: 0.15,
+              styleScore: 0.0,
+              layerRoleScore: 0.05,
+              matchType: 'sameCategory'
+            }
           }
         ],
         remixPlan: {
@@ -142,9 +152,9 @@ describe('InspirationPage', () => {
                 category: '外套',
                 slot: 'outerLayer',
                 colorHint: '黑色',
-                silhouette: '短款硬挺',
+                silhouette: ['短款', '硬挺'],
                 layerRole: 'outer',
-                importance: 'high',
+                importance: 5,
                 styleTags: ['通勤'],
                 alternatives: ['短夹克']
               },
@@ -191,9 +201,10 @@ describe('InspirationPage', () => {
     expect(screen.getByText('色彩公式 · 黑白基础色 + 灰色过渡')).toBeInTheDocument()
     expect(screen.getByText('轮廓公式 · 短外套 + 直筒下装')).toBeInTheDocument()
     expect(screen.getByText('西装外套 · 外套')).toBeInTheDocument()
-    expect(screen.getByText(/外套 · outerLayer · 黑色 · 短款硬挺/)).toBeInTheDocument()
+    expect(screen.getByText(/外套 · outerLayer · 黑色 · 短款 \/ 硬挺/)).toBeInTheDocument()
     expect(screen.getByText('可替代：短夹克')).toBeInTheDocument()
-    expect(screen.getByText('按类别/slot、颜色、轮廓、风格标签和层次角色综合排序。')).toBeInTheDocument()
+    expect(screen.getByText('同类替代：按类别 35%、slot 15%、颜色 20%、轮廓 15%、风格 10%、层次 5% 加权排序。')).toBeInTheDocument()
+    expect(screen.getByText(/匹配分 90/)).toBeInTheDocument()
     expect(screen.getByText('保持线条干净')).toBeInTheDocument()
     expect(screen.getByText('我的版本怎么穿')).toBeInTheDocument()
     expect(screen.getByText('完成度：1/1')).toBeInTheDocument()

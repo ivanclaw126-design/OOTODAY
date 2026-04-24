@@ -19,13 +19,14 @@ describe('matchClosetToInspiration', () => {
             category: '外套',
             slot: 'outerLayer',
             colorHint: '黑色',
-            silhouette: '短款硬挺',
+            silhouette: ['短款', '硬挺'],
             layerRole: 'outer',
-            importance: 'high',
+            importance: 5,
             styleTags: ['通勤', '极简']
           }
         ],
-        stylingTips: []
+        stylingTips: [],
+        colorStrategyNotes: []
       },
       [
         {
@@ -54,8 +55,10 @@ describe('matchClosetToInspiration', () => {
     )
 
     expect(matches[0]?.matchedItems.map((item) => item.id)).toEqual(['coat-1', 'coat-2'])
-    expect(matches[0]?.matchReason).toContain('类别/slot')
+    expect(matches[0]?.matchReason).toContain('同类替代')
     expect(matches[0]?.substituteSuggestion).toBeNull()
+    expect(matches[0]?.scoreBreakdown?.categoryScore).toBeCloseTo(0.35)
+    expect(matches[0]?.scoreBreakdown?.total).toBeGreaterThan(0.7)
   })
 
   it('suggests formula-based substitutes when the closet has no same-category item', () => {
@@ -75,14 +78,15 @@ describe('matchClosetToInspiration', () => {
             category: '配饰',
             slot: 'accessory',
             colorHint: '红色',
-            silhouette: '小面积亮点',
-            layerRole: 'accent',
-            importance: 'high',
+            silhouette: ['小面积', '亮点'],
+            layerRole: 'statement',
+            importance: 5,
             styleTags: ['亮点'],
             alternatives: ['红色针织衫', '红色包袋']
           }
         ],
-        stylingTips: []
+        stylingTips: [],
+        colorStrategyNotes: []
       },
       [
         {
@@ -111,7 +115,55 @@ describe('matchClosetToInspiration', () => {
     )
 
     expect(matches[0]?.matchedItems.map((item) => item.id)).toEqual(['red-knit'])
-    expect(matches[0]?.matchReason).toContain('没有同类单品')
+    expect(matches[0]?.matchReason).toContain('公式替代')
     expect(matches[0]?.substituteSuggestion).toContain('红色针织衫')
+    expect(matches[0]?.scoreBreakdown?.matchType).toBe('formulaSubstitute')
+  })
+
+  it('uses silhouette and color to substitute a long dark coat with a long dark blazer', () => {
+    const matches = matchClosetToInspiration(
+      {
+        summary: 'summary',
+        scene: 'scene',
+        vibe: 'vibe',
+        colorFormula: '深色主线',
+        silhouetteFormula: '长线条外层 + 窄下装',
+        layeringFormula: '外长内短',
+        focalPoint: '深色长外套',
+        keyItems: [
+          {
+            id: 'item-1',
+            label: '深色长外套',
+            category: '大衣',
+            slot: 'outerLayer',
+            colorHint: '黑色',
+            silhouette: ['长线条', '长外套'],
+            layerRole: 'outer',
+            importance: 5,
+            styleTags: ['通勤'],
+            alternatives: ['深色长西装外套']
+          }
+        ],
+        stylingTips: [],
+        colorStrategyNotes: []
+      },
+      [
+        {
+          id: 'long-blazer',
+          imageUrl: null,
+          category: '外套',
+          subCategory: '长西装外套',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-22T00:00:00Z'
+        }
+      ]
+    )
+
+    expect(matches[0]?.matchedItems.map((item) => item.id)).toEqual(['long-blazer'])
+    expect(matches[0]?.substituteSuggestion).toContain('深色长西装外套')
+    expect(matches[0]?.scoreBreakdown?.silhouetteScore).toBeGreaterThan(0)
   })
 })
