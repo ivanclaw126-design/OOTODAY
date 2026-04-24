@@ -3,9 +3,6 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 
-const DEMO_EMAIL = process.env.DEMO_EMAIL || 'test@test.com'
-const DEMO_AUDIENCE = process.env.DEMO_AUDIENCE || 'womens'
-
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) {
     return
@@ -58,7 +55,10 @@ async function findUserByEmail(admin, email) {
 }
 
 loadEnvFile(resolve(process.cwd(), '.env.local'))
+loadEnvFile(resolve(process.cwd(), '.env'))
 
+const DEMO_EMAIL = process.env.DEMO_SEED_EMAIL || process.env.DEMO_EMAIL || 'test@test.com'
+const DEMO_AUDIENCE = process.env.DEMO_AUDIENCE || 'womens'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || 'http://localhost:3000'

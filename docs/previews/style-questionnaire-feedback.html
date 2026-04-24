@@ -180,13 +180,10 @@
       }
 
       .thumb {
-        aspect-ratio: 1 / 1.16;
-        background-image: var(--img);
-        background-repeat: no-repeat;
-        background-size: 200% calc(var(--rows) * 100%);
-        background-position:
-          calc(var(--col) * 100%)
-          calc(var(--row) * 100% / (var(--rows) - 1));
+        display: block;
+        width: 100%;
+        height: auto;
+        background: var(--soft);
       }
 
       .label {
@@ -249,10 +246,6 @@
           grid-template-columns: 1fr;
         }
 
-        .thumb {
-          aspect-ratio: 1 / 1.05;
-        }
-
         .reject {
           min-height: 92px;
         }
@@ -269,7 +262,7 @@
         <div class="actions">
           <button type="button" id="copy">复制反馈</button>
           <button type="button" class="secondary" id="clear">清空选择</button>
-          <span class="count" id="count">已选择 0 / 46</span>
+          <span class="count" id="count">已选择 0 / 47</span>
         </div>
       </div>
 
@@ -281,6 +274,7 @@
       const sections = [
         {
           title: "1. 场景偏好",
+          slug: "scene",
           img: "./style-questionnaire-images/01-scene.png",
           rows: 5,
           options: [
@@ -293,6 +287,7 @@
         },
         {
           title: "2. 轮廓偏好",
+          slug: "silhouette",
           img: "./style-questionnaire-images/02-silhouette.png",
           rows: 5,
           options: [
@@ -305,6 +300,7 @@
         },
         {
           title: "3. 色彩偏好",
+          slug: "color",
           img: "./style-questionnaire-images/03-color.png",
           rows: 5,
           options: [
@@ -317,6 +313,7 @@
         },
         {
           title: "4. 叠穿偏好",
+          slug: "layering",
           img: "./style-questionnaire-images/04-layering.png",
           rows: 4,
           options: [
@@ -328,6 +325,7 @@
         },
         {
           title: "5. 视觉重点偏好",
+          slug: "focal",
           img: "./style-questionnaire-images/05-focal-point.png",
           rows: 5,
           options: [
@@ -340,6 +338,7 @@
         },
         {
           title: "6. 实用和造型取向",
+          slug: "practicality",
           img: "./style-questionnaire-images/06-practicality.png",
           rows: 4,
           options: [
@@ -351,6 +350,7 @@
         },
         {
           title: "7. 推荐补齐项偏好",
+          slug: "slot",
           img: "./style-questionnaire-images/07-slot.png",
           rows: 4,
           options: [
@@ -362,6 +362,7 @@
         },
         {
           title: "8. 探索程度偏好",
+          slug: "exploration",
           img: "./style-questionnaire-images/08-exploration.png",
           rows: 4,
           options: [
@@ -373,6 +374,7 @@
         },
         {
           title: "9. 避雷项偏好（1/2）",
+          slug: "avoid1",
           img: "./style-questionnaire-images/09-hard-avoid-1.png",
           rows: 6,
           options: [
@@ -386,6 +388,7 @@
         },
         {
           title: "10. 避雷项偏好（2/2）",
+          slug: "avoid2",
           img: "./style-questionnaire-images/10-hard-avoid-2.png",
           rows: 5,
           options: [
@@ -415,7 +418,7 @@
         const body =
           variant === "none"
             ? `<div class="reject">都不合适<br><small>需要重做这一组选项图</small></div>`
-            : `<div class="thumb" style="--img: url('${section.img}'); --rows: ${section.rows}; --row: ${optionIndex}; --col: ${variant === "A" ? 0 : 1};"></div>`;
+            : `<img class="thumb" src="./style-questionnaire-crops/${section.slug}-r${optionIndex + 1}-${variant.toLowerCase()}.png" alt="${section.title} ${option[0]} 候选 ${variant}" loading="lazy" />`;
 
         return `
           <label class="choice">
