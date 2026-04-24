@@ -1,3 +1,5 @@
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
 export type Database = {
   public: {
     Tables: {
@@ -132,6 +134,79 @@ export type Database = {
           weather_summary?: string | null
           plan_json?: unknown
           updated_at?: string
+        }
+      }
+      recommendation_preferences: {
+        Row: {
+          user_id: string
+          version: number
+          source: 'default' | 'questionnaire' | 'adaptive'
+          default_weights: Json
+          questionnaire_delta: Json
+          rating_delta: Json
+          final_weights: Json
+          profile: Json
+          questionnaire_answers: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          version: number
+          source?: 'default' | 'questionnaire' | 'adaptive'
+          default_weights: Json
+          questionnaire_delta?: Json
+          rating_delta?: Json
+          final_weights: Json
+          profile: Json
+          questionnaire_answers?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          version?: number
+          source?: 'default' | 'questionnaire' | 'adaptive'
+          default_weights?: Json
+          questionnaire_delta?: Json
+          rating_delta?: Json
+          final_weights?: Json
+          profile?: Json
+          questionnaire_answers?: Json | null
+          updated_at?: string
+        }
+      }
+      outfit_feedback_events: {
+        Row: {
+          id: string
+          user_id: string
+          recommendation_id: string | null
+          preference_version: number | null
+          context: string
+          rating: number
+          reason_tags: string[]
+          recommendation_snapshot: Json | null
+          component_scores: Json | null
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          recommendation_id?: string | null
+          preference_version?: number | null
+          context?: string
+          rating: number
+          reason_tags?: string[]
+          recommendation_snapshot?: Json | null
+          component_scores?: Json | null
+          created_at?: string
+        }
+        Update: {
+          recommendation_id?: string | null
+          preference_version?: number | null
+          context?: string
+          rating?: number
+          reason_tags?: string[]
+          recommendation_snapshot?: Json | null
+          component_scores?: Json | null
         }
       }
     }
