@@ -193,6 +193,52 @@ describe('TodayPage', () => {
     expect(engineInvite.compareDocumentPosition(statusHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('shows weather facts in the status card without confidence or preview blocks', () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 3,
+          city: '上海',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: {
+            status: 'ready',
+            weather: {
+              city: 'Shanghai',
+              temperatureC: 24,
+              conditionLabel: '晴',
+              isWarm: true,
+              isCold: false
+            }
+          },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    expect(screen.getByText('温度')).toBeInTheDocument()
+    expect(screen.getByText('24°C')).toBeInTheDocument()
+    expect(screen.getByText('地点')).toBeInTheDocument()
+    expect(screen.getByText('上海')).toBeInTheDocument()
+    expect(screen.queryByText('Shanghai')).not.toBeInTheDocument()
+    expect(screen.getByText('天气')).toBeInTheDocument()
+    expect(screen.getAllByText('晴').length).toBeGreaterThan(0)
+    expect(screen.queryByText('匹配度')).not.toBeInTheDocument()
+    expect(screen.queryByText('穿搭重点')).not.toBeInTheDocument()
+    expect(screen.queryByText('接下来 1-3 天可以先这样用')).not.toBeInTheDocument()
+    expect(screen.queryByText('用于判断外层、材质和鞋履舒适度。')).not.toBeInTheDocument()
+  })
+
   it('renders full outfit slots and a gentle missing-slot hint', () => {
     render(
       <TodayPage

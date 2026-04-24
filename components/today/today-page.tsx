@@ -56,7 +56,7 @@ export function TodayPage({
           </div>
         ) : null}
 
-        <TodayStatusCard weatherState={view.weatherState} />
+        <TodayStatusCard city={view.city} weatherState={view.weatherState} />
 
         {view.itemCount === 0 ? (
           <div className="space-y-4">
