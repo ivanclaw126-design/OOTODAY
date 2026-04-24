@@ -1,4 +1,5 @@
 import { EmptyState } from '@/components/ui/empty-state'
+import { FeedbackLink } from '@/components/beta/feedback-link'
 import { TodayRecommendationCard } from '@/components/today/today-recommendation-card'
 import type { TodayOotdStatus, TodayRecommendation } from '@/lib/today/types'
 
@@ -23,6 +24,13 @@ export function TodayRecommendationList({
       <EmptyState
         title="推荐暂时生成失败"
         description="刷新页面后重试，或先去衣橱检查单品信息是否完整。"
+        action={
+          <FeedbackLink
+            surface="today_recommendation_error"
+            label="反馈这个问题"
+            className="mx-auto inline-flex rounded-full border border-[var(--color-line)] bg-white px-3 py-2 text-sm font-semibold text-[var(--color-primary)]"
+          />
+        }
       />
     )
   }

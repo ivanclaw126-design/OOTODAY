@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getSession } from '@/lib/auth/get-session'
+import { reportBetaIssue, trackBetaEvent } from '@/lib/beta/telemetry'
 import { validatePassword } from '@/lib/auth/password'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getClosetView } from '@/lib/closet/get-closet-view'
@@ -27,6 +28,12 @@ export async function updateTodayCityAction({ city }: { city: string }) {
   const { error } = await supabase.from('profiles').update({ city: normalizedCity }).eq('id', session.user.id)
 
   if (error) {
+    await reportBetaIssue({
+      code: 'today_city_update_failed',
+      surface: 'today',
+      userId: session.user.id,
+      recoverable: true
+    })
     return { error: '城市保存失败，请稍后重试' }
   }
 
@@ -54,7 +61,25 @@ export async function submitTodayOotdAction({
   })
 
   if (!result.error) {
+    await trackBetaEvent({
+      event: 'ootd_submitted',
+      surface: 'today',
+      userId: session.user.id,
+      metadata: {
+        satisfactionScore
+      }
+    })
     revalidatePath('/today')
+  } else {
+    await reportBetaIssue({
+      code: 'today_ootd_submit_failed',
+      surface: 'today',
+      userId: session.user.id,
+      recoverable: true,
+      context: {
+        hasRecommendation: Boolean(recommendation.id)
+      }
+    })
   }
 
   return result

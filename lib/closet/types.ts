@@ -10,6 +10,9 @@ export type ClosetItemCardData = {
   subCategory: string | null
   colorCategory: string | null
   styleTags: string[]
+  purchasePrice?: number | null
+  purchaseYear?: string | null
+  itemCondition?: string | null
   lastWornDate: string | null
   wearCount: number
   createdAt: string
@@ -24,6 +27,9 @@ export type ClosetAnalysisResult = {
 
 export type ClosetAnalysisDraft = ClosetAnalysisResult & {
   imageUrl: string
+  purchasePrice?: number | null
+  purchaseYear?: string | null
+  itemCondition?: string | null
 }
 
 export type ClosetDuplicateGroup = {

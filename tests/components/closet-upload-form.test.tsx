@@ -28,7 +28,10 @@ describe('ClosetUploadForm', () => {
       category: '外层',
       subCategory: '未知类型请手动选择',
       colorCategory: '蓝色',
-      styleTags: ['通勤', '极简']
+      styleTags: ['通勤', '极简'],
+      purchasePrice: null,
+      purchaseYear: null,
+      itemCondition: null
     })
   })
 
@@ -70,7 +73,10 @@ describe('ClosetUploadForm', () => {
       category: '上装',
       subCategory: '衬衫',
       colorCategory: '蓝色',
-      styleTags: ['通勤', '极简', '法式']
+      styleTags: ['通勤', '极简', '法式'],
+      purchasePrice: null,
+      purchaseYear: null,
+      itemCondition: null
     })
   })
 
@@ -89,7 +95,10 @@ describe('ClosetUploadForm', () => {
       category: '外层',
       subCategory: '未知类型请手动选择',
       colorCategory: '卡其色',
-      styleTags: ['通勤', '简约']
+      styleTags: ['通勤', '简约'],
+      purchasePrice: null,
+      purchaseYear: null,
+      itemCondition: null
     })
   })
 

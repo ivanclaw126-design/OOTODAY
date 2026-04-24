@@ -164,6 +164,7 @@ export function BottomNav() {
               ref={(node) => {
                 itemRefs.current[links.findIndex((candidate) => candidate.href === link.href)] = node
               }}
+              prefetch
               data-nav-index={links.findIndex((candidate) => candidate.href === link.href)}
               aria-current={pathname === link.href ? 'page' : undefined}
               className={`group relative flex min-h-[2.95rem] w-full flex-col items-center justify-center rounded-[1rem] px-1.5 py-1.5 text-[0.64rem] font-semibold uppercase tracking-[0.08em] transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] sm:min-h-[3rem] sm:text-[0.72rem] ${

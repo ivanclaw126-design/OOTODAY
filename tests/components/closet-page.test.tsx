@@ -54,6 +54,29 @@ describe('ClosetPage', () => {
     expect(screen.getByLabelText('选择衣物图片')).toBeInTheDocument()
   })
 
+  it('shows beta onboarding guidance when opened from the first-run redirect', () => {
+    render(
+      <ClosetPage
+        userId="user-1"
+        onboardingMode
+        itemCount={0}
+        items={[]}
+        insights={{ duplicateGroups: [], idleItems: [], missingBasics: [], actionPlan: [] }}
+        storageBucket="ootd-images"
+        analyzeUpload={analyzeUpload}
+        analyzeImportUrl={analyzeImportUrl}
+        saveItem={saveItem}
+        updateItem={updateItem}
+        reanalyzeItem={reanalyzeItem}
+        deleteItem={deleteItem}
+        updateImageRotation={updateImageRotation}
+      />
+    )
+
+    expect(screen.getByText('先在 Closet 完成第一步')).toBeInTheDocument()
+    expect(screen.getByText('先把这轮 beta 要用的几件衣物放进来')).toBeInTheDocument()
+  })
+
   it('shows recent saved items when items exist', () => {
     render(
       <ClosetPage

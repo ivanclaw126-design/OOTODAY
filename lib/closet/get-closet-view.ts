@@ -14,6 +14,9 @@ type ClosetItemRow = {
   sub_category: string | null
   color_category: string | null
   style_tags: string[]
+  purchase_price?: number | null
+  purchase_year?: string | null
+  item_condition?: string | null
   last_worn_date: string | null
   wear_count: number
   created_at: string
@@ -43,6 +46,9 @@ function mapClosetItems(data: ClosetItemRow[] | null | undefined): ClosetItemCar
       subCategory: normalized.subCategory,
       colorCategory: normalized.colorCategory,
       styleTags: item.style_tags,
+      purchasePrice: item.purchase_price ?? null,
+      purchaseYear: item.purchase_year ?? null,
+      itemCondition: item.item_condition ?? null,
       lastWornDate: item.last_worn_date,
       wearCount: item.wear_count,
       createdAt: item.created_at
@@ -57,7 +63,7 @@ export async function getClosetView(userId: string, options?: { limit?: number }
   const baseQueryWithFlip = supabase
     .from('items')
     .select(
-      'id, image_url, image_flipped, image_original_url, image_rotation_quarter_turns, image_restore_expires_at, category, sub_category, color_category, style_tags, last_worn_date, wear_count, created_at'
+      'id, image_url, image_flipped, image_original_url, image_rotation_quarter_turns, image_restore_expires_at, category, sub_category, color_category, style_tags, purchase_price, purchase_year, item_condition, last_worn_date, wear_count, created_at'
     )
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
@@ -66,7 +72,12 @@ export async function getClosetView(userId: string, options?: { limit?: number }
   let rows = initialResult.data as ClosetItemRow[] | null | undefined
   let error = initialResult.error
 
-  if (error && /(image_flipped|image_original_url|image_rotation_quarter_turns|image_restore_expires_at)/i.test(error.message)) {
+  if (
+    error &&
+    /(image_flipped|image_original_url|image_rotation_quarter_turns|image_restore_expires_at|purchase_price|purchase_year|item_condition)/i.test(
+      error.message
+    )
+  ) {
     const fallbackQuery = supabase
       .from('items')
       .select('id, image_url, category, sub_category, color_category, style_tags, last_worn_date, wear_count, created_at')

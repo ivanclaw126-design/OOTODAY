@@ -79,7 +79,7 @@ describe('TodayPage', () => {
     )
 
     expect(screen.getByText('你的衣橱还是空的')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '去上传衣物' })).toHaveAttribute('href', '/closet')
+    expect(screen.getByRole('link', { name: '去上传衣物' })).toHaveAttribute('href', '/closet?onboarding=1')
   })
 
   it('shows the record CTA on a recommendation card before submission', () => {
@@ -106,7 +106,7 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByRole('button', { name: '记为今日已穿' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '记为今日已穿并评分' })).toBeInTheDocument()
   })
 
   it('expands the score chooser and requires a score before submit', () => {
@@ -133,7 +133,7 @@ describe('TodayPage', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '记为今日已穿' }))
+    fireEvent.click(screen.getByRole('button', { name: '记为今日已穿并评分' }))
 
     expect(screen.getByRole('button', { name: '1 分' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '提交今日记录' })).toBeDisabled()
@@ -168,7 +168,7 @@ describe('TodayPage', () => {
       />
     )
 
-    fireEvent.click(screen.getAllByRole('button', { name: '记为今日已穿' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: '记为今日已穿并评分' })[0])
     fireEvent.click(screen.getByRole('button', { name: '4 分' }))
     fireEvent.click(screen.getByRole('button', { name: '提交今日记录' }))
 
@@ -178,7 +178,7 @@ describe('TodayPage', () => {
 
     expect(screen.getByText('今日已记录')).toBeInTheDocument()
     expect(screen.getByText('今天已记录，其他方案暂时锁定')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '记为今日已穿' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '记为今日已穿并评分' })).not.toBeInTheDocument()
   })
 
   it('keeps the card expanded and shows inline error when submit fails', async () => {
@@ -210,7 +210,7 @@ describe('TodayPage', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '记为今日已穿' }))
+    fireEvent.click(screen.getByRole('button', { name: '记为今日已穿并评分' }))
     fireEvent.click(screen.getByRole('button', { name: '5 分' }))
     fireEvent.click(screen.getByRole('button', { name: '提交今日记录' }))
 

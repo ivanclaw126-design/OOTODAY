@@ -36,7 +36,10 @@ describe('saveClosetItem', () => {
       category: '上装',
       sub_category: '衬衫',
       color_category: '蓝色',
-      style_tags: ['通勤']
+      style_tags: ['通勤'],
+      purchase_price: null,
+      purchase_year: null,
+      item_condition: null
     })
     expect(select).toHaveBeenCalledWith('id')
     expect(single).toHaveBeenCalled()

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { LandingPage } from '@/components/landing/landing-page'
 import { getSession } from '@/lib/auth/get-session'
+import { getBetaBootstrapState } from '@/lib/beta/bootstrap'
 
 export default async function HomePage({
   searchParams
@@ -10,7 +11,8 @@ export default async function HomePage({
   const session = await getSession()
 
   if (session) {
-    redirect('/today')
+    const bootstrap = await getBetaBootstrapState(session.user.id)
+    redirect(bootstrap.recommendedEntryRoute)
   }
 
   const params = await searchParams

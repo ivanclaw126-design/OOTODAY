@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { sendBetaIssueFromClient } from '@/lib/beta/telemetry'
 import { ItemShowcase, type ItemShowcaseEntry } from '@/components/ui/item-showcase'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -193,6 +194,14 @@ export function TodayRecommendationCard({
                   setIsSubmitting(false)
 
                   if (result.error) {
+                    void sendBetaIssueFromClient({
+                      code: 'today_ootd_submit_failed',
+                      surface: 'today_card',
+                      recoverable: true,
+                      context: {
+                        recommendationId: recommendation.id
+                      }
+                    })
                     setError(result.error)
                     return
                   }
@@ -224,7 +233,7 @@ export function TodayRecommendationCard({
               setError(null)
             }}
           >
-            记为今日已穿
+            记为今日已穿并评分
           </PrimaryButton>
         )}
       </div>

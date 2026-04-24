@@ -45,6 +45,8 @@ function parseStyleTags(styleTagsText: string) {
     .filter(Boolean)
 }
 
+const conditionOptions = ['全新', '良好', '常穿', '待观察'] as const
+
 export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel = '保存到衣橱', onSubmit }: ClosetUploadFormProps) {
   const normalizedInitialDraft = {
     ...initialDraft,
@@ -92,6 +94,9 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
         event.preventDefault()
         void onSubmit({
           ...draft,
+          purchasePrice: draft.purchasePrice ?? null,
+          purchaseYear: draft.purchaseYear?.trim() ? draft.purchaseYear.trim() : null,
+          itemCondition: draft.itemCondition?.trim() ? draft.itemCondition.trim() : null,
           styleTags: parseStyleTags(styleTagsText)
         })
       }}
@@ -213,6 +218,73 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
             className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
           />
         </label>
+      </div>
+
+      <div className="rounded-[1rem] border border-black/7 bg-white/82 p-3">
+        <div className="mb-2 space-y-1">
+          <p className="text-sm font-medium text-[var(--color-primary)]">补充信息</p>
+          <p className="text-xs text-[var(--color-neutral-dark)]">Beta 期先记住价格、年份和状态，后面 Today / Shop 才更容易给出更像你的建议。</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="flex flex-col gap-1 text-sm">
+            <span>购买价格</span>
+            <input
+              aria-label="购买价格"
+              type="number"
+              min="0"
+              step="0.01"
+              value={draft.purchasePrice ?? ''}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  purchasePrice: event.target.value ? Number(event.target.value) : null
+                }))
+              }
+              placeholder="例如 299"
+              className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            <span>购买年份</span>
+            <input
+              aria-label="购买年份"
+              inputMode="numeric"
+              maxLength={4}
+              value={draft.purchaseYear ?? ''}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  purchaseYear: event.target.value.replace(/[^\d]/g, '').slice(0, 4)
+                }))
+              }
+              placeholder="例如 2024"
+              className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            <span>当前状态</span>
+            <select
+              aria-label="当前状态"
+              value={draft.itemCondition ?? ''}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  itemCondition: event.target.value || null
+                }))
+              }
+              className="rounded-md border border-[var(--color-neutral-mid)] px-3 py-2"
+            >
+              <option value="">暂不填写</option>
+              {conditionOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       <PrimaryButton type="submit" disabled={disabled}>
