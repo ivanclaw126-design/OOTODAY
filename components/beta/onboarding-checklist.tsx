@@ -6,7 +6,7 @@ export function OnboardingChecklist({
   compact = false
 }: {
   title?: string
-  description?: string
+  description?: string | null
   compact?: boolean
 }) {
   return (
@@ -14,7 +14,7 @@ export function OnboardingChecklist({
       <div className="space-y-1">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">First run</p>
         <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-primary)]">{title}</h2>
-        <p className="max-w-2xl text-sm leading-6 text-[var(--color-neutral-dark)]">{description}</p>
+        {description ? <p className="max-w-2xl text-sm leading-6 text-[var(--color-neutral-dark)]">{description}</p> : null}
       </div>
 
       <div className={`grid gap-3 ${compact ? 'sm:grid-cols-1' : 'sm:grid-cols-3'}`}>
