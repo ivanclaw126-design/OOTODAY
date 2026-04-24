@@ -244,7 +244,7 @@ describe('generateTodayRecommendations', () => {
     expect(firstRecommendation?.componentScores?.completeness).toBe(100)
     expect(firstRecommendation?.componentScores?.colorHarmony).toBeGreaterThanOrEqual(0)
     expect(firstRecommendation?.componentScores?.colorHarmony).toBeLessThanOrEqual(100)
-    expect(firstRecommendation?.mode === 'separates' || firstRecommendation?.mode === 'onePiece').toBe(true)
+    expect(firstRecommendation?.mode).toBe('daily')
   })
 
   it('keeps recommendations when shoes or bag are missing and lowers completeness', () => {
@@ -372,6 +372,104 @@ describe('generateTodayRecommendations', () => {
 
     expect(recommendations[0]?.top?.id).toBe('top-tonal')
     expect(recommendations[0]?.bottom?.id).toBe('bottom-tonal')
+  })
+
+  it('inserts at most one deterministic inspiration recommendation when exploration is enabled', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items: [
+        ...items,
+        {
+          id: 'shoes-bright',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '休闲鞋',
+          colorCategory: '红色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:06:00Z'
+        },
+        {
+          id: 'bag-basic',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '托特包',
+          colorCategory: '黑色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:07:00Z'
+        }
+      ],
+      weather: null,
+      explorationSeed: 'phase-7-inspiration',
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: true,
+            rate: 1
+          }
+        }
+      }
+    })
+
+    const inspirationRecommendations = recommendations.filter((recommendation) => recommendation.mode === 'inspiration')
+
+    expect(recommendations).toHaveLength(3)
+    expect(inspirationRecommendations).toHaveLength(1)
+    expect(inspirationRecommendations[0]?.id).toMatch(/^inspiration-/u)
+    expect(inspirationRecommendations[0]?.dailyDifference).toContain('日常')
+    expect(recommendations.filter((recommendation) => recommendation.mode === 'daily')).toHaveLength(2)
+  })
+
+  it('does not insert inspiration recommendations when exploration rate is 0', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items,
+      weather: null,
+      explorationSeed: 'phase-7-inspiration',
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: true,
+            rate: 0
+          }
+        }
+      }
+    })
+
+    expect(recommendations).toHaveLength(3)
+    expect(recommendations.every((recommendation) => recommendation.mode !== 'inspiration')).toBe(true)
+  })
+
+  it('does not insert inspiration recommendations that hit hard avoids', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items,
+      weather: null,
+      explorationSeed: 'phase-7-inspiration',
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          hardAvoids: ['通勤', '极简'],
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: true,
+            rate: 1
+          }
+        }
+      }
+    })
+
+    expect(recommendations.every((recommendation) => recommendation.mode !== 'inspiration')).toBe(true)
   })
 
   it('falls back to single-item recommendations when the closet lacks full outfits', () => {

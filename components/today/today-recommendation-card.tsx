@@ -94,6 +94,7 @@ export function TodayRecommendationCard({
   ].filter((item): item is ItemShowcaseEntry => item !== null)
   const missingSlots = recommendation.missingSlots ?? []
   const confidence = recommendation.confidence ?? null
+  const isInspiration = recommendation.mode === 'inspiration'
 
   function toggleReasonTag(tag: TodayFeedbackReasonTag) {
     setSelectedReasonTags((current) =>
@@ -135,9 +136,16 @@ export function TodayRecommendationCard({
               {rankLabel}
             </div>
             <div className="space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">搭配方案</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">
+                {isInspiration ? '灵感尝试' : '搭配方案'}
+              </p>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">第 {index} 套</p>
+                {isInspiration ? (
+                  <span className="rounded-full bg-[var(--color-accent)] px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)]">
+                    灵感尝试
+                  </span>
+                ) : null}
                 {confidence !== null ? (
                   <span className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-[var(--color-neutral-dark)]">
                     完整度 {confidence}
@@ -156,6 +164,16 @@ export function TodayRecommendationCard({
         <div className="rounded-[1.6rem] bg-[var(--color-panel)] p-5 text-white shadow-[var(--shadow-strong)]">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/52">为什么推荐这套</p>
           <p className="mt-3 text-base leading-8 text-white/82 sm:text-sm sm:leading-7">{recommendation.reason}</p>
+          {isInspiration ? (
+            <div className="mt-4 rounded-[1.1rem] border border-white/12 bg-white/8 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                {recommendation.inspirationReason ?? '低频灵感尝试'}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-white/78">
+                {recommendation.dailyDifference ?? '这套比你的日常推荐多一点变化，但仍保留天气、场景和配色底线。'}
+              </p>
+            </div>
+          ) : null}
         </div>
 
         {outfitItems.length > 0 ? (

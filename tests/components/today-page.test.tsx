@@ -74,7 +74,15 @@ const completeRecommendation = {
     completeness: 88,
     freshness: 80
   },
-  mode: 'separates' as const
+  mode: 'daily' as const
+}
+
+const inspirationRecommendation = {
+  ...completeRecommendation,
+  id: 'rec-inspiration',
+  mode: 'inspiration' as const,
+  inspirationReason: '低频灵感尝试',
+  dailyDifference: '比你的日常推荐更强调鞋履存在感，但颜色和场景仍在安全范围内。'
 }
 
 describe('TodayPage', () => {
@@ -183,6 +191,35 @@ describe('TodayPage', () => {
     expect(screen.getAllByText(/托特包/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/腰带/).length).toBeGreaterThan(0)
     expect(screen.getByText('这套还缺 外层，可以先按主组合穿，后续在衣橱里补齐会更完整。')).toBeInTheDocument()
+  })
+
+  it('renders inspiration attempt labeling and daily-difference copy', () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 6,
+          city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'not-set' },
+          recommendations: [inspirationRecommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    expect(screen.getAllByText('灵感尝试').length).toBeGreaterThan(0)
+    expect(screen.getByText('低频灵感尝试')).toBeInTheDocument()
+    expect(screen.getByText('比你的日常推荐更强调鞋履存在感，但颜色和场景仍在安全范围内。')).toBeInTheDocument()
   })
 
   it('expands the score chooser and requires a score before submit', () => {

@@ -33,11 +33,13 @@ export type TodayRecommendation = {
   confidence?: number
   componentScores?: ScoreWeights
   mode?: TodayRecommendationMode
+  inspirationReason?: string | null
+  dailyDifference?: string | null
 }
 
 export type TodayRecommendationMissingSlot = 'top' | 'bottom' | 'dress' | 'outerLayer' | 'shoes' | 'bag' | 'accessories'
 
-export type TodayRecommendationMode = 'separates' | 'onePiece' | 'partial'
+export type TodayRecommendationMode = 'daily' | 'inspiration'
 
 export type { TodayFeedbackReasonTag }
 

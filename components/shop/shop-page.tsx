@@ -38,6 +38,46 @@ function duplicateRiskLabel(risk: ShopPurchaseAnalysis['duplicateRisk']) {
   return '低'
 }
 
+function outfitYieldLabel(analysis: ShopPurchaseAnalysis) {
+  if (analysis.gapType === 'shoeFinisher') {
+    return '收尾套数'
+  }
+
+  if (analysis.gapType === 'sceneBag') {
+    return '场景补全'
+  }
+
+  if (analysis.gapType === 'visualFocus' || analysis.gapType === 'styleReinforcement') {
+    return '强化套数'
+  }
+
+  return '可搭套数'
+}
+
+function gapTypeLabel(gapType: ShopPurchaseAnalysis['gapType']) {
+  if (gapType === 'coreOutfit') {
+    return '核心搭配缺口'
+  }
+
+  if (gapType === 'shoeFinisher') {
+    return '鞋履收尾缺口'
+  }
+
+  if (gapType === 'sceneBag') {
+    return '包袋场景缺口'
+  }
+
+  if (gapType === 'visualFocus') {
+    return '视觉中心缺口'
+  }
+
+  if (gapType === 'styleReinforcement') {
+    return '风格强化'
+  }
+
+  return '未发现明显缺口'
+}
+
 export function ShopPage({
   itemCount,
   userId,
@@ -366,12 +406,38 @@ export function ShopPage({
               </div>
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(231,255,55,0.18)] p-4">
                 <p className="text-[0.68rem] font-semibold text-[var(--color-neutral-dark)]">
-                  <span className="block uppercase tracking-[0.2em]">可搭套数</span>
+                  <span className="block uppercase tracking-[0.2em]">{outfitYieldLabel(analysis)}</span>
                   <span className="mt-1 block text-[0.72rem] tracking-[0.16em]">Outfit Yield</span>
                 </p>
                 <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{analysis.estimatedOutfitCount}</p>
               </div>
             </div>
+
+            {analysis.fillsWardrobeGap || analysis.completesIncompleteOutfitCount > 0 ? (
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
+                  <p className="text-[0.68rem] font-semibold text-[var(--color-neutral-dark)]">
+                    <span className="block uppercase tracking-[0.2em]">补齐缺口</span>
+                    <span className="mt-1 block text-[0.72rem] tracking-[0.16em]">Wardrobe Gap</span>
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--color-primary)]">{gapTypeLabel(analysis.gapType)}</p>
+                </div>
+                <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
+                  <p className="text-[0.68rem] font-semibold text-[var(--color-neutral-dark)]">
+                    <span className="block uppercase tracking-[0.2em]">解锁搭配</span>
+                    <span className="mt-1 block text-[0.72rem] tracking-[0.16em]">Unlocks</span>
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{analysis.unlocksOutfitCount ?? analysis.estimatedOutfitCount}</p>
+                </div>
+                <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4">
+                  <p className="text-[0.68rem] font-semibold text-[var(--color-neutral-dark)]">
+                    <span className="block uppercase tracking-[0.2em]">补完整套</span>
+                    <span className="mt-1 block text-[0.72rem] tracking-[0.16em]">Completes</span>
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-[var(--color-primary)]">{analysis.completesIncompleteOutfitCount ?? 0}</p>
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid gap-3 lg:grid-cols-[1.3fr_0.9fr]">
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-white shadow-[var(--shadow-strong)]">

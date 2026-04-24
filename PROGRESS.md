@@ -9,11 +9,11 @@
 - Closet 已具备第一阶段低成本导入闭环：本地图片上传、相册批量导入、商品链接或图片链接导入、拼图拆分导入，以及保存后继续浏览和编辑。
 - Closet 已具备第一阶段整理能力：重复提醒、闲置提醒、基础缺口、优先动作清单、按类型/按颜色分组浏览、编辑识别结果、重新识别、删除、图片右转 90°。
 - Today + OOTD 已形成主链路：基于衣橱生成规则型推荐，支持天气增强、城市保存、换一批推荐、记录今日已穿、满意度反馈、最近历史查看与编辑/删除。
-- 推荐偏好引擎已完成前六阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入，以及完整 outfit slots + `finalWeights` 加权排序。
+- 推荐偏好引擎已完成前七阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序，以及低频 deterministic “灵感尝试”推荐。
 - Beta 首轮体验已开始收敛：登录后入口会按衣橱状态自动分流到 `Closet onboarding` 或 `Today`，Landing / Closet / Today 已接入统一 first-run checklist、明确的下一步 CTA 与可达的反馈入口。
 - Beta 最小观测层已落地：Landing、登录邮件发送、Closet 导入启动与保存、Today 浏览、OOTD 提交、反馈入口打开已接入轻量 telemetry；登录失败、导入失败、识别失败、Today 提交失败等高价值路径已接入统一 issue reporting，且失败不会阻塞主流程。
 - Today / Closet 已完成第一轮 server-client 边界收敛：页面壳、状态头和主路径提示已回到服务端，交互性的推荐/历史/设置与衣橱导入/浏览/编辑收敛到更小的客户端工作区；路由层已补 Suspense fallback，并已完成一轮 dev browser QA 与 bundle manifest 复核。
-- Shop 已完成第一版购买分析：支持商品链接、本地图片、图片 URL 输入，输出重复风险、可搭套数、购买建议，并具备基础平台兼容与非服饰拦截。
+- Shop 已完成扩展购买分析：支持商品链接、本地图片、图片 URL 输入，输出重复风险、可搭/收尾/强化收益、购买建议；分析范围已从核心服饰扩展到鞋履、包袋、配饰，并具备基础平台兼容与非服饰拦截。
 - Looks 已完成第一版灵感复刻：支持上传灵感图或图片链接，输出风格拆解、关键单品、衣橱借用建议和“我的版本怎么穿”。
 - Travel 已完成第一版打包方案：支持目的地、天数、场景生成旅行清单、按天轮换建议、最近方案保存/重开/更新/删除。
 - 配色与分类规则已进入共享层：Today、Shop、Looks、Travel 均开始复用统一的 taxonomy 与 color strategy helper。

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_PREFERENCE_PROFILE } from '@/lib/recommendation/default-weights'
-import { isGoodInspirationCandidate, pickDeterministicInspirationCandidate, shouldShowInspiration } from '@/lib/recommendation/exploration'
+import { deterministicSeedToUnit, isGoodInspirationCandidate, pickDeterministicInspirationCandidate, shouldShowInspiration } from '@/lib/recommendation/exploration'
 import type { PreferenceProfile } from '@/lib/recommendation/preference-types'
 
 function profileWithExploration(overrides: Partial<PreferenceProfile['exploration']> = {}): PreferenceProfile {
@@ -27,6 +27,12 @@ describe('exploration helpers', () => {
     expect(shouldShowInspiration({ profile, deterministicValue: 0.5 })).toBe(false)
   })
 
+  it('maps deterministic seeds into stable unit values', () => {
+    expect(deterministicSeedToUnit('phase-7')).toBe(deterministicSeedToUnit('phase-7'))
+    expect(deterministicSeedToUnit('phase-7')).toBeGreaterThanOrEqual(0)
+    expect(deterministicSeedToUnit('phase-7')).toBeLessThanOrEqual(1)
+  })
+
   it('rejects inspiration candidates that violate hard avoids or fit guardrails', () => {
     const profile = {
       ...profileWithExploration({ enabled: true, maxDistanceFromDailyStyle: 0.45 }),
@@ -43,7 +49,7 @@ describe('exploration helpers', () => {
     }, profile)).toBe(true)
     expect(isGoodInspirationCandidate({
       id: 'bad-avoid',
-      hardAvoidTags: ['不喜欢高跟鞋'],
+      hardAvoidTags: ['高跟鞋'],
       colorHarmony: 80
     }, profile)).toBe(false)
     expect(isGoodInspirationCandidate({

@@ -4,7 +4,7 @@ function clamp01(value: number) {
   return Math.min(1, Math.max(0, value))
 }
 
-function stableSeedToUnit(seed: string) {
+export function deterministicSeedToUnit(seed: string) {
   let hash = 2166136261
 
   for (let index = 0; index < seed.length; index += 1) {
@@ -17,6 +17,10 @@ function stableSeedToUnit(seed: string) {
 
 function normalizeToken(value: string) {
   return value.trim().toLowerCase()
+}
+
+function tokensOverlap(left: string, right: string) {
+  return left === right || left.includes(right) || right.includes(left)
 }
 
 export function shouldShowInspiration({
@@ -39,7 +43,7 @@ export function shouldShowInspiration({
   }
 
   const thresholdValue = deterministicValue === undefined
-    ? stableSeedToUnit(seed)
+    ? deterministicSeedToUnit(seed)
     : clamp01(deterministicValue)
 
   return thresholdValue < rate
@@ -53,7 +57,7 @@ export function isGoodInspirationCandidate(candidate: InspirationCandidateSignal
   const hardAvoids = new Set(profile.hardAvoids.map(normalizeToken))
   const candidateTokens = [...(candidate.hardAvoidTags ?? []), ...(candidate.styleTags ?? [])].map(normalizeToken)
 
-  if (candidateTokens.some((token) => hardAvoids.has(token))) {
+  if (candidateTokens.some((token) => [...hardAvoids].some((avoid) => tokensOverlap(token, avoid)))) {
     return false
   }
 
@@ -93,6 +97,6 @@ export function pickDeterministicInspirationCandidate(
     return null
   }
 
-  const index = Math.floor(stableSeedToUnit(seed) * goodCandidates.length) % goodCandidates.length
+  const index = Math.floor(deterministicSeedToUnit(seed) * goodCandidates.length) % goodCandidates.length
   return goodCandidates[index] ?? null
 }

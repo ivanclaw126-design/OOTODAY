@@ -110,6 +110,49 @@ describe('ShopPage', () => {
     expect(screen.getByAltText('Soft Knit Cardigan 商品图')).toBeInTheDocument()
   })
 
+  it('renders slot-aware wardrobe gap metrics for accessories', async () => {
+    const analyzeCandidate = vi.fn().mockResolvedValue({
+      error: null,
+      analysis: {
+        candidate: {
+          imageUrl: 'https://example.com/bag.jpg',
+          imageCandidates: ['https://example.com/bag.jpg'],
+          sourceUrl: 'https://shop.example.com/bag',
+          sourceTitle: 'Black Tote Bag',
+          category: '包袋',
+          subCategory: '托特包',
+          colorCategory: '黑色',
+          styleTags: ['通勤']
+        },
+        duplicateItems: [],
+        duplicateRisk: 'low',
+        estimatedOutfitCount: 2,
+        unlocksOutfitCount: 2,
+        completesIncompleteOutfitCount: 3,
+        fillsWardrobeGap: true,
+        gapType: 'sceneBag',
+        missingCategoryHints: ['衣橱里缺少能补场景完整度的包袋'],
+        colorStrategyHints: [],
+        recommendation: 'buy',
+        recommendationReason: '它能补足 2 套搭配的场景完整度，颜色也能和衣橱形成呼应。'
+      }
+    })
+
+    render(<ShopPage itemCount={3} userId="user-1" storageBucket="ootd-images" analyzeCandidate={analyzeCandidate} />)
+
+    fireEvent.change(screen.getByRole('textbox', { name: '商品链接或图片链接' }), {
+      target: { value: 'https://shop.example.com/bag' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: '开始分析' }))
+
+    expect(await screen.findByText('场景补全')).toBeInTheDocument()
+    expect(screen.getByText('补齐缺口')).toBeInTheDocument()
+    expect(screen.getByText('包袋场景缺口')).toBeInTheDocument()
+    expect(screen.getByText('解锁搭配')).toBeInTheDocument()
+    expect(screen.getByText('补完整套')).toBeInTheDocument()
+    expect(screen.getByText('衣橱里缺少能补场景完整度的包袋')).toBeInTheDocument()
+  })
+
   it('uploads a local image and analyzes the uploaded public url', async () => {
     upload.mockResolvedValue({ error: null })
     getPublicUrl.mockReturnValue({

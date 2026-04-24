@@ -13,12 +13,12 @@ import {
   scoreColorCompatibility
 } from '@/lib/closet/taxonomy'
 import { DEFAULT_PREFERENCE_PROFILE, DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
-import type { PreferenceProfile, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
+import { isGoodInspirationCandidate, pickDeterministicInspirationCandidate, shouldShowInspiration } from '@/lib/recommendation/exploration'
+import type { InspirationCandidateSignals, PreferenceProfile, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
 import type {
   TodayRecommendation,
   TodayRecommendationItem,
   TodayRecommendationMissingSlot,
-  TodayRecommendationMode,
   TodayWeather
 } from '@/lib/today/types'
 
@@ -26,6 +26,7 @@ type RecommendationCandidate = {
   recommendation: TodayRecommendation
   mainIds: string[]
   score: number
+  draft: OutfitDraft
 }
 
 type GenerateTodayRecommendationsParams = {
@@ -33,11 +34,14 @@ type GenerateTodayRecommendationsParams = {
   weather: TodayWeather | null
   offset?: number
   preferenceState?: RecommendationPreferenceState
+  explorationSeed?: string
 }
+
+type OutfitKind = 'separates' | 'onePiece' | 'partial'
 
 type OutfitDraft = {
   id: string
-  mode: TodayRecommendationMode
+  outfitKind: OutfitKind
   top: ClosetItemCardData | null
   bottom: ClosetItemCardData | null
   dress: ClosetItemCardData | null
@@ -282,17 +286,17 @@ function scoreColorHarmony(draft: OutfitDraft) {
 }
 
 function scoreSilhouetteBalance(draft: OutfitDraft, profile: PreferenceProfile) {
-  if (draft.mode === 'partial') {
+  if (draft.outfitKind === 'partial') {
     return draft.bottom || draft.top ? 46 : 35
   }
 
-  let score = draft.mode === 'onePiece' ? 78 : 74
+  let score = draft.outfitKind === 'onePiece' ? 78 : 74
 
-  if (draft.mode === 'onePiece' && profile.silhouettePreference.includes('onePiece')) {
+  if (draft.outfitKind === 'onePiece' && profile.silhouettePreference.includes('onePiece')) {
     score += 12
   }
 
-  if (draft.mode === 'separates' && draft.top && draft.bottom) {
+  if (draft.outfitKind === 'separates' && draft.top && draft.bottom) {
     score += Math.min(10, countSharedStyleTags(draft.top.styleTags, draft.bottom.styleTags) * 5)
 
     if (profile.silhouettePreference.includes('shortTopHighWaist') || profile.silhouettePreference.includes('fittedTopWideBottom')) {
@@ -335,7 +339,7 @@ function scoreFocalPoint(draft: OutfitDraft, profile: PreferenceProfile) {
   }
 
   if (profile.focalPointPreference === 'waist') {
-    return draft.mode === 'separates' ? 78 : 64
+    return draft.outfitKind === 'separates' ? 78 : 64
   }
 
   const selectedItems = getSelectedItems(draft)
@@ -487,7 +491,7 @@ function toRecommendation(draft: OutfitDraft, componentScores: ScoreWeights, sco
 
   return {
     id: draft.id,
-    reason: draft.mode === 'onePiece' ? buildDressReason(draft, weather) : buildPairReason(draft, weather),
+    reason: draft.outfitKind === 'onePiece' ? buildDressReason(draft, weather) : buildPairReason(draft, weather),
     top: draft.top ? toRecommendationItem(draft.top) : null,
     bottom: draft.bottom ? toRecommendationItem(draft.bottom) : null,
     dress: draft.dress ? toRecommendationItem(draft.dress) : null,
@@ -498,7 +502,9 @@ function toRecommendation(draft: OutfitDraft, componentScores: ScoreWeights, sco
     missingSlots: draft.missingSlots,
     confidence,
     componentScores,
-    mode: draft.mode
+    mode: 'daily',
+    inspirationReason: null,
+    dailyDifference: null
   }
 }
 
@@ -533,6 +539,7 @@ function buildRecommendationCandidates(
     candidates.push({
       score,
       mainIds: completedDraft.mainIds,
+      draft: completedDraft,
       recommendation: toRecommendation(completedDraft, componentScores, score, weather)
     })
   }
@@ -540,7 +547,7 @@ function buildRecommendationCandidates(
   for (const dress of dresses) {
     finishDraft({
       id: `dress-${dress.id}`,
-      mode: 'onePiece',
+      outfitKind: 'onePiece',
       top: null,
       bottom: null,
       dress,
@@ -557,7 +564,7 @@ function buildRecommendationCandidates(
     for (const bottom of bottoms) {
       finishDraft({
         id: `set-${top.id}-${bottom.id}`,
-        mode: 'separates',
+        outfitKind: 'separates',
         top,
         bottom,
         dress: null,
@@ -574,7 +581,7 @@ function buildRecommendationCandidates(
   for (const top of tops) {
     finishDraft({
       id: `single-${top.id}`,
-      mode: 'partial',
+      outfitKind: 'partial',
       top,
       bottom: null,
       dress: null,
@@ -590,7 +597,7 @@ function buildRecommendationCandidates(
   for (const bottom of bottoms) {
     finishDraft({
       id: `single-${bottom.id}`,
-      mode: 'partial',
+      outfitKind: 'partial',
       top: null,
       bottom,
       dress: null,
@@ -610,6 +617,103 @@ function buildRecommendationCandidates(
 
     return left.recommendation.id.localeCompare(right.recommendation.id)
   })
+}
+
+function getFocalPointCount(draft: OutfitDraft) {
+  const selectedItems = getSelectedItems(draft)
+  const vividCount = selectedItems.filter((item) => isVividColor(item.colorCategory)).length
+  const accessoryFocusCount = [draft.shoes, draft.bag, ...draft.accessories].filter((item) => item && !isNeutralColor(item.colorCategory)).length
+
+  return Math.max(1, vividCount + accessoryFocusCount)
+}
+
+function getDistanceFromDailyStyle(candidate: RecommendationCandidate, profile: PreferenceProfile) {
+  const selectedItems = getSelectedItems(candidate.draft)
+  const selectedTags = selectedItems.flatMap((item) => item.styleTags)
+  const sceneTags: Record<PreferenceProfile['preferredScenes'][number], string[]> = {
+    work: ['通勤', '正式', '商务'],
+    casual: ['休闲', '基础', '极简'],
+    date: ['约会', '优雅', '甜美'],
+    travel: ['旅行', '休闲', '轻便'],
+    outdoor: ['户外', '运动', '防风'],
+    party: ['派对', '亮片', '华丽']
+  }
+  const preferredTags = profile.preferredScenes.flatMap((scene) => sceneTags[scene] ?? [])
+  const hasPreferredSceneTag = selectedTags.some((tag) => preferredTags.includes(tag))
+  const vividCount = selectedItems.filter((item) => isVividColor(item.colorCategory)).length
+  let distance = 0.16
+
+  if (!hasPreferredSceneTag) {
+    distance += 0.12
+  }
+
+  if (vividCount > profile.colorPreference.accentTolerance) {
+    distance += 0.12
+  }
+
+  if (candidate.draft.outerLayer && !profile.slotPreference.outerwear) {
+    distance += 0.06
+  }
+
+  if (candidate.draft.bag && profile.focalPointPreference !== 'bagAccessory') {
+    distance += 0.04
+  }
+
+  if (candidate.draft.shoes && profile.focalPointPreference !== 'shoes') {
+    distance += 0.04
+  }
+
+  return Math.min(1, distance)
+}
+
+function toInspirationSignal(candidate: RecommendationCandidate, profile: PreferenceProfile, weather: TodayWeather | null): InspirationCandidateSignals {
+  const selectedTags = getSelectedItems(candidate.draft).flatMap((item) => item.styleTags)
+
+  return {
+    id: candidate.recommendation.id,
+    styleTags: selectedTags,
+    hardAvoidTags: selectedTags,
+    colorHarmony: candidate.recommendation.componentScores?.colorHarmony,
+    focalPointCount: getFocalPointCount(candidate.draft),
+    sceneFit: candidate.recommendation.componentScores?.sceneFit,
+    weatherComfort: candidate.recommendation.componentScores?.weatherComfort,
+    distanceFromDailyStyle: getDistanceFromDailyStyle(candidate, profile),
+    isFormalScene: profile.preferredScenes.includes('work'),
+    isSevereWeather: Boolean(weather?.isCold)
+  }
+}
+
+function buildInspirationDifference(candidate: RecommendationCandidate, profile: PreferenceProfile) {
+  const selectedItems = getSelectedItems(candidate.draft)
+  const vividItem = selectedItems.find((item) => isVividColor(item.colorCategory))
+
+  if (profile.focalPointPreference !== 'shoes' && candidate.draft.shoes) {
+    return '比你的日常偏好更强调鞋履存在感，但颜色和场景仍在安全范围内。'
+  }
+
+  if (profile.focalPointPreference !== 'bagAccessory' && (candidate.draft.bag || candidate.draft.accessories.length > 0)) {
+    return '比你的日常搭配更重视包袋或配饰细节，适合小幅试新。'
+  }
+
+  if (vividItem) {
+    return `比你的日常色彩更有重点，把${vividItem.colorCategory}控制在一处来试新。`
+  }
+
+  if (!profile.slotPreference.outerwear && candidate.draft.outerLayer) {
+    return '比你的日常组合多一层外层，适合尝试更完整的层次。'
+  }
+
+  return '比你的日常推荐多一点变化，但没有越过避雷、天气和场景底线。'
+}
+
+function toInspirationRecommendation(candidate: RecommendationCandidate, profile: PreferenceProfile): TodayRecommendation {
+  return {
+    ...candidate.recommendation,
+    id: `inspiration-${candidate.recommendation.id}`,
+    mode: 'inspiration',
+    inspirationReason: '低频灵感尝试',
+    dailyDifference: buildInspirationDifference(candidate, profile)
+  }
 }
 
 function buildRecommendationBatch(candidates: RecommendationCandidate[], offset: number) {
@@ -652,6 +756,61 @@ function buildRecommendationBatch(candidates: RecommendationCandidate[], offset:
   return selected
 }
 
+function maybeInsertInspirationRecommendation({
+  recommendations,
+  candidates,
+  preferenceState,
+  weather,
+  offset,
+  explorationSeed
+}: {
+  recommendations: TodayRecommendation[]
+  candidates: RecommendationCandidate[]
+  preferenceState?: RecommendationPreferenceState
+  weather: TodayWeather | null
+  offset: number
+  explorationSeed?: string
+}) {
+  if (!preferenceState) {
+    return recommendations
+  }
+
+  const profile = preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE
+  const selectedIds = new Set(recommendations.map((recommendation) => recommendation.id))
+  const candidatePool = candidates.filter((candidate) => !selectedIds.has(candidate.recommendation.id))
+  const inspirationPool = candidatePool.length > 0 ? candidatePool : candidates
+  const signals = inspirationPool
+    .map((candidate) => toInspirationSignal(candidate, profile, weather))
+    .filter((signal) => isGoodInspirationCandidate(signal, profile))
+
+  if (!shouldShowInspiration({
+    profile,
+    seed: `${explorationSeed ?? 'today'}:${offset}:show`,
+    candidateCount: signals.length,
+    alreadyShownToday: recommendations.some((recommendation) => recommendation.mode === 'inspiration')
+  })) {
+    return recommendations
+  }
+
+  const selectedSignal = pickDeterministicInspirationCandidate(signals, profile, `${explorationSeed ?? 'today'}:${offset}:pick`)
+  const selectedCandidate = selectedSignal
+    ? inspirationPool.find((candidate) => candidate.recommendation.id === selectedSignal.id)
+    : null
+
+  if (!selectedCandidate) {
+    return recommendations
+  }
+
+  const inspirationRecommendation = toInspirationRecommendation(selectedCandidate, profile)
+  const dailyRecommendations = recommendations.filter((recommendation) => recommendation.mode !== 'inspiration')
+
+  if (dailyRecommendations.length >= 3) {
+    return [...dailyRecommendations.slice(0, 2), inspirationRecommendation]
+  }
+
+  return [...dailyRecommendations, inspirationRecommendation].slice(0, 3)
+}
+
 export function generateTodayRecommendations(
   params: GenerateTodayRecommendationsParams
 ): TodayRecommendation[]
@@ -669,7 +828,9 @@ export function generateTodayRecommendations(
   const weather = Array.isArray(input) ? weatherArg : input.weather
   const offset = Array.isArray(input) ? offsetArg : input.offset ?? 0
   const preferenceState = Array.isArray(input) ? undefined : input.preferenceState
-  const recommendations = buildRecommendationBatch(buildRecommendationCandidates(items, weather, preferenceState), offset)
+  const explorationSeed = Array.isArray(input) ? undefined : input.explorationSeed
+  const candidates = buildRecommendationCandidates(items, weather, preferenceState)
+  const recommendations = buildRecommendationBatch(candidates, offset)
 
   while (recommendations.length < 3 && recommendations.length > 0) {
     const seed = recommendations[recommendations.length % Math.max(1, recommendations.length)]
@@ -680,5 +841,12 @@ export function generateTodayRecommendations(
     })
   }
 
-  return recommendations.slice(0, 3)
+  return maybeInsertInspirationRecommendation({
+    recommendations,
+    candidates,
+    preferenceState,
+    weather,
+    offset,
+    explorationSeed
+  }).slice(0, 3)
 }
