@@ -1,5 +1,8 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { TodayPage } from '@/components/today/today-page'
+import { TodayWorkspaceFallback } from '@/components/today/today-workspace-fallback'
+import { AppShell } from '@/components/app-shell'
 import {
   changeTodayPasswordAction,
   deleteTodayHistoryEntryAction,
@@ -14,7 +17,7 @@ import { getTodayView } from '@/lib/today/get-today-view'
 import type { TodayHistoryUpdateInput, TodayRecommendation } from '@/lib/today/types'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 
-export default async function TodayRoute({
+async function TodayRouteContent({
   searchParams
 }: {
   searchParams?: Promise<{ offset?: string }>
@@ -92,5 +95,23 @@ export default async function TodayRoute({
       updateHistoryEntry={updateHistoryEntry}
       deleteHistoryEntry={deleteHistoryEntry}
     />
+  )
+}
+
+export default function TodayRoute({
+  searchParams
+}: {
+  searchParams?: Promise<{ offset?: string }>
+}) {
+  return (
+    <Suspense
+      fallback={
+        <AppShell title="Today">
+          <TodayWorkspaceFallback />
+        </AppShell>
+      }
+    >
+      <TodayRouteContent searchParams={searchParams} />
+    </Suspense>
   )
 }

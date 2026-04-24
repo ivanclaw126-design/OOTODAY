@@ -1,6 +1,6 @@
 # OOTODAY 进度追踪
 
-> 最后更新：2026-04-23
+> 最后更新：2026-04-24
 > 角色：项目总览页。这里只记录当前稳定状态、已完成里程碑、未闭环事项和运行约定，不记录 session 级流水账。
 
 ## 当前状态
@@ -9,6 +9,9 @@
 - Closet 已具备第一阶段低成本导入闭环：本地图片上传、相册批量导入、商品链接或图片链接导入、拼图拆分导入，以及保存后继续浏览和编辑。
 - Closet 已具备第一阶段整理能力：重复提醒、闲置提醒、基础缺口、优先动作清单、按类型/按颜色分组浏览、编辑识别结果、重新识别、删除、图片右转 90°。
 - Today + OOTD 已形成主链路：基于衣橱生成规则型推荐，支持天气增强、城市保存、换一批推荐、记录今日已穿、满意度反馈、最近历史查看与编辑/删除。
+- Beta 首轮体验已开始收敛：登录后入口会按衣橱状态自动分流到 `Closet onboarding` 或 `Today`，Landing / Closet / Today 已接入统一 first-run checklist、明确的下一步 CTA 与可达的反馈入口。
+- Beta 最小观测层已落地：Landing、登录邮件发送、Closet 导入启动与保存、Today 浏览、OOTD 提交、反馈入口打开已接入轻量 telemetry；登录失败、导入失败、识别失败、Today 提交失败等高价值路径已接入统一 issue reporting，且失败不会阻塞主流程。
+- Today / Closet 已完成第一轮 server-client 边界收敛：页面壳、状态头和主路径提示已回到服务端，交互性的推荐/历史/设置与衣橱导入/浏览/编辑收敛到更小的客户端工作区；路由层已补 Suspense fallback，并已完成一轮 dev browser QA 与 bundle manifest 复核。
 - Shop 已完成第一版购买分析：支持商品链接、本地图片、图片 URL 输入，输出重复风险、可搭套数、购买建议，并具备基础平台兼容与非服饰拦截。
 - Looks 已完成第一版灵感复刻：支持上传灵感图或图片链接，输出风格拆解、关键单品、衣橱借用建议和“我的版本怎么穿”。
 - Travel 已完成第一版打包方案：支持目的地、天数、场景生成旅行清单、按天轮换建议、最近方案保存/重开/更新/删除。
@@ -31,6 +34,7 @@
 - 已完成标准化分类与颜色字典，不确定值会回退到手动选择，而不是继续写入自由文本。
 - 已完成已保存衣物的编辑、重新识别、删除、分组浏览和图片右转 90°。
 - 已完成第一版整理建议：重复、闲置、缺口与优先动作清单。
+- 已补 beta 期高价值衣物元数据入口：导入/编辑时可填写购买价格、购买年份与当前状态，并对未完成远端迁移的旧库保留兼容式读写回退。
 - 已完成衣橱分类字典 v2：核心服装主类收敛为上装 / 下装 / 连体/全身装 / 外层，旧的上衣 / 裤装 / 全身装 / 外套 / 乐福鞋等历史值会在读取与编辑时自动归一到新字典。
 - 已完成一二级类图标的真实组件接入，上传确认表单现在支持分类与子分类的图标快选。
 - 已完成组件测试与多轮浏览器验证；旧库未加 `image_flipped` 列时，读取与写入都有兼容兜底。
@@ -42,6 +46,8 @@
 - “换一批推荐”已从简单轮转改为基于候选搭配池的 offset 切换，结果变化更明显。
 - OOTD 已支持单日唯一记录、1-5 分满意度、最近历史展示、编辑与删除。
 - 提交 OOTD 后会同步更新 `items.last_worn_date / wear_count`，推荐逻辑也会优先避开最近刚穿过的单品。
+- Today 已补首轮闭环提示：空衣橱态会直接引导去 `Closet onboarding`，首次成功推荐后会强调“记录一次反馈”，并新增轻量的未来 1-3 天预看占位区。
+- Today / Closet 的高频交互区已从整页客户端壳里拆出；当前 manifest 复核显示 Today 已较轻，Closet 仍因导入/图片工作流保留较大客户端岛，后续优化应聚焦导入区懒加载而非继续扩功能。
 
 ### 4. Shop Purchase Analysis MVP
 
@@ -71,13 +77,24 @@
 - Today、Shop、Looks、Travel 已接入第一版共享解释层，减少页面间重复规则分支。
 - 下一步不是继续堆研究样本，而是继续统一 score / explanation 结构，并补跨页面真实 QA。
 
+### 8. Beta Onboarding + Telemetry Foundation
+
+- 已新增统一 beta helper：bootstrap state、first-run content、feedback link 与 telemetry / issue reporting 接口，避免页面各自维护字符串与入口逻辑。
+- Landing 已接入首屏埋点与统一 checklist；Today 与 Closet 已根据首轮使用阶段补充引导、下一步 CTA 和反馈入口。
+- App shell 已提供全局“提反馈”入口，确保在主路径和错误态附近都能快速到达外部反馈表单。
+- 当前观测层刻意保持轻量：以 API route + server/client helper 为主，不引入新的重监控基础设施。
+- Travel / Shop / Looks 已补 beta extension 提示，明确它们在这一轮主要是扩展能力，不抢 `Closet -> Today` 主路径叙事。
+- 密码登录、magic-link callback 与登录后首页都已统一走 bootstrap 分流：空衣橱进入 `/closet?onboarding=1`，已有衣橱进入 `/today`。
+- 已新增朋友 beta QA 清单与 runbook，覆盖邀请、成功标准、反馈收集、stop/go 阈值和两条 smoke flow。
+
 ## 当前风险 / 待验证
 
 - `travel_plans` 远端表仍需在可连通 Supabase Postgres 的环境里执行迁移，当前线上仍可能走 fallback。
 - `items.image_flipped` 远端列也仍需正式推上远端库；当前兼容兜底能防止报错，但不是最终持久化状态。
-- Closet 的移动端首屏虽然已多轮压缩，仍需再做一轮真实浏览器 QA，确认文件夹式折叠与分组浏览在 iPhone 上足够直观。
 - Closet 的右转 90° 需要在旧库环境里再点一轮真实浏览器确认，确保不再触发 node/server action 报错。
-- Today、Shop、Looks、Travel 已接入共享颜色规则层，但还缺一轮更系统的跨页面真实 QA。
+- Closet 仍是客户端体积重点：当前导入、远程链接、拼图与编辑能力集中在同一交互岛里，下一轮若继续压包，应优先把低频导入/图片处理路径懒加载。
+- 移动端底部导航在 full-page 截图里会覆盖部分中段内容；实际滚动底部已有 padding，但 beta 前仍建议再做一次手感微调。
+- Today、Shop、Looks、Travel 已接入共享颜色规则层，但还缺一轮更系统的跨页面语言一致性 QA。
 - Auth 还需要一轮真实邮箱与部署环境验证，覆盖“默认密码直登”和“改密后使用其他密码”两个分支。
 - Shop 对淘宝 / 得物的商品图兼容仍有继续提升空间，但当前先保持核心服饰范围，不扩品类。
 
@@ -107,7 +124,7 @@
 
 ## 下一步
 
-1. 在可连通远端 Supabase Postgres 的环境里执行迁移，补上 `travel_plans` 与 `items.image_flipped` 的正式远端落库。
-2. 用真实浏览器补一轮 Closet 移动端、taxonomy v2 图标/标签与右转 90° 验证，确认新折叠结构和旧库兼容路径都稳定。
-3. 对 Today、Shop、Looks、Travel 做一轮跨页面真实 QA，重点检查共享颜色解释层的语言一致性。
-4. 根据 QA 结果决定下一步是继续下沉 score / explanation 结构，还是优先做 Travel 的“另存为新方案”/未保存改动提醒。
+1. 在可连通远端 Supabase Postgres 的环境里执行迁移，补上 `travel_plans`、`items.image_flipped` 与 beta 衣物元数据字段的正式远端落库。
+2. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
+3. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
+4. 对 Today、Shop、Looks、Travel 做一轮跨页面语言一致性 QA，重点检查共享颜色解释层和 beta extension 提示。

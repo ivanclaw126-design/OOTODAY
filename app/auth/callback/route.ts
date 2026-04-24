@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { bootstrapPasswordLogin } from '@/lib/auth/bootstrap-password-login'
+import { getBetaBootstrapState } from '@/lib/beta/bootstrap'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
-  const next = url.searchParams.get('next') ?? '/today'
+  const explicitNext = url.searchParams.get('next')
+  let next = explicitNext ?? '/today'
 
   if (code) {
     const supabase = await createSupabaseServerClient()
@@ -22,6 +24,11 @@ export async function GET(request: Request) {
 
           if (result.error) {
             return NextResponse.redirect(new URL('/?auth_error=password_bootstrap_failed', url.origin))
+          }
+
+          if (!explicitNext) {
+            const bootstrap = await getBetaBootstrapState(user.id)
+            next = bootstrap.recommendedEntryRoute
           }
         } catch {
           return NextResponse.redirect(new URL('/?auth_error=password_bootstrap_failed', url.origin))

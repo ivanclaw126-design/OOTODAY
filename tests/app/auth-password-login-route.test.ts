@@ -7,6 +7,7 @@ const createSupabaseServerClient = vi.fn(async () => ({
   }
 }))
 const bootstrapPasswordLoginByEmail = vi.fn()
+const getBetaBootstrapState = vi.fn()
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient
@@ -16,15 +17,26 @@ vi.mock('@/lib/auth/bootstrap-password-login', () => ({
   bootstrapPasswordLoginByEmail
 }))
 
+vi.mock('@/lib/beta/bootstrap', () => ({
+  getBetaBootstrapState
+}))
+
 describe('auth password login route', () => {
   beforeEach(() => {
     signInWithPassword.mockReset()
     createSupabaseServerClient.mockClear()
     bootstrapPasswordLoginByEmail.mockReset()
+    getBetaBootstrapState.mockReset()
+    getBetaBootstrapState.mockResolvedValue({
+      itemCount: 0,
+      hasCity: false,
+      hasOotdHistory: false,
+      recommendedEntryRoute: '/closet?onboarding=1'
+    })
   })
 
   it('uses the default password when the user only submits an email', async () => {
-    signInWithPassword.mockResolvedValue({ error: null })
+    signInWithPassword.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
 
     const { POST } = await import('@/app/auth/password-login/route')
     const request = new Request('https://ootoday-ecru.vercel.app/auth/password-login', {
@@ -41,14 +53,21 @@ describe('auth password login route', () => {
       email: 'ivanwuyh@163.com',
       password: '123456'
     })
-    expect(response.headers.get('location')).toBe('https://ootoday-ecru.vercel.app/today')
+    expect(getBetaBootstrapState).toHaveBeenCalledWith('user-1')
+    expect(response.headers.get('location')).toBe('https://ootoday-ecru.vercel.app/closet?onboarding=1')
   })
 
   it('repairs old accounts with the default password and retries login once', async () => {
     signInWithPassword
       .mockResolvedValueOnce({ error: { message: 'Invalid login credentials' } })
-      .mockResolvedValueOnce({ error: null })
+      .mockResolvedValueOnce({ data: { user: { id: 'user-1' } }, error: null })
     bootstrapPasswordLoginByEmail.mockResolvedValue({ passwordBootstrapped: true })
+    getBetaBootstrapState.mockResolvedValue({
+      itemCount: 4,
+      hasCity: false,
+      hasOotdHistory: false,
+      recommendedEntryRoute: '/today'
+    })
 
     const { POST } = await import('@/app/auth/password-login/route')
     const request = new Request('https://ootoday-ecru.vercel.app/auth/password-login', {
@@ -63,6 +82,7 @@ describe('auth password login route', () => {
 
     expect(bootstrapPasswordLoginByEmail).toHaveBeenCalledWith('ivanwuyh@163.com')
     expect(signInWithPassword).toHaveBeenCalledTimes(2)
+    expect(getBetaBootstrapState).toHaveBeenCalledWith('user-1')
     expect(response.headers.get('location')).toBe('https://ootoday-ecru.vercel.app/today')
   })
 

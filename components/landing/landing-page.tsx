@@ -1,3 +1,7 @@
+import { FeedbackLink } from '@/components/beta/feedback-link'
+import { OnboardingChecklist } from '@/components/beta/onboarding-checklist'
+import { PageViewTracker } from '@/components/beta/page-view-tracker'
+
 function getAuthErrorMessage(authError: string | null) {
   if (!authError) {
     return null
@@ -23,6 +27,7 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f5f0e7_0%,#f7f3eb_38%,#efe8dd_100%)] px-4 py-6 text-[var(--color-primary)] sm:px-6 sm:py-8">
+      <PageViewTracker event="landing_viewed" surface="landing" />
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col justify-between overflow-hidden rounded-[2.4rem] border border-[var(--color-line)] bg-white/72 shadow-[var(--shadow-strong)] backdrop-blur md:min-h-[calc(100vh-4rem)]">
         <div className="grid flex-1 gap-0 md:grid-cols-[1.1fr_0.9fr]">
           <section className="order-2 min-w-0 flex flex-col justify-between border-b border-[var(--color-line)] p-6 sm:p-8 md:order-1 md:border-b-0 md:border-r md:p-12">
@@ -47,18 +52,7 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  ['01', '导入 3-5 件常穿衣服'],
-                  ['02', '去 Today 看当天推荐'],
-                  ['03', '记一次反馈，越用越像你']
-                ].map(([step, label]) => (
-                  <div key={step} className="rounded-[1.7rem] border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-4 shadow-[var(--shadow-soft)]">
-                    <p className="text-xs font-semibold tracking-[0.18em] text-[var(--color-primary)]">{step}</p>
-                    <p className="mt-3 text-sm leading-6 text-[var(--color-primary)]">{label}</p>
-                  </div>
-                ))}
-              </div>
+              <OnboardingChecklist />
             </div>
 
             <div className="mt-8 grid gap-3 border-t border-[var(--color-line)] pt-6 text-sm text-[var(--color-neutral-dark)] sm:grid-cols-3">
@@ -157,6 +151,15 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
               <div className="mt-6 w-full min-w-0 rounded-[1.5rem] bg-[var(--color-secondary)]/50 p-4 text-sm leading-6 text-[var(--color-neutral-dark)]">
                 <p className="font-medium text-[var(--color-primary)]">你进来之后会先做什么</p>
                 <p className="mt-2 break-words">先把几件常穿衣服导进 Closet，再去 Today 看推荐。如果最近要出门，也可以顺手试 Travel。</p>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-[1.3rem] border border-[var(--color-line)] bg-white/75 px-4 py-3 text-sm text-[var(--color-neutral-dark)]">
+                <p>内测期间任何卡点都可以直接发我，最好顺手带上当前页面和截图。</p>
+                <FeedbackLink
+                  surface="landing"
+                  label="发送反馈"
+                  className="inline-flex shrink-0 rounded-full bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white"
+                />
               </div>
 
               {magicLinkSent ? (

@@ -37,12 +37,12 @@
 
 ## Latest Sync Snapshot
 
-- Date: 2026-04-23
-- Branch / theme: `main` - closet taxonomy v2 migration and icon integration
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260423-181000-closet-taxonomy-v2-icons.md`
-- Current blocker: remote Supabase migrations for `travel_plans` and `items.image_flipped` still need a network-reachable environment
-- Next plan to read: `docs/superpowers/plans/2026-04-23-outfit-taxonomy-color-strategy.md`
-- Intended summary if `/context-save` fails: latest stable state is in `PROGRESS.md`; resume from the closet taxonomy v2 checkpoint first, then run a real browser QA pass on Closet to verify new labels, icons, grouped browsing, and edit overlay behavior on mobile + desktop
+- Date: 2026-04-24
+- Branch / theme: `main` - beta convergence implementation and smoke QA
+- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260424-103131-beta-convergence-closeout.md`
+- Current blocker: remote Supabase migrations and a later Closet import-island bundle reduction pass
+- Next plan to read: `docs/superpowers/plans/2026-04-22-friend-beta-readiness.md`, then `docs/superpowers/plans/2026-04-23-outfit-taxonomy-color-strategy.md`
+- Intended summary if `/context-save` fails: beta first-run loop is implemented and browser-smoke-tested; resume from `PROGRESS.md`, then verify remote migrations and deployment auth behavior
 
 ## Snapshot Template
 

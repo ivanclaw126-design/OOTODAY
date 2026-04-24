@@ -278,34 +278,34 @@ Use a lightweight link-based approach first. Defer anything heavier until users 
 
 ## Task 1: Tighten the friend-beta entrypoint
 
-- [ ] Update `app/page.tsx` so signed-in users route by bootstrap state, not always to `/today`
-- [ ] Extend `components/landing/landing-page.tsx` into a friend-beta entrypoint with a shared 3-step checklist
-- [ ] Keep magic-link login behavior unchanged
+- [x] Update `app/page.tsx` so signed-in users route by bootstrap state, not always to `/today`
+- [x] Extend `components/landing/landing-page.tsx` into a friend-beta entrypoint with a shared 3-step checklist
+- [x] Keep magic-link login behavior unchanged
 
 ## Task 2: Add shared first-run guidance
 
-- [ ] Create one shared first-run checklist/content block for landing, Closet empty state, and Today empty state
-- [ ] Add onboarding-aware Closet messaging for `?onboarding=1`
-- [ ] Add post-import next-step CTA that points users into `Today`
+- [x] Create one shared first-run checklist/content block for landing, Closet empty state, and Today empty state
+- [x] Add onboarding-aware Closet messaging for `?onboarding=1`
+- [x] Add post-import next-step CTA that points users into `Today`
 
 ## Task 3: Add lightweight observability and feedback
 
-- [ ] Add one minimal bootstrap-safe observability helper for core beta events and key failures
-- [ ] Add a visible feedback/report-problem entrypoint in the app shell or a stable shared location
-- [ ] Ensure feedback/reporting is still reachable from empty states and recoverable error states
+- [x] Add one minimal bootstrap-safe observability helper for core beta events and key failures
+- [x] Add a visible feedback/report-problem entrypoint in the app shell or a stable shared location
+- [x] Ensure feedback/reporting is still reachable from empty states and recoverable error states
 
 ## Task 4: Add coverage for the first-run loop
 
-- [ ] Add route tests for home bootstrap behavior
-- [ ] Add component tests for landing, Closet onboarding state, and Today empty/success guidance
-- [ ] Add tests for observability helper behavior
-- [ ] Add one real browser smoke flow for `login -> import -> Today -> feedback`
+- [x] Add route tests for home bootstrap behavior
+- [x] Add component tests for landing, Closet onboarding state, and Today empty/success guidance
+- [x] Add tests for observability helper behavior
+- [x] Add one real browser smoke flow for `login -> import -> Today -> feedback`
 
 ## Task 5: Prepare the beta runbook
 
-- [ ] Add a repo doc for friend-beta QA checklist
-- [ ] Add a repo doc for invite instructions, success criteria, and how to collect feedback
-- [ ] Record the `5-10` friend-beta goals and stop/go threshold in project docs
+- [x] Add a repo doc for friend-beta QA checklist
+- [x] Add a repo doc for invite instructions, success criteria, and how to collect feedback
+- [x] Record the `5-10` friend-beta goals and stop/go threshold in project docs
 
 ## Worktree Parallelization Strategy
 
@@ -338,6 +338,7 @@ Lane C can start in parallel once the user-visible flow and feedback entrypoint 
 ## Completion Summary
 
 - Step 0: Scope Challenge — scope reduced to friend-beta readiness for `Landing -> Closet -> Today -> feedback`
+- 2026-04-24: Beta loop implementation completed. Bootstrap routing, shared first-run guidance, lightweight telemetry/reporting, feedback entrypoints, route/component/helper tests, browser smoke QA, and beta runbook docs are now in place.
 - Architecture Review: `3` issues found
 - Code Quality Review: `3` issues found
 - Test Review: diagram produced, `18` gaps identified

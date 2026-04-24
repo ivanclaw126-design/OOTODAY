@@ -1,14 +1,23 @@
 'use client'
 
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { ClosetCollageSplitter } from '@/components/closet/closet-collage-splitter'
+import { FeedbackLink } from '@/components/beta/feedback-link'
 import { ClosetUploadForm } from '@/components/closet/closet-upload-form'
 import { SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { buildClosetUploadPath } from '@/lib/closet/build-upload-path'
+import { sendBetaEventFromClient, sendBetaIssueFromClient } from '@/lib/beta/telemetry'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
+
+const ClosetCollageSplitter = dynamic(
+  () => import('@/components/closet/closet-collage-splitter').then((module) => module.ClosetCollageSplitter),
+  {
+    loading: () => <div className="rounded-lg border border-[var(--color-neutral-mid)] p-3 text-sm text-[var(--color-neutral-dark)]">正在加载拼图拆分工具…</div>
+  }
+)
 
 type Phase = 'idle' | 'analyzing' | 'confirming' | 'error'
 
@@ -129,6 +138,15 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
       }
 
       if (error) {
+        void sendBetaIssueFromClient({
+          code: 'closet_upload_failed',
+          surface: 'closet_upload_card',
+          recoverable: true,
+          context: {
+            kind: uploadItem.kind
+          }
+        })
+
         setCurrentUpload((current) =>
           current?.id === uploadItem.id
             ? {
@@ -163,6 +181,15 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
         return
       }
 
+      void sendBetaIssueFromClient({
+        code: uploadItem.kind === 'remote' ? 'closet_import_ai_failed' : 'closet_analyze_failed',
+        surface: 'closet_upload_card',
+        recoverable: true,
+        context: {
+          kind: uploadItem.kind
+        }
+      })
+
       setCurrentUpload((current) =>
         current?.id === uploadItem.id
           ? {
@@ -184,6 +211,14 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
     if (files.length === 0 || currentUpload || isSaving) {
       return
     }
+
+    void sendBetaEventFromClient({
+      event: 'closet_import_started',
+      surface: 'closet_upload_local',
+      metadata: {
+        fileCount: files.length
+      }
+    })
 
     const uploads = files.map((file, index) => {
       const previewUrl = URL.createObjectURL(file)
@@ -308,6 +343,11 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
       return
     }
 
+    void sendBetaEventFromClient({
+      event: 'closet_import_started',
+      surface: 'closet_upload_url'
+    })
+
     const nextId = `remote-${Date.now()}`
     setCompletedCount(0)
     setTotalCount(1)
@@ -354,10 +394,22 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
 
     try {
       await saveItem(nextDraft)
+      void sendBetaEventFromClient({
+        event: 'closet_item_saved',
+        surface: 'closet_upload_card',
+        metadata: {
+          category: nextDraft.category
+        }
+      })
       hasSavedItemsRef.current = true
       revokePreviewUrl(currentUpload.previewUrl)
       queueNextUpload(pendingUploads, completedCount + 1, false)
     } catch {
+      void sendBetaIssueFromClient({
+        code: 'closet_item_save_failed',
+        surface: 'closet_upload_card',
+        recoverable: true
+      })
       setCurrentUpload((current) =>
         current
           ? {
@@ -454,6 +506,15 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
                 <p className="text-sm text-[var(--color-neutral-dark)]">先手动框出 2-4 个单品，再拆成多张图片继续排队处理。</p>
               </div>
               <ClosetCollageSplitter disabled={isFlowActive} onSplitComplete={enqueueLocalFiles} />
+            </div>
+
+            <div className="flex items-center justify-between gap-3 rounded-[1.15rem] border border-[var(--color-line)] bg-white/70 px-3 py-3 text-sm text-[var(--color-neutral-dark)]">
+              <p>导入、识别或保存失败时，直接发反馈会更快定位。</p>
+              <FeedbackLink
+                surface="closet_upload"
+                label="反馈导入问题"
+                className="inline-flex shrink-0 rounded-full bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white"
+              />
             </div>
           </div>
 

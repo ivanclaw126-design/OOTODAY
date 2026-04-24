@@ -12,6 +12,7 @@ const refresh = vi.fn()
 const createObjectURL = vi.fn()
 const revokeObjectURL = vi.fn()
 const analyzeImportUrl = vi.fn()
+const OriginalURL = globalThis.URL
 const splitCollageFiles = [
   new File(['split-1'], 'collage-split-1.jpg', { type: 'image/jpeg' }),
   new File(['split-2'], 'collage-split-2.jpg', { type: 'image/jpeg' })
@@ -30,6 +31,15 @@ vi.mock('@/lib/supabase/client', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh })
+}))
+
+vi.mock('@/lib/beta/telemetry', () => ({
+  sendBetaEventFromClient: vi.fn(),
+  sendBetaIssueFromClient: vi.fn()
+}))
+
+vi.mock('@/components/beta/feedback-link', () => ({
+  FeedbackLink: ({ label = '反馈' }: { label?: string }) => <span>{label}</span>
 }))
 
 vi.mock('@/components/closet/closet-collage-splitter', () => ({
@@ -57,10 +67,12 @@ describe('ClosetUploadCard', () => {
     createObjectURL.mockImplementation((file: File) => `blob:${file.name}`)
     revokeObjectURL.mockReset()
 
-    vi.stubGlobal('URL', {
-      createObjectURL,
-      revokeObjectURL
-    })
+    class MockURL extends OriginalURL {
+      static createObjectURL = createObjectURL
+      static revokeObjectURL = revokeObjectURL
+    }
+
+    vi.stubGlobal('URL', MockURL)
   })
 
   afterEach(() => {
@@ -92,7 +104,7 @@ describe('ClosetUploadCard', () => {
     await waitFor(() => {
       expect(upload).toHaveBeenCalledTimes(1)
     })
-    expect(await screen.findByRole('combobox', { name: '分类' })).toHaveValue('上装')
+    expect(await screen.findByLabelText('分类')).toHaveValue('上装')
     expect(analyzeUpload).toHaveBeenCalledWith({
       imageUrl: 'https://example.supabase.co/storage/v1/object/public/ootd-images/user-1/shirt.jpg'
     })
@@ -165,8 +177,8 @@ describe('ClosetUploadCard', () => {
     const file = new File(['fake-image'], 'shirt.jpg', { type: 'image/jpeg' })
     fireEvent.change(screen.getByLabelText('选择衣物图片'), { target: { files: [file] } })
 
-    await screen.findByRole('combobox', { name: '分类' })
-    fireEvent.change(screen.getByLabelText('分类'), { target: { value: '外层' } })
+    await screen.findByLabelText('分类')
+    fireEvent.click(screen.getByRole('button', { name: /外层/ }))
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
     await waitFor(() => {
@@ -175,7 +187,10 @@ describe('ClosetUploadCard', () => {
         category: '外层',
         subCategory: '未知类型请手动选择',
         colorCategory: '蓝色',
-        styleTags: ['通勤']
+        styleTags: ['通勤'],
+        purchasePrice: null,
+        purchaseYear: null,
+        itemCondition: null
       })
     })
     expect(refresh).toHaveBeenCalledTimes(1)
@@ -204,7 +219,7 @@ describe('ClosetUploadCard', () => {
     const file = new File(['fake-image'], 'shirt.jpg', { type: 'image/jpeg' })
     fireEvent.change(screen.getByLabelText('选择衣物图片'), { target: { files: [file] } })
 
-    await screen.findByRole('combobox', { name: '分类' })
+    await screen.findByLabelText('分类')
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
     expect(await screen.findByText('保存失败，请稍后再试')).toBeInTheDocument()
@@ -282,7 +297,7 @@ describe('ClosetUploadCard', () => {
       target: { files: [firstFile, secondFile] }
     })
 
-    expect(await screen.findByRole('combobox', { name: '分类' })).toHaveValue('上装')
+    expect(await screen.findByLabelText('分类')).toHaveValue('上装')
     expect(screen.getByText('当前正在处理第 1 / 2 张，后面还有 1 张排队')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
@@ -292,7 +307,7 @@ describe('ClosetUploadCard', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('下装')
+      expect(screen.getByLabelText('分类')).toHaveValue('下装')
     })
     expect(screen.getByText('当前正在处理第 2 / 2 张，这是这一轮的最后一张')).toBeInTheDocument()
 
@@ -343,10 +358,10 @@ describe('ClosetUploadCard', () => {
       target: { files: [firstFile, secondFile] }
     })
 
-    await screen.findByRole('combobox', { name: '分类' })
+    await screen.findByLabelText('分类')
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
-    await screen.findByRole('combobox', { name: '分类' })
+    await screen.findByLabelText('分类')
     fireEvent.click(screen.getByRole('button', { name: '跳过这张' }))
 
     await waitFor(() => {
@@ -385,7 +400,7 @@ describe('ClosetUploadCard', () => {
     fireEvent.click(screen.getByRole('button', { name: '通过链接导入' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('外层')
+      expect(screen.getByLabelText('分类')).toHaveValue('外层')
     })
     expect(analyzeImportUrl).toHaveBeenCalledWith({ sourceUrl: 'https://shop.example.com/item/1' })
 
@@ -397,7 +412,10 @@ describe('ClosetUploadCard', () => {
         category: '外层',
         subCategory: '西装外套',
         colorCategory: '米色',
-        styleTags: ['通勤']
+        styleTags: ['通勤'],
+        purchasePrice: null,
+        purchaseYear: null,
+        itemCondition: null
       })
     })
     expect(refresh).toHaveBeenCalledTimes(1)
@@ -432,13 +450,13 @@ describe('ClosetUploadCard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '模拟拼图拆分' }))
 
-    expect(await screen.findByRole('combobox', { name: '分类' })).toHaveValue('上装')
+    expect(await screen.findByLabelText('分类')).toHaveValue('上装')
     expect(screen.getByText('当前正在处理第 1 / 2 张，后面还有 1 张排队')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: '分类' })).toHaveValue('外层')
+      expect(screen.getByLabelText('分类')).toHaveValue('外层')
     })
     fireEvent.click(screen.getByRole('button', { name: '保存到衣橱' }))
 

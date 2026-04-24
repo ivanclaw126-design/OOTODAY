@@ -1,5 +1,8 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { ClosetPage } from '@/components/closet/closet-page'
+import { ClosetWorkspaceFallback } from '@/components/closet/closet-workspace-fallback'
+import { AppShell } from '@/components/app-shell'
 import { getSession } from '@/lib/auth/get-session'
 import { getClosetInsights } from '@/lib/closet/get-closet-insights'
 import { getClosetView } from '@/lib/closet/get-closet-view'
@@ -16,7 +19,11 @@ import {
 } from '@/app/closet/actions'
 import type { ClosetAnalysisDraft, ClosetAnalysisResult } from '@/lib/closet/types'
 
-export default async function ClosetRoute() {
+async function ClosetRouteContent({
+  searchParams
+}: {
+  searchParams?: Promise<{ onboarding?: string }>
+}) {
   const session = await getSession()
 
   if (!session) {
@@ -75,10 +82,12 @@ export default async function ClosetRoute() {
   const { storageBucket } = getEnv()
   const closet = await getClosetView(userId, { limit: 0 })
   const insights = await getClosetInsights(userId, closet.items)
+  const resolvedSearchParams = (await searchParams) ?? {}
 
   return (
     <ClosetPage
       userId={userId}
+      onboardingMode={resolvedSearchParams.onboarding === '1'}
       itemCount={closet.itemCount}
       items={closet.items}
       insights={insights}
@@ -91,5 +100,23 @@ export default async function ClosetRoute() {
       deleteItem={deleteItem}
       updateImageRotation={updateImageRotation}
     />
+  )
+}
+
+export default function ClosetRoute({
+  searchParams
+}: {
+  searchParams?: Promise<{ onboarding?: string }>
+}) {
+  return (
+    <Suspense
+      fallback={
+        <AppShell title="Closet">
+          <ClosetWorkspaceFallback />
+        </AppShell>
+      }
+    >
+      <ClosetRouteContent searchParams={searchParams} />
+    </Suspense>
   )
 }
