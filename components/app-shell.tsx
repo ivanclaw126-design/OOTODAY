@@ -19,9 +19,13 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
           <div className="flex shrink-0 items-center gap-2">
             <Link
               href="/settings"
-              className="inline-flex items-center rounded-full border border-[var(--color-line)] bg-white/80 px-3 py-1.5 text-xs font-semibold tracking-[0.04em] text-[var(--color-primary)] shadow-[var(--shadow-soft)]"
+              className="group inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-[var(--color-primary)] px-3 py-1.5 text-xs font-semibold tracking-[0.04em] text-white shadow-[0_14px_32px_rgba(21,21,18,0.18)] hover:-translate-y-0.5"
             >
-              设置
+              <span className="relative flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-primary)]">
+                <span className="absolute h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
+                <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-white/90" />
+              </span>
+              AI 造型引擎
             </Link>
             <FeedbackLink
               surface={`app_shell:${title.toLowerCase()}`}

@@ -20,6 +20,8 @@ export async function submitQuestionnaire({
   const state = {
     ...defaultState,
     source: 'questionnaire' as const,
+    hasQuestionnaireAnswers: true,
+    questionnaireAnswers: answers,
     questionnaireDelta: questionnaireResult.questionnaireDelta,
     ratingDelta: {},
     finalWeights: questionnaireResult.finalWeights,

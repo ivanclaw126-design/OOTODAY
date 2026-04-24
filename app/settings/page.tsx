@@ -35,7 +35,7 @@ export default async function SettingsRoute() {
   }
 
   return (
-    <AppShell title="设置">
+    <AppShell title="AI 造型引擎">
       <SettingsPage
         source={preferenceState.source}
         updatedAt={preferenceState.updatedAt}

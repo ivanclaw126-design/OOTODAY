@@ -25,5 +25,6 @@ export async function submitStyleQuestionnaireAction(answers: StyleQuestionnaire
   }
 
   revalidatePath('/preferences')
+  revalidatePath('/today')
   return { error: null }
 }

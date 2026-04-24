@@ -107,6 +107,8 @@ export function deserializePreferenceState(row: RecommendationPreferenceRow): Re
   return {
     version: row.version,
     source: row.source,
+    hasQuestionnaireAnswers: row.questionnaire_answers !== null && row.questionnaire_answers !== undefined,
+    questionnaireAnswers: row.questionnaire_answers ?? null,
     defaultWeights,
     questionnaireDelta,
     ratingDelta,
@@ -120,12 +122,14 @@ export function deserializePreferenceState(row: RecommendationPreferenceRow): Re
 export function serializePreferenceState({
   userId,
   state,
-  questionnaireAnswers = null
+  questionnaireAnswers
 }: {
   userId: string
   state: RecommendationPreferenceState
   questionnaireAnswers?: unknown | null
 }) {
+  const nextQuestionnaireAnswers = questionnaireAnswers === undefined ? state.questionnaireAnswers : questionnaireAnswers
+
   return {
     user_id: userId,
     version: state.version,
@@ -135,7 +139,7 @@ export function serializePreferenceState({
     rating_delta: toJson(state.ratingDelta),
     final_weights: toJson(state.finalWeights),
     profile: toJson(state.profile),
-    questionnaire_answers: questionnaireAnswers === undefined ? null : toJson(questionnaireAnswers),
+    questionnaire_answers: nextQuestionnaireAnswers === null || nextQuestionnaireAnswers === undefined ? null : toJson(nextQuestionnaireAnswers),
     created_at: state.createdAt,
     updated_at: state.updatedAt
   }

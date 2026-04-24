@@ -60,7 +60,7 @@ describe('getTodayView', () => {
     })
     getTodayOotdStatus.mockResolvedValue({ status: 'not-recorded' })
     getRecentOotdHistory.mockResolvedValue([])
-    getPreferenceState.mockResolvedValue({ source: 'questionnaire' })
+    getPreferenceState.mockResolvedValue({ source: 'questionnaire', hasQuestionnaireAnswers: true })
     generateTodayRecommendations.mockReturnValue([{ id: 'rec-1' }, { id: 'rec-2' }, { id: 'rec-3' }])
 
     const { getTodayView } = await import('@/lib/today/get-today-view')
@@ -79,6 +79,7 @@ describe('getTodayView', () => {
       accountEmail: 'user@example.com',
       passwordBootstrapped: true,
       passwordChangedAt: null,
+      hasCompletedStyleQuestionnaire: true,
       weatherState: { status: 'not-set' },
       recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }, { id: 'rec-3' }],
       recommendationError: false,
@@ -104,7 +105,7 @@ describe('getTodayView', () => {
       ],
       weather: null,
       offset: 0,
-      preferenceState: { source: 'questionnaire' }
+      preferenceState: { source: 'questionnaire', hasQuestionnaireAnswers: true }
     })
   })
 
@@ -123,7 +124,7 @@ describe('getTodayView', () => {
         notes: 'OOTD: 衬衫 + 西裤；理由：基础组合稳定不出错'
       }
     ])
-    getPreferenceState.mockResolvedValue({ source: 'adaptive' })
+    getPreferenceState.mockResolvedValue({ source: 'adaptive', hasQuestionnaireAnswers: true })
     generateTodayRecommendations.mockReturnValue([])
 
     const { getTodayView } = await import('@/lib/today/get-today-view')
@@ -142,6 +143,7 @@ describe('getTodayView', () => {
       accountEmail: 'user@example.com',
       passwordBootstrapped: true,
       passwordChangedAt: '2026-04-21T10:00:00.000Z',
+      hasCompletedStyleQuestionnaire: true,
       weatherState: { status: 'unavailable', city: 'Shanghai' },
       recommendations: [],
       recommendationError: false,
@@ -162,7 +164,7 @@ describe('getTodayView', () => {
       items: [],
       weather: null,
       offset: 0,
-      preferenceState: { source: 'adaptive' }
+      preferenceState: { source: 'adaptive', hasQuestionnaireAnswers: true }
     })
   })
 })
