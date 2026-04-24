@@ -58,9 +58,7 @@ export function ClosetPage({
             <p className="text-[2rem] font-semibold leading-none tracking-[-0.08em] text-[var(--color-accent)]">{itemCount}</p>
             <p className="pb-0.5 text-sm text-white/72">件</p>
           </div>
-          <p className="max-w-sm text-sm leading-6 text-white/72">
-            {itemCount > 0 ? '先把 Closet 和 Today 跑顺，这轮 beta 先不追求把所有功能都用一遍。' : '先导入几件最常穿的衣服，Today 才会开始变得有用。'}
-          </p>
+          {itemCount === 0 ? <p className="max-w-sm text-sm leading-6 text-white/72">先导入几件最常穿的衣服，Today 才会开始变得有用。</p> : null}
         </div>
       </section>
 
