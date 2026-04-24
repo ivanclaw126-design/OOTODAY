@@ -7,6 +7,10 @@ describe('buildInspirationColorStrategy', () => {
       summary: 'summary',
       scene: 'scene',
       vibe: 'vibe',
+      colorFormula: '红色重点 + 黑色托底',
+      silhouetteFormula: '短上衣 + 直筒裤',
+      layeringFormula: '单层搭配',
+      focalPoint: '红色针织衫',
       keyItems: [
         {
           id: 'item-1',

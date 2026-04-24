@@ -5,7 +5,7 @@ import { TodayInteractiveWorkspace } from '@/components/today/today-interactive-
 import { TodayStatusCard } from '@/components/today/today-status-card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PrimaryLink } from '@/components/ui/button'
-import type { TodayHistoryUpdateInput, TodayOotdHistoryEntry, TodayRecommendation, TodayView } from '@/lib/today/types'
+import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayOotdHistoryEntry, TodayRecommendation, TodayView } from '@/lib/today/types'
 
 export function TodayPage({
   view,
@@ -18,10 +18,7 @@ export function TodayPage({
 }: {
   view: TodayView
   updateCity: (input: { city: string }) => Promise<{ error: string | null }>
-  submitOotd: (input: {
-    recommendation: TodayRecommendation
-    satisfactionScore: number
-  }) => Promise<{ error: string | null; wornAt: string | null }>
+  submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
   refreshRecommendations: (input: { offset: number }) => Promise<{ recommendations: TodayRecommendation[] }>
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
   updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>

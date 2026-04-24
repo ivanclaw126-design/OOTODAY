@@ -20,7 +20,10 @@ function getRecommendationItemIds(recommendation: TodayRecommendation) {
     recommendation.top?.id,
     recommendation.bottom?.id,
     recommendation.dress?.id,
-    recommendation.outerLayer?.id
+    recommendation.outerLayer?.id,
+    recommendation.shoes?.id,
+    recommendation.bag?.id,
+    ...(recommendation.accessories ?? []).map((item) => item.id)
   ].filter((id): id is string => Boolean(id))
 }
 

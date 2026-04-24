@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OOTODAY Recommendation Engine Acceptance Preview</title>
+    <style>
+      :root {
+        --bg: #f6f1ea;
+        --surface: rgba(255, 255, 255, 0.88);
+        --surface-strong: #ffffff;
+        --ink: #251f1a;
+        --muted: #746a60;
+        --line: rgba(39, 31, 25, 0.12);
+        --primary: #41372f;
+        --accent: #b85f3d;
+        --accent-soft: #f4ded4;
+        --green: #237653;
+        --green-soft: #dff2e7;
+        --amber: #a86516;
+        --amber-soft: #faead1;
+        --panel: #1f2420;
+        --panel-muted: rgba(255, 255, 255, 0.7);
+        --shadow: 0 18px 42px rgba(44, 31, 22, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", sans-serif;
+        color: var(--ink);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.74) 0%, rgba(255, 255, 255, 0) 34%),
+          linear-gradient(135deg, #f8f3ec 0%, #f1e9df 48%, #e9ded0 100%);
+      }
+
+      .page {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 36px 0 60px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 22px;
+        grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+        align-items: stretch;
+      }
+
+      .hero-main,
+      .hero-side,
+      .section {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .hero-main {
+        padding: 28px;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 780px;
+        font-size: clamp(34px, 5vw, 58px);
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        margin: 18px 0 0;
+        max-width: 780px;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      .hero-side {
+        display: grid;
+        align-content: space-between;
+        gap: 18px;
+        padding: 24px;
+        color: white;
+        background: linear-gradient(180deg, #252b27 0%, #36332b 100%);
+      }
+
+      .status-total {
+        display: grid;
+        gap: 10px;
+      }
+
+      .status-total strong {
+        font-size: 52px;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .status-total span,
+      .hero-side p {
+        color: var(--panel-muted);
+        line-height: 1.7;
+      }
+
+      .status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        width: fit-content;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .section {
+        margin-top: 22px;
+        padding: 24px;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 18px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 24px;
+        letter-spacing: 0;
+      }
+
+      .subcopy {
+        margin: 7px 0 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .flow {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .flow-step {
+        min-height: 126px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        background: var(--surface-strong);
+      }
+
+      .step-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        margin-bottom: 12px;
+        color: white;
+        font-size: 12px;
+        font-weight: 800;
+        background: var(--primary);
+      }
+
+      .flow-step h3,
+      .check-card h3,
+      .evidence-card h3 {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.35;
+      }
+
+      .flow-step p,
+      .check-card p,
+      .evidence-card p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+
+      .check-card,
+      .evidence-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+        background: var(--surface-strong);
+      }
+
+      .check-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .badge {
+        flex: 0 0 auto;
+        border-radius: 999px;
+        padding: 6px 9px;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .pass {
+        color: var(--green);
+        background: var(--green-soft);
+      }
+
+      .partial {
+        color: var(--amber);
+        background: var(--amber-soft);
+      }
+
+      .path {
+        display: block;
+        margin-top: 10px;
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+
+      .evidence-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .command {
+        margin-top: 12px;
+        border-radius: 8px;
+        background: #211d19;
+        color: #f7efe8;
+        padding: 13px;
+        font: 13px/1.5 "SFMono-Regular", Consolas, monospace;
+      }
+
+      .note {
+        border-left: 4px solid var(--amber);
+        padding: 14px 16px;
+        border-radius: 8px;
+        background: var(--amber-soft);
+        color: #59402a;
+        line-height: 1.7;
+      }
+
+      @media (max-width: 900px) {
+        .hero,
+        .flow,
+        .evidence-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section-head {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div class="hero-main">
+          <p class="eyebrow">OOTODAY Recommendation Engine</p>
+          <h1>推荐偏好引擎验收看板</h1>
+          <p class="lead">
+            这份本地预览汇总 Phase 1 到 Phase 8C 的验收状态：视觉问卷、Today 权重打分、完整 outfit slots、反馈学习、低频灵感推荐、设置页重置，以及 Travel / Shop / Inspiration 的后续复用准备。
+          </p>
+        </div>
+        <aside class="hero-side">
+          <div class="status-total">
+            <strong>9/10</strong>
+            <span>验收项已满足，1 项为阶段性部分满足。</span>
+          </div>
+          <div class="status-row">
+            <span class="pill">9 项通过</span>
+            <span class="pill">1 项部分通过</span>
+            <span class="pill">Build 通过</span>
+          </div>
+          <p>当前唯一需要后续补齐的是 Travel / Shop / Inspiration 对 recommendation preference/profile 的实际参数接入。</p>
+        </aside>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>核心闭环</h2>
+            <p class="subcopy">用户从视觉问卷进入初始偏好，Today 用权重生成完整穿搭，评分反馈再小幅更新偏好。</p>
+          </div>
+        </div>
+        <div class="flow">
+          <article class="flow-step">
+            <span class="step-num">1</span>
+            <h3>视觉问卷</h3>
+            <p>场景、轮廓、配色、叠穿、舒适度、slot 和探索意愿生成初始 profile。</p>
+          </article>
+          <article class="flow-step">
+            <span class="step-num">2</span>
+            <h3>权重合成</h3>
+            <p>defaultWeights + questionnaireDelta + ratingDelta 归一化为 finalWeights。</p>
+          </article>
+          <article class="flow-step">
+            <span class="step-num">3</span>
+            <h3>Today 推荐</h3>
+            <p>完整 outfit slots 进入候选生成，并用 finalWeights 计算最终排序。</p>
+          </article>
+          <article class="flow-step">
+            <span class="step-num">4</span>
+            <h3>评分反馈</h3>
+            <p>1-5 分和 reasonTags 写入反馈事件，小学习率更新 ratingDelta。</p>
+          </article>
+          <article class="flow-step">
+            <span class="step-num">5</span>
+            <h3>低频探索</h3>
+            <p>exploration.rate 控制“灵感尝试”，通过 deterministic seed 保持可测试。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>验收清单</h2>
+            <p class="subcopy">逐项对应当前代码实现和测试覆盖状态。</p>
+          </div>
+        </div>
+        <div class="grid">
+          <article class="check-card">
+            <div class="check-top"><h3>1. 视觉问卷生成初始推荐偏好</h3><span class="badge pass">满足</span></div>
+            <p>/preferences 登录保护，提交后调用 submitQuestionnaire，从默认状态生成 questionnaire 偏好。</p>
+            <span class="path">app/preferences/page.tsx · lib/recommendation/submit-questionnaire.ts</span>
+          </article>
+          <article class="check-card">
+            <div class="check-top"><h3>2. Today 使用 preferenceState.finalWeights</h3><span class="badge pass">满足</span></div>
+            <p>Today view 和刷新 action 都读取 preferenceState，推荐生成按 finalWeights 计算 score。</p>
+            <span class="path">lib/today/get-today-view.ts · lib/today/generate-recommendations.ts</span>
+          </article>
+          <article class="check-card">
+            <div class="check-top"><h3>3. 推荐包含完整 outfit slots</h3><span class="badge pass">满足</span></div>
+            <p>外套、鞋履、包袋、配饰进入生成流程和推荐卡展示。</p>
+            <span class="path">lib/today/types.ts · components/today/today-recommendation-card.tsx</span>
+          </article>
+          <article class="check-card">
+            <div class="check-top"><h3>4. 缺失 slot 不失败</h3><span class="badge pass">满足</span></div>
+            <p>缺鞋、缺包、缺配饰写入 missingSlots，并在卡片中提示后续补齐。</p>
+            <span class="path">lib/today/generate-recommendations.ts · tests/lib/today/generate-recommendations.test.ts</span>
+          </article>
+          <article class="check-card">
+            <div class="check-top"><h3>5. 评分和原因小幅更新 ratingDelta</h3><span class="badge pass">满足</span></div>
+            <p>rating signal 为 (rating - 3) / 2，学习率 0.015，单维限制在 [-0.06, 0.06]。</p>
+            <span class="path">app/today/actions.ts · lib/recommendation/feedback-learning.ts</span>
+          </article>
+          <article class="check-card">
+            <div class="check-top"><h3>6. 低频灵感推荐明确标注</h3><span class="badge pass">满足</span></div>
+            <p>exploration.rate 控制出现频率，UI 显示“灵感尝试”和与日常偏好的差异。</p>
+            <span class="path">lib/recommendation/exploration.ts · components/today/today-recommendation-card.tsx</span>
+          </article>
+          <article class="check-card">
+            <div class="check-top"><h3>7. 设置页重置推荐权重</h3><span class="badge pass">满足</span></div>
+            <p>Settings 展示 default / questionnaire / adaptive，并可保存新的 default preference state。</p>
+            <span class="path">app/settings/page.tsx · app/settings/actions.ts</span>
+          </article>
+          <article class="check-card">
+            <div class="check-top"><h3>8. 重新填写前先重置</h3><span class="badge pass">满足</span></div>
+            <p>restartStyleQuestionnaireAction 先 reset，再跳转 /preferences；中途退出保持 default。</p>
+            <span class="path">app/settings/actions.ts · tests/app/settings/actions.test.ts</span>
+          </article>
+          <article class="check-card">
+            <div class="check-top"><h3>9. Travel / Shop / Inspiration 复用偏好</h3><span class="badge partial">部分满足</span></div>
+            <p>三个模块已完成 slots / formula 扩展，具备后续接入点，但当前还未实际接收 preferenceState/profile。</p>
+            <span class="path">lib/travel · lib/shop · lib/inspiration</span>
+          </article>
+          <article class="check-card">
+            <div class="check-top"><h3>10. lint / test / build 通过</h3><span class="badge pass">满足</span></div>
+            <p>三项命令刚刚重跑通过，lint 仅保留既有 Closet 图片优化 warning。</p>
+            <span class="path">npm run lint · npm test · npm run build</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>验证结果</h2>
+            <p class="subcopy">本地命令均已通过，当前预览文件不依赖应用运行时。</p>
+          </div>
+        </div>
+        <div class="evidence-grid">
+          <article class="evidence-card">
+            <h3>Lint</h3>
+            <p>0 errors，4 warnings。warnings 为既有 Closet img 优化提示。</p>
+            <div class="command">npm run lint</div>
+          </article>
+          <article class="evidence-card">
+            <h3>Tests</h3>
+            <p>59 个测试文件通过，235 个测试通过。</p>
+            <div class="command">npm test</div>
+          </article>
+          <article class="evidence-card">
+            <h3>Build</h3>
+            <p>Next.js production build 通过，15 个静态页面生成完成。</p>
+            <div class="command">npm run build</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="note">
+          后续建议：Phase 8D 将 Travel / Shop / Inspiration 的核心分析函数增加可选 preferenceState/profile 参数，先只影响排序、阈值和文案解释，不改变数据结构。
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

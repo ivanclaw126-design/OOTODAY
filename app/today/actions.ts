@@ -6,10 +6,31 @@ import { reportBetaIssue, trackBetaEvent } from '@/lib/beta/telemetry'
 import { validatePassword } from '@/lib/auth/password'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getClosetView } from '@/lib/closet/get-closet-view'
+import { applyFeedback } from '@/lib/recommendation/apply-feedback'
+import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
+import { TODAY_FEEDBACK_REASON_TAGS, type TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { saveTodayOotdFeedback } from '@/lib/today/save-today-ootd-feedback'
 import { getWeather } from '@/lib/today/get-weather'
-import type { TodayHistoryUpdateInput, TodayOotdHistoryEntry, TodayRecommendation } from '@/lib/today/types'
+import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayOotdHistoryEntry } from '@/lib/today/types'
+
+const todayFeedbackReasonTagSet = new Set<string>(TODAY_FEEDBACK_REASON_TAGS)
+
+function normalizeTodayFeedbackReasonTags(value: unknown): TodayFeedbackReasonTag[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const normalized: TodayFeedbackReasonTag[] = []
+
+  value.forEach((tag) => {
+    if (typeof tag === 'string' && todayFeedbackReasonTagSet.has(tag) && !normalized.includes(tag as TodayFeedbackReasonTag)) {
+      normalized.push(tag as TodayFeedbackReasonTag)
+    }
+  })
+
+  return normalized
+}
 
 export async function updateTodayCityAction({ city }: { city: string }) {
   const session = await getSession()
@@ -43,16 +64,16 @@ export async function updateTodayCityAction({ city }: { city: string }) {
 
 export async function submitTodayOotdAction({
   recommendation,
-  satisfactionScore
-}: {
-  recommendation: TodayRecommendation
-  satisfactionScore: number
-}) {
+  satisfactionScore,
+  reasonTags = []
+}: TodayOotdFeedbackInput) {
   const session = await getSession()
 
   if (!session) {
     throw new Error('Unauthorized')
   }
+
+  const normalizedReasonTags = normalizeTodayFeedbackReasonTags(reasonTags)
 
   const result = await saveTodayOotdFeedback({
     userId: session.user.id,
@@ -61,12 +82,37 @@ export async function submitTodayOotdAction({
   })
 
   if (!result.error) {
+    try {
+      await applyFeedback({
+        userId: session.user.id,
+        rating: satisfactionScore,
+        reasonTags: normalizedReasonTags,
+        recommendationId: recommendation.id,
+        recommendationSnapshot: recommendation,
+        componentScores: recommendation.componentScores ?? null,
+        context: 'today'
+      })
+    } catch {
+      await reportBetaIssue({
+        code: 'today_preference_feedback_failed',
+        surface: 'today',
+        userId: session.user.id,
+        recoverable: true,
+        context: {
+          recommendationId: recommendation.id,
+          reasonTagCount: normalizedReasonTags.length
+        }
+      })
+    }
+
     await trackBetaEvent({
       event: 'ootd_submitted',
       surface: 'today',
       userId: session.user.id,
       metadata: {
-        satisfactionScore
+        satisfactionScore,
+        reasonTags: normalizedReasonTags.join('|'),
+        reasonTagCount: normalizedReasonTags.length
       }
     })
     revalidatePath('/today')
@@ -93,9 +139,10 @@ export async function refreshTodayRecommendationsAction(offset: number) {
   }
 
   const supabase = await createSupabaseServerClient()
-  const [{ data: profile }, closet] = await Promise.all([
+  const [{ data: profile }, closet, preferenceState] = await Promise.all([
     supabase.from('profiles').select('city').eq('id', session.user.id).maybeSingle(),
-    getClosetView(session.user.id, { limit: 0 })
+    getClosetView(session.user.id, { limit: 0 }),
+    getPreferenceState({ userId: session.user.id })
   ])
 
   if (closet.itemCount === 0) {
@@ -106,7 +153,12 @@ export async function refreshTodayRecommendationsAction(offset: number) {
   const weather = city ? await getWeather(city) : null
 
   return {
-    recommendations: generateTodayRecommendations(closet.items, weather, offset)
+    recommendations: generateTodayRecommendations({
+      items: closet.items,
+      weather,
+      offset,
+      preferenceState
+    })
   }
 }
 

@@ -24,9 +24,35 @@ describe('buildOotdNotes', () => {
           subCategory: '西装外套',
           colorCategory: '藏蓝',
           styleTags: ['通勤']
-        }
+        },
+        shoes: {
+          id: 'shoes-1',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '乐福鞋',
+          colorCategory: '黑色',
+          styleTags: ['通勤']
+        },
+        bag: {
+          id: 'bag-1',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '托特包',
+          colorCategory: '黑色',
+          styleTags: ['通勤']
+        },
+        accessories: [
+          {
+            id: 'accessory-1',
+            imageUrl: null,
+            category: '配饰',
+            subCategory: '腰带',
+            colorCategory: '黑色',
+            styleTags: ['通勤']
+          }
+        ]
       })
-    ).toBe('OOTD: 针织连衣裙；外层建议：西装外套；理由：一件完成搭配')
+    ).toBe('OOTD: 针织连衣裙；外层建议：西装外套；鞋履：乐福鞋；包袋：托特包；配饰：腰带；理由：一件完成搭配')
   })
 
   it('formats a separates recommendation and keeps missing bottom explicit', () => {

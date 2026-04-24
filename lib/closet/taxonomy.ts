@@ -36,6 +36,9 @@ export const TOP_CATEGORY = '上装'
 export const BOTTOM_CATEGORY = '下装'
 export const ONE_PIECE_CATEGORY = '连体/全身装'
 export const OUTER_LAYER_CATEGORY = '外层'
+export const SHOES_CATEGORY = '鞋履'
+export const BAG_CATEGORY = '包袋'
+export const ACCESSORY_CATEGORY = '配饰'
 
 export const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
   {
@@ -105,8 +108,8 @@ export const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
     ]
   },
   {
-    value: '鞋履',
-    label: '鞋履',
+    value: SHOES_CATEGORY,
+    label: SHOES_CATEGORY,
     aliases: ['鞋履', '鞋子', 'shoes', 'footwear', 'sneakers', 'boots'],
     subCategories: [
       { value: '运动鞋', label: '运动鞋', aliases: ['运动鞋', 'sneakers'] },
@@ -118,8 +121,8 @@ export const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
     ]
   },
   {
-    value: '包袋',
-    label: '包袋',
+    value: BAG_CATEGORY,
+    label: BAG_CATEGORY,
     aliases: ['包袋', '包', 'bag', 'handbag', 'tote'],
     subCategories: [
       { value: '托特包', label: '托特包', aliases: ['托特包', 'tote bag'] },
@@ -130,8 +133,8 @@ export const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
     ]
   },
   {
-    value: '配饰',
-    label: '配饰',
+    value: ACCESSORY_CATEGORY,
+    label: ACCESSORY_CATEGORY,
     aliases: ['配饰', 'accessories', 'jewelry', 'hat', 'belt', 'scarf'],
     subCategories: [
       { value: '帽子', label: '帽子', aliases: ['帽子', 'hat', 'cap'] },
@@ -368,9 +371,43 @@ export function isOuterwearCategory(category: string | null | undefined) {
   return normalizeCategoryValue(category) === OUTER_LAYER_CATEGORY
 }
 
+function normalizeCategoryOrSubCategoryValue(input: string | null | undefined) {
+  const normalizedCategory = normalizeCategoryValue(input)
+
+  if (normalizedCategory !== UNKNOWN_CATEGORY) {
+    return normalizedCategory
+  }
+
+  return inferCategoryFromSubCategory(input)
+}
+
+export function isShoesCategory(category: string | null | undefined) {
+  return normalizeCategoryOrSubCategoryValue(category) === SHOES_CATEGORY
+}
+
+export function isBagCategory(category: string | null | undefined) {
+  return normalizeCategoryOrSubCategoryValue(category) === BAG_CATEGORY
+}
+
+export function isAccessoryCategory(category: string | null | undefined) {
+  return normalizeCategoryOrSubCategoryValue(category) === ACCESSORY_CATEGORY
+}
+
+export function isRecommendableCategory(category: string | null | undefined) {
+  const normalizedCategory = normalizeCategoryOrSubCategoryValue(category)
+  return [
+    TOP_CATEGORY,
+    BOTTOM_CATEGORY,
+    ONE_PIECE_CATEGORY,
+    OUTER_LAYER_CATEGORY,
+    SHOES_CATEGORY,
+    BAG_CATEGORY,
+    ACCESSORY_CATEGORY
+  ].includes(normalizedCategory)
+}
+
 export function isSupportedTodayCategory(category: string | null | undefined) {
-  const normalizedCategory = normalizeCategoryValue(category)
-  return [TOP_CATEGORY, BOTTOM_CATEGORY, ONE_PIECE_CATEGORY, OUTER_LAYER_CATEGORY].includes(normalizedCategory)
+  return isRecommendableCategory(category)
 }
 
 export function getColorDefinition(color: string | null | undefined) {

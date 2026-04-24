@@ -1,4 +1,5 @@
 import { getClosetView } from '@/lib/closet/get-closet-view'
+import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { getRecentOotdHistory } from '@/lib/today/get-recent-ootd-history'
 import { getTodayOotdStatus } from '@/lib/today/get-today-ootd-status'
@@ -20,10 +21,11 @@ export async function getTodayView({
   passwordChangedAt: string | null
   offset?: number
 }): Promise<TodayView> {
-  const [closet, ootdStatus, recentOotdHistory] = await Promise.all([
+  const [closet, ootdStatus, recentOotdHistory, preferenceState] = await Promise.all([
     getClosetView(userId, { limit: 0 }),
     getTodayOotdStatus(userId),
-    getRecentOotdHistory(userId)
+    getRecentOotdHistory(userId),
+    getPreferenceState({ userId })
   ])
 
   if (closet.itemCount === 0) {
@@ -49,7 +51,12 @@ export async function getTodayView({
       passwordBootstrapped,
       passwordChangedAt,
       weatherState: { status: 'not-set' },
-      recommendations: generateTodayRecommendations(closet.items, null, offset),
+      recommendations: generateTodayRecommendations({
+        items: closet.items,
+        weather: null,
+        offset,
+        preferenceState
+      }),
       recommendationError: false,
       ootdStatus,
       recentOotdHistory
@@ -66,7 +73,12 @@ export async function getTodayView({
       passwordBootstrapped,
       passwordChangedAt,
       weatherState: { status: 'unavailable', city },
-      recommendations: generateTodayRecommendations(closet.items, null, offset),
+      recommendations: generateTodayRecommendations({
+        items: closet.items,
+        weather: null,
+        offset,
+        preferenceState
+      }),
       recommendationError: false,
       ootdStatus,
       recentOotdHistory
@@ -80,7 +92,12 @@ export async function getTodayView({
     passwordBootstrapped,
     passwordChangedAt,
     weatherState: { status: 'ready', weather },
-    recommendations: generateTodayRecommendations(closet.items, weather, offset),
+    recommendations: generateTodayRecommendations({
+      items: closet.items,
+      weather,
+      offset,
+      preferenceState
+    }),
     recommendationError: false,
     ootdStatus,
     recentOotdHistory

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { resetRecommendationPreferences } from '@/lib/recommendation/reset-preferences'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 
 const items = [
@@ -166,15 +167,309 @@ describe('generateTodayRecommendations', () => {
   })
 
   it('adds outer layers in cold weather when available', () => {
-    const recommendations = generateTodayRecommendations(items, {
-      city: 'Shanghai',
-      temperatureC: 7,
-      conditionLabel: 'light rain',
-      isWarm: false,
-      isCold: true
+    const recommendations = generateTodayRecommendations({
+      items,
+      weather: {
+        city: 'Shanghai',
+        temperatureC: 7,
+        conditionLabel: 'light rain',
+        isWarm: false,
+        isCold: true
+      },
+      preferenceState: resetRecommendationPreferences()
     })
 
     expect(recommendations.some((recommendation) => recommendation.outerLayer)).toBe(true)
+  })
+
+  it('adds shoes, bag, accessories, confidence, and component scores when available', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items: [
+        ...items,
+        {
+          id: 'shoes-1',
+          imageUrl: 'https://example.com/shoes-1.jpg',
+          category: '鞋子',
+          subCategory: '乐福鞋',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:06:00Z'
+        },
+        {
+          id: 'bag-1',
+          imageUrl: 'https://example.com/bag-1.jpg',
+          category: '包袋',
+          subCategory: '托特包',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:07:00Z'
+        },
+        {
+          id: 'accessory-1',
+          imageUrl: 'https://example.com/accessory-1.jpg',
+          category: '配饰',
+          subCategory: '腰带',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:08:00Z'
+        }
+      ],
+      weather: null,
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          slotPreference: {
+            ...preferenceState.profile.slotPreference,
+            accessories: true
+          }
+        }
+      }
+    })
+
+    const firstRecommendation = recommendations[0]
+
+    expect(firstRecommendation?.shoes?.id).toBe('shoes-1')
+    expect(firstRecommendation?.bag?.id).toBe('bag-1')
+    expect(firstRecommendation?.accessories?.[0]?.id).toBe('accessory-1')
+    expect(firstRecommendation?.missingSlots).toEqual([])
+    expect(firstRecommendation?.confidence).toBeGreaterThan(70)
+    expect(firstRecommendation?.componentScores?.completeness).toBe(100)
+    expect(firstRecommendation?.componentScores?.colorHarmony).toBeGreaterThanOrEqual(0)
+    expect(firstRecommendation?.componentScores?.colorHarmony).toBeLessThanOrEqual(100)
+    expect(firstRecommendation?.mode).toBe('daily')
+  })
+
+  it('keeps recommendations when shoes or bag are missing and lowers completeness', () => {
+    const recommendations = generateTodayRecommendations(
+      [
+        {
+          id: 'top-only-color',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '衬衫',
+          colorCategory: '白色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'bottom-only-color',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '西裤',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:01:00Z'
+        }
+      ],
+      null
+    )
+
+    expect(recommendations[0]?.top?.id).toBe('top-only-color')
+    expect(recommendations[0]?.bottom?.id).toBe('bottom-only-color')
+    expect(recommendations[0]?.missingSlots).toEqual(expect.arrayContaining(['shoes', 'bag']))
+    expect(recommendations[0]?.componentScores?.completeness).toBeLessThan(100)
+    expect(recommendations[0]?.confidence).toBeLessThan(90)
+  })
+
+  it('uses final weights to change candidate ordering', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items: [
+        {
+          id: 'top-tonal',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '衬衫',
+          colorCategory: '浅蓝色',
+          styleTags: ['基础'],
+          lastWornDate: '2026-04-21',
+          wearCount: 5,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'bottom-tonal',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '西裤',
+          colorCategory: '藏蓝色',
+          styleTags: ['基础'],
+          lastWornDate: '2026-04-21',
+          wearCount: 5,
+          createdAt: '2026-04-19T10:01:00Z'
+        },
+        {
+          id: 'top-clash',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '针织衫',
+          colorCategory: '红色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:02:00Z'
+        },
+        {
+          id: 'bottom-clash',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '长裙',
+          colorCategory: '绿色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:03:00Z'
+        },
+        {
+          id: 'shoes-basic',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '休闲鞋',
+          colorCategory: '黑色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:04:00Z'
+        },
+        {
+          id: 'bag-basic',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '托特包',
+          colorCategory: '黑色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:05:00Z'
+        }
+      ],
+      weather: null,
+      preferenceState: {
+        ...preferenceState,
+        finalWeights: {
+          colorHarmony: 0.86,
+          silhouetteBalance: 0.02,
+          layering: 0.02,
+          focalPoint: 0.02,
+          sceneFit: 0.02,
+          weatherComfort: 0.02,
+          completeness: 0.02,
+          freshness: 0.02
+        }
+      }
+    })
+
+    expect(recommendations[0]?.top?.id).toBe('top-tonal')
+    expect(recommendations[0]?.bottom?.id).toBe('bottom-tonal')
+  })
+
+  it('inserts at most one deterministic inspiration recommendation when exploration is enabled', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items: [
+        ...items,
+        {
+          id: 'shoes-bright',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '休闲鞋',
+          colorCategory: '红色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:06:00Z'
+        },
+        {
+          id: 'bag-basic',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '托特包',
+          colorCategory: '黑色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:07:00Z'
+        }
+      ],
+      weather: null,
+      explorationSeed: 'phase-7-inspiration',
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: true,
+            rate: 1
+          }
+        }
+      }
+    })
+
+    const inspirationRecommendations = recommendations.filter((recommendation) => recommendation.mode === 'inspiration')
+
+    expect(recommendations).toHaveLength(3)
+    expect(inspirationRecommendations).toHaveLength(1)
+    expect(inspirationRecommendations[0]?.id).toMatch(/^inspiration-/u)
+    expect(inspirationRecommendations[0]?.dailyDifference).toContain('日常')
+    expect(recommendations.filter((recommendation) => recommendation.mode === 'daily')).toHaveLength(2)
+  })
+
+  it('does not insert inspiration recommendations when exploration rate is 0', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items,
+      weather: null,
+      explorationSeed: 'phase-7-inspiration',
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: true,
+            rate: 0
+          }
+        }
+      }
+    })
+
+    expect(recommendations).toHaveLength(3)
+    expect(recommendations.every((recommendation) => recommendation.mode !== 'inspiration')).toBe(true)
+  })
+
+  it('does not insert inspiration recommendations that hit hard avoids', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items,
+      weather: null,
+      explorationSeed: 'phase-7-inspiration',
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          hardAvoids: ['通勤', '极简'],
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: true,
+            rate: 1
+          }
+        }
+      }
+    })
+
+    expect(recommendations.every((recommendation) => recommendation.mode !== 'inspiration')).toBe(true)
   })
 
   it('falls back to single-item recommendations when the closet lacks full outfits', () => {

@@ -285,6 +285,20 @@ export function InspirationPage({
                     <span className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-white/84">场景 · {analysis.breakdown.scene}</span>
                     <span className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-white/84">气质 · {analysis.breakdown.vibe}</span>
                   </div>
+                  <div className="mt-4 grid gap-2 text-sm">
+                    <p className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-2 text-white/84">
+                      色彩公式 · {analysis.breakdown.colorFormula ?? '按关键单品颜色复刻'}
+                    </p>
+                    <p className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-2 text-white/84">
+                      轮廓公式 · {analysis.breakdown.silhouetteFormula ?? '先保住核心轮廓比例'}
+                    </p>
+                    <p className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-2 text-white/84">
+                      叠穿公式 · {analysis.breakdown.layeringFormula ?? '按内外层关系复刻'}
+                    </p>
+                    <p className="rounded-[1rem] border border-white/10 bg-white/8 px-3 py-2 text-white/84">
+                      视觉中心 · {analysis.breakdown.focalPoint ?? '保住最显眼的关键单品'}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -295,9 +309,16 @@ export function InspirationPage({
                     <p className="text-sm font-medium">{item.label}</p>
                     <p className="text-sm text-white/82">
                       {item.category}
+                      {item.slot ? ` · ${item.slot}` : ''}
                       {item.colorHint ? ` · ${item.colorHint}` : ''}
+                      {item.silhouette ? ` · ${item.silhouette}` : ''}
+                      {item.layerRole ? ` · ${item.layerRole}` : ''}
+                      {item.importance ? ` · ${item.importance}` : ''}
                       {item.styleTags.length > 0 ? ` · ${item.styleTags.join(' / ')}` : ''}
                     </p>
+                    {(item.alternatives ?? []).length > 0 ? (
+                      <p className="mt-1 text-sm text-white/68">可替代：{(item.alternatives ?? []).join(' / ')}</p>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -336,6 +357,10 @@ export function InspirationPage({
                   <p className="text-sm font-medium">
                     {group.inspirationItem.label} · {group.inspirationItem.category}
                   </p>
+                  <p className="text-sm text-[var(--color-neutral-dark)]">{group.matchReason}</p>
+                  {group.substituteSuggestion ? (
+                    <p className="text-sm text-[var(--color-neutral-dark)]">{group.substituteSuggestion}</p>
+                  ) : null}
                   {group.matchedItems.length > 0 ? (
                     <ItemShowcase
                       items={group.matchedItems.map((item) => ({
@@ -352,7 +377,7 @@ export function InspirationPage({
                         .join(' / ')}
                     />
                   ) : (
-                    <p className="text-sm text-[var(--color-neutral-dark)]">你衣橱里暂时没有很接近的同类单品。</p>
+                    <p className="text-sm text-[var(--color-neutral-dark)]">你衣橱里暂时没有很接近的单品，先按公式记住它承担的角色。</p>
                   )}
                 </div>
               ))}

@@ -191,7 +191,10 @@ describe('saveTodayOotdFeedback', () => {
       data: [
         { id: 'top-1', wear_count: 4 },
         { id: 'bottom-1', wear_count: 1 },
-        { id: 'outer-1', wear_count: 0 }
+        { id: 'outer-1', wear_count: 0 },
+        { id: 'shoes-1', wear_count: 2 },
+        { id: 'bag-1', wear_count: 3 },
+        { id: 'accessory-1', wear_count: 1 }
       ],
       error: null
     })
@@ -228,13 +231,39 @@ describe('saveTodayOotdFeedback', () => {
           subCategory: '西装外套',
           colorCategory: '藏蓝',
           styleTags: ['通勤']
-        }
+        },
+        shoes: {
+          id: 'shoes-1',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '乐福鞋',
+          colorCategory: '黑色',
+          styleTags: ['通勤']
+        },
+        bag: {
+          id: 'bag-1',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '托特包',
+          colorCategory: '黑色',
+          styleTags: ['通勤']
+        },
+        accessories: [
+          {
+            id: 'accessory-1',
+            imageUrl: null,
+            category: '配饰',
+            subCategory: '腰带',
+            colorCategory: '黑色',
+            styleTags: ['通勤']
+          }
+        ]
       }
     })
 
     const wornDate = result.wornAt?.slice(0, 10)
 
-    expect(itemsIn).toHaveBeenCalledWith('id', ['top-1', 'bottom-1', 'outer-1'])
+    expect(itemsIn).toHaveBeenCalledWith('id', ['top-1', 'bottom-1', 'outer-1', 'shoes-1', 'bag-1', 'accessory-1'])
     expect(update).toHaveBeenNthCalledWith(1, {
       last_worn_date: wornDate,
       wear_count: 5
@@ -246,6 +275,18 @@ describe('saveTodayOotdFeedback', () => {
     expect(update).toHaveBeenNthCalledWith(3, {
       last_worn_date: wornDate,
       wear_count: 1
+    })
+    expect(update).toHaveBeenNthCalledWith(4, {
+      last_worn_date: wornDate,
+      wear_count: 3
+    })
+    expect(update).toHaveBeenNthCalledWith(5, {
+      last_worn_date: wornDate,
+      wear_count: 4
+    })
+    expect(update).toHaveBeenNthCalledWith(6, {
+      last_worn_date: wornDate,
+      wear_count: 2
     })
   })
 })

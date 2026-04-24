@@ -11,7 +11,7 @@ import { TodayOotdHistory } from '@/components/today/today-ootd-history'
 import { TodayRecommendationList } from '@/components/today/today-recommendation-list'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { buildOotdNotes } from '@/lib/today/build-ootd-notes'
-import type { TodayHistoryUpdateInput, TodayOotdHistoryEntry, TodayOotdStatus, TodayRecommendation, TodayView } from '@/lib/today/types'
+import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayOotdHistoryEntry, TodayOotdStatus, TodayRecommendation, TodayView } from '@/lib/today/types'
 
 function isSameCalendarDay(left: string, right: string) {
   return new Date(left).toDateString() === new Date(right).toDateString()
@@ -50,10 +50,7 @@ export function TodayInteractiveWorkspace({
 }: {
   view: TodayView
   updateCity: (input: { city: string }) => Promise<{ error: string | null }>
-  submitOotd: (input: {
-    recommendation: TodayRecommendation
-    satisfactionScore: number
-  }) => Promise<{ error: string | null; wornAt: string | null }>
+  submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
   refreshRecommendations: (input: { offset: number }) => Promise<{ recommendations: TodayRecommendation[] }>
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
   updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>
@@ -75,10 +72,7 @@ export function TodayInteractiveWorkspace({
   )
   const hasStartedFeedbackLoop = ootdStatus.status === 'recorded' || historyEntries.length > 0
 
-  async function submitTodayOotd(input: {
-    recommendation: TodayRecommendation
-    satisfactionScore: number
-  }) {
+  async function submitTodayOotd(input: TodayOotdFeedbackInput) {
     const result = await submitOotd(input)
 
     if (!result.error && result.wornAt) {

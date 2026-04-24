@@ -3,8 +3,19 @@ import type { TodayWeather } from '@/lib/today/types'
 
 export type TravelScene = '通勤' | '休闲' | '正式' | '约会' | '户外'
 
+export type TravelPackingSlot =
+  | 'tops'
+  | 'bottoms'
+  | 'dresses'
+  | 'outerwear'
+  | 'comfortShoes'
+  | 'formalShoes'
+  | 'backupShoes'
+  | 'bags'
+
 export type TravelPackingEntry = {
   id: string
+  slot?: TravelPackingSlot
   categoryLabel: string
   quantity: number
   itemLabels: string[]
@@ -27,6 +38,8 @@ export type TravelPackingPlan = {
 export type TravelDailyPlanEntry = {
   dayLabel: string
   outfitSummary: string
+  shoeSummary?: string | null
+  bagSummary?: string | null
   focus: string
   selectedItems: ClosetItemCardData[]
 }

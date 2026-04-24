@@ -87,12 +87,30 @@ describe('TravelPage', () => {
                 quantity: 3,
                 itemLabels: ['白色 衬衫', '灰色 针织衫'],
                 reason: '上衣按 2 天左右轮换一次来带，能兼顾体积和变化。'
+              },
+              {
+                id: 'comfort-shoes',
+                slot: 'comfortShoes',
+                categoryLabel: '舒适鞋',
+                quantity: 1,
+                itemLabels: ['白色 运动鞋'],
+                reason: '户外、步行或长途旅行优先保证脚感，一双舒适鞋比多带一件上衣更关键。'
+              },
+              {
+                id: 'bags',
+                slot: 'bags',
+                categoryLabel: '包袋',
+                quantity: 1,
+                itemLabels: ['黑色 托特包'],
+                reason: '通勤或正式场景需要包袋承接电脑、证件和整体正式感。'
               }
             ],
             dailyPlan: [
               {
                 dayLabel: '第 1 天',
-                outfitSummary: '白色 衬衫 + 黑色 西裤',
+                outfitSummary: '白色 衬衫 + 黑色 西裤 + 白色 运动鞋 + 黑色 托特包',
+                shoeSummary: '白色 运动鞋',
+                bagSummary: '黑色 托特包',
                 focus: '先用最稳的一套开局，减少到达当天的决策负担。'
               }
             ],
@@ -110,8 +128,12 @@ describe('TravelPage', () => {
     expect(screen.getByRole('button', { name: '更新这份方案' })).toBeInTheDocument()
     expect(screen.getByText('建议打包')).toBeInTheDocument()
     expect(screen.getByText('上衣 · 建议带 3 件')).toBeInTheDocument()
+    expect(screen.getByText('舒适鞋 · 建议带 1 件')).toBeInTheDocument()
+    expect(screen.getByText('包袋 · 建议带 1 件')).toBeInTheDocument()
     expect(screen.getByText('按天轮换建议')).toBeInTheDocument()
     expect(screen.getByText('第 1 天')).toBeInTheDocument()
+    expect(screen.getByText('鞋履：白色 运动鞋')).toBeInTheDocument()
+    expect(screen.getByText('包袋：黑色 托特包')).toBeInTheDocument()
     expect(screen.getByText('最近保存方案')).toBeInTheDocument()
     expect(screen.getByText('上海 4天 · 通勤/休闲')).toBeInTheDocument()
     expect(screen.getByText('当前正在编辑这份方案')).toBeInTheDocument()
