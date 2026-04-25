@@ -1,5 +1,7 @@
 'use client'
 
+import { AnalyticsEventTracker } from '@/components/analytics/event-tracker'
+import { PageViewTracker } from '@/components/analytics/page-view-tracker'
 import { AppShell } from '@/components/app-shell'
 import { ItemShowcase } from '@/components/ui/item-showcase'
 import { Card } from '@/components/ui/card'
@@ -74,6 +76,18 @@ export function TravelPage({
 
   return (
     <AppShell title="Travel">
+      <PageViewTracker
+        eventName="travel_viewed"
+        module="travel"
+        properties={{ itemCount: view.itemCount, status: view.status }}
+      />
+      {view.status === 'empty-closet' ? (
+        <AnalyticsEventTracker
+          eventName="travel_empty_closet_blocked"
+          module="travel"
+          properties={{ itemCount: 0 }}
+        />
+      ) : null}
       <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
         <form
           action="/travel"

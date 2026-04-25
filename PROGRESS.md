@@ -11,7 +11,7 @@
 - Today + OOTD 已形成主链路：基于衣橱生成规则型推荐，支持天气增强、城市保存、换一批推荐、记录今日已穿、满意度反馈、最近历史查看与编辑/删除。
 - 推荐偏好引擎已完成共享评价体系阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序、Today 第 3 套安全灵感套装、跨 Today / Shop / Looks / Travel 的推荐文案统一，以及共享 outfit evaluator 对颜色、轮廓、层次、视觉中心、场景、天气、完整度和新鲜度的统一评分。
 - Beta 首轮体验已开始收敛：登录后入口会按衣橱状态自动分流到 `Closet onboarding` 或 `Today`，Landing / Closet / Today 已接入统一 first-run checklist、明确的下一步 CTA 与可达的反馈入口。
-- Beta 最小观测层已落地：Landing、登录邮件发送、Closet 导入启动与保存、Today 浏览、OOTD 提交、反馈入口打开已接入轻量 telemetry；登录失败、导入失败、识别失败、Today 提交失败等高价值路径已接入统一 issue reporting，且失败不会阻塞主流程。
+- Beta 最小观测层已升级为自建 analytics 基础：Landing、登录邮件发送、Closet 导入启动与保存、Today 浏览/推荐/刷新/OOTD 提交、Travel 生成/保存、Shop 分析成功/失败、Looks 浏览和反馈入口已接入统一事件；登录失败、导入失败、识别失败、Today 提交失败等高价值路径会映射为卡点事件，且失败不会阻塞主流程。
 - Today / Closet 已完成第一轮 server-client 边界收敛：页面壳、状态头和主路径提示已回到服务端，交互性的推荐/历史/设置与衣橱导入/浏览/编辑收敛到更小的客户端工作区；路由层已补 Suspense fallback，并已完成一轮 dev browser QA 与 bundle manifest 复核。
 - Shop 已完成偏好感知的扩展购买分析：支持商品链接、本地图片、图片 URL 输入，输出重复风险、可搭/收尾/强化收益、购买建议；分析范围已从核心服饰扩展到鞋履、包袋、配饰，并会结合用户偏好调整舒适、造型、低调与 hard avoids 的购买判断。
 - Looks 已完成偏好感知的公式化灵感复刻：支持上传灵感图或图片链接，输出色彩/轮廓/叠穿/视觉中心公式、关键单品、衣橱借用与替代建议，并会结合用户推荐偏好轻微调整排序、过滤 hard avoids、解释适合日常复刻还是更适合作为灵感尝试。
@@ -95,15 +95,24 @@
 - 已新增统一 beta helper：bootstrap state、first-run content、feedback link 与 telemetry / issue reporting 接口，避免页面各自维护字符串与入口逻辑。
 - Landing 已接入首屏埋点与统一 checklist；Today 与 Closet 已根据首轮使用阶段补充引导、下一步 CTA 和反馈入口。
 - App shell 已提供全局“提反馈”入口，确保在主路径和错误态附近都能快速到达外部反馈表单。
-- 当前观测层刻意保持轻量：以 API route + server/client helper 为主，不引入新的重监控基础设施。
+- 当前观测层刻意保持轻量：以 API route + server/client helper + Supabase `analytics_events` 为主，不引入新的重监控基础设施。
 - Travel / Shop / Looks 已补 beta extension 提示，明确它们在这一轮主要是扩展能力，不抢 `Closet -> Today` 主路径叙事。
 - 密码登录、magic-link callback 与登录后首页都已统一走 bootstrap 分流：空衣橱进入 `/closet?onboarding=1`，已有衣橱进入 `/today`。
 - 已新增朋友 beta QA 清单与 runbook，覆盖邀请、成功标准、反馈收集、stop/go 阈值和两条 smoke flow。
 - Settings 已新增 demo seed 衣橱体验入口：`test@test.com` 用于女装演示衣橱，`test-men@test.com` 用于男装演示衣橱；真实用户可复制演示衣橱到自己的账号，也可一键清空当前账号的衣橱、OOTD、保存搭配和旅行方案；`npm run demo:magiclink` 可创建/确认 seed 账号并生成维护用 magic link。
 
+### 9. Analytics Dashboard MVP
+
+- 已新增 `analytics_events` 事件表迁移、RLS、类型定义、payload 校验、client `trackEvent()`、server `trackServerEvent()` 和 `/api/analytics/track`。
+- 已保留旧 `/api/beta/track` 与 `/api/beta/report` 兼容入口，并通过 adapter 映射到新 analytics 事件，避免新旧观测系统分裂。
+- 已新增 `/admin/analytics`，通过 `ADMIN_EMAILS` 做管理员保护，server-side service role 查询聚合 Overview、Feature Usage、Funnels、Friction 和 Recommendation Quality。
+- 推荐质量看板直接复用 `outfit_feedback_events` 的 rating、reason tags 和 context，不复制推荐评分数据。
+- 已通过 `npm test`、`npm run build`、`npm run lint` 和 Supabase 6543 transaction-pooler dry-run 验证。
+
 ## 当前风险 / 待验证
 
-- 远端 Supabase schema 已完成 recommendation storage 与 `items.algorithm_meta` reconciliation；`supabase db push --dry-run --include-all` 已确认 remote database up to date。
+- 远端 Supabase schema 已完成 recommendation storage 与 `items.algorithm_meta` reconciliation；新增 analytics migration 已通过 `supabase db push --dry-run --include-all` 验证，正式部署或远端试用前还需要实际 push `20260425120000_add_analytics_events.sql`。
+- `/admin/analytics` 需要部署环境配置 `ADMIN_EMAILS` 与 `SUPABASE_SERVICE_ROLE_KEY`；缺少 service role 时页面无法读取全站事件。
 - Closet 的右转 90° 需要在旧库环境里再点一轮真实浏览器确认，确保不再触发 node/server action 报错。
 - Closet 仍是客户端体积重点：当前导入、远程链接、拼图与编辑能力集中在同一交互岛里，下一轮若继续压包，应优先把低频导入/图片处理路径懒加载。
 - 移动端底部导航在 full-page 截图里会覆盖部分中段内容；实际滚动底部已有 padding，但 beta 前仍建议再做一次手感微调。
@@ -139,8 +148,9 @@
 
 ## 下一步
 
-1. 按 `docs/beta-readiness-checklist.md` 跑目标环境 beta go/no-go：优先 Auth、推荐偏好、Today、移动端和 CI/部署。
-2. 用 `test@test.com` 维护女装 demo 图片衣橱，用 `test-men@test.com` 维护男装 demo 图片衣橱，并在部署环境验证“复制演示衣橱”和“清空我的衣橱”两条 Settings 路径。
-3. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
-4. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
-5. 为 Today、Shop、Looks、Travel 的关键推荐和文案状态补视觉回归截图或手动截图 QA。
+1. 正式 push analytics migration，并在部署环境设置 `ADMIN_EMAILS` / `SUPABASE_SERVICE_ROLE_KEY` 后打开 `/admin/analytics` 做一次真实数据 smoke。
+2. 按 `docs/beta-readiness-checklist.md` 跑目标环境 beta go/no-go：优先 Auth、推荐偏好、Today、移动端和 CI/部署。
+3. 用 `test@test.com` 维护女装 demo 图片衣橱，用 `test-men@test.com` 维护男装 demo 图片衣橱，并在部署环境验证“复制演示衣橱”和“清空我的衣橱”两条 Settings 路径。
+4. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
+5. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
+6. 为 Today、Shop、Looks、Travel 的关键推荐和文案状态补视觉回归截图或手动截图 QA。

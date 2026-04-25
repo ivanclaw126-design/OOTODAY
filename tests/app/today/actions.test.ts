@@ -40,7 +40,7 @@ vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient
 }))
 
-vi.mock('@/lib/beta/telemetry', () => ({
+vi.mock('@/lib/beta/server-telemetry', () => ({
   reportBetaIssue,
   trackBetaEvent
 }))

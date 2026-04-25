@@ -224,6 +224,53 @@ export type Database = {
           component_scores?: Json | null
         }
       }
+      analytics_events: {
+        Row: {
+          id: string
+          user_id: string | null
+          anonymous_id: string | null
+          session_id: string | null
+          event_name: string
+          module: string
+          route: string | null
+          properties: Json
+          user_agent: string | null
+          referrer: string | null
+          utm_source: string | null
+          utm_medium: string | null
+          utm_campaign: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          anonymous_id?: string | null
+          session_id?: string | null
+          event_name: string
+          module: string
+          route?: string | null
+          properties?: Json
+          user_agent?: string | null
+          referrer?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          created_at?: string
+        }
+        Update: {
+          anonymous_id?: string | null
+          session_id?: string | null
+          event_name?: string
+          module?: string
+          route?: string | null
+          properties?: Json
+          user_agent?: string | null
+          referrer?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+        }
+      }
     }
   }
 }

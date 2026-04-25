@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { trackServerEvent } from '@/lib/analytics/server'
 import { getSession } from '@/lib/auth/get-session'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
@@ -66,6 +67,20 @@ export async function saveTravelPlanAction(formData: FormData) {
     existingPlanId: typeof existingPlanId === 'string' && existingPlanId ? existingPlanId : null,
     existingSource:
       existingPlanSource === 'travel_plans' || existingPlanSource === 'outfits' ? existingPlanSource : null
+  })
+
+  await trackServerEvent({
+    userId: session.user.id,
+    eventName: 'travel_plan_saved',
+    module: 'travel',
+    route: '/travel',
+    properties: {
+      destinationCity: normalizedCity,
+      days: normalizedDays,
+      scenes,
+      savedPlanId: savedPlan.id,
+      source: savedPlan.source
+    }
   })
 
   revalidatePath('/travel')

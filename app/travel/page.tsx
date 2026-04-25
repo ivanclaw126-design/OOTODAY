@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { deleteTravelPlanAction, saveTravelPlanAction } from '@/app/travel/actions'
 import { TravelPage } from '@/components/travel/travel-page'
+import { trackServerEvent } from '@/lib/analytics/server'
 import { getSession } from '@/lib/auth/get-session'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
@@ -83,19 +84,37 @@ export default async function TravelRoute({
       savedPlanId
     }
   } else {
-    const plan =
-      savedPlanSnapshot?.plan &&
-      savedPlanSnapshot.destinationCity === destinationCity &&
+    const canReuseSavedPlan =
+      Boolean(savedPlanSnapshot?.plan) &&
+      savedPlanSnapshot?.destinationCity === destinationCity &&
       savedPlanSnapshot.days === days &&
       areScenesEqual(savedPlanSnapshot.scenes, scenes)
-        ? savedPlanSnapshot.plan
-        : buildTravelPackingPlan({
-            destinationCity,
-            days,
-            scenes,
-            items: closet.items,
-            weather: await getWeather(destinationCity)
-          })
+    const weather = canReuseSavedPlan ? null : await getWeather(destinationCity)
+    const plan = canReuseSavedPlan
+      ? savedPlanSnapshot.plan
+      : buildTravelPackingPlan({
+          destinationCity,
+          days,
+          scenes,
+          items: closet.items,
+          weather
+        })
+
+    if (!canReuseSavedPlan) {
+      await trackServerEvent({
+        userId: session.user.id,
+        eventName: 'travel_plan_generated',
+        module: 'travel',
+        route: '/travel',
+        properties: {
+          destinationCity,
+          days,
+          scenes,
+          itemCount: closet.itemCount,
+          weatherAvailable: Boolean(weather)
+        }
+      })
+    }
 
     view = {
       status: 'ready',

@@ -1,4 +1,6 @@
 import { OnboardingChecklist } from '@/components/beta/onboarding-checklist'
+import { AnalyticsEventTracker } from '@/components/analytics/event-tracker'
+import { PageViewTracker } from '@/components/analytics/page-view-tracker'
 import { AppShell } from '@/components/app-shell'
 import { ClosetSection } from '@/components/closet/closet-section'
 import { ClosetUploadCard } from '@/components/closet/closet-upload-card'
@@ -65,6 +67,14 @@ export function ClosetPage({
 }: ClosetPageProps) {
   return (
     <AppShell title="Closet">
+      <PageViewTracker eventName="closet_viewed" module="closet" properties={{ itemCount }} />
+      {itemCount === 0 ? (
+        <AnalyticsEventTracker
+          eventName="closet_empty_state_viewed"
+          module="closet"
+          properties={{ route: onboardingMode ? 'onboarding' : 'default' }}
+        />
+      ) : null}
       <section className="overflow-hidden rounded-[1.55rem] bg-[#111111] text-white shadow-[var(--shadow-strong)]">
         <div className="flex flex-wrap items-end justify-between gap-3 px-4 py-3 sm:px-5">
           <div className="flex items-end gap-2">

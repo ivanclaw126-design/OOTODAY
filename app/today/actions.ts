@@ -2,8 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { trackServerEvent } from '@/lib/analytics/server'
 import { getSession } from '@/lib/auth/get-session'
-import { reportBetaIssue, trackBetaEvent } from '@/lib/beta/telemetry'
+import { reportBetaIssue, trackBetaEvent } from '@/lib/beta/server-telemetry'
 import { validatePassword } from '@/lib/auth/password'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getClosetView } from '@/lib/closet/get-closet-view'
@@ -153,14 +154,27 @@ export async function refreshTodayRecommendationsAction(offset: number) {
   const city = profile?.city ?? null
   const weather = city ? await getWeather(city) : null
 
-  return {
-    recommendations: generateTodayRecommendations({
+  const recommendations = generateTodayRecommendations({
       items: closet.items,
       weather,
       offset,
       preferenceState
     })
-  }
+
+  await trackServerEvent({
+    userId: session.user.id,
+    eventName: 'today_recommendation_refreshed',
+    module: 'today',
+    route: '/today',
+    properties: {
+      offset,
+      recommendationCount: recommendations.length,
+      itemCount: closet.itemCount,
+      weatherAvailable: Boolean(weather)
+    }
+  })
+
+  return { recommendations }
 }
 
 export async function changeTodayPasswordAction({

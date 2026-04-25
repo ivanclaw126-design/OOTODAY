@@ -2,12 +2,15 @@
 
 import Image from 'next/image'
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from 'react'
+import { PageViewTracker } from '@/components/analytics/page-view-tracker'
 import { AppShell } from '@/components/app-shell'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ItemShowcase } from '@/components/ui/item-showcase'
 import { buildClosetUploadPath } from '@/lib/closet/build-upload-path'
+import { sourceDomainFromUrl } from '@/lib/analytics/events'
+import { trackEvent } from '@/lib/analytics/track'
 import { useSessionState } from '@/lib/hooks/use-session-state'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { ShopPurchaseAnalysis } from '@/lib/shop/types'
@@ -141,6 +144,21 @@ export function ShopPage({
     }
 
     setError(null)
+    void trackEvent({
+      eventName: 'shop_candidate_url_submitted',
+      module: 'shop',
+      properties: {
+        sourceDomain: sourceDomainFromUrl(nextSourceUrl)
+      }
+    })
+    void trackEvent({
+      eventName: 'shop_candidate_analyze_started',
+      module: 'shop',
+      properties: {
+        sourceDomain: sourceDomainFromUrl(nextSourceUrl),
+        hasPreferredImage: Boolean(preferredImageUrl)
+      }
+    })
     const result = await analyzeCandidate({ sourceUrl: nextSourceUrl, preferredImageUrl })
 
     if (manageSubmittingState) {
@@ -221,6 +239,7 @@ export function ShopPage({
 
   return (
     <AppShell title="Shop">
+      <PageViewTracker eventName="shop_viewed" module="shop" properties={{ itemCount }} />
       <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
         <div className="flex flex-col gap-5">
           <div className="space-y-2">

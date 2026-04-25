@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from 'react'
+import { PageViewTracker } from '@/components/analytics/page-view-tracker'
 import { AppShell } from '@/components/app-shell'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -156,6 +157,7 @@ export function InspirationPage({
 
   return (
     <AppShell title="Looks">
+      <PageViewTracker eventName="inspiration_viewed" module="inspiration" properties={{ itemCount }} />
       <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(241,235,226,0.94)_100%)]">
         <div className="flex flex-col gap-5">
           <div className="space-y-2">

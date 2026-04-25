@@ -1,5 +1,5 @@
 import { OnboardingChecklist } from '@/components/beta/onboarding-checklist'
-import { PageViewTracker } from '@/components/beta/page-view-tracker'
+import { PageViewTracker } from '@/components/analytics/page-view-tracker'
 import { AppShell } from '@/components/app-shell'
 import Link from 'next/link'
 import { TodayInteractiveWorkspace } from '@/components/today/today-interactive-workspace'
@@ -30,7 +30,15 @@ export function TodayPage({
 }) {
   return (
     <AppShell title="Today">
-      <PageViewTracker event="today_viewed" surface="today" />
+      <PageViewTracker
+        eventName="today_viewed"
+        module="today"
+        properties={{
+          itemCount: view.itemCount,
+          city: view.city,
+          hasRecommendations: view.recommendations.length > 0
+        }}
+      />
       <div className="space-y-4">
         {!view.hasCompletedStyleQuestionnaire ? (
           <div

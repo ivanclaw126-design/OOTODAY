@@ -1,6 +1,6 @@
 import { FeedbackLink } from '@/components/beta/feedback-link'
 import { OnboardingChecklist } from '@/components/beta/onboarding-checklist'
-import { PageViewTracker } from '@/components/beta/page-view-tracker'
+import { PageViewTracker } from '@/components/analytics/page-view-tracker'
 
 function getAuthErrorMessage(authError: string | null) {
   if (!authError) {
@@ -27,7 +27,7 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f5f0e7_0%,#f7f3eb_38%,#efe8dd_100%)] px-4 py-6 text-[var(--color-primary)] sm:px-6 sm:py-8">
-      <PageViewTracker event="landing_viewed" surface="landing" />
+      <PageViewTracker module="system" properties={{ surface: 'landing' }} />
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col justify-between overflow-hidden rounded-[2.4rem] border border-[var(--color-line)] bg-white/72 shadow-[var(--shadow-strong)] backdrop-blur md:min-h-[calc(100vh-4rem)]">
         <div className="grid flex-1 gap-0 md:grid-cols-[1.1fr_0.9fr]">
           <section className="order-2 min-w-0 flex flex-col justify-between border-b border-[var(--color-line)] p-6 sm:p-8 md:order-1 md:border-b-0 md:border-r md:p-12">

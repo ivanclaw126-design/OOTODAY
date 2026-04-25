@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-25
-- Branch / theme: shared recommendation methodology evaluator
-- Latest checkpoint: not written in-session; use this snapshot if native Gstack context is missing.
-- Current blocker: no code blocker; local implementation, tests, lint, and build pass. Browser visual regression screenshots are still a follow-up.
-- Next plan to read: `docs/superpowers/plans/2026-04-23-outfit-taxonomy-color-strategy.md`
-- Intended summary if `/context-save` fails: Added `lib/recommendation/outfit-evaluator.ts` and wired Today, Shop, Inspiration, and Travel to shared scoring. The evaluator uses colors, tonal clusters, visual weight, silhouette, layer role, warmth, fabric weight, formality, comfort, pattern, scene, weather, completeness, freshness, `seasonTags`, and `algorithmMeta`, with category/subcategory/style fallback. Today and Travel now avoid 15-degree shorts/sandals when alternatives exist; Shop counts purchase value through scored outfit drafts; Inspiration reads metadata and nudges formula matching with `finalWeights`. Follow-up refined Today so recommendation reasons show highest scoring points and card 3 becomes a safe, diverse `灵感套装` when exploration is enabled.
+- Branch / theme: self-hosted analytics dashboard
+- Latest checkpoint: to be written via `/context-save`; use this snapshot if native Gstack context is missing.
+- Current blocker: no code blocker; local implementation, tests, lint, build, Supabase migration list, and dry-run pass. Remote schema still needs the new analytics migration pushed before deployed admin usage.
+- Next plan to read: `docs/superpowers/plans/2026-04-25-analytics-dashboard.md`
+- Intended summary if `/context-save` fails: Added Supabase `analytics_events`, analytics client/server helpers, `/api/analytics/track`, beta telemetry adapters, product event instrumentation across Closet/Today/Travel/Shop/Looks, and `/admin/analytics` protected by `ADMIN_EMAILS`. Dashboard aggregates overview cards, feature usage, funnels, friction, and recommendation quality from `analytics_events`, `profiles`, and `outfit_feedback_events`. Verification passed locally; Supabase dry-run shows only `20260425120000_add_analytics_events.sql` pending for remote push.
 
 ## Snapshot Template
 

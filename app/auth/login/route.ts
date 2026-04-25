@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { reportBetaIssue, trackBetaEvent } from '@/lib/beta/telemetry'
+import { reportBetaIssue, trackBetaEvent } from '@/lib/beta/server-telemetry'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 function getMagicLinkErrorCode(message: string | null | undefined) {

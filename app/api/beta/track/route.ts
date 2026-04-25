@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
-import { trackBetaEvent } from '@/lib/beta/telemetry'
+import { getSession } from '@/lib/auth/get-session'
+import { trackBetaEvent } from '@/lib/beta/server-telemetry'
 
 export async function POST(request: Request) {
   try {
     const payload = await request.json()
-    await trackBetaEvent(payload)
+    const session = await getSession()
+    await trackBetaEvent(payload, session?.user.id ?? payload?.userId)
   } catch {
     // non-blocking by design
   }

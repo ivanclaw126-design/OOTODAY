@@ -17,6 +17,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getTodayView } from '@/lib/today/get-today-view'
 import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput } from '@/lib/today/types'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
+import { trackServerEvent } from '@/lib/analytics/server'
 
 async function TodayRouteContent({
   searchParams
@@ -49,6 +50,32 @@ async function TodayRouteContent({
     passwordChangedAt: typeof session.user.user_metadata?.password_changed_at === 'string' ? session.user.user_metadata.password_changed_at : null,
     offset: Number.isNaN(offset) ? 0 : offset
   })
+
+  if (view.itemCount === 0) {
+    await trackServerEvent({
+      userId: session.user.id,
+      eventName: 'today_empty_closet_blocked',
+      module: 'today',
+      route: '/today',
+      properties: {
+        itemCount: 0
+      }
+    })
+  } else if (view.recommendations.length > 0) {
+    await trackServerEvent({
+      userId: session.user.id,
+      eventName: 'today_recommendation_generated',
+      module: 'today',
+      route: '/today',
+      properties: {
+        recommendationCount: view.recommendations.length,
+        offset: Number.isNaN(offset) ? 0 : offset,
+        itemCount: view.itemCount,
+        city: view.city,
+        weatherAvailable: view.weatherState.status === 'ready'
+      }
+    })
+  }
 
   async function updateCity(input: { city: string }) {
     'use server'
