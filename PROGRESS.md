@@ -1,6 +1,6 @@
 # OOTODAY 进度追踪
 
-> 最后更新：2026-04-25
+> 最后更新：2026-04-26
 > 角色：项目总览页。这里只记录当前稳定状态、已完成里程碑、未闭环事项和运行约定，不记录 session 级流水账。
 
 ## 当前状态
@@ -106,13 +106,14 @@
 - 已新增 `analytics_events` 事件表迁移、RLS、类型定义、payload 校验、client `trackEvent()`、server `trackServerEvent()` 和 `/api/analytics/track`。
 - 已保留旧 `/api/beta/track` 与 `/api/beta/report` 兼容入口，并通过 adapter 映射到新 analytics 事件，避免新旧观测系统分裂。
 - 已新增 `/admin/analytics`，通过 `ADMIN_EMAILS` 做管理员保护，server-side service role 查询聚合 Overview、Feature Usage、Funnels、Friction 和 Recommendation Quality。
+- Analytics 看板已补 DAU / WAU 历史柱状图，按所选时间范围展示每一期活跃用户；Feature Usage 固定展示 Today、Closet、Travel、Shop、Looks、Auth，并补 Looks 灵感拆解漏斗与失败卡点。
 - 推荐质量看板直接复用 `outfit_feedback_events` 的 rating、reason tags 和 context，不复制推荐评分数据。
-- 已通过 `npm test`、`npm run build`、`npm run lint` 和 Supabase 6543 transaction-pooler dry-run 验证。
+- 已通过 `npm test`、`npm run build`、`npm run lint`、Supabase 6543 transaction-pooler dry-run 与远端 migration push 验证。
 
 ## 当前风险 / 待验证
 
-- 远端 Supabase schema 已完成 recommendation storage 与 `items.algorithm_meta` reconciliation；新增 analytics migration 已通过 `supabase db push --dry-run --include-all` 验证，正式部署或远端试用前还需要实际 push `20260425120000_add_analytics_events.sql`。
-- `/admin/analytics` 需要部署环境配置 `ADMIN_EMAILS` 与 `SUPABASE_SERVICE_ROLE_KEY`；缺少 service role 时页面无法读取全站事件。
+- 远端 Supabase schema 已完成 recommendation storage、`items.algorithm_meta` reconciliation 与 `analytics_events` migration push。
+- `/admin/analytics` 需要部署环境持续配置 `ADMIN_EMAILS` 与 `SUPABASE_SERVICE_ROLE_KEY`；缺少 service role 时页面无法读取全站事件，缺少 admin email 时管理员会看到 404。
 - Closet 的右转 90° 需要在旧库环境里再点一轮真实浏览器确认，确保不再触发 node/server action 报错。
 - Closet 仍是客户端体积重点：当前导入、远程链接、拼图与编辑能力集中在同一交互岛里，下一轮若继续压包，应优先把低频导入/图片处理路径懒加载。
 - 移动端底部导航在 full-page 截图里会覆盖部分中段内容；实际滚动底部已有 padding，但 beta 前仍建议再做一次手感微调。
@@ -148,7 +149,7 @@
 
 ## 下一步
 
-1. 正式 push analytics migration，并在部署环境设置 `ADMIN_EMAILS` / `SUPABASE_SERVICE_ROLE_KEY` 后打开 `/admin/analytics` 做一次真实数据 smoke。
+1. 用 `ADMIN_EMAILS` 内账号在部署环境打开 `/admin/analytics` 做一次真实数据 smoke，确认 DAU / WAU 柱状图、Looks 使用行和 Looks 漏斗有数据。
 2. 按 `docs/beta-readiness-checklist.md` 跑目标环境 beta go/no-go：优先 Auth、推荐偏好、Today、移动端和 CI/部署。
 3. 用 `test@test.com` 维护女装 demo 图片衣橱，用 `test-men@test.com` 维护男装 demo 图片衣橱，并在部署环境验证“复制演示衣橱”和“清空我的衣橱”两条 Settings 路径。
 4. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。

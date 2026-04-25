@@ -40,6 +40,9 @@ describe('analytics dashboard aggregation', () => {
       event({ event_name: 'today_recommendation_refreshed', module: 'today', user_id: 'user-1' }),
       event({ event_name: 'today_ootd_submitted', module: 'today', user_id: 'user-1' }),
       event({ event_name: 'shop_candidate_analyze_failed', module: 'shop', route: '/shop', user_id: 'user-2' }),
+      event({ event_name: 'inspiration_viewed', module: 'inspiration', route: '/inspiration', user_id: 'user-2' }),
+      event({ event_name: 'inspiration_analysis_started', module: 'inspiration', route: '/inspiration', user_id: 'user-2' }),
+      event({ event_name: 'inspiration_analysis_succeeded', module: 'inspiration', route: '/inspiration', user_id: 'user-2' }),
       event({ event_name: 'server_action_failed', module: 'system', route: '/shop', user_id: 'user-2' })
     ]
     const feedbackEvents = [
@@ -63,16 +66,34 @@ describe('analytics dashboard aggregation', () => {
       expect.objectContaining({ label: 'DAU', value: '2' }),
       expect.objectContaining({ label: '新注册用户', value: '2' }),
       expect.objectContaining({ label: 'Today 推荐', value: '1' }),
+      expect.objectContaining({ label: 'Looks 拆解', value: '1' }),
       expect.objectContaining({ label: '平均推荐评分', value: '3.5' })
     ]))
+    expect(data.activeUserTrend.at(-1)).toEqual(expect.objectContaining({
+      date: '2026-04-25',
+      dau: 2,
+      wau: 2
+    }))
     expect(data.featureUsage[0]).toEqual(expect.objectContaining({
       module: 'today',
+      moduleLabel: 'Today',
       activeUsers: 1,
       eventCount: 7
+    }))
+    expect(data.featureUsage.find((row) => row.module === 'inspiration')).toEqual(expect.objectContaining({
+      moduleLabel: 'Looks',
+      activeUsers: 1,
+      eventCount: 3
     }))
     expect(data.funnels.find((funnel) => funnel.title === '新用户激活漏斗')?.steps.at(-1)).toEqual(
       expect.objectContaining({ label: '提交 OOTD 评分', value: 1 })
     )
+    expect(data.funnels.find((funnel) => funnel.title === 'Looks 灵感漏斗')?.steps).toEqual([
+      expect.objectContaining({ label: '进入 Looks', value: 1 }),
+      expect.objectContaining({ label: '开始拆解', value: 1 }),
+      expect.objectContaining({ label: '拆解成功', value: 1 }),
+      expect.objectContaining({ label: '拆解失败', value: 0 })
+    ])
     expect(data.friction).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'Shop 分析失败', value: 1 }),
       expect.objectContaining({ label: '高刷新用户', value: 1 }),

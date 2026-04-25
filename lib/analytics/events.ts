@@ -38,6 +38,9 @@ export const ANALYTICS_EVENT_NAMES = [
   'shop_candidate_analyze_failed',
   'shop_candidate_saved_to_closet',
   'inspiration_viewed',
+  'inspiration_analysis_started',
+  'inspiration_analysis_succeeded',
+  'inspiration_analysis_failed',
   'error_shown',
   'server_action_failed'
 ] as const

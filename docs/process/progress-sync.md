@@ -37,12 +37,12 @@
 
 ## Latest Sync Snapshot
 
-- Date: 2026-04-25
-- Branch / theme: self-hosted analytics dashboard
-- Latest checkpoint: to be written via `/context-save`; use this snapshot if native Gstack context is missing.
-- Current blocker: no code blocker; local implementation, tests, lint, build, Supabase migration list, and dry-run pass. Remote schema still needs the new analytics migration pushed before deployed admin usage.
+- Date: 2026-04-26
+- Branch / theme: self-hosted analytics dashboard polish
+- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260426-003712-analytics-dashboard-polish.md`.
+- Current blocker: no code blocker; analytics migration has been pushed and production env has `ADMIN_EMAILS`. Remaining validation is admin-account smoke in deployed `/admin/analytics`.
 - Next plan to read: `docs/superpowers/plans/2026-04-25-analytics-dashboard.md`
-- Intended summary if `/context-save` fails: Added Supabase `analytics_events`, analytics client/server helpers, `/api/analytics/track`, beta telemetry adapters, product event instrumentation across Closet/Today/Travel/Shop/Looks, and `/admin/analytics` protected by `ADMIN_EMAILS`. Dashboard aggregates overview cards, feature usage, funnels, friction, and recommendation quality from `analytics_events`, `profiles`, and `outfit_feedback_events`. Verification passed locally; Supabase dry-run shows only `20260425120000_add_analytics_events.sql` pending for remote push.
+- Intended summary if `/context-save` fails: Polished `/admin/analytics` with DAU/WAU historical bar chart, fixed module display so Looks appears even with zero events, added Looks inspiration analysis started/succeeded/failed events, Looks funnel, Looks failure friction metric, and tests. Verification passed with `npm run lint && npm test && npm run build`.
 
 ## Snapshot Template
 

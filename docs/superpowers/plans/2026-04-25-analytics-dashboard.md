@@ -12,6 +12,7 @@
 - [x] 埋点核心页面与动作：Closet、Today、Travel、Shop、Looks/Inspiration、system issue reporting
 - [x] 新增 `ADMIN_EMAILS` env 与 `/admin/analytics` 管理页
 - [x] 增加 Overview、Feature Usage、Funnels、Friction、Recommendation Quality
+- [x] 增加 DAU / WAU 历史柱状图，Feature Usage 固定展示 Looks，补 Looks 灵感拆解漏斗与失败卡点
 - [x] 增加单元、route/auth、dashboard component 和受影响页面测试
 
 ## Implementation Notes
@@ -20,6 +21,8 @@
 - `/api/analytics/track` 对未登录、非法 payload、写入失败都返回 `{ ok: true }`，避免埋点影响主流程。
 - 旧 beta event 会映射到新事件名，例如 `closet_item_saved -> closet_item_created`、`ootd_submitted -> today_ootd_submitted`。
 - Shop 的提交/开始分析在客户端记录，成功/失败在 server action 记录，确保品类、颜色和推荐结论来自真实分析结果。
+- Looks 会记录 `inspiration_viewed`、`inspiration_analysis_started`、`inspiration_analysis_succeeded`、`inspiration_analysis_failed`，dashboard 中对外显示为 Looks，而底层 module 仍沿用 `inspiration`。
+- DAU / WAU 历史趋势在 server helper 中按日期聚合，`7d` 与 `30d` 展示固定窗口，`all` 从最早事件日期开始展示。
 - Recommendation Quality 直接读取 `outfit_feedback_events`，不复制评分数据到 analytics 表。
 
 ## Verification
@@ -29,9 +32,10 @@
 - [x] `npm run lint`，仅剩既有 `<img>` warnings
 - [x] `supabase migration list --workdir /Users/spicyclaw/MyProjects/OOTODAY --db-url <6543 + statement_cache_capacity=0>`
 - [x] `supabase db push --dry-run --include-all --workdir /Users/spicyclaw/MyProjects/OOTODAY --db-url <6543 + statement_cache_capacity=0>`
+- [x] `supabase db push --include-all --workdir /Users/spicyclaw/MyProjects/OOTODAY --db-url <6543 + statement_cache_capacity=0>`
 
 ## Open Items
 
-- [ ] 部署或远端试用前，正式执行 Supabase migration push；dry-run 当前显示只会推 `20260425120000_add_analytics_events.sql`。
-- [ ] 部署环境配置 `ADMIN_EMAILS` 和 `SUPABASE_SERVICE_ROLE_KEY`，否则 admin 看板无法读取全站分析。
+- [x] 部署或远端试用前，正式执行 Supabase migration push；远端已包含 `20260425120000_add_analytics_events.sql`。
+- [x] 部署环境配置 `ADMIN_EMAILS` 和 `SUPABASE_SERVICE_ROLE_KEY`，否则 admin 看板无法读取全站分析。
 - [ ] 后续如果需要匿名 Landing PV，再加 rate limit 后开放 anon insert；首期保持登录用户数据更干净。

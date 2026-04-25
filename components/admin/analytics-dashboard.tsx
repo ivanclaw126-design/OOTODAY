@@ -12,7 +12,13 @@ function formatPercent(value: number) {
   return `${Math.round(value * 100)}%`
 }
 
+function maxActivityValue(data: AnalyticsDashboardData) {
+  return Math.max(1, ...data.activeUserTrend.flatMap((point) => [point.dau, point.wau]))
+}
+
 export function AnalyticsDashboard({ data }: { data: AnalyticsDashboardData }) {
+  const activityMax = maxActivityValue(data)
+
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f5f0e7_0%,#f7f3eb_45%,#efe8dd_100%)] px-4 py-6 text-[var(--color-primary)] sm:px-6 sm:py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-5">
@@ -51,6 +57,54 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsDashboardData }) {
           ))}
         </section>
 
+        <Card>
+          <div className="space-y-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-neutral-dark)]">Active Users</p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em]">DAU / WAU 历史趋势</h2>
+              </div>
+              <div className="flex gap-3 text-xs font-semibold text-[var(--color-neutral-dark)]">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />
+                  DAU
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#8f6f43]" />
+                  WAU
+                </span>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <div className="flex min-h-64 min-w-[720px] items-end gap-3 border-b border-[var(--color-line)] pb-4">
+                {data.activeUserTrend.map((point) => (
+                  <div key={point.date} className="flex min-w-12 flex-1 flex-col items-center gap-2">
+                    <div className="flex h-44 w-full items-end justify-center gap-1.5">
+                      <div
+                        className="w-3 rounded-t-md bg-[var(--color-primary)]"
+                        style={{ height: `${Math.max(point.dau === 0 ? 0 : 4, Math.round((point.dau / activityMax) * 100))}%` }}
+                        title={`${point.date} DAU ${point.dau}`}
+                      />
+                      <div
+                        className="w-3 rounded-t-md bg-[#8f6f43]"
+                        style={{ height: `${Math.max(point.wau === 0 ? 0 : 4, Math.round((point.wau / activityMax) * 100))}%` }}
+                        title={`${point.date} WAU ${point.wau}`}
+                      />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-medium text-[var(--color-primary)]">{point.label}</p>
+                      <p className="text-[0.68rem] text-[var(--color-neutral-dark)]">
+                        {point.dau} / {point.wau}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+
         <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <Card>
             <div className="space-y-4">
@@ -79,7 +133,10 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsDashboardData }) {
                     ) : (
                       data.featureUsage.map((row) => (
                         <tr key={row.module} className="border-t border-[var(--color-line)]">
-                          <td className="py-3 pr-3 font-semibold">{row.module}</td>
+                          <td className="py-3 pr-3 font-semibold">
+                            {row.moduleLabel}
+                            <span className="ml-2 text-xs font-normal text-[var(--color-neutral-dark)]">{row.module}</span>
+                          </td>
                           <td className="py-3 pr-3">{row.activeUsers}</td>
                           <td className="py-3 pr-3">{row.eventCount}</td>
                           <td className="py-3 pr-3">{row.eventsPerUser.toFixed(1)}</td>

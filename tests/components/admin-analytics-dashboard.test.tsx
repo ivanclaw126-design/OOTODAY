@@ -10,13 +10,27 @@ const data: AnalyticsDashboardData = {
     { label: 'DAU', value: '2', hint: '最近 24 小时活跃用户' },
     { label: 'Today 推荐', value: '4' }
   ],
+  activeUserTrend: [
+    { date: '2026-04-23', label: '4/23', dau: 1, wau: 1 },
+    { date: '2026-04-24', label: '4/24', dau: 2, wau: 2 },
+    { date: '2026-04-25', label: '4/25', dau: 1, wau: 2 }
+  ],
   featureUsage: [
     {
       module: 'today',
+      moduleLabel: 'Today',
       activeUsers: 2,
       eventCount: 8,
       eventsPerUser: 4,
       topEvent: 'today_viewed (2)'
+    },
+    {
+      module: 'inspiration',
+      moduleLabel: 'Looks',
+      activeUsers: 1,
+      eventCount: 3,
+      eventsPerUser: 3,
+      topEvent: 'inspiration_viewed (1)'
     }
   ],
   funnels: [
@@ -53,9 +67,12 @@ describe('AnalyticsDashboard', () => {
     render(<AnalyticsDashboard data={data} />)
 
     expect(screen.getByRole('heading', { name: 'Analytics' })).toBeInTheDocument()
-    expect(screen.getByText('DAU')).toBeInTheDocument()
+    expect(screen.getAllByText('DAU')).toHaveLength(2)
     expect(screen.getByText('Today 推荐')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'DAU / WAU 历史趋势' })).toBeInTheDocument()
+    expect(screen.getByText('4/25')).toBeInTheDocument()
     expect(screen.getByText('功能使用排行')).toBeInTheDocument()
+    expect(screen.getByText('Looks')).toBeInTheDocument()
     expect(screen.getByText('today_viewed (2)')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Today 推荐漏斗' })).toBeInTheDocument()
     expect(screen.getByText('空衣橱阻塞')).toBeInTheDocument()

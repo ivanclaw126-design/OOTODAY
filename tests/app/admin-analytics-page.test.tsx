@@ -36,6 +36,7 @@ describe('AdminAnalyticsPage', () => {
       range: '7d',
       rangeLabel: '最近 7 天',
       overview: [],
+      activeUserTrend: [],
       featureUsage: [],
       funnels: [],
       friction: [],

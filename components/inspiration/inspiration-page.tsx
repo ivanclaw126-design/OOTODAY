@@ -12,6 +12,7 @@ import { buildClosetUploadPath } from '@/lib/closet/build-upload-path'
 import { useSessionState } from '@/lib/hooks/use-session-state'
 import type { InspirationAnalysis } from '@/lib/inspiration/types'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/lib/analytics/track'
 
 const LOOKS_STORAGE_KEY = 'ootoday:looks-page'
 
@@ -77,6 +78,14 @@ export function InspirationPage({
     }
 
     setError(null)
+    void trackEvent({
+      eventName: 'inspiration_analysis_started',
+      module: 'inspiration',
+      properties: {
+        source: nextSourceUrl.startsWith('http') ? 'url' : 'unknown',
+        itemCount
+      }
+    })
     const result = await analyzeInspiration({ sourceUrl: nextSourceUrl })
 
     if (manageSubmittingState) {
@@ -86,10 +95,27 @@ export function InspirationPage({
     if (result.error || !result.analysis) {
       setAnalysis(null)
       setError(result.error ?? '分析失败，请稍后再试')
+      void trackEvent({
+        eventName: 'inspiration_analysis_failed',
+        module: 'inspiration',
+        properties: {
+          errorCode: result.error ?? 'unknown',
+          itemCount
+        }
+      })
       return
     }
 
     setAnalysis(result.analysis)
+    void trackEvent({
+      eventName: 'inspiration_analysis_succeeded',
+      module: 'inspiration',
+      properties: {
+        itemCount,
+        matchedItemCount: result.analysis.closetMatches.length,
+        sourceTitle: result.analysis.sourceTitle ?? null
+      }
+    })
   }
 
   const handleFileUpload = async (file: File) => {

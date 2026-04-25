@@ -26,10 +26,18 @@ export type OverviewMetric = {
 
 export type FeatureUsageRow = {
   module: string
+  moduleLabel: string
   activeUsers: number
   eventCount: number
   eventsPerUser: number
   topEvent: string
+}
+
+export type ActiveUserTrendPoint = {
+  date: string
+  label: string
+  dau: number
+  wau: number
 }
 
 export type FunnelStep = {
@@ -59,6 +67,7 @@ export type AnalyticsDashboardData = {
   range: AnalyticsDashboardRange
   rangeLabel: string
   overview: OverviewMetric[]
+  activeUserTrend: ActiveUserTrendPoint[]
   featureUsage: FeatureUsageRow[]
   funnels: FunnelCard[]
   friction: FrictionMetric[]
@@ -71,10 +80,43 @@ const rangeLabels: Record<AnalyticsDashboardRange, string> = {
   all: '全部'
 }
 
+const productModules = ['today', 'closet', 'travel', 'shop', 'inspiration', 'auth'] as const
+
+const moduleLabels: Record<(typeof productModules)[number], string> = {
+  today: 'Today',
+  closet: 'Closet',
+  travel: 'Travel',
+  shop: 'Shop',
+  inspiration: 'Looks',
+  auth: 'Auth'
+}
+
 function addDays(date: Date, days: number) {
   const next = new Date(date)
   next.setDate(next.getDate() + days)
   return next
+}
+
+function startOfUtcDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+}
+
+function endOfUtcDay(date: Date) {
+  const next = startOfUtcDay(addDays(date, 1))
+  next.setMilliseconds(next.getMilliseconds() - 1)
+  return next
+}
+
+function dateKey(date: Date) {
+  return startOfUtcDay(date).toISOString().slice(0, 10)
+}
+
+function formatShortDate(date: Date) {
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: 'numeric',
+    day: 'numeric',
+    timeZone: 'UTC'
+  }).format(date)
 }
 
 function actorId(event: AnalyticsEventRow) {
@@ -120,6 +162,54 @@ function topEntry(counts: Map<string, number>) {
   return [...counts.entries()].sort((left, right) => right[1] - left[1])[0] ?? null
 }
 
+function buildActivityTrend({
+  range,
+  events,
+  now
+}: {
+  range: AnalyticsDashboardRange
+  events: AnalyticsEventRow[]
+  now: Date
+}): ActiveUserTrendPoint[] {
+  const today = startOfUtcDay(now)
+  const eventDates = events
+    .map((event) => new Date(event.created_at))
+    .filter((date) => !Number.isNaN(date.getTime()))
+  const firstEventDate = eventDates.length
+    ? startOfUtcDay(new Date(Math.min(...eventDates.map((date) => date.getTime()))))
+    : today
+  const start =
+    range === '7d'
+      ? addDays(today, -6)
+      : range === '30d'
+        ? addDays(today, -29)
+        : firstEventDate
+  const points: ActiveUserTrendPoint[] = []
+
+  for (let cursor = startOfUtcDay(start); cursor <= today; cursor = addDays(cursor, 1)) {
+    const dayStart = startOfUtcDay(cursor)
+    const dayEnd = endOfUtcDay(cursor)
+    const weekStart = addDays(dayStart, -6)
+    const dayEvents = events.filter((event) => {
+      const createdAt = new Date(event.created_at)
+      return createdAt >= dayStart && createdAt <= dayEnd
+    })
+    const weekEvents = events.filter((event) => {
+      const createdAt = new Date(event.created_at)
+      return createdAt >= weekStart && createdAt <= dayEnd
+    })
+
+    points.push({
+      date: dateKey(dayStart),
+      label: formatShortDate(dayStart),
+      dau: uniqueActorCount(dayEvents),
+      wau: uniqueActorCount(weekEvents)
+    })
+  }
+
+  return points
+}
+
 export function normalizeAnalyticsRange(value: string | null | undefined): AnalyticsDashboardRange {
   return value === '30d' || value === 'all' ? value : '7d'
 }
@@ -147,8 +237,9 @@ function buildFeatureUsage(events: AnalyticsEventRow[]): FeatureUsageRow[] {
     modules.set(event.module, [...(modules.get(event.module) ?? []), event])
   })
 
-  return [...modules.entries()]
-    .map(([module, moduleEvents]) => {
+  return productModules
+    .map((module) => {
+      const moduleEvents = modules.get(module) ?? []
       const eventCounts = new Map<string, number>()
 
       moduleEvents.forEach((event) => {
@@ -160,13 +251,14 @@ function buildFeatureUsage(events: AnalyticsEventRow[]): FeatureUsageRow[] {
 
       return {
         module,
+        moduleLabel: moduleLabels[module],
         activeUsers,
         eventCount: moduleEvents.length,
         eventsPerUser: activeUsers === 0 ? 0 : moduleEvents.length / activeUsers,
         topEvent: top ? `${top[0]} (${top[1]})` : '-'
       }
     })
-    .sort((left, right) => right.eventCount - left.eventCount)
+    .sort((left, right) => right.eventCount - left.eventCount || left.moduleLabel.localeCompare(right.moduleLabel))
 }
 
 function buildFunnels(events: AnalyticsEventRow[]): FunnelCard[] {
@@ -206,6 +298,15 @@ function buildFunnels(events: AnalyticsEventRow[]): FunnelCard[] {
         ['提交链接/图片', ['shop_candidate_url_submitted']],
         ['开始分析', ['shop_candidate_analyze_started']],
         ['分析成功', ['shop_candidate_analyze_succeeded']]
+      ]
+    },
+    {
+      title: 'Looks 灵感漏斗',
+      steps: [
+        ['进入 Looks', ['inspiration_viewed']],
+        ['开始拆解', ['inspiration_analysis_started']],
+        ['拆解成功', ['inspiration_analysis_succeeded']],
+        ['拆解失败', ['inspiration_analysis_failed']]
       ]
     }
   ] as const
@@ -254,6 +355,11 @@ function buildFriction(events: AnalyticsEventRow[], feedbackEvents: AnalyticsFee
       label: 'Shop 分析失败',
       value: countEvents(events, 'shop_candidate_analyze_failed'),
       hint: '链接解析、品类拦截或商品图识别失败'
+    },
+    {
+      label: 'Looks 拆解失败',
+      value: countEvents(events, 'inspiration_analysis_failed'),
+      hint: '灵感图片上传、链接解析或穿搭拆解失败'
     },
     {
       label: 'Server action 失败',
@@ -321,6 +427,7 @@ export function buildAnalyticsDashboardData({
   const dau = uniqueActorCount(events.filter((event) => new Date(event.created_at) >= oneDayStart))
   const wau = uniqueActorCount(events.filter((event) => new Date(event.created_at) >= sevenDayStart))
   const recommendationQuality = buildRecommendationQuality(feedbackEvents)
+  const activeUserTrend = buildActivityTrend({ range, events, now })
 
   return {
     range,
@@ -334,9 +441,11 @@ export function buildAnalyticsDashboardData({
       { label: 'OOTD 提交', value: formatNumber(countEvents(events, 'today_ootd_submitted')) },
       { label: 'Travel 生成', value: formatNumber(countEvents(events, 'travel_plan_generated')) },
       { label: 'Shop 成功/失败', value: `${countEvents(events, 'shop_candidate_analyze_succeeded')} / ${countEvents(events, 'shop_candidate_analyze_failed')}` },
+      { label: 'Looks 拆解', value: formatNumber(countEvents(events, 'inspiration_analysis_succeeded')) },
       { label: '平均推荐评分', value: formatDecimal(averageRating), hint: '来自 outfit_feedback_events' },
       { label: '错误事件', value: formatNumber(countEventsByNames(events, ['error_shown', 'server_action_failed'])) }
     ],
+    activeUserTrend,
     featureUsage: buildFeatureUsage(events),
     funnels: buildFunnels(events),
     friction: buildFriction(events, feedbackEvents),
