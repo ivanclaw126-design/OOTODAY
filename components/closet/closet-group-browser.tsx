@@ -11,8 +11,6 @@ export type ClosetBrowseGroup = {
   items: ClosetItemCardData[]
 }
 
-const ACTIVE_GROUP_PREVIEW_LIMIT = 2
-
 function getGroupLabel(item: ClosetItemCardData, mode: ClosetBrowseMode) {
   if (mode === 'category') {
     return item.category
@@ -89,7 +87,6 @@ export function ClosetGroupBrowser({
       <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
         {groups.map((group) => {
           const isActive = activeGroupValue === group.value
-          const previewItems = isActive ? group.items.slice(0, ACTIVE_GROUP_PREVIEW_LIMIT) : []
 
           return (
             <button
@@ -118,27 +115,20 @@ export function ClosetGroupBrowser({
                 </span>
               </div>
 
-              {previewItems.length > 0 ? (
-                <div className="mt-2.5 grid max-w-28 grid-cols-2 gap-1.5">
-                  {previewItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="aspect-square overflow-hidden rounded-[0.75rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.88)_0%,rgba(240,233,223,0.92)_100%)] p-1"
-                    >
-                      {item.imageUrl ? (
-                        <ClosetItemImage
-                          src={item.imageUrl}
-                          alt={`${group.label} 缩略图`}
-                          fit="contain"
-                          sizes="56px"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-neutral-dark)]">暂无图</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : null}
+              <div className="mt-2.5 grid grid-cols-4 gap-1.5">
+                {group.items.slice(0, 8).map((item) => (
+                  <div
+                    key={item.id}
+                    className="aspect-square overflow-hidden rounded-[0.75rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.88)_0%,rgba(240,233,223,0.92)_100%)] p-1"
+                  >
+                    {item.imageUrl ? (
+                      <ClosetItemImage src={item.imageUrl} alt={`${group.label} 缩略图`} fit="contain" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-neutral-dark)]">暂无图</div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </button>
           )
         })}

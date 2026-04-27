@@ -8,7 +8,6 @@ import {
   ClosetColorIcon,
   ClosetSubCategoryIcon
 } from '@/components/closet/closet-taxonomy-icons'
-import { closetImageLoader } from '@/components/closet/closet-item-image'
 import {
   getCategoryOptions,
   getColorOptions,
@@ -113,7 +112,7 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
               src={draft.imageUrl}
               alt="衣物预览"
               fill
-              loader={closetImageLoader}
+              unoptimized
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 420px"
             />

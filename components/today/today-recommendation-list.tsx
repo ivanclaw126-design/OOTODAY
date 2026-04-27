@@ -44,6 +44,7 @@ export function TodayRecommendationList({
   continuationMode,
   isRefreshing = false,
   isContinuationLoading = false,
+  continuationVersion = 0,
   onContinuationCueVisible
 }: {
   recommendations: TodayRecommendation[]
@@ -64,10 +65,12 @@ export function TodayRecommendationList({
   continuationMode?: TodayRecommendationMode
   isRefreshing?: boolean
   isContinuationLoading?: boolean
+  continuationVersion?: number
   onContinuationCueVisible?: () => void
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const cueRef = useRef<HTMLDivElement | null>(null)
+  const thirdCardRef = useRef<HTMLDivElement | null>(null)
   const isContinuationCueArmedRef = useRef(true)
 
   useEffect(() => {
@@ -98,6 +101,18 @@ export function TodayRecommendationList({
     observer.observe(cue)
     return () => observer.disconnect()
   }, [onContinuationCueVisible, recommendations.length])
+
+  useEffect(() => {
+    if (continuationVersion <= 0 || !thirdCardRef.current || typeof thirdCardRef.current.scrollIntoView !== 'function') {
+      return
+    }
+
+    thirdCardRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    })
+  }, [continuationVersion])
 
   if (recommendationError) {
     return (
@@ -130,7 +145,7 @@ export function TodayRecommendationList({
   const cueIsInspiration = continuationMode === 'inspiration'
   const swipeHint = isContinuationLoading
     ? cueIsInspiration ? '灵感正在到来' : '正在找下一套'
-    : `左滑继续看 · 已有 ${recommendations.length} 套`
+    : '左滑继续看 · 2 / 3 套'
 
   return (
     <section className="space-y-3">
@@ -159,7 +174,7 @@ export function TodayRecommendationList({
         className={`-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 transition-opacity duration-200 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden ${isRefreshing ? 'opacity-72' : 'opacity-100'}`}
       >
         {recommendations.map((recommendation, index) => (
-          <div key={recommendation.id} className="min-w-full snap-center sm:min-w-0">
+          <div key={recommendation.id} ref={index === 2 ? thirdCardRef : undefined} className="min-w-full snap-center sm:min-w-0">
             <TodayRecommendationCard
               recommendation={recommendation}
               index={index}

@@ -8,9 +8,9 @@ describe('ClosetItemCard', () => {
       <ClosetItemCard
         item={{
           id: 'item-1',
-          imageUrl: 'https://xaoqhaakrzolcyivqutn.supabase.co/storage/v1/object/public/ootd-images/user-1/top-rotated.jpg',
+          imageUrl: 'https://example.com/top-rotated.jpg',
           imageFlipped: true,
-          imageOriginalUrl: 'https://xaoqhaakrzolcyivqutn.supabase.co/storage/v1/object/public/ootd-images/user-1/top-original.jpg',
+          imageOriginalUrl: 'https://example.com/top-original.jpg',
           imageRotationQuarterTurns: 1,
           imageRestoreExpiresAt: '2099-04-24T12:30:00Z',
           canRestoreOriginal: true,
@@ -26,7 +26,7 @@ describe('ClosetItemCard', () => {
     )
 
     const image = screen.getByAltText('上装 蓝色')
-    expect(decodeURIComponent(image.getAttribute('src') ?? '')).toContain('/storage/v1/render/image/public/ootd-images/user-1/top-rotated.jpg')
+    expect(image).toHaveAttribute('src', 'https://example.com/top-rotated.jpg')
     expect(image.className).not.toContain('rotate-90')
   })
 
@@ -38,9 +38,9 @@ describe('ClosetItemCard', () => {
       <ClosetItemCard
         item={{
           id: 'item-1',
-          imageUrl: 'https://xaoqhaakrzolcyivqutn.supabase.co/storage/v1/object/public/ootd-images/user-1/top-rotated.jpg',
+          imageUrl: 'https://example.com/top-rotated.jpg',
           imageFlipped: true,
-          imageOriginalUrl: 'https://xaoqhaakrzolcyivqutn.supabase.co/storage/v1/object/public/ootd-images/user-1/top-original.jpg',
+          imageOriginalUrl: 'https://example.com/top-original.jpg',
           imageRotationQuarterTurns: 2,
           imageRestoreExpiresAt: '2099-04-24T12:30:00Z',
           canRestoreOriginal: true,

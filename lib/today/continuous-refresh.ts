@@ -47,18 +47,34 @@ export function getNextContinuationMode({
 
 export function mergeContinuousRecommendations({
   currentRecommendations,
-  newRecommendation
+  newRecommendation,
+  recordedRecommendationId,
+  maxCount = 3
 }: {
   currentRecommendations: TodayRecommendation[]
   newRecommendation: TodayRecommendation | null
   recordedRecommendationId: string | null
   maxCount?: number
 }) {
-  const current = [...currentRecommendations]
+  const current = currentRecommendations.slice(0, maxCount)
 
   if (!newRecommendation || current.some((recommendation) => recommendation.id === newRecommendation.id)) {
     return current
   }
 
-  return [...current, newRecommendation]
+  if (current.length < maxCount) {
+    return [...current, newRecommendation].slice(-maxCount)
+  }
+
+  const replacementIndex = current.findIndex((recommendation) => recommendation.id !== recordedRecommendationId)
+
+  if (replacementIndex < 0) {
+    return current
+  }
+
+  return [
+    ...current.slice(0, replacementIndex),
+    ...current.slice(replacementIndex + 1),
+    newRecommendation
+  ].slice(0, maxCount)
 }

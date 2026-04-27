@@ -35,27 +35,27 @@ function recommendation(id: string): TodayRecommendation {
 }
 
 describe('continuous Today refresh', () => {
-  it('keeps the visible cards resident when appending a new one', () => {
+  it('keeps exactly 3 recommendations when appending a new one', () => {
     const merged = mergeContinuousRecommendations({
       currentRecommendations: [recommendation('rec-1'), recommendation('rec-2'), recommendation('rec-3')],
       newRecommendation: recommendation('rec-4'),
       recordedRecommendationId: null
     })
 
-    expect(merged.map((item) => item.id)).toEqual(['rec-1', 'rec-2', 'rec-3', 'rec-4'])
+    expect(merged.map((item) => item.id)).toEqual(['rec-2', 'rec-3', 'rec-4'])
   })
 
-  it('preserves a worn recommendation while appending the next card', () => {
+  it('removes the first non-recorded recommendation when the first card is worn', () => {
     const merged = mergeContinuousRecommendations({
       currentRecommendations: [recommendation('locked'), recommendation('rec-2'), recommendation('rec-3')],
       newRecommendation: recommendation('rec-4'),
       recordedRecommendationId: 'locked'
     })
 
-    expect(merged.map((item) => item.id)).toEqual(['locked', 'rec-2', 'rec-3', 'rec-4'])
+    expect(merged.map((item) => item.id)).toEqual(['locked', 'rec-3', 'rec-4'])
   })
 
-  it('keeps scroll order stable when the worn recommendation is in the middle or at the end', () => {
+  it('preserves a worn recommendation in the middle or at the end', () => {
     const middle = mergeContinuousRecommendations({
       currentRecommendations: [recommendation('rec-1'), recommendation('locked'), recommendation('rec-3')],
       newRecommendation: recommendation('rec-4'),
@@ -67,8 +67,8 @@ describe('continuous Today refresh', () => {
       recordedRecommendationId: 'locked'
     })
 
-    expect(middle.map((item) => item.id)).toEqual(['rec-1', 'locked', 'rec-3', 'rec-4'])
-    expect(end.map((item) => item.id)).toEqual(['rec-1', 'rec-2', 'locked', 'rec-4'])
+    expect(middle.map((item) => item.id)).toEqual(['locked', 'rec-3', 'rec-4'])
+    expect(end.map((item) => item.id)).toEqual(['rec-2', 'locked', 'rec-4'])
   })
 
   it('keeps inspiration cadence between 3 and 10 refreshes and follows exploration willingness', () => {
