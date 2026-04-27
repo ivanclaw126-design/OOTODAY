@@ -1228,6 +1228,7 @@ describe('TodayPage', () => {
       })
     })
     expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+    expect(await screen.findByText('新生成')).toBeInTheDocument()
     expect(screen.queryByText('第一套理由')).not.toBeInTheDocument()
     expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
   })
@@ -1262,13 +1263,13 @@ describe('TodayPage', () => {
     )
 
     dragWithinHorizontalRefreshThreshold(getHorizontalRefreshRail(container))
-    expect(screen.getByText('继续拖动')).toBeInTheDocument()
+    expect(screen.getByText('继续拖')).toBeInTheDocument()
 
     dragPastHorizontalRefreshThresholdWithoutRelease(getHorizontalRefreshRail(container))
-    expect(screen.getByText('松手生成')).toBeInTheDocument()
+    expect(screen.getByText('松开生成')).toBeInTheDocument()
   })
 
-  it('shows a mobile edge cue after scrolling to the horizontal end', () => {
+  it('keeps the pull refresh copy hidden until users drag the edge card', () => {
     const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
     const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
     const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
@@ -1298,7 +1299,7 @@ describe('TodayPage', () => {
     )
 
     fireEvent.scroll(getHorizontalRefreshRail(container))
-    expect(screen.getByText('继续左拖')).toBeInTheDocument()
+    expect(screen.queryByText('继续拖')).not.toBeInTheDocument()
   })
 
   it('shows pull refresh copy for mobile touch drags at the horizontal end', () => {
@@ -1331,7 +1332,7 @@ describe('TodayPage', () => {
     )
 
     touchDragPastHorizontalRefreshThresholdWithoutRelease(getHorizontalRefreshRail(container))
-    expect(screen.getByText('松手生成')).toBeInTheDocument()
+    expect(screen.getByText('松开生成')).toBeInTheDocument()
   })
 
   it('keeps mobile touch pull state when native horizontal scroll cancels the pointer stream', () => {
@@ -1364,7 +1365,7 @@ describe('TodayPage', () => {
     )
 
     touchDragPastHorizontalRefreshThresholdAfterPointerCancel(getHorizontalRefreshRail(container))
-    expect(screen.getByText('松手生成')).toBeInTheDocument()
+    expect(screen.getByText('松开生成')).toBeInTheDocument()
   })
 
   it('does not request another continuation while one horizontal pull refresh is in flight', async () => {
@@ -1553,7 +1554,7 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByText('滑到最右再左拖生成更多')).toBeInTheDocument()
+    expect(screen.getByText('横滑查看更多，末尾可继续生成')).toBeInTheDocument()
   })
 
   it('shows default password guidance and lets the user submit a new password', async () => {

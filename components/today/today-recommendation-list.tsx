@@ -78,6 +78,7 @@ export function TodayRecommendationList({
   const touchGestureActiveRef = useRef(false)
   const [pullDistance, setPullDistance] = useState(0)
   const [isAtEnd, setIsAtEnd] = useState(false)
+  const [arrivedContinuationVersion, setArrivedContinuationVersion] = useState(0)
 
   function isAtScrollEnd(element: HTMLDivElement) {
     return element.scrollLeft + element.clientWidth >= element.scrollWidth - 48
@@ -101,6 +102,20 @@ export function TodayRecommendationList({
       block: 'nearest',
       inline: 'center'
     })
+  }, [continuationVersion])
+
+  useEffect(() => {
+    if (continuationVersion <= 0) {
+      return
+    }
+
+    const showHandle = window.setTimeout(() => setArrivedContinuationVersion(continuationVersion), 0)
+    const hideHandle = window.setTimeout(() => setArrivedContinuationVersion(0), 2200)
+
+    return () => {
+      window.clearTimeout(showHandle)
+      window.clearTimeout(hideHandle)
+    }
   }, [continuationVersion])
 
   useEffect(() => {
@@ -138,9 +153,26 @@ export function TodayRecommendationList({
   const cueIsInspiration = continuationMode === 'inspiration'
   const swipeHint = isContinuationLoading
     ? cueIsInspiration ? '灵感正在到来' : '正在找下一套'
-    : '滑到最右再左拖生成更多'
+    : '横滑查看更多，末尾可继续生成'
   const pullProgress = Math.min(1, pullDistance / PULL_REFRESH_THRESHOLD)
   const isPullReady = pullDistance >= PULL_REFRESH_THRESHOLD
+  const hasActivePullCue = pullDistance > 0 || isContinuationLoading
+  const pullCueLabel = isContinuationLoading ? '生成新方案' : isPullReady ? '松开生成' : '继续拖'
+  const pullCueTranslateX = isContinuationLoading
+    ? 0
+    : hasActivePullCue
+      ? 66 - pullProgress * 66
+      : isAtEnd ? 86 : 116
+  const pullCueProgress = isContinuationLoading ? 100 : Math.max(isAtEnd ? 18 : 0, pullProgress * 100)
+  const pullCueStatus = isContinuationLoading
+    ? '正在生成新方案'
+    : isPullReady
+      ? '松开后生成更多推荐'
+      : pullDistance > 0
+        ? '继续向左拖动生成更多推荐'
+        : arrivedContinuationVersion === continuationVersion && continuationVersion > 0
+          ? '已生成更多推荐'
+          : ''
 
   function resetPullState() {
     pullStartXRef.current = null
@@ -308,7 +340,12 @@ export function TodayRecommendationList({
           className={`-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 transition-opacity duration-200 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden ${isRefreshing ? 'opacity-72' : 'opacity-100'}`}
         >
           {recommendations.map((recommendation, index) => (
-            <div key={recommendation.id} ref={index === 2 ? thirdCardRef : undefined} className="min-w-full snap-center sm:min-w-0">
+            <div key={recommendation.id} ref={index === 2 ? thirdCardRef : undefined} className="relative min-w-full snap-center sm:min-w-0">
+              {index === 2 && arrivedContinuationVersion === continuationVersion && continuationVersion > 0 ? (
+                <span className="pointer-events-none absolute right-4 top-4 z-10 rounded-full border border-[rgba(231,255,55,0.62)] bg-[var(--color-accent)] px-3 py-1 text-[11px] font-semibold text-[var(--color-primary)] shadow-[0_10px_24px_rgba(17,14,9,0.14)]">
+                  新生成
+                </span>
+              ) : null}
               <TodayRecommendationCard
                 recommendation={recommendation}
                 index={index}
@@ -333,17 +370,25 @@ export function TodayRecommendationList({
         {onContinuationRefresh ? (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-2 right-0 top-0 flex w-[7.25rem] items-center justify-center overflow-hidden rounded-l-[1.25rem] bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(231,255,55,0.24))] transition-opacity duration-150 sm:hidden"
-            style={{ opacity: pullDistance > 0 || isContinuationLoading ? Math.max(0.22, pullProgress) : isAtEnd ? 0.32 : 0 }}
+            className="pointer-events-none absolute right-[-1rem] top-[8.1rem] z-10 flex h-[7.5rem] w-[8rem] items-start justify-end overflow-hidden sm:hidden"
+            style={{ opacity: hasActivePullCue ? 1 : isAtEnd ? 0.62 : 0 }}
           >
             <div
-              className="grid min-w-[5.9rem] place-items-center rounded-full border border-[var(--color-line)] bg-white/92 px-3 py-2 text-center text-xs font-semibold leading-5 text-[var(--color-primary)] shadow-[0_10px_22px_rgba(17,14,9,0.12)]"
-              style={{ transform: `translateX(${Math.max(0, pullDistance > 0 ? 38 - pullProgress * 38 : isAtEnd ? 20 : 38)}px)` }}
+              className="flex h-[7.5rem] w-[7rem] flex-col justify-center rounded-l-[1.35rem] border border-[var(--color-line)] bg-white/94 px-3 py-3 text-center text-[var(--color-primary)] shadow-[0_16px_34px_rgba(17,14,9,0.14)] backdrop-blur"
+              style={{ transform: `translateX(${Math.max(0, pullCueTranslateX)}px)` }}
             >
-              {isContinuationLoading ? '生成中' : isPullReady ? '松手生成' : pullDistance > 0 ? '继续拖动' : isAtEnd ? '继续左拖' : '继续拖动'}
+              <span className="text-xl font-semibold leading-none">{hasActivePullCue ? (isPullReady || isContinuationLoading ? '+' : '>') : '更多'}</span>
+              <span className="mt-2 text-xs font-semibold leading-4">{hasActivePullCue ? pullCueLabel : '更多'}</span>
+              <span className="mt-3 h-1.5 overflow-hidden rounded-full bg-[rgba(17,14,9,0.1)]">
+                <span
+                  className="block h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-100"
+                  style={{ width: `${pullCueProgress}%` }}
+                />
+              </span>
             </div>
           </div>
         ) : null}
+        <span className="sr-only" aria-live="polite">{pullCueStatus}</span>
       </div>
     </section>
   )
