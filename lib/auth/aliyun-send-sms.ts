@@ -85,15 +85,14 @@ export function extractSendSmsHookEvent(payload: SupabaseSendSmsHookPayload): Se
 
 export function normalizeChinaPhone(phone: string) {
   const normalized = phone.replace(/[\s-]/g, '')
-
-  if (!normalized.startsWith('+86')) {
-    throw new SendSmsHookError('unsupported_country', 'Only +86 phone numbers are supported by this SMS provider.', 400)
-  }
-
-  const phoneNumber = normalized.slice(3)
+  const phoneNumber = normalized.startsWith('+86')
+    ? normalized.slice(3)
+    : normalized.startsWith('86')
+      ? normalized.slice(2)
+      : normalized
 
   if (!/^1\d{10}$/.test(phoneNumber)) {
-    throw new SendSmsHookError('invalid_phone', 'Invalid mainland China phone number.', 400)
+    throw new SendSmsHookError('unsupported_country', 'Only +86 phone numbers are supported by this SMS provider.', 400)
   }
 
   return {
