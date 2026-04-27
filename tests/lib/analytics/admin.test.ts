@@ -104,4 +104,36 @@ describe('analytics dashboard aggregation', () => {
       { tag: 'dislike_color', count: 1 }
     ])
   })
+
+  it('groups active user trend by Beijing calendar days', () => {
+    const data = buildAnalyticsDashboardData({
+      range: '7d',
+      events: [
+        event({
+          user_id: 'user-after-midnight',
+          created_at: '2026-04-25T16:07:45.143Z'
+        }),
+        event({
+          user_id: 'user-next-day',
+          created_at: '2026-04-27T02:45:58.278Z'
+        })
+      ],
+      feedbackEvents: [],
+      profiles: [],
+      now: new Date('2026-04-27T14:00:00.000Z')
+    })
+
+    expect(data.activeUserTrend.find((point) => point.date === '2026-04-25')).toEqual(expect.objectContaining({
+      dau: 0,
+      wau: 0
+    }))
+    expect(data.activeUserTrend.find((point) => point.date === '2026-04-26')).toEqual(expect.objectContaining({
+      dau: 1,
+      wau: 1
+    }))
+    expect(data.activeUserTrend.find((point) => point.date === '2026-04-27')).toEqual(expect.objectContaining({
+      dau: 1,
+      wau: 2
+    }))
+  })
 })

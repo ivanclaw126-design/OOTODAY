@@ -80,6 +80,9 @@ const rangeLabels: Record<AnalyticsDashboardRange, string> = {
   all: '全部'
 }
 
+const queryPageSize = 1000
+const analyticsTimeZoneOffsetMs = 8 * 60 * 60 * 1000
+
 const productModules = ['today', 'closet', 'travel', 'shop', 'inspiration', 'auth'] as const
 
 const moduleLabels: Record<(typeof productModules)[number], string> = {
@@ -97,26 +100,28 @@ function addDays(date: Date, days: number) {
   return next
 }
 
-function startOfUtcDay(date: Date) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+function startOfAnalyticsDay(date: Date) {
+  const shifted = new Date(date.getTime() + analyticsTimeZoneOffsetMs)
+  return new Date(
+    Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()) -
+      analyticsTimeZoneOffsetMs
+  )
 }
 
-function endOfUtcDay(date: Date) {
-  const next = startOfUtcDay(addDays(date, 1))
+function endOfAnalyticsDay(date: Date) {
+  const next = startOfAnalyticsDay(addDays(date, 1))
   next.setMilliseconds(next.getMilliseconds() - 1)
   return next
 }
 
 function dateKey(date: Date) {
-  return startOfUtcDay(date).toISOString().slice(0, 10)
+  return new Date(startOfAnalyticsDay(date).getTime() + analyticsTimeZoneOffsetMs).toISOString().slice(0, 10)
 }
 
 function formatShortDate(date: Date) {
-  return new Intl.DateTimeFormat('zh-CN', {
-    month: 'numeric',
-    day: 'numeric',
-    timeZone: 'UTC'
-  }).format(date)
+  const shifted = new Date(startOfAnalyticsDay(date).getTime() + analyticsTimeZoneOffsetMs)
+
+  return `${shifted.getUTCMonth() + 1}/${shifted.getUTCDate()}`
 }
 
 function actorId(event: AnalyticsEventRow) {
@@ -171,12 +176,12 @@ function buildActivityTrend({
   events: AnalyticsEventRow[]
   now: Date
 }): ActiveUserTrendPoint[] {
-  const today = startOfUtcDay(now)
+  const today = startOfAnalyticsDay(now)
   const eventDates = events
     .map((event) => new Date(event.created_at))
     .filter((date) => !Number.isNaN(date.getTime()))
   const firstEventDate = eventDates.length
-    ? startOfUtcDay(new Date(Math.min(...eventDates.map((date) => date.getTime()))))
+    ? startOfAnalyticsDay(new Date(Math.min(...eventDates.map((date) => date.getTime()))))
     : today
   const start =
     range === '7d'
@@ -186,9 +191,9 @@ function buildActivityTrend({
         : firstEventDate
   const points: ActiveUserTrendPoint[] = []
 
-  for (let cursor = startOfUtcDay(start); cursor <= today; cursor = addDays(cursor, 1)) {
-    const dayStart = startOfUtcDay(cursor)
-    const dayEnd = endOfUtcDay(cursor)
+  for (let cursor = startOfAnalyticsDay(start); cursor <= today; cursor = addDays(cursor, 1)) {
+    const dayStart = startOfAnalyticsDay(cursor)
+    const dayEnd = endOfAnalyticsDay(cursor)
     const weekStart = addDays(dayStart, -6)
     const dayEvents = events.filter((event) => {
       const createdAt = new Date(event.created_at)
@@ -224,6 +229,105 @@ export function getAnalyticsRangeStart(range: AnalyticsDashboardRange, now = new
   }
 
   return null
+}
+
+async function fetchAnalyticsEvents(rangeStart: Date | null) {
+  const admin = createSupabaseAdminClient()
+  const rows: AnalyticsEventRow[] = []
+  let from = 0
+
+  while (true) {
+    let query = admin
+      .from('analytics_events')
+      .select('id, user_id, anonymous_id, session_id, event_name, module, route, properties, created_at')
+      .order('created_at', { ascending: false })
+      .range(from, from + queryPageSize - 1)
+
+    if (rangeStart) {
+      query = query.gte('created_at', rangeStart.toISOString())
+    }
+
+    const result = await query
+
+    if (result.error) {
+      throw result.error
+    }
+
+    const page = (result.data ?? []) as AnalyticsEventRow[]
+    rows.push(...page)
+
+    if (page.length < queryPageSize) {
+      return rows
+    }
+
+    from += queryPageSize
+  }
+}
+
+async function fetchAnalyticsFeedbackEvents(rangeStart: Date | null) {
+  const admin = createSupabaseAdminClient()
+  const rows: AnalyticsFeedbackRow[] = []
+  let from = 0
+
+  while (true) {
+    let query = admin
+      .from('outfit_feedback_events')
+      .select('id, user_id, context, rating, reason_tags, created_at')
+      .order('created_at', { ascending: false })
+      .range(from, from + queryPageSize - 1)
+
+    if (rangeStart) {
+      query = query.gte('created_at', rangeStart.toISOString())
+    }
+
+    const result = await query
+
+    if (result.error) {
+      throw result.error
+    }
+
+    const page = (result.data ?? []) as AnalyticsFeedbackRow[]
+    rows.push(...page)
+
+    if (page.length < queryPageSize) {
+      return rows
+    }
+
+    from += queryPageSize
+  }
+}
+
+async function fetchAnalyticsProfiles(rangeStart: Date | null) {
+  const admin = createSupabaseAdminClient()
+  const rows: AnalyticsProfileRow[] = []
+  let from = 0
+
+  while (true) {
+    let query = admin
+      .from('profiles')
+      .select('id, created_at')
+      .order('created_at', { ascending: false })
+      .range(from, from + queryPageSize - 1)
+
+    if (rangeStart) {
+      query = query.gte('created_at', rangeStart.toISOString())
+    }
+
+    const result = await query
+
+    if (result.error) {
+      throw result.error
+    }
+
+    const page = (result.data ?? []) as AnalyticsProfileRow[]
+    rows.push(...page)
+
+    if (page.length < queryPageSize) {
+      return rows
+    }
+
+    from += queryPageSize
+  }
 }
 
 function buildFeatureUsage(events: AnalyticsEventRow[]): FeatureUsageRow[] {
@@ -455,52 +559,16 @@ export function buildAnalyticsDashboardData({
 
 export async function getAnalyticsDashboardData(range: AnalyticsDashboardRange) {
   const rangeStart = getAnalyticsRangeStart(range)
-  const admin = createSupabaseAdminClient()
-  let eventsQuery = admin
-    .from('analytics_events')
-    .select('id, user_id, anonymous_id, session_id, event_name, module, route, properties, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5000)
-  let feedbackQuery = admin
-    .from('outfit_feedback_events')
-    .select('id, user_id, context, rating, reason_tags, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5000)
-  let profilesQuery = admin
-    .from('profiles')
-    .select('id, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5000)
-
-  if (rangeStart) {
-    const start = rangeStart.toISOString()
-    eventsQuery = eventsQuery.gte('created_at', start)
-    feedbackQuery = feedbackQuery.gte('created_at', start)
-    profilesQuery = profilesQuery.gte('created_at', start)
-  }
-
-  const [eventsResult, feedbackResult, profilesResult] = await Promise.all([
-    eventsQuery,
-    feedbackQuery,
-    profilesQuery
+  const [events, feedbackEvents, profiles] = await Promise.all([
+    fetchAnalyticsEvents(rangeStart),
+    fetchAnalyticsFeedbackEvents(rangeStart),
+    fetchAnalyticsProfiles(rangeStart)
   ])
-
-  if (eventsResult.error) {
-    throw eventsResult.error
-  }
-
-  if (feedbackResult.error) {
-    throw feedbackResult.error
-  }
-
-  if (profilesResult.error) {
-    throw profilesResult.error
-  }
 
   return buildAnalyticsDashboardData({
     range,
-    events: (eventsResult.data ?? []) as AnalyticsEventRow[],
-    feedbackEvents: (feedbackResult.data ?? []) as AnalyticsFeedbackRow[],
-    profiles: (profilesResult.data ?? []) as AnalyticsProfileRow[]
+    events,
+    feedbackEvents,
+    profiles
   })
 }
