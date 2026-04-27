@@ -435,7 +435,7 @@ export function TodayRecommendationCard({
 
         {isVisuallyLowered ? (
           <div className="rounded-[1rem] border border-[var(--color-line)] bg-white/68 px-3 py-2 text-sm leading-6 text-[var(--color-neutral-dark)]">
-            已记录这套暂时不想穿。可以继续看下面方案，或使用“换一批推荐”。
+            已记录这套暂时不想穿。可以继续横向滑动，并在最右侧继续拖动生成更多方案。
           </div>
         ) : null}
 
