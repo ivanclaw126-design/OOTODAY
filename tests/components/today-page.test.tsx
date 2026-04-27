@@ -347,13 +347,9 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByText('温度')).toBeInTheDocument()
-    expect(screen.getByText('24°C')).toBeInTheDocument()
-    expect(screen.getByText('地点')).toBeInTheDocument()
-    expect(screen.getByText('上海')).toBeInTheDocument()
+    expect(screen.getByText('今天 · 上海 · 24°C 晴 · 按常用')).toBeInTheDocument()
+    expect(screen.getByText(/当前天气/u)).toBeInTheDocument()
     expect(screen.queryByText('Shanghai')).not.toBeInTheDocument()
-    expect(screen.getByText('天气')).toBeInTheDocument()
-    expect(screen.getAllByText('晴').length).toBeGreaterThan(0)
     expect(screen.queryByText('匹配度')).not.toBeInTheDocument()
     expect(screen.queryByText('穿搭重点')).not.toBeInTheDocument()
     expect(screen.queryByText('接下来 1-3 天可以先这样用')).not.toBeInTheDocument()
@@ -418,8 +414,8 @@ describe('TodayPage', () => {
       expect(refreshRecommendations).toHaveBeenCalledWith({ offset: 0, targetDate: 'tomorrow', scene: null })
     })
     expect(await screen.findByText('明天推荐')).toBeInTheDocument()
-    expect(screen.getByText('明天白天预报')).toBeInTheDocument()
-    expect(screen.getByText('18°C')).toBeInTheDocument()
+    expect(screen.getByText('明天 · 上海 · 18°C 多云 · 按常用')).toBeInTheDocument()
+    expect(screen.getByText(/明天白天预报/u)).toBeInTheDocument()
     expect(refresh).not.toHaveBeenCalled()
   })
 
@@ -557,6 +553,12 @@ describe('TodayPage', () => {
     )
 
     expect(screen.getByText('完整度 82')).toBeInTheDocument()
+    expect(screen.getByText('核心单品')).toBeInTheDocument()
+    expect(screen.getByText('待补 外层')).toBeInTheDocument()
+    expect(screen.queryByText('鞋包配饰')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '展开单品详情' }))
+
     expect(screen.getByText('鞋包配饰')).toBeInTheDocument()
     expect(screen.getAllByText(/乐福鞋/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/托特包/).length).toBeGreaterThan(0)
@@ -589,8 +591,14 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByText('13 个穿搭子策略命中情况')).toBeInTheDocument()
+    expect(screen.getByText('推荐引擎最主要的 3 个判断')).toBeInTheDocument()
+    expect(screen.queryByText('13 个穿搭子策略命中情况')).not.toBeInTheDocument()
     expect(screen.getByText('主命中策略')).toBeInTheDocument()
+    expect(screen.queryAllByRole('button', { name: /查看.*策略说明/u })).toHaveLength(0)
+
+    fireEvent.click(screen.getByRole('button', { name: '查看全部 13 项策略' }))
+
+    expect(screen.getByText('13 个穿搭子策略命中情况')).toBeInTheDocument()
     expect(screen.getAllByText('辅助命中').length).toBeGreaterThan(0)
     expect(screen.getAllByText('低信号').length).toBeGreaterThan(0)
     expect(screen.getAllByRole('button', { name: /查看.*策略说明/u })).toHaveLength(13)
