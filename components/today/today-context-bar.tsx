@@ -37,7 +37,7 @@ function chipClass(isSelected = false) {
   return [
     'inline-flex min-h-14 shrink-0 flex-col items-center justify-center rounded-full px-4 py-2 text-sm font-semibold leading-none transition disabled:opacity-55',
     isSelected
-      ? 'bg-[var(--color-primary)] text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)]'
+      ? 'bg-[var(--color-primary)] text-white'
       : 'border border-[var(--color-line)] bg-white/78 text-[var(--color-primary)] hover:bg-white'
   ].join(' ')
 }
@@ -100,8 +100,8 @@ export function TodayContextBar({
   const hasConfirmedCity = weatherState.status === 'ready' || weatherState.status === 'unavailable' || Boolean(city)
 
   return (
-    <section className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/78 p-2.5 shadow-[0_10px_22px_rgba(17,14,9,0.04)]">
-      <div className="flex items-center gap-2 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <section className="rounded-[1.2rem] border border-[var(--color-line)] bg-white p-2.5">
+      <div className="flex items-center gap-2 overflow-x-auto overscroll-x-contain bg-transparent pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <ContextChip
           type="button"
           label="日期"

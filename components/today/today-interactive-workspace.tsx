@@ -255,7 +255,6 @@ export function TodayInteractiveWorkspace({
   const [isRefreshingRecommendations, setIsRefreshingRecommendations] = useState(false)
   const [isContinuingRecommendations, setIsContinuingRecommendations] = useState(false)
   const [continuousRefreshCount, setContinuousRefreshCount] = useState(0)
-  const [continuationVersion, setContinuationVersion] = useState(0)
   const isFirstLoopDismissed = useSyncExternalStore(
     subscribeToFirstLoopDismissed,
     getFirstLoopDismissedSnapshot,
@@ -584,10 +583,6 @@ export function TodayInteractiveWorkspace({
         setRecommendationOffset(nextOffset)
         setContinuousRefreshCount((current) => current + 1)
 
-        if (nextRecommendation) {
-          setContinuationVersion((current) => current + 1)
-        }
-
         setRecordedRecommendationId((current) =>
           current && mergedRecommendations.some((recommendation) => recommendation.id === current) ? current : null
         )
@@ -678,7 +673,6 @@ export function TodayInteractiveWorkspace({
         continuationMode={continuationMode}
         isRefreshing={isRefreshingRecommendations}
         isContinuationLoading={isContinuingRecommendations}
-        continuationVersion={continuationVersion}
         onContinuationCueVisible={continuousRefresh.enabled ? handleContinuationCueVisible : undefined}
       />
 

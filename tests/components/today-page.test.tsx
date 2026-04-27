@@ -1325,7 +1325,7 @@ describe('TodayPage', () => {
     }
   })
 
-  it('renumbers recycled recommendations after they return to the continuation feed', async () => {
+  it('keeps already-visible recommendations stable when the continuation feed returns a duplicate', async () => {
     const continuationCue = mockControlledContinuationCue()
     const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
     const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
@@ -1376,15 +1376,15 @@ describe('TodayPage', () => {
 
       continuationCue.leave()
       continuationCue.enter()
-      expect(await screen.findByText('第一套回流')).toBeInTheDocument()
 
       await waitFor(() => {
         expect(refreshRecommendations).toHaveBeenNthCalledWith(2, expect.objectContaining({
           excludeRecommendationIds: ['rec-1', 'rec-2', 'rec-3', 'rec-4']
         }))
       })
-      expect(screen.queryByLabelText('今天第 1 套推荐')).not.toBeInTheDocument()
-      expect(screen.getByLabelText('今天第 5 套推荐')).toBeInTheDocument()
+      expect(screen.queryByText('第一套回流')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('今天第 1 套推荐')).toBeInTheDocument()
+      expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
     } finally {
       continuationCue.restore()
     }
@@ -1442,9 +1442,7 @@ describe('TodayPage', () => {
 
       expect(await screen.findByText('已穿这套理由')).toBeInTheDocument()
       expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
-      await waitFor(() => {
-        expect(screen.queryByText('第二套理由')).not.toBeInTheDocument()
-      })
+      expect(screen.getByText('第二套理由')).toBeInTheDocument()
     } finally {
       restoreIntersectionObserver()
     }
