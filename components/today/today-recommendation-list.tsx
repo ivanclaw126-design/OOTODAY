@@ -1,19 +1,31 @@
 import { EmptyState } from '@/components/ui/empty-state'
 import { FeedbackLink } from '@/components/beta/feedback-link'
 import { TodayRecommendationCard } from '@/components/today/today-recommendation-card'
-import type { TodayOotdFeedbackInput, TodayOotdStatus, TodayRecommendation } from '@/lib/today/types'
+import type { TodayOotdFeedbackInput, TodayOotdStatus, TodayRecommendation, TodayScene, TodayTargetDate } from '@/lib/today/types'
+
+const sceneLabels: Record<Exclude<TodayScene, null>, string> = {
+  work: '通勤',
+  casual: '日常',
+  date: '约会/聚会',
+  travel: '旅行',
+  outdoor: '户外'
+}
 
 export function TodayRecommendationList({
   recommendations,
   recommendationError,
   ootdStatus,
   recordedRecommendationId,
+  targetDate = 'today',
+  scene = null,
   submitOotd
 }: {
   recommendations: TodayRecommendation[]
   recommendationError: boolean
   ootdStatus: TodayOotdStatus
   recordedRecommendationId: string | null
+  targetDate?: TodayTargetDate
+  scene?: TodayScene
   submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
 }) {
   if (recommendationError) {
@@ -41,14 +53,17 @@ export function TodayRecommendationList({
     )
   }
 
+  const targetLabel = targetDate === 'tomorrow' ? '明天推荐' : '今日推荐'
+  const sceneLabel = scene ? sceneLabels[scene] : '常用场景'
+
   return (
     <section className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">今日推荐</p>
-          <p className="text-[1.85rem] font-semibold tracking-[-0.05em] text-[var(--color-primary)] sm:text-2xl">3 套可直接做决定的搭配</p>
+          <p className="text-[11px] font-semibold uppercase text-[var(--color-neutral-dark)]">{targetLabel}</p>
+          <p className="text-[1.85rem] font-semibold text-[var(--color-primary)] sm:text-2xl">3 套可直接做决定的搭配</p>
         </div>
-        <p className="max-w-xs text-sm leading-6 text-[var(--color-neutral-dark)]">按今天的场景、天气和最近穿着整理</p>
+        <p className="max-w-xs text-sm leading-6 text-[var(--color-neutral-dark)]">按{targetDate === 'tomorrow' ? '明天' : '今天'}的{sceneLabel}、天气和最近穿着整理</p>
       </div>
 
       <div className="grid gap-3">

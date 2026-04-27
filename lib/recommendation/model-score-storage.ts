@@ -5,6 +5,17 @@ import type { Database } from '@/types/database'
 
 export type CandidateModelScoreMap = Record<string, RecommendationModelScores>
 
+export type EntityModelScore = {
+  modelRunId: string
+  lightfmScore: number
+  implicitScore: number
+  finalScore: number
+  status: RecommendationModelScores['status']
+  metadata: Record<string, unknown>
+}
+
+export type EntityModelScoreMap = Record<string, EntityModelScore>
+
 type SupabaseModelScoreClient = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
 function normalizeScore(value: unknown) {
@@ -144,6 +155,64 @@ export async function getCandidateModelScoreMap({
         surface
       }
     })
+    return {}
+  }
+}
+
+export async function getEntityModelScoreMap({
+  userId,
+  surface,
+  entityType = 'closet_item',
+  supabase
+}: {
+  userId: string
+  surface: RecommendationSurface
+  entityType?: string
+  supabase?: SupabaseModelScoreClient
+}): Promise<EntityModelScoreMap> {
+  try {
+    const client = supabase ?? await createSupabaseServerClient()
+    const run = await getPromotedRecommendationModelRun(client)
+
+    if (!run || run.status !== 'active') {
+      return {}
+    }
+
+    const { data, error } = await client
+      .from('recommendation_model_entity_scores')
+      .select('entity_id, lightfm_score, implicit_score, metadata')
+      .eq('run_id', run.id)
+      .eq('user_id', userId)
+      .eq('surface', surface)
+      .eq('entity_type', entityType)
+      .limit(2000)
+
+    if (error) {
+      throw error
+    }
+
+    return Object.fromEntries(
+      ((data ?? []) as Pick<Database['public']['Tables']['recommendation_model_entity_scores']['Row'], 'entity_id' | 'lightfm_score' | 'implicit_score' | 'metadata'>[])
+        .map((row) => {
+          const lightfmScore = normalizeScore(row.lightfm_score) ?? 0
+          const implicitScore = normalizeScore(row.implicit_score) ?? 0
+
+          return [
+            row.entity_id,
+            {
+              modelRunId: run.id,
+              lightfmScore,
+              implicitScore,
+              finalScore: Math.max(lightfmScore, implicitScore),
+              status: run.status,
+              metadata: row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
+                ? row.metadata as Record<string, unknown>
+                : {}
+            } satisfies EntityModelScore
+          ]
+        })
+    )
+  } catch {
     return {}
   }
 }

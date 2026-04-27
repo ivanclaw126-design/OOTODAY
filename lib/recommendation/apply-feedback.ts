@@ -1,6 +1,8 @@
 import { buildWeightsAfterFeedback } from '@/lib/recommendation/feedback-learning'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 import { savePreferenceState } from '@/lib/recommendation/save-preference-state'
+import { buildFeedbackLearningSignals } from '@/lib/recommendation/learning-signals'
+import { recordRecommendationLearningSignals } from '@/lib/recommendation/learning-signal-storage'
 import { resolveRecommendationSupabaseClient, type RecommendationSupabaseClientLike } from '@/lib/recommendation/recommendation-supabase'
 import type { ScoreWeights, TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 import type { Json } from '@/types/database'
@@ -11,6 +13,10 @@ function toJsonOrNull(value: unknown | null | undefined): Json | null {
   }
 
   return JSON.parse(JSON.stringify(value)) as Json
+}
+
+function toRecommendationSurface(context: string) {
+  return context === 'shop' || context === 'inspiration' || context === 'travel' ? context : 'today'
 }
 
 export async function applyFeedback({
@@ -75,6 +81,21 @@ export async function applyFeedback({
     state: nextState,
     questionnaireAnswers: currentState.questionnaireAnswers,
     supabase: client
+  })
+
+  await recordRecommendationLearningSignals({
+    userId,
+    surface: toRecommendationSurface(context),
+    signals: buildFeedbackLearningSignals({
+      recommendationSnapshot,
+      rating,
+      reasonTags,
+      contextKey: context
+    }),
+    metadata: {
+      recommendationId,
+      preferenceVersion: currentState.version
+    }
   })
 
   return nextState

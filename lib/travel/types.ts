@@ -1,6 +1,8 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
-import type { CandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import type { RecommendationLearningSignal } from '@/lib/recommendation/learning-signals'
+import type { CandidateModelScoreMap, EntityModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import type { RecommendationPreferenceState } from '@/lib/recommendation/preference-types'
+import type { RecommendationTrendSignal } from '@/lib/recommendation/trends'
 import type { TodayWeather } from '@/lib/today/types'
 
 export type TravelScene = '通勤' | '休闲' | '正式' | '约会' | '户外'
@@ -102,4 +104,7 @@ export type TravelPlannerInput = {
   weather: TodayWeather | null
   preferenceState?: RecommendationPreferenceState | null
   modelScoreMap?: CandidateModelScoreMap
+  entityModelScoreMap?: EntityModelScoreMap
+  trendSignals?: RecommendationTrendSignal[]
+  learningSignals?: RecommendationLearningSignal[]
 }

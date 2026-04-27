@@ -11,14 +11,61 @@ import { getClosetView } from '@/lib/closet/get-closet-view'
 import { applyFeedback } from '@/lib/recommendation/apply-feedback'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
-import { getCandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import { getRecommendationLearningSignals } from '@/lib/recommendation/learning-signal-storage'
+import { getCandidateModelScoreMap, getEntityModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import { getRecommendationTrendSignals } from '@/lib/recommendation/get-trend-signals'
 import { TODAY_FEEDBACK_REASON_TAGS, type TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { saveTodayOotdFeedback } from '@/lib/today/save-today-ootd-feedback'
-import { getWeather } from '@/lib/today/get-weather'
-import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayOotdHistoryEntry } from '@/lib/today/types'
+import { getWeatherForTarget } from '@/lib/today/get-weather'
+import {
+  TODAY_CONTEXT_SCENES,
+  TODAY_TARGET_DATES,
+  type TodayHistoryUpdateInput,
+  type TodayOotdFeedbackInput,
+  type TodayOotdHistoryEntry,
+  type TodayRecommendationRefreshInput,
+  type TodayRecommendationRefreshResult,
+  type TodayScene,
+  type TodayTargetDate,
+  type TodayWeatherState
+} from '@/lib/today/types'
 
 const todayFeedbackReasonTagSet = new Set<string>(TODAY_FEEDBACK_REASON_TAGS)
+const todayTargetDateSet = new Set<string>(TODAY_TARGET_DATES)
+const todaySceneSet = new Set<string>(TODAY_CONTEXT_SCENES)
+
+function normalizeTodayTargetDate(value: unknown): TodayTargetDate {
+  return typeof value === 'string' && todayTargetDateSet.has(value) ? value as TodayTargetDate : 'today'
+}
+
+function normalizeTodayScene(value: unknown): TodayScene {
+  return typeof value === 'string' && todaySceneSet.has(value) ? value as TodayScene : null
+}
+
+function normalizeTodayRefreshInput(input: number | TodayRecommendationRefreshInput): Required<TodayRecommendationRefreshInput> {
+  if (typeof input === 'number') {
+    return {
+      offset: input,
+      targetDate: 'today',
+      scene: null
+    }
+  }
+
+  if (!input || typeof input !== 'object') {
+    return {
+      offset: 0,
+      targetDate: 'today',
+      scene: null
+    }
+  }
+
+  return {
+    offset: Number.isFinite(input.offset) ? input.offset : 0,
+    targetDate: normalizeTodayTargetDate(input.targetDate),
+    scene: normalizeTodayScene(input.scene)
+  }
+}
 
 function normalizeTodayFeedbackReasonTags(value: unknown): TodayFeedbackReasonTag[] {
   if (!Array.isArray(value)) {
@@ -111,7 +158,29 @@ export async function submitTodayOotdAction({
           ...(recommendation.accessories ?? []).map((item) => item.id)
         ].filter((id): id is string => Boolean(id)),
         context: {
-          reasonTags: normalizedReasonTags
+          reasonTags: normalizedReasonTags,
+          targetDate: recommendation.targetDate ?? 'today',
+          scene: recommendation.scene ?? null,
+          formulaId: recommendation.formulaId ?? null,
+          recallSource: recommendation.recallSource ?? null,
+          categoryKeys: [
+            recommendation.top?.category,
+            recommendation.bottom?.category,
+            recommendation.dress?.category,
+            recommendation.outerLayer?.category,
+            recommendation.shoes?.category,
+            recommendation.bag?.category,
+            ...(recommendation.accessories ?? []).map((item) => item.category)
+          ].filter((value): value is string => Boolean(value)),
+          colorKeys: [
+            recommendation.top?.colorCategory,
+            recommendation.bottom?.colorCategory,
+            recommendation.dress?.colorCategory,
+            recommendation.outerLayer?.colorCategory,
+            recommendation.shoes?.colorCategory,
+            recommendation.bag?.colorCategory,
+            ...(recommendation.accessories ?? []).map((item) => item.colorCategory)
+          ].filter((value): value is string => Boolean(value))
         },
         scoreBreakdown: recommendation.scoreBreakdown ?? null,
         rating: satisfactionScore
@@ -155,35 +224,53 @@ export async function submitTodayOotdAction({
   return result
 }
 
-export async function refreshTodayRecommendationsAction(offset: number) {
+export async function refreshTodayRecommendationsAction(input: number | TodayRecommendationRefreshInput): Promise<TodayRecommendationRefreshResult> {
   const session = await getSession()
 
   if (!session) {
     throw new Error('Unauthorized')
   }
 
+  const { offset, targetDate, scene } = normalizeTodayRefreshInput(input)
   const supabase = await createSupabaseServerClient()
-  const [{ data: profile }, closet, preferenceState, modelScoreMap] = await Promise.all([
+  const [{ data: profile }, closet, preferenceState, modelScoreMap, entityModelScoreMap, trendSignals, learningSignals] = await Promise.all([
     supabase.from('profiles').select('city').eq('id', session.user.id).maybeSingle(),
     getClosetView(session.user.id, { limit: 0 }),
     getPreferenceState({ userId: session.user.id }),
-    getCandidateModelScoreMap({ userId: session.user.id, surface: 'today', supabase })
+    getCandidateModelScoreMap({ userId: session.user.id, surface: 'today', supabase }),
+    getEntityModelScoreMap({ userId: session.user.id, surface: 'today', supabase }),
+    getRecommendationTrendSignals({ supabase }),
+    getRecommendationLearningSignals({ userId: session.user.id, surface: 'today', supabase })
   ])
 
+  const city = profile?.city ?? null
+
   if (closet.itemCount === 0) {
-    return { recommendations: [] }
+    return {
+      recommendations: [],
+      weatherState: city ? { status: 'unavailable', city, targetDate } : { status: 'not-set', targetDate }
+    }
   }
 
-  const city = profile?.city ?? null
-  const weather = city ? await getWeather(city) : null
+  const weather = city ? await getWeatherForTarget(city, targetDate) : null
+  const weatherState: TodayWeatherState = weather
+    ? { status: 'ready', weather, targetDate }
+    : city
+      ? { status: 'unavailable', city, targetDate }
+      : { status: 'not-set', targetDate }
 
   const recommendations = generateTodayRecommendations({
-      items: closet.items,
-      weather,
-      offset,
-      preferenceState,
-      ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {})
-    })
+    items: closet.items,
+    weather,
+    offset,
+    preferenceState,
+    targetDate,
+    scene,
+    ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {}),
+    ...(Object.keys(entityModelScoreMap).length > 0 ? { entityModelScoreMap } : {}),
+    ...(trendSignals.length > 0 ? { trendSignals } : {}),
+    ...(learningSignals.length > 0 ? { learningSignals } : {})
+  })
 
   await trackServerEvent({
     userId: session.user.id,
@@ -192,13 +279,15 @@ export async function refreshTodayRecommendationsAction(offset: number) {
     route: '/today',
     properties: {
       offset,
+      targetDate,
+      scene,
       recommendationCount: recommendations.length,
       itemCount: closet.itemCount,
       weatherAvailable: Boolean(weather)
     }
   })
 
-  return { recommendations }
+  return { recommendations, weatherState }
 }
 
 export async function changeTodayPasswordAction({

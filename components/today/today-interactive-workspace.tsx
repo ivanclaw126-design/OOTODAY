@@ -8,9 +8,21 @@ import { TodayCityForm } from '@/components/today/today-city-form'
 import { TodayCityPromptCard } from '@/components/today/today-city-prompt-card'
 import { TodayOotdHistory } from '@/components/today/today-ootd-history'
 import { TodayRecommendationList } from '@/components/today/today-recommendation-list'
+import { TodayStatusCard } from '@/components/today/today-status-card'
 import { SecondaryButton } from '@/components/ui/button'
 import { buildOotdNotes } from '@/lib/today/build-ootd-notes'
-import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayOotdHistoryEntry, TodayOotdStatus, TodayRecommendation, TodayView } from '@/lib/today/types'
+import type {
+  TodayHistoryUpdateInput,
+  TodayOotdFeedbackInput,
+  TodayOotdHistoryEntry,
+  TodayOotdStatus,
+  TodayRecommendation,
+  TodayRecommendationRefreshInput,
+  TodayRecommendationRefreshResult,
+  TodayScene,
+  TodayTargetDate,
+  TodayView
+} from '@/lib/today/types'
 
 function isSameCalendarDay(left: string, right: string) {
   return new Date(left).toDateString() === new Date(right).toDateString()
@@ -49,7 +61,7 @@ export function TodayInteractiveWorkspace({
   view: TodayView
   updateCity: (input: { city: string }) => Promise<{ error: string | null }>
   submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
-  refreshRecommendations: (input: { offset: number }) => Promise<{ recommendations: TodayRecommendation[] }>
+  refreshRecommendations: (input: TodayRecommendationRefreshInput) => Promise<TodayRecommendationRefreshResult>
   updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>
   deleteHistoryEntry: (input: { ootdId: string }) => Promise<{ error: string | null }>
 }) {
@@ -57,6 +69,9 @@ export function TodayInteractiveWorkspace({
   const [cityFormSource, setCityFormSource] = useState<'prompt' | 'actions' | null>(null)
   const [ootdStatus, setOotdStatus] = useState<TodayOotdStatus>(view.ootdStatus)
   const [recommendations, setRecommendations] = useState(view.recommendations)
+  const [weatherState, setWeatherState] = useState(view.weatherState)
+  const [targetDate, setTargetDate] = useState<TodayTargetDate>(view.targetDate ?? 'today')
+  const [scene, setScene] = useState<TodayScene>(view.scene ?? null)
   const [recommendationOffset, setRecommendationOffset] = useState(0)
   const [isRefreshingRecommendations, setIsRefreshingRecommendations] = useState(false)
   const [isFirstLoopDismissed, setIsFirstLoopDismissed] = useState(() => {
@@ -110,10 +125,42 @@ export function TodayInteractiveWorkspace({
     const nextOffset = recommendationOffset + 1
 
     try {
-      const result = await refreshRecommendations({ offset: nextOffset })
+      const result = await refreshRecommendations({ offset: nextOffset, targetDate, scene })
       startTransition(() => {
         setRecommendations(result.recommendations)
+        setWeatherState(result.weatherState ?? weatherState)
         setRecommendationOffset(nextOffset)
+        setRecordedRecommendationId((current) =>
+          current && result.recommendations.some((recommendation) => recommendation.id === current) ? current : null
+        )
+      })
+    } finally {
+      setIsRefreshingRecommendations(false)
+    }
+  }
+
+  async function handleContextChange(nextContext: { targetDate?: TodayTargetDate; scene?: TodayScene }) {
+    const nextTargetDate = nextContext.targetDate ?? targetDate
+    const nextScene = nextContext.scene === undefined ? scene : nextContext.scene
+
+    if (nextTargetDate === targetDate && nextScene === scene) {
+      return
+    }
+
+    setIsRefreshingRecommendations(true)
+
+    try {
+      const result = await refreshRecommendations({
+        offset: 0,
+        targetDate: nextTargetDate,
+        scene: nextScene
+      })
+      startTransition(() => {
+        setTargetDate(nextTargetDate)
+        setScene(nextScene)
+        setWeatherState(result.weatherState ?? weatherState)
+        setRecommendations(result.recommendations)
+        setRecommendationOffset(0)
         setRecordedRecommendationId((current) =>
           current && result.recommendations.some((recommendation) => recommendation.id === current) ? current : null
         )
@@ -151,6 +198,16 @@ export function TodayInteractiveWorkspace({
 
   return (
     <>
+      <TodayStatusCard
+        city={view.city}
+        weatherState={weatherState}
+        targetDate={targetDate}
+        scene={scene}
+        isRefreshing={isRefreshingRecommendations}
+        onTargetDateChange={(nextTargetDate) => void handleContextChange({ targetDate: nextTargetDate })}
+        onSceneChange={(nextScene) => void handleContextChange({ scene: nextScene })}
+      />
+
       {!hasStartedFeedbackLoop && !isFirstLoopDismissed ? (
         <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.8)_0%,rgba(245,239,230,0.94)_100%)]">
           <div className="space-y-3">
@@ -201,6 +258,8 @@ export function TodayInteractiveWorkspace({
         recommendationError={view.recommendationError}
         ootdStatus={ootdStatus}
         recordedRecommendationId={recordedRecommendationId}
+        targetDate={targetDate}
+        scene={scene}
         submitOotd={submitTodayOotd}
       />
 

@@ -22,9 +22,11 @@ import {
 import { buildMissingSlotCopy } from '@/lib/recommendation/copy'
 import { evaluateOutfit, getWeightedOutfitScore, type EvaluatedOutfit } from '@/lib/recommendation/outfit-evaluator'
 import { scoreRecommendationCandidate } from '@/lib/recommendation/canonical-scoring'
+import type { RecommendationLearningSignal } from '@/lib/recommendation/learning-signals'
 import type { CandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
 import type { RecommendationPreferenceState } from '@/lib/recommendation/preference-types'
+import type { RecommendationTrendSignal } from '@/lib/recommendation/trends'
 import type { ShopCandidateItem, ShopPurchaseAnalysis, ShopWardrobeGapType } from '@/lib/shop/types'
 
 export const supportedFashionCategories = [
@@ -670,7 +672,9 @@ export function analyzePurchaseCandidate(
   candidate: ShopCandidateItem,
   closetItems: ClosetItemCardData[],
   preferenceState?: RecommendationPreferenceState | null,
-  modelScoreMap: CandidateModelScoreMap = {}
+  modelScoreMap: CandidateModelScoreMap = {},
+  trendSignals: RecommendationTrendSignal[] = [],
+  learningSignals: RecommendationLearningSignal[] = []
 ): ShopPurchaseAnalysis {
   const duplicateItems = findDuplicateItems(candidate, closetItems)
   const duplicateRisk = getDuplicateRisk(candidate, duplicateItems)
@@ -704,6 +708,9 @@ export function analyzePurchaseCandidate(
     context: {
       surface: 'shop',
       profile: preferenceState?.profile ?? null,
+      trendSignals,
+      learningSignals,
+      recallSource: 'rule',
       effortLevel: preferenceState?.profile.practicalityPreference.comfortPriority && preferenceState.profile.practicalityPreference.comfortPriority > preferenceState.profile.practicalityPreference.stylePriority ? 'low' : 'medium'
     }
   }, modelScoreMap[candidateId])

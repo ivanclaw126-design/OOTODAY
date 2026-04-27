@@ -20,6 +20,7 @@ import type {
   RecommendationStrategyScores
 } from '@/lib/recommendation/canonical-types'
 import { RECOMMENDATION_STRATEGY_KEYS } from '@/lib/recommendation/canonical-types'
+import { DEFAULT_RECOMMENDATION_TRENDS, getTrendSearchTags } from '@/lib/recommendation/trends'
 import type { PreferenceProfile } from '@/lib/recommendation/preference-types'
 
 export type StrategyScoreResult = {
@@ -28,24 +29,6 @@ export type StrategyScoreResult = {
   explanation: string
   riskFlags?: string[]
 }
-
-const TREND_TOKENS = [
-  'brooch',
-  '胸针',
-  'lace',
-  '蕾丝',
-  'cool blue',
-  '蓝色',
-  'khaki',
-  '卡其',
-  'poetcore',
-  'glamoratti',
-  'structured shoulder',
-  '垫肩',
-  'funnel neck',
-  'celestial',
-  '星月'
-]
 
 function clampScore(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)))
@@ -402,12 +385,16 @@ function scorePinterestRecreation(outfit: EvaluatedOutfit, context: Recommendati
 }
 
 function scoreTrendOverlay(outfit: EvaluatedOutfit, context: RecommendationScoringContext): StrategyScoreResult {
-  const trendTags = [...TREND_TOKENS, ...(context.trendTags ?? [])]
+  const trendSignals = context.trendSignals && context.trendSignals.length > 0 ? context.trendSignals : DEFAULT_RECOMMENDATION_TRENDS
+  const trendTags = [...getTrendSearchTags(trendSignals), ...(context.trendTags ?? [])]
   const text = outfitText(outfit)
   const matched = trendTags.filter((tag) => hasToken(text, [tag])).length
+  const matchedSignalWeight = trendSignals
+    .filter((signal) => [signal.tag, ...signal.aliases].some((tag) => hasToken(text, [tag])))
+    .reduce((sum, signal) => sum + signal.activeWeight, 0)
   const profile = getProfile(context)
   const sensitivity = profile.exploration.rate >= 0.08 ? 1.2 : profile.exploration.rate <= 0.02 ? 0.55 : 1
-  const score = clampScore(48 + matched * 18 * sensitivity)
+  const score = clampScore(48 + matched * 9 * sensitivity + matchedSignalWeight * 11 * sensitivity)
 
   return {
     key: 'trendOverlay',

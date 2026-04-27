@@ -7,7 +7,9 @@ import { analyzeItemImage } from '@/lib/closet/analyze-item-image'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
+import { getRecommendationLearningSignals } from '@/lib/recommendation/learning-signal-storage'
 import { getCandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import { getRecommendationTrendSignals } from '@/lib/recommendation/get-trend-signals'
 import { analyzePurchaseCandidate, getShopCandidateId, getUnsupportedShopCategoryMessage } from '@/lib/shop/analyze-purchase-candidate'
 import { resolveShopInput } from '@/lib/shop/resolve-shop-input'
 
@@ -46,11 +48,13 @@ export async function analyzeShopCandidateAction({
     }
   }
 
-  const [candidate, closet, preferenceState, modelScoreMap] = await Promise.all([
+  const [candidate, closet, preferenceState, modelScoreMap, trendSignals, learningSignals] = await Promise.all([
     analyzeItemImage(resolved.imageUrl),
     getClosetView(session.user.id, { limit: 0 }),
     getPreferenceState({ userId: session.user.id }),
-    getCandidateModelScoreMap({ userId: session.user.id, surface: 'shop' })
+    getCandidateModelScoreMap({ userId: session.user.id, surface: 'shop' }),
+    getRecommendationTrendSignals(),
+    getRecommendationLearningSignals({ userId: session.user.id, surface: 'shop' })
   ])
 
   const unsupportedCategoryMessage = getUnsupportedShopCategoryMessage(candidate.category)
@@ -83,7 +87,9 @@ export async function analyzeShopCandidateAction({
     },
     closet.items,
     preferenceState,
-    modelScoreMap
+    modelScoreMap,
+    trendSignals,
+    learningSignals
   )
   await recordRecommendationInteraction({
     userId: session.user.id,
@@ -94,7 +100,9 @@ export async function analyzeShopCandidateAction({
     context: {
       recommendation: analysis.recommendation,
       duplicateRisk: analysis.duplicateRisk,
-      estimatedOutfitCount: analysis.estimatedOutfitCount
+      estimatedOutfitCount: analysis.estimatedOutfitCount,
+      categoryKeys: [analysis.candidate.category],
+      colorKeys: [analysis.candidate.colorCategory].filter(Boolean)
     },
     scoreBreakdown: analysis.scoreBreakdown ?? null
   })

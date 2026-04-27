@@ -25,12 +25,18 @@ const redirect = vi.fn((path: string) => {
 })
 const reportBetaIssue = vi.fn()
 const trackBetaEvent = vi.fn()
+const trackServerEvent = vi.fn()
 const saveTodayOotdFeedback = vi.fn()
 const applyFeedback = vi.fn()
 const getPreferenceState = vi.fn()
 const getClosetView = vi.fn()
 const getWeather = vi.fn()
+const getWeatherForTarget = vi.fn()
 const generateTodayRecommendations = vi.fn()
+const getCandidateModelScoreMap = vi.fn()
+const getEntityModelScoreMap = vi.fn()
+const getRecommendationTrendSignals = vi.fn()
+const getRecommendationLearningSignals = vi.fn()
 
 vi.mock('@/lib/auth/get-session', () => ({
   getSession
@@ -62,11 +68,29 @@ vi.mock('@/lib/closet/get-closet-view', () => ({
 }))
 
 vi.mock('@/lib/today/get-weather', () => ({
-  getWeather
+  getWeather,
+  getWeatherForTarget
 }))
 
 vi.mock('@/lib/today/generate-recommendations', () => ({
   generateTodayRecommendations
+}))
+
+vi.mock('@/lib/recommendation/model-score-storage', () => ({
+  getCandidateModelScoreMap,
+  getEntityModelScoreMap
+}))
+
+vi.mock('@/lib/recommendation/get-trend-signals', () => ({
+  getRecommendationTrendSignals
+}))
+
+vi.mock('@/lib/recommendation/learning-signal-storage', () => ({
+  getRecommendationLearningSignals
+}))
+
+vi.mock('@/lib/analytics/server', () => ({
+  trackServerEvent
 }))
 
 vi.mock('next/cache', () => ({
@@ -101,6 +125,8 @@ describe('today actions', () => {
     reportBetaIssue.mockResolvedValue(undefined)
     trackBetaEvent.mockReset()
     trackBetaEvent.mockResolvedValue(undefined)
+    trackServerEvent.mockReset()
+    trackServerEvent.mockResolvedValue(undefined)
     revalidatePath.mockReset()
     saveTodayOotdFeedback.mockReset()
     applyFeedback.mockReset()
@@ -109,7 +135,16 @@ describe('today actions', () => {
     getPreferenceState.mockResolvedValue({ source: 'default' })
     getClosetView.mockReset()
     getWeather.mockReset()
+    getWeatherForTarget.mockReset()
     generateTodayRecommendations.mockReset()
+    getCandidateModelScoreMap.mockReset()
+    getCandidateModelScoreMap.mockResolvedValue({})
+    getEntityModelScoreMap.mockReset()
+    getEntityModelScoreMap.mockResolvedValue({})
+    getRecommendationTrendSignals.mockReset()
+    getRecommendationTrendSignals.mockResolvedValue([])
+    getRecommendationLearningSignals.mockReset()
+    getRecommendationLearningSignals.mockResolvedValue([])
   })
 
   it('updates the signed-in user city and revalidates Today', async () => {
@@ -334,23 +369,31 @@ describe('today actions', () => {
       itemCount: 2,
       items: [{ id: 'item-1' }, { id: 'item-2' }]
     })
-    getWeather.mockResolvedValue({ city: 'Shanghai', temperatureC: 24, conditionLabel: '晴', isWarm: true, isCold: false })
+    getWeatherForTarget.mockResolvedValue({ city: 'Shanghai', temperatureC: 18, conditionLabel: '多云', isWarm: false, isCold: false, targetDate: 'tomorrow', sourceLabel: '明天白天预报' })
     generateTodayRecommendations.mockReturnValue([{ id: 'rec-1' }, { id: 'rec-2' }])
 
     const { refreshTodayRecommendationsAction } = await import('@/app/today/actions')
 
-    await expect(refreshTodayRecommendationsAction(3)).resolves.toEqual({
-      recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }]
+    await expect(refreshTodayRecommendationsAction({ offset: 3, targetDate: 'tomorrow', scene: 'work' })).resolves.toEqual({
+      recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }],
+      weatherState: {
+        status: 'ready',
+        targetDate: 'tomorrow',
+        weather: { city: 'Shanghai', temperatureC: 18, conditionLabel: '多云', isWarm: false, isCold: false, targetDate: 'tomorrow', sourceLabel: '明天白天预报' }
+      }
     })
 
     expect(getClosetView).toHaveBeenCalledWith('user-1', { limit: 0 })
     expect(getPreferenceState).toHaveBeenCalledWith({ userId: 'user-1' })
-    expect(generateTodayRecommendations).toHaveBeenCalledWith({
+    expect(getWeatherForTarget).toHaveBeenCalledWith('Shanghai', 'tomorrow')
+    expect(generateTodayRecommendations).toHaveBeenCalledWith(expect.objectContaining({
       items: [{ id: 'item-1' }, { id: 'item-2' }],
       weather: expect.any(Object),
       offset: 3,
-      preferenceState: { source: 'default' }
-    })
+      preferenceState: { source: 'default' },
+      targetDate: 'tomorrow',
+      scene: 'work'
+    }))
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 

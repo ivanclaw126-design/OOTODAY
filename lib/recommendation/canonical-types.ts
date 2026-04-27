@@ -1,4 +1,6 @@
 import type { EvaluatedOutfit } from '@/lib/recommendation/outfit-evaluator'
+import type { RecommendationLearningSignal } from '@/lib/recommendation/learning-signals'
+import type { RecommendationTrendSignal } from '@/lib/recommendation/trends'
 import type { PreferenceProfile, ScoreWeights } from '@/lib/recommendation/preference-types'
 import type { TodayWeather } from '@/lib/today/types'
 
@@ -91,7 +93,11 @@ export type RecommendationScoringContext = {
   scenes?: string[]
   travelScenes?: string[]
   trendTags?: string[]
+  trendSignals?: RecommendationTrendSignal[]
   inspirationTags?: string[]
+  learningSignals?: RecommendationLearningSignal[]
+  formulaId?: string | null
+  recallSource?: 'formula' | 'rule' | 'weather' | 'exploration' | 'model_seed'
   effortLevel?: 'low' | 'medium' | 'high'
 }
 

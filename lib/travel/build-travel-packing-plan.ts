@@ -280,6 +280,9 @@ function rankTravelItemsWithModel({
   items,
   slot,
   modelScoreMap,
+  entityModelScoreMap,
+  trendSignals,
+  learningSignals,
   weather,
   profile,
   scenes
@@ -287,6 +290,9 @@ function rankTravelItemsWithModel({
   items: ClosetItemCardData[]
   slot: TravelPackingSlot
   modelScoreMap?: CandidateModelScoreMap
+  entityModelScoreMap?: TravelPlannerInput['entityModelScoreMap']
+  trendSignals?: TravelPlannerInput['trendSignals']
+  learningSignals?: TravelPlannerInput['learningSignals']
   weather: TravelPlannerInput['weather']
   profile: PreferenceProfile | null | undefined
   scenes: TravelScene[]
@@ -301,9 +307,13 @@ function rankTravelItemsWithModel({
         weather,
         profile,
         travelScenes: scenes,
+        trendSignals,
+        learningSignals,
+        recallSource: 'rule',
         effortLevel: profile && profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority ? 'low' : 'medium'
       }
-    }, modelScoreMap?.[`travel-${slot}-${item.id}`]).scoreBreakdown.totalScore
+    }, modelScoreMap?.[`travel-${slot}-${item.id}`]).scoreBreakdown.totalScore +
+      (entityModelScoreMap?.[item.id]?.finalScore ?? 0) * 0.08
     const delta = scoreItem(right) - scoreItem(left)
 
     if (delta !== 0) {
@@ -321,7 +331,10 @@ export function buildTravelPackingPlan({
   items,
   weather,
   preferenceState,
-  modelScoreMap
+  modelScoreMap,
+  entityModelScoreMap,
+  trendSignals,
+  learningSignals
 }: TravelPlannerInput): TravelPackingPlan {
   const profile = preferenceState?.profile
   const rankContext = { weather, profile, travelScenes: scenes }
@@ -336,6 +349,9 @@ export function buildTravelPackingPlan({
     ),
     slot: 'tops',
     modelScoreMap,
+    entityModelScoreMap,
+    trendSignals,
+    learningSignals,
     weather,
     profile,
     scenes
@@ -347,6 +363,9 @@ export function buildTravelPackingPlan({
     ),
     slot: 'bottoms',
     modelScoreMap,
+    entityModelScoreMap,
+    trendSignals,
+    learningSignals,
     weather,
     profile,
     scenes
@@ -358,6 +377,9 @@ export function buildTravelPackingPlan({
     ),
     slot: 'dresses',
     modelScoreMap,
+    entityModelScoreMap,
+    trendSignals,
+    learningSignals,
     weather,
     profile,
     scenes
@@ -369,6 +391,9 @@ export function buildTravelPackingPlan({
     ),
     slot: 'outerwear',
     modelScoreMap,
+    entityModelScoreMap,
+    trendSignals,
+    learningSignals,
     weather,
     profile,
     scenes
@@ -380,6 +405,9 @@ export function buildTravelPackingPlan({
     ),
     slot: 'comfortShoes',
     modelScoreMap,
+    entityModelScoreMap,
+    trendSignals,
+    learningSignals,
     weather,
     profile,
     scenes
@@ -388,6 +416,9 @@ export function buildTravelPackingPlan({
     items: rankItemsForRecommendation(items.filter((item) => isBagCategory(item.category)), rankContext),
     slot: 'bags',
     modelScoreMap,
+    entityModelScoreMap,
+    trendSignals,
+    learningSignals,
     weather,
     profile,
     scenes

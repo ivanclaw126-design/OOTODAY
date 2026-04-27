@@ -6,7 +6,9 @@ import { getSession } from '@/lib/auth/get-session'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
-import { getCandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import { getRecommendationLearningSignals } from '@/lib/recommendation/learning-signal-storage'
+import { getCandidateModelScoreMap, getEntityModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import { getRecommendationTrendSignals } from '@/lib/recommendation/get-trend-signals'
 import { buildTravelPackingPlan } from '@/lib/travel/build-travel-packing-plan'
 import { getTravelPlanById } from '@/lib/travel/get-travel-plan-by-id'
 import { getRecentTravelPlans } from '@/lib/travel/get-recent-travel-plans'
@@ -50,11 +52,14 @@ export default async function TravelRoute({
     : Math.min(Math.max(parsedDays, 1), 14)
   const scenesFromParams = normalizeScenes(resolvedSearchParams.scene)
   const scenes = scenesFromParams.length > 0 ? scenesFromParams : savedPlanSnapshot?.scenes ?? []
-  const [closet, recentSavedPlans, preferenceState, modelScoreMap] = await Promise.all([
+  const [closet, recentSavedPlans, preferenceState, modelScoreMap, entityModelScoreMap, trendSignals, learningSignals] = await Promise.all([
     getClosetView(session.user.id, { limit: 0 }),
     getRecentTravelPlans(session.user.id),
     getPreferenceState({ userId: session.user.id }),
-    getCandidateModelScoreMap({ userId: session.user.id, surface: 'travel' })
+    getCandidateModelScoreMap({ userId: session.user.id, surface: 'travel' }),
+    getEntityModelScoreMap({ userId: session.user.id, surface: 'travel' }),
+    getRecommendationTrendSignals(),
+    getRecommendationLearningSignals({ userId: session.user.id, surface: 'travel' })
   ])
   const editingSavedPlan = savedPlanSnapshot
     ? {
@@ -105,7 +110,10 @@ export default async function TravelRoute({
           items: closet.items,
           weather,
           preferenceState,
-          ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {})
+          ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {}),
+          ...(Object.keys(entityModelScoreMap).length > 0 ? { entityModelScoreMap } : {}),
+          ...(trendSignals.length > 0 ? { trendSignals } : {}),
+          ...(learningSignals.length > 0 ? { learningSignals } : {})
         })
 
     if (!canReuseSavedPlan) {

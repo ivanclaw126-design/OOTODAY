@@ -7,7 +7,7 @@ import { TodaySettingsPanel } from '@/components/today/today-settings-panel'
 import { TodayStatusCard } from '@/components/today/today-status-card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PrimaryLink } from '@/components/ui/button'
-import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayOotdHistoryEntry, TodayRecommendation, TodayView } from '@/lib/today/types'
+import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayOotdHistoryEntry, TodayRecommendationRefreshInput, TodayRecommendationRefreshResult, TodayView } from '@/lib/today/types'
 
 export function TodayPage({
   view,
@@ -22,7 +22,7 @@ export function TodayPage({
   view: TodayView
   updateCity: (input: { city: string }) => Promise<{ error: string | null }>
   submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
-  refreshRecommendations: (input: { offset: number }) => Promise<{ recommendations: TodayRecommendation[] }>
+  refreshRecommendations: (input: TodayRecommendationRefreshInput) => Promise<TodayRecommendationRefreshResult>
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>
@@ -36,6 +36,8 @@ export function TodayPage({
         properties={{
           itemCount: view.itemCount,
           city: view.city,
+          targetDate: view.targetDate ?? 'today',
+          scene: view.scene ?? null,
           hasRecommendations: view.recommendations.length > 0
         }}
       />
@@ -67,10 +69,9 @@ export function TodayPage({
           </div>
         ) : null}
 
-        <TodayStatusCard city={view.city} weatherState={view.weatherState} />
-
         {view.itemCount === 0 ? (
           <div className="space-y-4">
+            <TodayStatusCard city={view.city} weatherState={view.weatherState} targetDate={view.targetDate ?? 'today'} scene={view.scene ?? null} />
             <EmptyState
               title="你的衣橱还是空的"
               description="先上传 5-10 件常穿的单品，Today 才能给出真实推荐。"

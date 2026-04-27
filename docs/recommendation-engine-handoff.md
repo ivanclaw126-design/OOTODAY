@@ -2,6 +2,60 @@
 
 ## Current Phase Completed
 
+Phase 11 complete recommendation engine rollout completed on 2026-04-27.
+
+OOTODAY now extends the Phase 10 strict ML foundation into the six missing production-readiness areas from `推荐引擎上线ref.md`: formula-based candidate generation, model-seeded recall, stricter offline evaluation, bounded learning signals, controlled trend dictionary, and configurable training promotion. Today is the full rollout surface; Shop, Inspiration, and Travel consume the shared trend/learning/model context without adding new UI.
+
+## Phase 11 Complete Six-Part Recommendation Rollout
+
+### Files Changed
+
+- `lib/recommendation/outfit-formulas.ts` and `lib/today/generate-recommendations.ts`
+  - Add first-class `OutfitFormula` registry and deterministic formula candidate IDs.
+  - Expand Today recall to formula candidates, model-seeded item candidates, existing dress/separates/weather/rule candidates, and safe exploration candidates.
+  - Preserve `formulaId` and `recallSource` on Today recommendations and interaction context for offline metrics.
+- `lib/recommendation/trends.ts`, `get-trend-signals.ts`, `learning-signals.ts`, and `learning-signal-storage.ts`
+  - Add controlled trend signals with editorial defaults and Supabase-backed active trend loading.
+  - Add bounded learning signals for user-item-context, item-pair, color, silhouette, and hidden-item feedback.
+  - Keep `skipped` as weak negative learning and treat only `hidden_item` as a hard scoring block.
+- `lib/recommendation/canonical-types.ts`, `canonical-scoring.ts`, `strategy-scorers.ts`, and `model-score-storage.ts`
+  - Extend scoring context with trend signals, learning signals, formula ID, recall source, and entity model scores.
+  - Apply small learning-signal nudges to user preference scoring while keeping hard avoids, hidden items, and unsafe weather stronger than model scores.
+  - Add promoted entity-score reads for model-seeded recall and closet item reranking.
+- Today / Shop / Inspiration / Travel server paths
+  - Load shared trend and learning signals for scoring.
+  - Today and Travel also consume promoted entity scores; Inspiration uses entity scores as a small closet-substitute nudge.
+  - Interaction rows now include formula/source/category/color metadata when available so offline metrics can measure formula, color, and category coverage.
+- `supabase/migrations/20260427142000_add_recommendation_trends_learning_signals.sql` and `types/database.ts`
+  - Add `recommendation_trends` with editorial seed rows.
+  - Add `recommendation_learning_signals` with user-owned RLS.
+- `ml/recommendation/train.py`, `.github/workflows/recommendation-training.yml`, and ML tests
+  - Add configurable `--lookback-days`, `--min-interactions`, and `--promote`.
+  - Replace lightweight metrics with graded NDCG/MAP, item/category/color/formula coverage, intra-list diversity, edit rate, item repetition rate, and row/positive-user/positive-candidate gates.
+  - Keep data-insufficient runs as shadow reports instead of promoting.
+
+### Phase 11 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm test` passed: 72 test files, 321 tests.
+- `npm run build` passed.
+- Python compile passed: `python3 -m py_compile ml/recommendation/train.py`.
+- Python tests passed in local Python 3.11 venv: `python -m pytest ml/tests`, 6 tests.
+- Native local training dry-run with generated fixture trained LightFM, implicit ALS, and XGBoost Ranker, emitted promoted dry-run scores/artifacts, and exercised the new promotion gates.
+- Remote production dry-run loaded current events and correctly returned `promoted: false`: 6 rows, 0 positive users, 0 positive candidates.
+- Supabase 6543 transaction-pooler push applied `20260427142000_add_recommendation_trends_learning_signals.sql`.
+- Follow-up Supabase dry-run reports `Remote database is up to date`.
+- `supabase migration list --db-url ...6543...` shows `20260427142000` present locally and remotely.
+- Remote REST smoke returned 200 for `recommendation_trends`, `recommendation_learning_signals`, `recommendation_interactions`, `recommendation_model_runs`, `recommendation_model_candidate_scores`, and `recommendation_model_entity_scores`.
+
+### Phase 11 Remaining Issues
+
+- Trend maintenance is intentionally editorial/manual only; no external social-platform crawling is implemented.
+- Real production promotion still depends on enough live `recommendation_interactions` to satisfy the default gates: at least 50 rows, 3 positive users, and 10 positive candidates; current 90-day dry-run has 6 rows and no positive users/candidates.
+- The GitHub Recommendation Training workflow should be triggered with `promote=true` only after the event volume gate is met.
+
+## Previous Phase Completed
+
 Phase 10 strict production ML recommendation engine foundation completed on 2026-04-27.
 
 OOTODAY now treats `推荐引擎ref.md` as the canonical recommendation spec for the production scoring contract. The online app keeps hard constraints first, generates deterministic candidates, computes the full mature-strategy feature set, then lets promoted LightFM / implicit ALS / XGBoost candidate scores dominate ordering when available. When no promoted model score exists, the system falls back to the canonical rule baseline and records model-fallback risk flags instead of silently pretending ML is active.
