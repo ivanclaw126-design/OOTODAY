@@ -24,6 +24,14 @@ describe('aliyun send sms helpers', () => {
       countryCode: '86',
       phoneNumber: '13800138000'
     })
+    expect(normalizeChinaPhone('8613800138000')).toEqual({
+      countryCode: '86',
+      phoneNumber: '13800138000'
+    })
+    expect(normalizeChinaPhone('13800138000')).toEqual({
+      countryCode: '86',
+      phoneNumber: '13800138000'
+    })
   })
 
   it('rejects non-mainland phone numbers before the provider call', () => {
