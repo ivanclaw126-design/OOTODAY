@@ -5,6 +5,7 @@ import { sendBetaIssueFromClient } from '@/lib/beta/telemetry'
 import { ItemShowcase, type ItemShowcaseEntry } from '@/components/ui/item-showcase'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { TodayStrategyScorePanel } from '@/components/today/today-strategy-score-panel'
 import type { TodayFeedbackReasonTag, TodayOotdFeedbackInput, TodayOotdStatus, TodayRecommendation, TodayRecommendationMissingSlot } from '@/lib/today/types'
 
 const likeReasonTags: Array<{ tag: TodayFeedbackReasonTag; label: string }> = [
@@ -95,6 +96,7 @@ export function TodayRecommendationCard({
   const missingSlots = recommendation.missingSlots ?? []
   const confidence = recommendation.confidence ?? null
   const isInspiration = recommendation.mode === 'inspiration'
+  const reasonHighlights = (recommendation.reasonHighlights ?? []).filter(Boolean).slice(0, 3)
 
   function toggleReasonTag(tag: TodayFeedbackReasonTag) {
     setSelectedReasonTags((current) =>
@@ -128,7 +130,7 @@ export function TodayRecommendationCard({
   }
 
   return (
-    <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.76)_0%,rgba(241,234,224,0.94)_100%)]">
+    <Card className="overflow-visible bg-[linear-gradient(180deg,rgba(255,255,255,0.76)_0%,rgba(241,234,224,0.94)_100%)]">
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -163,7 +165,18 @@ export function TodayRecommendationCard({
 
         <div className="rounded-[1.6rem] bg-[var(--color-panel)] p-5 text-white shadow-[var(--shadow-strong)]">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/52">为什么推荐这套</p>
-          <p className="mt-3 text-base leading-8 text-white/82 sm:text-sm sm:leading-7">{recommendation.reason}</p>
+          {reasonHighlights.length > 0 ? (
+            <ul className="mt-3 space-y-2">
+              {reasonHighlights.map((highlight) => (
+                <li key={highlight} className="flex gap-2 text-sm leading-6 text-white/82">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+                  <span>{highlight}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-base leading-8 text-white/82 sm:text-sm sm:leading-7">{recommendation.reason}</p>
+          )}
           {isInspiration ? (
             <div className="mt-4 rounded-[1.1rem] border border-white/12 bg-white/8 px-3 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
@@ -175,6 +188,8 @@ export function TodayRecommendationCard({
             </div>
           ) : null}
         </div>
+
+        <TodayStrategyScorePanel strategyScores={recommendation.scoreBreakdown?.strategyScores} />
 
         {outfitItems.length > 0 ? (
           <ItemShowcase

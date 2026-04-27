@@ -2,6 +2,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { TodayPage } from '@/components/today/today-page'
+import {
+  RECOMMENDATION_STRATEGY_KEYS,
+  type RecommendationModelScores,
+  type RecommendationRuleScores,
+  type RecommendationScoreBreakdown,
+  type RecommendationStrategyScores
+} from '@/lib/recommendation/canonical-types'
+import type { ScoreWeights } from '@/lib/recommendation/preference-types'
 
 const refresh = vi.fn()
 const updateCity = vi.fn().mockResolvedValue({ error: null })
@@ -11,6 +19,73 @@ const changePassword = vi.fn().mockResolvedValue({ error: null })
 const signOut = vi.fn().mockResolvedValue(undefined)
 const updateHistoryEntry = vi.fn()
 const deleteHistoryEntry = vi.fn()
+
+const componentScores: ScoreWeights = {
+  colorHarmony: 92,
+  silhouetteBalance: 78,
+  layering: 62,
+  focalPoint: 70,
+  sceneFit: 86,
+  weatherComfort: 74,
+  completeness: 88,
+  freshness: 80
+}
+
+const ruleScores: RecommendationRuleScores = {
+  contextFit: 84,
+  visualCompatibility: 86,
+  userPreference: 76,
+  outfitStrategy: 82,
+  weatherPracticality: 74,
+  novelty: 80,
+  wardrobeRotation: 72,
+  trendOverlay: 48,
+  explanationQuality: 86
+}
+
+const modelScores: RecommendationModelScores = {
+  modelRunId: null,
+  xgboostScore: null,
+  lightfmScore: null,
+  implicitScore: null,
+  ruleScore: 82,
+  finalScore: 82,
+  status: 'missing'
+}
+
+function strategyScores(overrides: Partial<RecommendationStrategyScores> = {}): RecommendationStrategyScores {
+  return Object.fromEntries(
+    RECOMMENDATION_STRATEGY_KEYS.map((key) => [key, overrides[key] ?? 58])
+  ) as RecommendationStrategyScores
+}
+
+const scoreBreakdown: RecommendationScoreBreakdown = {
+  totalScore: 84,
+  ruleBaselineScore: 82,
+  modelScores,
+  ruleScores,
+  compatibilityScores: {
+    color: 92,
+    silhouette: 78,
+    material: 76,
+    formality: 82,
+    styleDistance: 80,
+    pattern: 78,
+    shoesBag: 88,
+    temperature: 74,
+    scene: 86
+  },
+  strategyScores: strategyScores({
+    outfitFormula: 94,
+    capsuleWardrobe: 88,
+    occasionNiche: 80,
+    trendOverlay: 42
+  }),
+  componentScores,
+  penalties: [],
+  explanation: ['穿搭公式命中：核心 slot 组合能形成稳定可复用公式。'],
+  riskFlags: ['model_fallback_missing']
+}
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -43,6 +118,11 @@ const recommendation = {
 
 const completeRecommendation = {
   ...recommendation,
+  reasonHighlights: [
+    '穿搭公式命中：核心 slot 组合能形成稳定可复用公式',
+    '场景 86：风格线索集中在通勤，适合通勤使用',
+    '完整度 88：鞋履、包袋已补齐，出门不用再补关键 slot'
+  ],
   id: 'rec-complete',
   shoes: {
     id: 'shoes-1',
@@ -72,16 +152,8 @@ const completeRecommendation = {
   ],
   missingSlots: ['outerLayer' as const],
   confidence: 82,
-  componentScores: {
-    colorHarmony: 92,
-    silhouetteBalance: 78,
-    layering: 62,
-    focalPoint: 70,
-    sceneFit: 86,
-    weatherComfort: 74,
-    completeness: 88,
-    freshness: 80
-  },
+  componentScores,
+  scoreBreakdown,
   mode: 'daily' as const
 }
 
@@ -490,6 +562,47 @@ describe('TodayPage', () => {
     expect(screen.getAllByText(/托特包/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/腰带/).length).toBeGreaterThan(0)
     expect(screen.getByText('这套还缺 外层，可以先按主组合穿，后续在衣橱里补齐会更完整。')).toBeInTheDocument()
+  })
+
+  it('renders all strategy scores and opens a strategy explanation popover', () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 6,
+          city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'not-set' },
+          recommendations: [completeRecommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    expect(screen.getByText('13 个穿搭子策略命中情况')).toBeInTheDocument()
+    expect(screen.getByText('主命中策略')).toBeInTheDocument()
+    expect(screen.getAllByText('辅助命中').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('低信号').length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /查看.*策略说明/u })).toHaveLength(13)
+
+    fireEvent.click(screen.getByRole('button', { name: '查看穿搭公式策略说明' }))
+
+    expect(screen.getByRole('dialog', { name: '穿搭公式策略说明' })).toBeInTheDocument()
+    expect(screen.getByText('把上装、下装、鞋履或一件式主件组合成低决策成本的固定公式。')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog', { name: '穿搭公式策略说明' })).not.toBeInTheDocument()
   })
 
   it('renders inspiration attempt labeling and daily-difference copy', () => {
