@@ -22,10 +22,11 @@ import {
   type RecommendationResult,
   type RecommendationRuleScores,
   type RecommendationScoringContext,
-  type RecommendationScoreBreakdown
+  type RecommendationScoreBreakdown,
+  type RecommendationStrategyKey
 } from '@/lib/recommendation/canonical-types'
 import { getLearningSignalScoreAdjustment, hasHiddenItemSignal } from '@/lib/recommendation/learning-signals'
-import { scoreRecommendationStrategies } from '@/lib/recommendation/strategy-scorers'
+import { scoreRecommendationStrategies, type StrategyScoreResult } from '@/lib/recommendation/strategy-scorers'
 import type { PreferenceProfile, ScoreWeights } from '@/lib/recommendation/preference-types'
 
 function clampScore(value: number) {
@@ -38,6 +39,94 @@ function average(values: number[], fallback = 60) {
   }
 
   return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+const PRIMARY_STRATEGY_GENERIC_PENALTY: Partial<Record<RecommendationStrategyKey, number>> = {
+  capsuleWardrobe: 18,
+  outfitFormula: 6,
+  twoThirdRule: 4
+}
+
+function getRecallSourcePrimaryBoost(key: RecommendationStrategyKey, context: RecommendationScoringContext) {
+  if (context.recallSource === 'formula' && key === 'outfitFormula') {
+    return 14
+  }
+
+  if (context.recallSource === 'exploration' && key === 'pinterestRecreation') {
+    return 16
+  }
+
+  if (context.recallSource === 'weather' && (key === 'layering' || key === 'occasionNiche')) {
+    return 8
+  }
+
+  if (context.formulaId && key === 'outfitFormula') {
+    return 8
+  }
+
+  return 0
+}
+
+function selectPrimaryStrategy(results: StrategyScoreResult[], context: RecommendationScoringContext) {
+  const eligible = results.filter((result) => result.score >= 72)
+
+  if (eligible.length === 0) {
+    return null
+  }
+
+  const averageScore = average(results.map((result) => result.score), 60)
+  const ranked = eligible
+    .map((result) => {
+      const distinctiveness = Math.max(0, result.score - averageScore)
+      const genericPenalty = PRIMARY_STRATEGY_GENERIC_PENALTY[result.key] ?? 0
+      const recallBoost = getRecallSourcePrimaryBoost(result.key, context)
+
+      return {
+        ...result,
+        primaryScore: result.score + distinctiveness * 0.55 + recallBoost - genericPenalty
+      }
+    })
+    .sort((left, right) => {
+      if (right.primaryScore !== left.primaryScore) {
+        return right.primaryScore - left.primaryScore
+      }
+
+      return right.score - left.score
+    })
+
+  const best = ranked[0]
+
+  if (!best) {
+    return null
+  }
+
+  if (best.key === 'capsuleWardrobe') {
+    const bestNonCapsule = ranked.find((result) => result.key !== 'capsuleWardrobe')
+
+    if (bestNonCapsule && bestNonCapsule.score >= best.score - 8) {
+      return bestNonCapsule.key
+    }
+  }
+
+  return best.key
+}
+
+function buildStrategySummaryKeys(results: StrategyScoreResult[], primaryStrategy: RecommendationStrategyKey | null) {
+  const summaryKeys = primaryStrategy ? [primaryStrategy] : []
+
+  for (const result of [...results].sort((left, right) => right.score - left.score)) {
+    if (result.score < 72 || summaryKeys.includes(result.key)) {
+      continue
+    }
+
+    summaryKeys.push(result.key)
+
+    if (summaryKeys.length >= 3) {
+      break
+    }
+  }
+
+  return summaryKeys
 }
 
 function selectedItems(outfit: EvaluatedOutfit) {
@@ -351,9 +440,15 @@ export function scoreRecommendationCandidate(
   const strategyEvaluation = scoreRecommendationStrategies(candidate.outfit, context)
   const strategyResults = strategyEvaluation.results
   const strategyAverage = average(strategyResults.map((result) => result.score), 60)
-  const explanation = strategyResults
-    .filter((result) => result.score >= 72)
-    .sort((left, right) => right.score - left.score)
+  const primaryStrategy = selectPrimaryStrategy(strategyResults, context)
+  const strategySummaryKeys = buildStrategySummaryKeys(strategyResults, primaryStrategy)
+  const explanationResults = [
+    primaryStrategy ? strategyResults.find((result) => result.key === primaryStrategy) ?? null : null,
+    ...strategyResults
+      .filter((result) => result.score >= 72 && result.key !== primaryStrategy)
+      .sort((left, right) => right.score - left.score)
+  ].filter((result): result is StrategyScoreResult => Boolean(result))
+  const explanation = explanationResults
     .slice(0, 4)
     .map((result) => result.explanation)
   const explanationQuality = clampScore(56 + Math.min(34, explanation.length * 10))
@@ -389,6 +484,8 @@ export function scoreRecommendationCandidate(
     ruleScores,
     compatibilityScores,
     strategyScores: strategyEvaluation.scoreMap,
+    primaryStrategy,
+    strategySummaryKeys,
     componentScores,
     penalties,
     explanation: explanation.length > 0 ? explanation : ['这套主要由规则基线兜底推荐，模型或策略信号不足时仍保持可解释。'],

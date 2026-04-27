@@ -1,6 +1,7 @@
 'use client'
 
 import { ChangeEvent, type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
 import { SecondaryButton } from '@/components/ui/button'
 import {
   createDefaultCropBox,
@@ -199,7 +200,14 @@ export function ClosetCollageSplitter({ disabled = false, onSplitComplete }: Clo
             onPointerUp={endDrag}
             onPointerLeave={endDrag}
           >
-            <img src={previewUrl} alt="拼图预览" className="h-full w-full object-contain" />
+            <Image
+              src={previewUrl}
+              alt="拼图预览"
+              fill
+              unoptimized
+              className="object-contain"
+              sizes="(max-width: 768px) 100vw, 420px"
+            />
 
             {cropBoxes.map((box, index) => (
               <button

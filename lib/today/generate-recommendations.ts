@@ -1,5 +1,6 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import {
+  getColorDefinition,
   isAccessoryCategory,
   isBagCategory,
   isBottomCategory,
@@ -13,6 +14,7 @@ import {
 } from '@/lib/closet/taxonomy'
 import { buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
 import { getLegacyWeightedRuleScore, scoreRecommendationCandidate } from '@/lib/recommendation/canonical-scoring'
+import type { RecommendationStrategyKey } from '@/lib/recommendation/canonical-types'
 import type { CandidateModelScoreMap, EntityModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { DEFAULT_PREFERENCE_PROFILE, DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
 import { isGoodInspirationCandidate } from '@/lib/recommendation/exploration'
@@ -24,6 +26,7 @@ import {
   getItemWeatherSuitability,
   rankItemsForRecommendation
 } from '@/lib/recommendation/outfit-evaluator'
+import { getRecommendationStrategyDisplay } from '@/lib/recommendation/strategy-display'
 import type { RecommendationTrendSignal } from '@/lib/recommendation/trends'
 import type { InspirationCandidateSignals, PreferenceProfile, PreferredScene, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
 import type {
@@ -236,6 +239,16 @@ function getWearFreshnessScore(item: ClosetItemCardData) {
   return getItemFreshnessScore(item) / 10
 }
 
+function getNonNeutralFamilyMatchScore(item: ClosetItemCardData, referenceItems: ClosetItemCardData[]) {
+  const itemColor = getColorDefinition(item.colorCategory)
+
+  if (!itemColor || isNeutralColor(item.colorCategory)) {
+    return 0
+  }
+
+  return referenceItems.some((reference) => getColorDefinition(reference.colorCategory)?.family === itemColor.family) ? 5 : 0
+}
+
 function average(numbers: number[]) {
   if (numbers.length === 0) {
     return 0
@@ -301,10 +314,11 @@ function pickBestMatchingItem({
   return [...candidates].sort((left, right) => {
     const scoreItem = (item: ClosetItemCardData) => {
       const colorScore = average(referenceItems.map((reference) => scoreColorCompatibility(item.colorCategory, reference.colorCategory))) * 4
-      const styleScore = average(referenceItems.map((reference) => countSharedStyleTags(item.styleTags, reference.styleTags))) * 3
+      const styleScore = average(referenceItems.map((reference) => countSharedStyleTags(item.styleTags, reference.styleTags))) * 4
       const sceneScore = includeScene ? getSceneMatchScore(item, profile) : 0
       const weatherScore = includeWeather ? getWeatherMatchScore(item, weather) : 0
-      return colorScore + styleScore + sceneScore + weatherScore + getWearFreshnessScore(item)
+      const familyMatchScore = getNonNeutralFamilyMatchScore(item, referenceItems)
+      return colorScore + styleScore + familyMatchScore + sceneScore + weatherScore + getWearFreshnessScore(item)
     }
     const scoreDelta = scoreItem(right) - scoreItem(left)
 
@@ -641,6 +655,7 @@ function toRecommendation(
     componentScores,
     totalScore: scoreBreakdown?.totalScore ?? score,
     scoreBreakdown,
+    primaryStrategy: scoreBreakdown?.primaryStrategy ?? null,
     modelScores: scoreBreakdown?.modelScores,
     modelRunId: scoreBreakdown?.modelScores.modelRunId ?? null,
     formulaId: draft.formulaId ?? null,
@@ -711,21 +726,14 @@ function buildRecommendationCandidates(
   const accessories = rankItemsForRecommendation(items.filter((item) => isAccessoryCategory(item.category)), rankContext)
   const candidates: RecommendationCandidate[] = []
   const seenDraftIds = new Set<string>()
-  const finishDraft = (draft: OutfitDraft) => {
-    if (seenDraftIds.has(draft.id)) {
+
+  const pushCompletedDraft = (completedDraft: OutfitDraft) => {
+    if (seenDraftIds.has(completedDraft.id)) {
       return
     }
 
-    seenDraftIds.add(draft.id)
-    const completedDraft = addCompletionSlots({
-      draft,
-      outerLayers,
-      shoes,
-      bags,
-      accessories,
-      weather,
-      profile
-    })
+    seenDraftIds.add(completedDraft.id)
+    const completedDraftModelScore = modelScoreMap[completedDraft.id]
     const scoredCandidate = scoreRecommendationCandidate({
       id: completedDraft.id,
       surface: 'today',
@@ -740,7 +748,7 @@ function buildRecommendationCandidates(
         recallSource: completedDraft.recallSource ?? 'rule',
         effortLevel: profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority ? 'low' : 'medium'
       }
-    }, modelScoreMap[completedDraft.id])
+    }, completedDraftModelScore)
     const componentScores = scoredCandidate.scoreBreakdown.componentScores
     const preferenceWeightedScore = getLegacyWeightedRuleScore(componentScores, weights)
     const score = scoredCandidate.scoreBreakdown.modelScores.status === 'active'
@@ -759,6 +767,63 @@ function buildRecommendationCandidates(
       draft: completedDraft,
       recommendation: toRecommendation(completedDraft, componentScores, score, weather, profile, weights, scoreBreakdown, targetDate, scene)
     })
+  }
+
+  const finishDraft = (draft: OutfitDraft) => {
+    if (seenDraftIds.has(draft.id)) {
+      return
+    }
+
+    const completedDraft = addCompletionSlots({
+      draft,
+      outerLayers,
+      shoes,
+      bags,
+      accessories,
+      weather,
+      profile
+    })
+
+    pushCompletedDraft(completedDraft)
+
+    const referenceItems = [...buildCoreReferenceItems(completedDraft), completedDraft.outerLayer].filter((item): item is ClosetItemCardData => item !== null)
+    const alternateBag = completedDraft.bag
+      ? pickBestMatchingItem({
+          referenceItems,
+          candidates: bags.filter((bag) => bag.id !== completedDraft.bag?.id),
+          profile,
+          weather,
+          includeScene: true
+        })
+      : null
+    const alternateShoes = completedDraft.shoes
+      ? pickBestMatchingItem({
+          referenceItems,
+          candidates: shoes.filter((shoe) => shoe.id !== completedDraft.shoes?.id),
+          profile,
+          weather,
+          includeScene: true,
+          includeWeather: true
+        })
+      : null
+
+    if (alternateBag) {
+      pushCompletedDraft({
+        ...completedDraft,
+        id: `${completedDraft.id}-bag-${alternateBag.id}`,
+        bag: alternateBag,
+        accessories: [...completedDraft.accessories]
+      })
+    }
+
+    if (alternateShoes) {
+      pushCompletedDraft({
+        ...completedDraft,
+        id: `${completedDraft.id}-shoes-${alternateShoes.id}`,
+        shoes: alternateShoes,
+        accessories: [...completedDraft.accessories]
+      })
+    }
   }
 
   const formulaCandidates = rankOutfitFormulas({ profile, weather }).slice(0, 5)
@@ -1105,6 +1170,110 @@ function getRecommendationItems(recommendation: TodayRecommendation) {
   ].filter((item): item is TodayRecommendationItem => Boolean(item))
 }
 
+function getRecommendationFinishers(recommendation: TodayRecommendation) {
+  return [
+    recommendation.shoes,
+    recommendation.bag,
+    ...(recommendation.accessories ?? [])
+  ].filter((item): item is TodayRecommendationItem => Boolean(item))
+}
+
+function getRecommendationPrimaryStrategy(recommendation: TodayRecommendation) {
+  return recommendation.primaryStrategy ?? recommendation.scoreBreakdown?.primaryStrategy ?? null
+}
+
+function getStrategyName(strategy: RecommendationStrategyKey | null | undefined) {
+  return strategy ? getRecommendationStrategyDisplay(strategy).name : ''
+}
+
+function getRecommendationOutfitKind(recommendation: TodayRecommendation) {
+  if (recommendation.dress) {
+    return 'onePiece'
+  }
+
+  if (recommendation.top && recommendation.bottom) {
+    return 'separates'
+  }
+
+  return 'partial'
+}
+
+function describeRecommendationCore(recommendation: TodayRecommendation) {
+  if (recommendation.dress) {
+    return recommendation.dress.subCategory ?? recommendation.dress.category
+  }
+
+  if (recommendation.top && recommendation.bottom) {
+    return `${recommendation.top.subCategory ?? recommendation.top.category}配${recommendation.bottom.subCategory ?? recommendation.bottom.category}`
+  }
+
+  return recommendation.top?.subCategory ?? recommendation.bottom?.subCategory ?? recommendation.top?.category ?? recommendation.bottom?.category ?? '主组合'
+}
+
+function getRecommendationColors(recommendation: TodayRecommendation) {
+  return [...new Set(getRecommendationItems(recommendation).map((item) => item.colorCategory).filter((color): color is string => Boolean(color)))]
+}
+
+function buildBatchDifferenceHighlight(current: TodayRecommendation, previous: TodayRecommendation) {
+  const currentPrimary = getRecommendationPrimaryStrategy(current)
+  const previousPrimary = getRecommendationPrimaryStrategy(previous)
+
+  if (currentPrimary && previousPrimary && currentPrimary !== previousPrimary) {
+    return `和上一套拉开差异：这套主打${getStrategyName(currentPrimary)}，上一套主打${getStrategyName(previousPrimary)}，决策理由不是重复同一套安全模板`
+  }
+
+  const currentKind = getRecommendationOutfitKind(current)
+  const previousKind = getRecommendationOutfitKind(previous)
+
+  if (currentKind !== previousKind) {
+    return `和上一套拉开差异：主轮廓换成${currentKind === 'onePiece' ? '一件式' : currentKind === 'separates' ? '上下装' : '单品起步'}，不是只替换颜色`
+  }
+
+  const previousColors = new Set(getRecommendationColors(previous))
+  const newColors = getRecommendationColors(current).filter((color) => !previousColors.has(color))
+
+  if (newColors.length > 0) {
+    return `和上一套拉开差异：新增${newColors.slice(0, 3).join(' / ')}，颜色组合有变化但仍保持低冲突`
+  }
+
+  const previousFinisherIds = new Set(getRecommendationFinishers(previous).map((item) => item.id))
+  const newFinishers = getRecommendationFinishers(current).filter((item) => !previousFinisherIds.has(item.id))
+
+  if (newFinishers.length > 0) {
+    return `和上一套拉开差异：鞋包配饰换成${newFinishers.map((item) => item.subCategory ?? item.category).slice(0, 2).join(' / ')}，收尾方式不同`
+  }
+
+  return `和上一套拉开差异：主组合换成${describeRecommendationCore(current)}，不是复用同一组核心单品`
+}
+
+function withBatchDifferenceHighlights(recommendations: TodayRecommendation[]) {
+  return recommendations.map((recommendation, index) => {
+    const previous = recommendations[index - 1]
+
+    if (!previous) {
+      return recommendation
+    }
+
+    const difference = buildBatchDifferenceHighlight(recommendation, previous)
+    const existingHighlights = (recommendation.reasonHighlights ?? [recommendation.reason]).filter(Boolean)
+    const firstHighlight = existingHighlights[0] ?? recommendation.reason
+    const reasonHighlights = [
+      firstHighlight,
+      difference,
+      ...existingHighlights.slice(1)
+    ].filter((highlight, highlightIndex, highlights) => highlights.indexOf(highlight) === highlightIndex).slice(0, 3)
+    const reason = recommendation.reason.includes(difference)
+      ? recommendation.reason
+      : buildReason([recommendation.reason, difference])
+
+    return {
+      ...recommendation,
+      reason,
+      reasonHighlights
+    }
+  })
+}
+
 function getDiversityScore(candidate: RecommendationCandidate, baselineRecommendations: TodayRecommendation[]) {
   const baselineIds = new Set(baselineRecommendations.flatMap(getRecommendationItems).map((item) => item.id))
   const baselineColors = new Set(baselineRecommendations.flatMap(getRecommendationItems).map((item) => item.colorCategory).filter(Boolean))
@@ -1172,33 +1341,66 @@ function buildRecommendationBatch(candidates: RecommendationCandidate[], offset:
   const windowStart = (Math.max(0, offset) * 3) % candidates.length
   const rotatedCandidates = [...candidates.slice(windowStart), ...candidates.slice(0, windowStart)]
   const selected: TodayRecommendation[] = []
+  const selectedCandidateIds = new Set<string>()
   const usedMainIds = new Set<string>()
+  const rotatedOrder = new Map(rotatedCandidates.map((candidate, index) => [candidate.recommendation.id, index]))
 
-  for (const candidate of rotatedCandidates) {
-    const conflicts = candidate.mainIds.some((id) => usedMainIds.has(id))
+  function getBatchSelectionScore(candidate: RecommendationCandidate) {
+    const orderBias = Math.max(0, 30 - (rotatedOrder.get(candidate.recommendation.id) ?? 0) * 3)
 
-    if (conflicts && rotatedCandidates.length > 3) {
-      continue
+    if (selected.length === 0) {
+      return candidate.score + orderBias
     }
 
-    selected.push(candidate.recommendation)
-    candidate.mainIds.forEach((id) => usedMainIds.add(id))
+    const selectedPrimaryStrategies = new Set(selected.map(getRecommendationPrimaryStrategy).filter(Boolean))
+    const selectedRecallSources = new Set(selected.map((recommendation) => recommendation.recallSource).filter(Boolean))
+    const selectedOutfitKinds = new Set(selected.map(getRecommendationOutfitKind))
+    const selectedFinisherIds = new Set(selected.flatMap(getRecommendationFinishers).map((item) => item.id))
+    const candidateFinishers = [
+      candidate.draft.shoes,
+      candidate.draft.bag,
+      ...candidate.draft.accessories
+    ].filter((item): item is ClosetItemCardData => Boolean(item))
+    const repeatedFinisherCount = candidateFinishers.filter((item) => selectedFinisherIds.has(item.id)).length
+    const primaryStrategy = getRecommendationPrimaryStrategy(candidate.recommendation)
+    const recallSource = candidate.recommendation.recallSource
+    const diversityScore = getDiversityScore(candidate, selected)
 
-    if (selected.length === 3) {
-      return selected
-    }
+    return (
+      candidate.score +
+      orderBias * 0.2 +
+      diversityScore * 0.38 +
+      (primaryStrategy ? !selectedPrimaryStrategies.has(primaryStrategy) ? 14 : -10 : 0) +
+      (recallSource && !selectedRecallSources.has(recallSource) ? 6 : 0) +
+      (!selectedOutfitKinds.has(candidate.draft.outfitKind) ? 8 : 0) -
+      repeatedFinisherCount * 18
+    )
   }
 
-  for (const candidate of rotatedCandidates) {
-    if (selected.some((item) => item.id === candidate.recommendation.id)) {
-      continue
+  while (selected.length < 3 && selectedCandidateIds.size < rotatedCandidates.length) {
+    const remainingCandidates = rotatedCandidates.filter((candidate) => !selectedCandidateIds.has(candidate.recommendation.id))
+    const nonConflictingCandidates = remainingCandidates.filter((candidate) => candidate.mainIds.every((id) => !usedMainIds.has(id)))
+    const candidatePool = nonConflictingCandidates.length > 0 ? nonConflictingCandidates : remainingCandidates
+    const nextCandidate = candidatePool
+      .map((candidate) => ({
+        candidate,
+        selectionScore: getBatchSelectionScore(candidate)
+      }))
+      .sort((left, right) => {
+        if (right.selectionScore !== left.selectionScore) {
+          return right.selectionScore - left.selectionScore
+        }
+
+        return (rotatedOrder.get(left.candidate.recommendation.id) ?? 0) - (rotatedOrder.get(right.candidate.recommendation.id) ?? 0)
+      })[0]?.candidate ?? null
+
+    if (!nextCandidate) {
+      break
     }
 
-    selected.push(candidate.recommendation)
-
-    if (selected.length === 3) {
-      return selected
-    }
+    selected.push(nextCandidate.recommendation)
+    selectedCandidateIds.add(nextCandidate.recommendation.id)
+    nextCandidate.mainIds.forEach((id) => usedMainIds.add(id))
   }
 
   return selected
@@ -1284,11 +1486,13 @@ export function generateTodayRecommendations(
     })
   }
 
-  return maybeInsertInspirationRecommendation({
+  const finalRecommendations = maybeInsertInspirationRecommendation({
     recommendations,
     candidates,
     preferenceState,
     weather,
     targetScenes
   }).slice(0, 3)
+
+  return withBatchDifferenceHighlights(finalRecommendations)
 }

@@ -50,6 +50,21 @@ describe('strategy display metadata', () => {
     expect(rows.find((row) => row.key === 'trendOverlay')?.level).toBe('weak')
   })
 
+  it('keeps the explicit primary strategy at the front even when another strategy has a higher score', () => {
+    const rows = buildRecommendationStrategyRows(strategyScores({
+      capsuleWardrobe: 98,
+      proportionBalance: 88
+    }), {
+      primaryStrategy: 'proportionBalance'
+    })
+
+    expect(rows[0]).toMatchObject({
+      key: 'proportionBalance',
+      level: 'primary'
+    })
+    expect(rows.find((row) => row.key === 'capsuleWardrobe')?.level).toBe('supporting')
+  })
+
   it('returns no rows when a recommendation has no strategy scores yet', () => {
     expect(buildRecommendationStrategyRows(null)).toEqual([])
   })

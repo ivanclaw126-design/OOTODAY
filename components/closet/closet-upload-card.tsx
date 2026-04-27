@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { FeedbackLink } from '@/components/beta/feedback-link'
 import { ClosetUploadForm } from '@/components/closet/closet-upload-form'
@@ -547,7 +548,16 @@ export function ClosetUploadCard({ userId, storageBucket, analyzeUpload, analyze
             )}
 
             {currentUpload?.phase === 'analyzing' && currentUpload.previewUrl ? (
-              <img src={currentUpload.previewUrl} alt="本地预览" className="aspect-square w-full rounded-[1rem] object-cover" />
+              <div className="relative aspect-square w-full overflow-hidden rounded-[1rem]">
+                <Image
+                  src={currentUpload.previewUrl}
+                  alt="本地预览"
+                  fill
+                  unoptimized
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 420px"
+                />
+              </div>
             ) : null}
 
             {currentUpload?.phase === 'analyzing' ? <p className="text-sm text-[var(--color-neutral-dark)]">AI 正在分析图片</p> : null}

@@ -854,6 +854,282 @@ describe('generateTodayRecommendations', () => {
     expect(recommendations.every((recommendation) => recommendation.mode !== 'inspiration')).toBe(true)
   })
 
+  it('keeps primary strategies and finisher items varied across a rich Today batch', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items: [
+        {
+          id: 'top-blue-shirt',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '浅蓝衬衫',
+          colorCategory: '浅蓝色',
+          styleTags: ['通勤', 'classic'],
+          algorithmMeta: { formality: 4, comfortLevel: 3, silhouette: ['短款'] },
+          lastWornDate: null,
+          wearCount: 3,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'bottom-navy-trouser',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '藏蓝西裤',
+          colorCategory: '藏蓝色',
+          styleTags: ['通勤', 'classic'],
+          algorithmMeta: { formality: 4, comfortLevel: 3, silhouette: ['高腰', '直筒'] },
+          lastWornDate: null,
+          wearCount: 3,
+          createdAt: '2026-04-19T10:01:00Z'
+        },
+        {
+          id: 'top-white-tee',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '白色T恤',
+          colorCategory: '白色',
+          styleTags: ['基础', '休闲'],
+          algorithmMeta: { formality: 2, comfortLevel: 5 },
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-19T10:02:00Z'
+        },
+        {
+          id: 'bottom-jeans',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '牛仔裤',
+          colorCategory: '牛仔蓝',
+          styleTags: ['休闲', 'denim'],
+          algorithmMeta: { formality: 2, comfortLevel: 4, silhouette: ['高腰', '直筒'] },
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-19T10:03:00Z'
+        },
+        {
+          id: 'top-black-tee',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '黑色T恤',
+          colorCategory: '黑色',
+          styleTags: ['基础', '运动'],
+          algorithmMeta: { formality: 2, comfortLevel: 5 },
+          lastWornDate: '2026-04-21',
+          wearCount: 2,
+          createdAt: '2026-04-19T10:04:00Z'
+        },
+        {
+          id: 'bottom-olive-cargo',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '橄榄绿工装裤',
+          colorCategory: '橄榄绿',
+          styleTags: ['户外', '运动'],
+          algorithmMeta: { formality: 2, comfortLevel: 5, silhouette: ['直筒'] },
+          lastWornDate: '2026-04-21',
+          wearCount: 2,
+          createdAt: '2026-04-19T10:05:00Z'
+        },
+        {
+          id: 'shoes-black-loafer',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '黑色乐福鞋',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          algorithmMeta: { formality: 4, comfortLevel: 4 },
+          lastWornDate: null,
+          wearCount: 2,
+          createdAt: '2026-04-19T10:06:00Z'
+        },
+        {
+          id: 'shoes-white-sneaker',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '白色运动鞋',
+          colorCategory: '白色',
+          styleTags: ['休闲', '舒适'],
+          algorithmMeta: { formality: 2, comfortLevel: 5 },
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-19T10:07:00Z'
+        },
+        {
+          id: 'shoes-olive-sneaker',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '橄榄绿运动鞋',
+          colorCategory: '橄榄绿',
+          styleTags: ['户外', '舒适'],
+          algorithmMeta: { formality: 2, comfortLevel: 5 },
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-19T10:08:00Z'
+        },
+        {
+          id: 'bag-black-tote',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '黑色托特包',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          algorithmMeta: { formality: 4 },
+          lastWornDate: null,
+          wearCount: 2,
+          createdAt: '2026-04-19T10:09:00Z'
+        },
+        {
+          id: 'bag-white-crossbody',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '白色斜挎包',
+          colorCategory: '白色',
+          styleTags: ['休闲'],
+          algorithmMeta: { formality: 2 },
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-19T10:10:00Z'
+        },
+        {
+          id: 'bag-olive-crossbody',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '橄榄绿斜挎包',
+          colorCategory: '橄榄绿',
+          styleTags: ['户外'],
+          algorithmMeta: { formality: 2 },
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-19T10:11:00Z'
+        },
+        {
+          id: 'cap-navy',
+          imageUrl: null,
+          category: '配饰',
+          subCategory: '藏蓝帽子',
+          colorCategory: '藏蓝色',
+          styleTags: ['休闲'],
+          lastWornDate: null,
+          wearCount: 1,
+          createdAt: '2026-04-19T10:12:00Z'
+        }
+      ],
+      weather: null,
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: false,
+            rate: 0
+          },
+          slotPreference: {
+            ...preferenceState.profile.slotPreference,
+            accessories: true
+          }
+        }
+      }
+    })
+
+    const primaryStrategies = recommendations.map((recommendation) => recommendation.scoreBreakdown?.primaryStrategy).filter(Boolean)
+    const shoeIds = recommendations.map((recommendation) => recommendation.shoes?.id).filter(Boolean)
+    const bagIds = recommendations.map((recommendation) => recommendation.bag?.id).filter(Boolean)
+
+    expect(recommendations).toHaveLength(3)
+    expect(new Set(primaryStrategies).size).toBeGreaterThan(1)
+    expect(new Set(shoeIds).size).toBeGreaterThan(1)
+    expect(new Set(bagIds).size).toBeGreaterThan(1)
+  })
+
+  it('adds batch-difference wording when adjacent recommendations could otherwise read alike', () => {
+    const recommendations = generateTodayRecommendations({
+      items: [
+        {
+          id: 'safe-top-1',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '白色T恤',
+          colorCategory: '白色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 2,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'safe-bottom-1',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '黑色西裤',
+          colorCategory: '黑色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 2,
+          createdAt: '2026-04-19T10:01:00Z'
+        },
+        {
+          id: 'safe-top-2',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '灰色T恤',
+          colorCategory: '灰色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 2,
+          createdAt: '2026-04-19T10:02:00Z'
+        },
+        {
+          id: 'safe-bottom-2',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '藏蓝长裤',
+          colorCategory: '藏蓝色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 2,
+          createdAt: '2026-04-19T10:03:00Z'
+        },
+        {
+          id: 'safe-shoes',
+          imageUrl: null,
+          category: '鞋履',
+          subCategory: '黑色乐福鞋',
+          colorCategory: '黑色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 2,
+          createdAt: '2026-04-19T10:04:00Z'
+        },
+        {
+          id: 'safe-bag',
+          imageUrl: null,
+          category: '包袋',
+          subCategory: '黑色托特包',
+          colorCategory: '黑色',
+          styleTags: ['基础'],
+          lastWornDate: null,
+          wearCount: 2,
+          createdAt: '2026-04-19T10:05:00Z'
+        }
+      ],
+      weather: null,
+      preferenceState: {
+        ...resetRecommendationPreferences(),
+        profile: {
+          ...resetRecommendationPreferences().profile,
+          exploration: {
+            ...resetRecommendationPreferences().profile.exploration,
+            enabled: false,
+            rate: 0
+          }
+        }
+      }
+    })
+
+    expect(recommendations[1]?.reasonHighlights?.some((highlight) => highlight.includes('和上一套拉开差异'))).toBe(true)
+    expect(recommendations[1]?.reason).toContain('和上一套拉开差异')
+  })
+
   it('falls back to single-item recommendations when the closet lacks full outfits', () => {
     const recommendations = generateTodayRecommendations({
       items: [

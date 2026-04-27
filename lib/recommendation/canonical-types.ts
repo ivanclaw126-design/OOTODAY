@@ -73,6 +73,8 @@ export type RecommendationScoreBreakdown = {
   ruleScores: RecommendationRuleScores
   compatibilityScores: RecommendationCompatibilityScores
   strategyScores: RecommendationStrategyScores
+  primaryStrategy?: RecommendationStrategyKey | null
+  strategySummaryKeys?: RecommendationStrategyKey[]
   componentScores: ScoreWeights
   penalties: RecommendationPenalty[]
   explanation: string[]

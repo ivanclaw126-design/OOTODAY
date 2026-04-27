@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import type {
+  RecommendationScoreBreakdown,
   RecommendationStrategyKey,
   RecommendationStrategyScores
 } from '@/lib/recommendation/canonical-types'
 import {
   buildRecommendationStrategyRows,
+  buildRecommendationStrategySummaryRows,
   type RecommendationStrategyDisplayRow,
   type RecommendationStrategyVisualType
 } from '@/lib/recommendation/strategy-display'
@@ -190,14 +192,18 @@ function getLevelLabel(row: RecommendationStrategyDisplayRow) {
 }
 
 export function TodayStrategyScorePanel({
+  scoreBreakdown,
   strategyScores
 }: {
+  scoreBreakdown?: RecommendationScoreBreakdown | null
   strategyScores?: Partial<RecommendationStrategyScores> | null
 }) {
   const [openKey, setOpenKey] = useState<RecommendationStrategyKey | null>(null)
   const [showAll, setShowAll] = useState(false)
-  const rows = buildRecommendationStrategyRows(strategyScores)
-  const summaryRows = rows.slice(0, 3)
+  const rows = buildRecommendationStrategyRows(scoreBreakdown?.strategyScores ?? strategyScores, {
+    primaryStrategy: scoreBreakdown?.primaryStrategy ?? null
+  })
+  const summaryRows = scoreBreakdown ? buildRecommendationStrategySummaryRows(scoreBreakdown) : rows.slice(0, 3)
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -219,7 +225,7 @@ export function TodayStrategyScorePanel({
       <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">策略摘要</p>
-          <h3 className="text-sm font-semibold text-[var(--color-primary)]">推荐引擎最主要的 3 个判断</h3>
+          <h3 className="text-sm font-semibold text-[var(--color-primary)]">这套最能说明差异的 3 个判断</h3>
         </div>
         <p className="text-xs leading-5 text-[var(--color-neutral-dark)]">完整评分默认收起，避免打断穿搭决策。</p>
       </div>

@@ -1,3 +1,5 @@
+import Image from 'next/image'
+
 export function ClosetItemImage({
   src,
   alt,
@@ -13,10 +15,13 @@ export function ClosetItemImage({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <img
+      <Image
         src={src}
         alt={alt}
-        className={`absolute inset-0 h-full w-full ${fitClass} ${className ?? ''}`.trim()}
+        fill
+        unoptimized
+        className={`${fitClass} ${className ?? ''}`.trim()}
+        sizes="(max-width: 768px) 50vw, 240px"
       />
     </div>
   )

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { TodayPage } from '@/components/today/today-page'
@@ -457,7 +457,7 @@ describe('TodayPage', () => {
     expect(await screen.findByText('按今天的户外、天气和最近穿着整理')).toBeInTheDocument()
   })
 
-  it('opens the city form directly under the city button', () => {
+  it('opens the city form inside 今日状态', () => {
     render(
       <TodayPage
         view={{
@@ -482,15 +482,19 @@ describe('TodayPage', () => {
       />
     )
 
-    const cityButton = screen.getByRole('button', { name: '修改城市' })
+    const statusSection = screen.getByText('今日状态').closest('section')
+    expect(statusSection).not.toBeNull()
+
+    const cityButton = within(statusSection as HTMLElement).getByRole('button', { name: '修改城市' })
     fireEvent.click(cityButton)
 
     const cityInput = screen.getByRole('textbox', { name: '常住城市' })
     expect(cityInput).toBeInTheDocument()
+    expect(statusSection?.contains(cityInput)).toBe(true)
     expect(cityButton.compareDocumentPosition(cityInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('opens the city form from the city weather prompt and hides the prompt after save', async () => {
+  it('opens the city form from 今日状态 and hides the city prompt after save', async () => {
     render(
       <TodayPage
         view={{
@@ -516,7 +520,10 @@ describe('TodayPage', () => {
     )
 
     expect(screen.getByText('填写常住城市，可获得更准推荐')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: '修改城市' }))
+    const statusSection = screen.getByText('今日状态').closest('section')
+    expect(statusSection).not.toBeNull()
+
+    fireEvent.click(within(statusSection as HTMLElement).getByRole('button', { name: '设置城市' }))
     fireEvent.change(screen.getByRole('textbox', { name: '常住城市' }), { target: { value: '上海' } })
     fireEvent.click(screen.getByRole('button', { name: '保存城市' }))
 
@@ -591,7 +598,7 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByText('推荐引擎最主要的 3 个判断')).toBeInTheDocument()
+    expect(screen.getByText('这套最能说明差异的 3 个判断')).toBeInTheDocument()
     expect(screen.queryByText('13 个穿搭子策略命中情况')).not.toBeInTheDocument()
     expect(screen.getByText('主命中策略')).toBeInTheDocument()
     expect(screen.queryAllByRole('button', { name: /查看.*策略说明/u })).toHaveLength(0)

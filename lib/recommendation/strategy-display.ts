@@ -1,6 +1,7 @@
 import {
   RECOMMENDATION_STRATEGY_KEYS,
   type RecommendationStrategyKey,
+  type RecommendationScoreBreakdown,
   type RecommendationStrategyScores
 } from '@/lib/recommendation/canonical-types'
 
@@ -141,8 +142,8 @@ function clampDisplayScore(score: number | null | undefined) {
   return Math.max(0, Math.min(100, Math.round(score)))
 }
 
-function getHitLevel(score: number, index: number): RecommendationStrategyHitLevel {
-  if (index === 0) {
+function getHitLevel(score: number, index: number, key: RecommendationStrategyKey, primaryStrategy: RecommendationStrategyKey | null) {
+  if (key === primaryStrategy || (!primaryStrategy && index === 0)) {
     return 'primary'
   }
 
@@ -169,11 +170,16 @@ export function getRecommendationStrategyDisplayList(): RecommendationStrategyDi
 }
 
 export function buildRecommendationStrategyRows(
-  strategyScores: Partial<RecommendationStrategyScores> | null | undefined
+  strategyScores: Partial<RecommendationStrategyScores> | null | undefined,
+  options: {
+    primaryStrategy?: RecommendationStrategyKey | null
+  } = {}
 ): RecommendationStrategyDisplayRow[] {
   if (!strategyScores) {
     return []
   }
+
+  const primaryStrategy = options.primaryStrategy ?? null
 
   return RECOMMENDATION_STRATEGY_KEYS
     .map((key) => ({
@@ -181,6 +187,14 @@ export function buildRecommendationStrategyRows(
       score: clampDisplayScore(strategyScores[key])
     }))
     .sort((left, right) => {
+      if (left.key === primaryStrategy && right.key !== primaryStrategy) {
+        return -1
+      }
+
+      if (right.key === primaryStrategy && left.key !== primaryStrategy) {
+        return 1
+      }
+
       if (right.score !== left.score) {
         return right.score - left.score
       }
@@ -190,6 +204,40 @@ export function buildRecommendationStrategyRows(
     .map((row, index) => ({
       ...row,
       rank: index + 1,
-      level: getHitLevel(row.score, index)
+      level: getHitLevel(row.score, index, row.key, primaryStrategy)
     }))
+}
+
+export function buildRecommendationStrategySummaryRows(
+  scoreBreakdown: Pick<RecommendationScoreBreakdown, 'strategyScores' | 'primaryStrategy' | 'strategySummaryKeys'> | null | undefined
+): RecommendationStrategyDisplayRow[] {
+  if (!scoreBreakdown?.strategyScores) {
+    return []
+  }
+
+  const rows = buildRecommendationStrategyRows(scoreBreakdown.strategyScores, {
+    primaryStrategy: scoreBreakdown.primaryStrategy ?? null
+  })
+  const summaryKeys = scoreBreakdown.strategySummaryKeys?.filter((key, index, keys) => keys.indexOf(key) === index) ?? []
+
+  if (summaryKeys.length === 0) {
+    return rows.slice(0, 3)
+  }
+
+  const keyedRows = new Map(rows.map((row) => [row.key, row]))
+  const summaryRows = summaryKeys
+    .map((key) => keyedRows.get(key))
+    .filter((row): row is RecommendationStrategyDisplayRow => Boolean(row))
+
+  for (const row of rows) {
+    if (summaryRows.length >= 3) {
+      break
+    }
+
+    if (!summaryRows.some((item) => item.key === row.key)) {
+      summaryRows.push(row)
+    }
+  }
+
+  return summaryRows.slice(0, 3)
 }

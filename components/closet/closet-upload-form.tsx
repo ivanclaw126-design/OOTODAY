@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { PrimaryButton } from '@/components/ui/button'
 import {
   ClosetCategoryIcon,
@@ -106,7 +107,16 @@ export function ClosetUploadForm({ initialDraft, disabled = false, submitLabel =
     >
       <div className="rounded-[1rem] border border-black/7 bg-[var(--color-secondary)]/35 p-3">
         {draft.imageUrl ? (
-          <img src={draft.imageUrl} alt="衣物预览" className="aspect-square w-full rounded-[0.85rem] object-cover" />
+          <div className="relative aspect-square w-full overflow-hidden rounded-[0.85rem]">
+            <Image
+              src={draft.imageUrl}
+              alt="衣物预览"
+              fill
+              unoptimized
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 420px"
+            />
+          </div>
         ) : (
           <div className="flex aspect-square w-full items-center justify-center rounded-[0.85rem] bg-white text-sm text-[var(--color-neutral-dark)]">
             暂无图片

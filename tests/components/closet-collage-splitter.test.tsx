@@ -7,6 +7,7 @@ const { splitCollageFile } = vi.hoisted(() => ({
 }))
 const createObjectURL = vi.fn()
 const revokeObjectURL = vi.fn()
+const OriginalURL = globalThis.URL
 
 vi.mock('@/lib/closet/split-collage-client', async () => {
   const actual = await vi.importActual<typeof import('@/lib/closet/split-collage-client')>('@/lib/closet/split-collage-client')
@@ -24,10 +25,12 @@ describe('ClosetCollageSplitter', () => {
     createObjectURL.mockImplementation((file: File) => `blob:${file.name}`)
     revokeObjectURL.mockReset()
 
-    vi.stubGlobal('URL', {
-      createObjectURL,
-      revokeObjectURL
-    })
+    class MockURL extends OriginalURL {
+      static createObjectURL = createObjectURL
+      static revokeObjectURL = revokeObjectURL
+    }
+
+    vi.stubGlobal('URL', MockURL)
   })
 
   afterEach(() => {

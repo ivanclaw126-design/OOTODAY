@@ -6,6 +6,16 @@ Phase 11 complete recommendation engine rollout completed on 2026-04-27.
 
 OOTODAY now extends the Phase 10 strict ML foundation into the six missing production-readiness areas from `推荐引擎上线ref.md`: formula-based candidate generation, model-seeded recall, stricter offline evaluation, bounded learning signals, controlled trend dictionary, and configurable training promotion. Today is the full rollout surface; Shop, Inspiration, and Travel consume the shared trend/learning/model context without adding new UI.
 
+## Follow-up Today Strategy Differentiation
+
+Completed on 2026-04-27.
+
+Today recommendation cards now separate "high score" from "primary strategy": canonical scoring writes `primaryStrategy` and `strategySummaryKeys`, the strategy panel uses those fields for its compact summary, and full 13-strategy scores remain available behind the expansion control. Capsule Wardrobe scoring is stricter so basic-color outfits can stay supporting signals without automatically dominating every card.
+
+Today batch selection now rewards different primary strategies, colors, outfit kinds, recall sources, and finishing items while penalizing repeated shoes, bags, and accessories. The generator also creates limited alternate shoe/bag completion variants so the batch selector has real finisher diversity to choose from. Adjacent cards receive a visible "和上一套拉开差异" reason highlight when there is a meaningful strategy, silhouette, color, or finisher difference. No database schema, preference contract, feedback learning, or ML training change was made.
+
+Verification passed: targeted Today / strategy tests, `npm run lint`, full `npm test` (73 files, 333 tests), `npm run build`, and mobile Playwright QA at 390px width on `/today` after logging in with the demo account.
+
 ## Phase 11 Complete Six-Part Recommendation Rollout
 
 ### Files Changed

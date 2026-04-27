@@ -1,5 +1,5 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
-import type { RecommendationModelScores, RecommendationScoreBreakdown } from '@/lib/recommendation/canonical-types'
+import type { RecommendationModelScores, RecommendationScoreBreakdown, RecommendationStrategyKey } from '@/lib/recommendation/canonical-types'
 import type { PreferredScene, ScoreWeights, TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 
 export const TODAY_TARGET_DATES = ['today', 'tomorrow'] as const
@@ -44,6 +44,7 @@ export type TodayRecommendation = {
   componentScores: ScoreWeights
   totalScore?: number
   scoreBreakdown?: RecommendationScoreBreakdown
+  primaryStrategy?: RecommendationStrategyKey | null
   modelScores?: RecommendationModelScores
   modelRunId?: string | null
   formulaId?: string | null
