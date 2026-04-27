@@ -51,12 +51,16 @@ function toShowcaseItem(item: TodayRecommendation['top']): ItemShowcaseEntry | n
   }
 }
 
-function slotRejectedIds(recommendation: TodayRecommendation, slot: TodayReplaceableSlot | null) {
+function slotRejectedIds(recommendation: TodayRecommendation, slot: TodayReplaceableSlot | null, replaceItemId?: string) {
   if (!slot) {
     return []
   }
 
   if (slot === 'accessories') {
+    if (replaceItemId) {
+      return [replaceItemId]
+    }
+
     return (recommendation.accessories ?? []).map((item) => item.id)
   }
 
@@ -66,6 +70,7 @@ function slotRejectedIds(recommendation: TodayRecommendation, slot: TodayReplace
 export function TodayRecommendationCard({
   recommendation,
   index,
+  recommendationSequenceNumber,
   variant = 'compact',
   ootdStatus,
   recordedRecommendationId,
@@ -82,6 +87,7 @@ export function TodayRecommendationCard({
 }: {
   recommendation: TodayRecommendation
   index: number
+  recommendationSequenceNumber?: number
   variant?: 'hero' | 'compact'
   ootdStatus: TodayOotdStatus
   recordedRecommendationId: string | null
@@ -104,20 +110,24 @@ export function TodayRecommendationCard({
   const [showDetails, setShowDetails] = useState(false)
   const [replacingSlot, setReplacingSlot] = useState<TodayReplaceableSlot | null>(null)
   const [pendingReplacementSlot, setPendingReplacementSlot] = useState<TodayReplaceableSlot | null>(null)
+  const [pendingReplacementItemId, setPendingReplacementItemId] = useState<string | null>(null)
   const [replacementError, setReplacementError] = useState<string | null>(null)
   const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
+  const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null)
   const [isVisuallyLowered, setIsVisuallyLowered] = useState(false)
 
   const isRecorded = ootdStatus.status === 'recorded' && recordedRecommendationId === recommendation.id
   const hasRecordedOutfit = ootdStatus.status === 'recorded'
   const rankLabel = String(index + 1).padStart(2, '0')
+  const sequenceLabel = recommendationSequenceNumber ? `今日第 ${recommendationSequenceNumber} 套` : null
   const confidence = recommendation.confidence ?? null
   const isInspiration = recommendation.mode === 'inspiration'
   const reasonHighlights = (recommendation.reasonHighlights ?? []).filter(Boolean).slice(0, 3)
   const role = getTodayDecisionRole({ index, scene, recommendation })
   const missingSlots = recommendation.missingSlots ?? []
   const replaceableSlots = getReplaceableSlots(recommendation)
+  const hasPositiveFeedback = Boolean(feedbackNotice)
   const outfitItems = [
     toShowcaseItem(recommendation.dress),
     toShowcaseItem(recommendation.top),
@@ -163,13 +173,14 @@ export function TodayRecommendationCard({
     }
   }
 
-  async function replaceRecommendationSlot(slot: TodayReplaceableSlot, reasonTags: TodayFeedbackReasonTag[] = []) {
+  async function replaceRecommendationSlot(slot: TodayReplaceableSlot, replaceItemId?: string, reasonTags: TodayFeedbackReasonTag[] = []) {
     setReplacingSlot(slot)
     setReplacementError(null)
     const result = await replaceSlot({
       recommendation,
       slot,
-      rejectedItemIds: slotRejectedIds(recommendation, slot),
+      ...(replaceItemId ? { replaceItemId } : {}),
+      rejectedItemIds: slotRejectedIds(recommendation, slot, replaceItemId),
       reasonTags,
       targetDate,
       scene
@@ -184,8 +195,14 @@ export function TodayRecommendationCard({
   }
 
   async function submitPositiveFeedback() {
+    if (hasPositiveFeedback) {
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
+    setFeedbackError(null)
+    setFeedbackNotice(null)
     const result = await submitPreChoiceFeedback({
       recommendation,
       scope: 'outfit',
@@ -207,12 +224,16 @@ export function TodayRecommendationCard({
         }
       })
       setError(result.error)
+      return
     }
+
+    setFeedbackNotice('AI 穿搭引擎又多懂了你一点。')
   }
 
   async function submitDislikeFeedback() {
     setIsFeedbackSubmitting(true)
     setFeedbackError(null)
+    setFeedbackNotice(null)
     const result = await submitPreChoiceFeedback({
       recommendation,
       scope: 'outfit',
@@ -238,10 +259,11 @@ export function TodayRecommendationCard({
     }
 
     const slot = pendingReplacementSlot
-    const result = await replaceRecommendationSlot(slot)
+    const result = await replaceRecommendationSlot(slot, pendingReplacementItemId ?? undefined)
 
     if (!result.error) {
       setPendingReplacementSlot(null)
+      setPendingReplacementItemId(null)
     }
   }
 
@@ -268,7 +290,10 @@ export function TodayRecommendationCard({
           <SecondaryButton
             type="button"
             disabled={Boolean(replacingSlot)}
-            onClick={() => setPendingReplacementSlot(null)}
+            onClick={() => {
+              setPendingReplacementSlot(null)
+              setPendingReplacementItemId(null)
+            }}
           >
             取消
           </SecondaryButton>
@@ -290,9 +315,17 @@ export function TodayRecommendationCard({
       </button>
     </div>
   ) : (
-    <p className="rounded-[1rem] border border-[var(--color-line)] bg-white/56 px-3 py-2 text-xs font-medium text-[var(--color-neutral-dark)]">
-      {hasRecordedOutfit ? '今天已选择另一套，这套仍可继续反馈。' : '先选择已穿，再用反馈微调推荐。'}
-    </p>
+    <div
+      data-testid="today-decision-prompt"
+      className="space-y-2 rounded-[1rem] border border-[var(--color-line)] bg-white/56 px-3 py-2 text-xs font-medium text-[var(--color-neutral-dark)]"
+    >
+      <p>{hasRecordedOutfit ? '今天已选择另一套，这套仍可继续反馈。' : '先选择已穿，再用反馈微调推荐。'}</p>
+      {feedbackNotice ? (
+        <p role="status" className="border-t border-[var(--color-line)]/70 pt-2 text-sm font-semibold text-[var(--color-primary)]">
+          {feedbackNotice}
+        </p>
+      ) : null}
+    </div>
   )
 
   const decisionControl = (
@@ -309,11 +342,16 @@ export function TodayRecommendationCard({
         </PrimaryButton>
         <PrimaryButton
           type="button"
-          className="min-h-11 border border-[var(--color-primary)]/10 !bg-[var(--color-accent)] px-2 text-xs !text-[var(--color-primary)] shadow-[0_14px_28px_rgba(17,14,9,0.13)] hover:!bg-[var(--color-accent)]/90 hover:shadow-[0_18px_34px_rgba(17,14,9,0.16)]"
-          disabled={isSubmitting || isFeedbackSubmitting}
+          aria-pressed={hasPositiveFeedback}
+          className={`min-h-11 border border-[var(--color-primary)]/10 px-2 text-xs shadow-[0_14px_28px_rgba(17,14,9,0.13)] hover:shadow-[0_18px_34px_rgba(17,14,9,0.16)] ${
+            hasPositiveFeedback
+              ? '!bg-[var(--color-primary)] !text-white'
+              : '!bg-[var(--color-accent)] !text-[var(--color-primary)] hover:!bg-[var(--color-accent)]/90'
+          }`}
+          disabled={isSubmitting || isFeedbackSubmitting || hasPositiveFeedback}
           onClick={() => void submitPositiveFeedback()}
         >
-          {isSubmitting ? '正在记录...' : '还不错'}
+          {isSubmitting ? '正在记录...' : hasPositiveFeedback ? '已反馈' : '还不错'}
         </PrimaryButton>
         <SecondaryButton
           type="button"
@@ -339,7 +377,7 @@ export function TodayRecommendationCard({
               {isInspiration ? '灵感套装' : 'Today outfit'} · {rankLabel}
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className={`${variant === 'hero' ? 'text-2xl' : 'text-xl'} font-semibold tracking-[-0.03em] ${isRecorded ? 'text-[var(--color-accent)] drop-shadow-[0_1px_0_rgba(0,0,0,0.24)]' : 'text-[var(--color-primary)]'}`}>
+              <h2 className={`${variant === 'hero' ? 'text-2xl' : 'text-xl'} bg-[linear-gradient(180deg,transparent_58%,rgba(231,255,55,0.48)_58%)] px-0.5 font-semibold leading-tight tracking-normal text-[var(--color-primary)]`}>
                 {role.label}
               </h2>
               {confidence !== null ? (
@@ -355,6 +393,14 @@ export function TodayRecommendationCard({
             </div>
             <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">{role.description}</p>
           </div>
+          {sequenceLabel ? (
+            <span
+              aria-label={`今天第 ${recommendationSequenceNumber} 套推荐`}
+              className="shrink-0 rounded-full border border-[var(--color-line)] bg-white/84 px-3 py-1.5 text-xs font-semibold text-[var(--color-primary)] shadow-[0_10px_22px_rgba(17,14,9,0.08)]"
+            >
+              {sequenceLabel}
+            </span>
+          ) : null}
         </div>
 
         <TodayOutfitHero
@@ -363,9 +409,10 @@ export function TodayRecommendationCard({
           weatherState={weatherState}
           replaceableSlots={!isRecorded ? replaceableSlots : []}
           replacingSlot={replacingSlot}
-          onRequestReplace={(slot) => {
+          onRequestReplace={(slot, item) => {
             setReplacementError(null)
             setPendingReplacementSlot(slot)
+            setPendingReplacementItemId(item?.id ?? null)
           }}
         />
 

@@ -31,6 +31,7 @@ import type { RecommendationTrendSignal } from '@/lib/recommendation/trends'
 import type { InspirationCandidateSignals, PreferenceProfile, PreferredScene, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
 import type {
   TodayRecommendation,
+  TodayInspirationPolicy,
   TodayRecommendationItem,
   TodayRecommendationMissingSlot,
   TodayScene,
@@ -58,6 +59,10 @@ export type GenerateTodayRecommendationsParams = {
   targetDate?: TodayTargetDate
   scene?: TodayScene
   targetScenes?: PreferredScene[]
+  inspirationPolicy?: TodayInspirationPolicy
+  excludeRecommendationIds?: string[]
+  baselineRecommendations?: TodayRecommendation[]
+  limit?: number
 }
 
 type OutfitKind = 'separates' | 'onePiece' | 'partial'
@@ -1333,6 +1338,10 @@ function pickInspirationCandidate({
     })[0]?.candidate ?? null
 }
 
+function recommendationMatchesExcludedId(recommendationId: string, excludedIds: Set<string>) {
+  return excludedIds.has(recommendationId) || excludedIds.has(`inspiration-${recommendationId}`)
+}
+
 function buildRecommendationBatch(candidates: RecommendationCandidate[], offset: number) {
   if (candidates.length === 0) {
     return []
@@ -1411,17 +1420,19 @@ function maybeInsertInspirationRecommendation({
   candidates,
   preferenceState,
   weather,
-  targetScenes = []
+  targetScenes = [],
+  inspirationPolicy = 'auto'
 }: {
   recommendations: TodayRecommendation[]
   candidates: RecommendationCandidate[]
   preferenceState?: RecommendationPreferenceState
   weather: TodayWeather | null
   targetScenes?: PreferredScene[]
+  inspirationPolicy?: TodayInspirationPolicy
 }) {
   const profile = applyTargetScenes(preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE, targetScenes)
 
-  if (!profile.exploration.enabled || profile.exploration.rate <= 0 || recommendations.length < 3) {
+  if (inspirationPolicy === 'suppress' || !profile.exploration.enabled || profile.exploration.rate <= 0 || recommendations.length < 3) {
     return recommendations
   }
 
@@ -1447,6 +1458,35 @@ function maybeInsertInspirationRecommendation({
   return [...fixedDailyRecommendations, inspirationRecommendation].slice(0, 3)
 }
 
+function buildForcedInspirationRecommendation({
+  candidates,
+  preferenceState,
+  weather,
+  targetScenes = [],
+  baselineRecommendations = []
+}: {
+  candidates: RecommendationCandidate[]
+  preferenceState?: RecommendationPreferenceState
+  weather: TodayWeather | null
+  targetScenes?: PreferredScene[]
+  baselineRecommendations?: TodayRecommendation[]
+}) {
+  const profile = applyTargetScenes(preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE, targetScenes)
+
+  if (!profile.exploration.enabled || profile.exploration.rate <= 0) {
+    return null
+  }
+
+  const selectedCandidate = pickInspirationCandidate({
+    candidates,
+    dailyRecommendations: baselineRecommendations.slice(-2),
+    profile,
+    weather
+  })
+
+  return selectedCandidate ? toInspirationRecommendation(selectedCandidate, profile, baselineRecommendations.slice(-2)) : null
+}
+
 export function generateTodayRecommendations(
   params: GenerateTodayRecommendationsParams
 ): TodayRecommendation[] {
@@ -1460,9 +1500,12 @@ export function generateTodayRecommendations(
     learningSignals = []
   } = params
   const offset = params.offset ?? 0
+  const limit = Math.max(1, params.limit ?? 3)
+  const inspirationPolicy = params.inspirationPolicy ?? 'auto'
   const targetDate = params.targetDate ?? weather?.targetDate ?? 'today'
   const scene = params.scene ?? null
   const targetScenes = params.targetScenes ?? (scene ? [scene] : [])
+  const excludedIds = new Set(params.excludeRecommendationIds ?? [])
   const candidates = buildRecommendationCandidates(
     items,
     weather,
@@ -1474,7 +1517,22 @@ export function generateTodayRecommendations(
     targetDate,
     scene,
     targetScenes
-  )
+  ).filter((candidate) => !recommendationMatchesExcludedId(candidate.recommendation.id, excludedIds))
+
+  if (inspirationPolicy === 'force') {
+    const inspirationRecommendation = buildForcedInspirationRecommendation({
+      candidates,
+      preferenceState,
+      weather,
+      targetScenes,
+      baselineRecommendations: params.baselineRecommendations ?? []
+    })
+
+    if (inspirationRecommendation) {
+      return withBatchDifferenceHighlights([inspirationRecommendation]).slice(0, limit)
+    }
+  }
+
   const recommendations = buildRecommendationBatch(candidates, offset)
 
   while (recommendations.length < 3 && recommendations.length > 0) {
@@ -1491,8 +1549,9 @@ export function generateTodayRecommendations(
     candidates,
     preferenceState,
     weather,
-    targetScenes
-  }).slice(0, 3)
+    targetScenes,
+    inspirationPolicy
+  }).slice(0, limit)
 
   return withBatchDifferenceHighlights(finalRecommendations)
 }

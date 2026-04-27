@@ -126,7 +126,11 @@ describe('getTodayView', () => {
       recommendationSource: 'generated',
       recommendationError: false,
       ootdStatus: { status: 'not-recorded' },
-      recentOotdHistory: []
+      recentOotdHistory: [],
+      continuousRefresh: {
+        enabled: true,
+        exploration: expect.any(Object)
+      }
     })
 
     expect(getWeatherForTarget).not.toHaveBeenCalled()
@@ -238,7 +242,11 @@ describe('getTodayView', () => {
           satisfactionScore: 4,
           notes: 'OOTD: 衬衫 + 西裤；理由：基础组合稳定不出错'
         }
-      ]
+      ],
+      continuousRefresh: {
+        enabled: true,
+        exploration: expect.any(Object)
+      }
     })
     expect(generateTodayRecommendations).toHaveBeenCalledWith(expect.objectContaining({
       items: [],

@@ -111,4 +111,45 @@ describe('replaceRecommendationSlot', () => {
     expect(result).toBeNull()
     expect(generateTodayRecommendations).not.toHaveBeenCalled()
   })
+
+  it('replaces one visible accessory while keeping the other accessory fixed', async () => {
+    const accessoryRecommendation: TodayRecommendation = {
+      ...baseRecommendation,
+      accessories: [
+        { id: 'accessory-1', imageUrl: null, category: '配饰', subCategory: '腰带', colorCategory: '黑色', styleTags: [] },
+        { id: 'accessory-2', imageUrl: null, category: '配饰', subCategory: '丝巾', colorCategory: '蓝色', styleTags: [] }
+      ]
+    }
+    const replacement = {
+      ...accessoryRecommendation,
+      id: 'rec-generated-accessory',
+      accessories: [
+        accessoryRecommendation.accessories[1],
+        { id: 'accessory-3', imageUrl: null, category: '配饰', subCategory: '腕表', colorCategory: '银色', styleTags: [] }
+      ]
+    }
+    generateTodayRecommendations.mockReturnValue([replacement])
+
+    const { replaceRecommendationSlot } = await import('@/lib/today/replace-recommendation-slot')
+    const result = replaceRecommendationSlot({
+      baseRecommendation: accessoryRecommendation,
+      slot: 'accessories',
+      replaceItemId: 'accessory-1',
+      items: [
+        item({ id: 'top-1', category: '上衣', subCategory: '衬衫' }),
+        item({ id: 'bottom-1', category: '裤装', subCategory: '西裤' }),
+        item({ id: 'shoes-1', category: '鞋履', subCategory: '乐福鞋' }),
+        item({ id: 'accessory-1', category: '配饰', subCategory: '腰带' }),
+        item({ id: 'accessory-2', category: '配饰', subCategory: '丝巾' }),
+        item({ id: 'accessory-3', category: '配饰', subCategory: '腕表' })
+      ],
+      weather: null,
+      preferenceState: { profile: {}, finalWeights: {} } as never
+    })
+
+    expect(result?.accessories.map((accessory) => accessory.id)).toEqual(['accessory-2', 'accessory-3'])
+    const generatedInput = generateTodayRecommendations.mock.calls[0]?.[0]
+    expect(generatedInput.items.map((candidate: ClosetItemCardData) => candidate.id)).toEqual(expect.arrayContaining(['accessory-2', 'accessory-3']))
+    expect(generatedInput.items.map((candidate: ClosetItemCardData) => candidate.id)).not.toContain('accessory-1')
+  })
 })

@@ -26,6 +26,7 @@ export function getReplaceableSlots(recommendation: TodayRecommendation): TodayR
     recommendation.shoes ? 'shoes' : null,
     recommendation.outerLayer ? 'outerLayer' : null,
     recommendation.bag ? 'bag' : null,
+    (recommendation.accessories ?? []).length > 0 ? 'accessories' : null,
     recommendation.bottom ? 'bottom' : null,
     recommendation.dress ? 'dress' : null,
     recommendation.top && !recommendation.dress ? 'top' : null

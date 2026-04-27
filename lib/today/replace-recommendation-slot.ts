@@ -34,8 +34,12 @@ function selectedRecommendationItems(recommendation: TodayRecommendation) {
   ].filter((item): item is TodayRecommendationItem => Boolean(item))
 }
 
-function slotItemIds(recommendation: TodayRecommendation, slot: TodayReplaceableSlot) {
+function slotItemIds(recommendation: TodayRecommendation, slot: TodayReplaceableSlot, replaceItemId?: string) {
   if (slot === 'accessories') {
+    if (replaceItemId && (recommendation.accessories ?? []).some((item) => item.id === replaceItemId)) {
+      return new Set([replaceItemId])
+    }
+
     return new Set((recommendation.accessories ?? []).map((item) => item.id))
   }
 
@@ -74,7 +78,15 @@ function sameItem(left: TodayRecommendationItem | null, right: TodayRecommendati
   return (left?.id ?? null) === (right?.id ?? null)
 }
 
-function keepsFixedSlots(candidate: TodayRecommendation, base: TodayRecommendation, slot: TodayReplaceableSlot) {
+function keepsFixedAccessoryItems(candidate: TodayRecommendation, base: TodayRecommendation, replacedIds: Set<string>) {
+  const candidateAccessoryIds = new Set((candidate.accessories ?? []).map((item) => item.id))
+
+  return (base.accessories ?? [])
+    .filter((item) => !replacedIds.has(item.id))
+    .every((item) => candidateAccessoryIds.has(item.id))
+}
+
+function keepsFixedSlots(candidate: TodayRecommendation, base: TodayRecommendation, slot: TodayReplaceableSlot, replacedIds: Set<string>) {
   if (slot !== 'dress' && !sameItem(candidate.dress, base.dress)) {
     return false
   }
@@ -99,6 +111,12 @@ function keepsFixedSlots(candidate: TodayRecommendation, base: TodayRecommendati
     return false
   }
 
+  if (slot === 'accessories' && replacedIds.size > 0) {
+    if (!keepsFixedAccessoryItems(candidate, base, replacedIds)) {
+      return false
+    }
+  }
+
   if (slot !== 'accessories') {
     const baseAccessoryIds = (base.accessories ?? []).map((item) => item.id).join('|')
     const candidateAccessoryIds = (candidate.accessories ?? []).map((item) => item.id).join('|')
@@ -111,10 +129,19 @@ function keepsFixedSlots(candidate: TodayRecommendation, base: TodayRecommendati
   return true
 }
 
-function changedTargetSlot(candidate: TodayRecommendation, base: TodayRecommendation, slot: TodayReplaceableSlot) {
+function changedTargetSlot(candidate: TodayRecommendation, base: TodayRecommendation, slot: TodayReplaceableSlot, replacedIds: Set<string>) {
   if (slot === 'accessories') {
     const baseIds = (base.accessories ?? []).map((item) => item.id).join('|')
     const candidateIds = (candidate.accessories ?? []).map((item) => item.id).join('|')
+
+    if (replacedIds.size > 0) {
+      const baseIdSet = new Set((base.accessories ?? []).map((item) => item.id))
+      const candidateIdSet = new Set((candidate.accessories ?? []).map((item) => item.id))
+      const targetWasRemoved = [...replacedIds].every((id) => !candidateIdSet.has(id))
+      const hasNewAccessory = [...candidateIdSet].some((id) => !baseIdSet.has(id))
+
+      return targetWasRemoved && hasNewAccessory
+    }
 
     return baseIds !== candidateIds
   }
@@ -134,6 +161,7 @@ export function replaceRecommendationSlot({
   learningSignals = [],
   targetDate = baseRecommendation.targetDate ?? 'today',
   scene = baseRecommendation.scene ?? null,
+  replaceItemId,
   rejectedItemIds = []
 }: {
   baseRecommendation: TodayRecommendation
@@ -147,12 +175,14 @@ export function replaceRecommendationSlot({
   learningSignals?: RecommendationLearningSignal[]
   targetDate?: TodayTargetDate
   scene?: TodayScene
+  replaceItemId?: string
   rejectedItemIds?: string[]
 }): TodayRecommendation | null {
-  const rejectedIds = new Set([...rejectedItemIds, ...slotItemIds(baseRecommendation, slot)])
+  const targetSlotItemIds = slotItemIds(baseRecommendation, slot, replaceItemId)
+  const rejectedIds = new Set([...rejectedItemIds, ...targetSlotItemIds])
   const itemsById = new Map(items.map((item) => [item.id, item]))
   const fixedItems = selectedRecommendationItems(baseRecommendation)
-    .filter((item) => !slotItemIds(baseRecommendation, slot).has(item.id))
+    .filter((item) => !targetSlotItemIds.has(item.id))
     .map((item) => itemsById.get(item.id))
     .filter((item): item is ClosetItemCardData => Boolean(item))
   const alternatives = items.filter((item) => itemMatchesSlot(item, slot) && !rejectedIds.has(item.id))
@@ -175,7 +205,7 @@ export function replaceRecommendationSlot({
     scene
   })
   const replacement = candidates.find((candidate) =>
-    keepsFixedSlots(candidate, baseRecommendation, slot) && changedTargetSlot(candidate, baseRecommendation, slot)
+    keepsFixedSlots(candidate, baseRecommendation, slot, targetSlotItemIds) && changedTargetSlot(candidate, baseRecommendation, slot, targetSlotItemIds)
   )
 
   if (!replacement) {

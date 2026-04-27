@@ -1,6 +1,6 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import type { RecommendationModelScores, RecommendationScoreBreakdown, RecommendationStrategyKey } from '@/lib/recommendation/canonical-types'
-import type { PreferredScene, ScoreWeights, TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
+import type { PreferenceProfile, PreferredScene, ScoreWeights, TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 
 export const TODAY_TARGET_DATES = ['today', 'tomorrow'] as const
 export type TodayTargetDate = (typeof TODAY_TARGET_DATES)[number]
@@ -60,6 +60,8 @@ export type TodayRecommendationMissingSlot = 'top' | 'bottom' | 'dress' | 'outer
 
 export type TodayRecommendationMode = 'daily' | 'inspiration'
 
+export type TodayInspirationPolicy = 'auto' | 'force' | 'suppress'
+
 export type { TodayFeedbackReasonTag }
 
 export type TodayReplaceableSlot = TodayRecommendationMissingSlot
@@ -107,16 +109,20 @@ export type TodayRecommendationRefreshInput = {
   scene?: TodayScene
   lockedRecommendation?: TodayRecommendation | null
   lockedRecommendationIndex?: number | null
+  requestedMode?: TodayRecommendationMode | null
+  excludeRecommendationIds?: string[]
 }
 
 export type TodayRecommendationRefreshResult = {
   recommendations: TodayRecommendation[]
   weatherState: TodayWeatherState
+  actualMode?: TodayRecommendationMode | null
 }
 
 export type TodaySlotReplacementInput = {
   recommendation: TodayRecommendation
   slot: TodayReplaceableSlot
+  replaceItemId?: string
   rejectedItemIds: string[]
   reasonTags?: TodayFeedbackReasonTag[]
   targetDate?: TodayTargetDate
@@ -154,4 +160,8 @@ export type TodayView = {
   recommendationError: boolean
   ootdStatus: TodayOotdStatus
   recentOotdHistory: TodayOotdHistoryEntry[]
+  continuousRefresh?: {
+    enabled: boolean
+    exploration: PreferenceProfile['exploration']
+  }
 }
