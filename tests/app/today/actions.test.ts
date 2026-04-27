@@ -26,7 +26,10 @@ const redirect = vi.fn((path: string) => {
 const reportBetaIssue = vi.fn()
 const trackBetaEvent = vi.fn()
 const trackServerEvent = vi.fn()
+const recordRecommendationInteraction = vi.fn()
+const chooseTodayOotd = vi.fn()
 const saveTodayOotdFeedback = vi.fn()
+const replaceRecommendationSlot = vi.fn()
 const applyFeedback = vi.fn()
 const getPreferenceState = vi.fn()
 const getClosetView = vi.fn()
@@ -52,7 +55,12 @@ vi.mock('@/lib/beta/server-telemetry', () => ({
 }))
 
 vi.mock('@/lib/today/save-today-ootd-feedback', () => ({
+  chooseTodayOotd,
   saveTodayOotdFeedback
+}))
+
+vi.mock('@/lib/today/replace-recommendation-slot', () => ({
+  replaceRecommendationSlot
 }))
 
 vi.mock('@/lib/recommendation/apply-feedback', () => ({
@@ -93,6 +101,10 @@ vi.mock('@/lib/analytics/server', () => ({
   trackServerEvent
 }))
 
+vi.mock('@/lib/recommendation/interactions', () => ({
+  recordRecommendationInteraction
+}))
+
 vi.mock('next/cache', () => ({
   revalidatePath
 }))
@@ -127,8 +139,14 @@ describe('today actions', () => {
     trackBetaEvent.mockResolvedValue(undefined)
     trackServerEvent.mockReset()
     trackServerEvent.mockResolvedValue(undefined)
+    recordRecommendationInteraction.mockReset()
+    recordRecommendationInteraction.mockResolvedValue(undefined)
     revalidatePath.mockReset()
+    chooseTodayOotd.mockReset()
+    chooseTodayOotd.mockResolvedValue({ error: null, wornAt: '2026-04-21T08:00:00.000Z' })
     saveTodayOotdFeedback.mockReset()
+    replaceRecommendationSlot.mockReset()
+    replaceRecommendationSlot.mockReturnValue(null)
     applyFeedback.mockReset()
     applyFeedback.mockResolvedValue({ source: 'adaptive' })
     getPreferenceState.mockReset()
@@ -224,6 +242,62 @@ describe('today actions', () => {
       context: 'today'
     })
     expect(revalidatePath).toHaveBeenCalledWith('/today')
+  })
+
+  it('chooses a recommendation and applies worn preference feedback', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    const recommendation = {
+      id: 'rec-choose',
+      reason: '基础组合稳定不出错',
+      top: {
+        id: 'top-1',
+        imageUrl: null,
+        category: '上衣',
+        subCategory: '衬衫',
+        colorCategory: '白色',
+        styleTags: ['通勤']
+      },
+      bottom: null,
+      dress: null,
+      outerLayer: null,
+      shoes: null,
+      bag: null,
+      accessories: [],
+      targetDate: 'today',
+      scene: 'work'
+    }
+
+    const { chooseTodayRecommendationAction } = await import('@/app/today/actions')
+
+    await expect(chooseTodayRecommendationAction({ recommendation, targetDate: 'today', scene: 'work' })).resolves.toEqual({
+      error: null,
+      wornAt: '2026-04-21T08:00:00.000Z'
+    })
+
+    expect(chooseTodayOotd).toHaveBeenCalledWith({
+      userId: 'user-1',
+      recommendation
+    })
+    expect(applyFeedback).toHaveBeenCalledWith({
+      userId: 'user-1',
+      rating: 5,
+      reasonTags: [],
+      recommendationId: 'rec-choose',
+      recommendationSnapshot: recommendation,
+      componentScores: null,
+      context: 'today'
+    })
+    expect(recordRecommendationInteraction).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: 'worn',
+      recommendationId: 'rec-choose',
+      context: expect.objectContaining({
+        targetDate: 'today',
+        scene: 'work',
+        baseRecommendationId: 'rec-choose',
+        categoryKeys: ['上衣'],
+        colorKeys: ['白色']
+      })
+    }))
   })
 
   it('sanitizes malformed reason tags before preference learning and telemetry', async () => {
@@ -395,6 +469,114 @@ describe('today actions', () => {
       scene: 'work'
     }))
     expect(revalidatePath).not.toHaveBeenCalled()
+  })
+
+  it('keeps the selected recommendation locked when refreshing', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    getClosetView.mockResolvedValue({
+      itemCount: 4,
+      items: [{ id: 'item-1' }, { id: 'item-2' }, { id: 'item-3' }, { id: 'item-4' }]
+    })
+    generateTodayRecommendations.mockReturnValue([{ id: 'new-1' }, { id: 'new-2' }, { id: 'new-3' }])
+
+    const lockedRecommendation = { id: 'locked-rec', reason: '已选择' }
+    const { refreshTodayRecommendationsAction } = await import('@/app/today/actions')
+
+    await expect(refreshTodayRecommendationsAction({
+      offset: 2,
+      targetDate: 'today',
+      scene: null,
+      lockedRecommendation: lockedRecommendation as never,
+      lockedRecommendationIndex: 1
+    })).resolves.toEqual({
+      recommendations: [{ id: 'new-1' }, lockedRecommendation, { id: 'new-2' }],
+      weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' }
+    })
+  })
+
+  it('replaces one recommendation slot and records the replacement interaction', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    getClosetView.mockResolvedValue({
+      itemCount: 2,
+      items: [{ id: 'top-1' }, { id: 'top-2' }]
+    })
+    const replacement = {
+      id: 'rec-replacement',
+      reason: '替换后更合适',
+      top: { id: 'top-2', imageUrl: null, category: '上衣', subCategory: 'T恤', colorCategory: '灰色', styleTags: [] },
+      bottom: null,
+      dress: null,
+      outerLayer: null,
+      shoes: null,
+      bag: null,
+      accessories: []
+    }
+    replaceRecommendationSlot.mockReturnValue(replacement)
+
+    const { replaceTodayRecommendationSlotAction } = await import('@/app/today/actions')
+
+    await expect(replaceTodayRecommendationSlotAction({
+      recommendation: {
+        id: 'rec-base',
+        reason: '基础',
+        top: { id: 'top-1', imageUrl: null, category: '上衣', subCategory: '衬衫', colorCategory: '白色', styleTags: [] },
+        bottom: null,
+        dress: null,
+        outerLayer: null,
+        shoes: null,
+        bag: null,
+        accessories: [],
+        scoreBreakdown: null
+      },
+      slot: 'top',
+      rejectedItemIds: ['top-1'],
+      reasonTags: ['dislike_item'],
+      targetDate: 'today',
+      scene: 'casual'
+    })).resolves.toEqual({ error: null, recommendation: replacement })
+
+    expect(recordRecommendationInteraction).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: 'replaced_item',
+      recommendationId: 'rec-base',
+      candidateId: 'rec-replacement',
+      context: expect.objectContaining({
+        slot: 'top',
+        reasonTags: ['dislike_item'],
+        replacementRecommendationId: 'rec-replacement'
+      })
+    }))
+  })
+
+  it('records pre-choice outfit feedback as skipped or disliked', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+
+    const { submitTodayPreChoiceFeedbackAction } = await import('@/app/today/actions')
+
+    await expect(submitTodayPreChoiceFeedbackAction({
+      recommendation: {
+        id: 'rec-skip',
+        reason: '基础',
+        top: null,
+        bottom: null,
+        dress: null,
+        outerLayer: null,
+        shoes: null,
+        bag: null,
+        accessories: []
+      },
+      scope: 'outfit',
+      reasonTags: ['dislike_item', 'unknown' as never],
+      targetDate: 'today',
+      scene: null
+    })).resolves.toEqual({ error: null })
+
+    expect(recordRecommendationInteraction).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: 'disliked',
+      context: expect.objectContaining({
+        scope: 'outfit',
+        reasonTags: ['dislike_item']
+      })
+    }))
   })
 
   it('updates the signed-in user password and records password state', async () => {

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { TodayPage } from '@/components/today/today-page'
@@ -15,6 +15,11 @@ const refresh = vi.fn()
 const updateCity = vi.fn().mockResolvedValue({ error: null })
 const refreshRecommendations = vi.fn().mockResolvedValue({ recommendations: [], weatherState: { status: 'not-set', targetDate: 'today' } })
 const submitOotd = vi.fn()
+const chooseRecommendation = vi.fn()
+const undoTodaySelection = vi.fn()
+const replaceRecommendationSlot = vi.fn()
+const submitPreChoiceFeedback = vi.fn()
+const recordRecommendationOpened = vi.fn()
 const changePassword = vi.fn().mockResolvedValue({ error: null })
 const signOut = vi.fn().mockResolvedValue(undefined)
 const updateHistoryEntry = vi.fn()
@@ -170,6 +175,16 @@ describe('TodayPage', () => {
     refresh.mockReset()
     updateCity.mockClear()
     submitOotd.mockReset()
+    chooseRecommendation.mockReset()
+    chooseRecommendation.mockResolvedValue({ error: null, wornAt: '2026-04-21T09:00:00.000Z' })
+    undoTodaySelection.mockReset()
+    undoTodaySelection.mockResolvedValue({ error: null })
+    replaceRecommendationSlot.mockReset()
+    replaceRecommendationSlot.mockResolvedValue({ error: '暂时没有更合适的鞋，可以试试换一套。', recommendation: null })
+    submitPreChoiceFeedback.mockReset()
+    submitPreChoiceFeedback.mockResolvedValue({ error: null })
+    recordRecommendationOpened.mockReset()
+    recordRecommendationOpened.mockResolvedValue({ error: null })
     refreshRecommendations.mockReset()
     refreshRecommendations.mockResolvedValue({ recommendations: [], weatherState: { status: 'not-set', targetDate: 'today' } })
     changePassword.mockReset()
@@ -208,6 +223,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        submitPreChoiceFeedback={submitPreChoiceFeedback}
         changePassword={changePassword}
         signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
@@ -220,7 +236,7 @@ describe('TodayPage', () => {
     expect(screen.getByRole('button', { name: '设置' })).toBeInTheDocument()
   })
 
-  it('shows the record CTA on a recommendation card before submission', () => {
+  it('shows quick feedback CTAs on a recommendation card before submission', () => {
     render(
       <TodayPage
         view={{
@@ -238,6 +254,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        replaceRecommendationSlot={replaceRecommendationSlot}
         changePassword={changePassword}
         signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
@@ -245,10 +262,12 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByRole('button', { name: '记为今日已穿并评分' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '还不错' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '不喜欢' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '就穿这个' })).toBeInTheDocument()
   })
 
-  it('lets the user dismiss the first loop card', () => {
+  it('lets the user dismiss the inline first loop hint', () => {
     render(
       <TodayPage
         view={{
@@ -266,6 +285,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        submitPreChoiceFeedback={submitPreChoiceFeedback}
         changePassword={changePassword}
         signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
@@ -273,10 +293,10 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByText('先在今天完成第一次推荐闭环')).toBeInTheDocument()
+    expect(screen.getByText('第一次选择会让下一轮推荐更像你。')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '关闭 first loop 提示' }))
 
-    expect(screen.queryByText('先在今天完成第一次推荐闭环')).not.toBeInTheDocument()
+    expect(screen.queryByText('第一次选择会让下一轮推荐更像你。')).not.toBeInTheDocument()
     expect(window.localStorage.getItem('ootoday-today-first-loop-dismissed')).toBe('1')
   })
 
@@ -299,6 +319,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        replaceRecommendationSlot={replaceRecommendationSlot}
         changePassword={changePassword}
         signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
@@ -307,10 +328,10 @@ describe('TodayPage', () => {
     )
 
     const engineInvite = screen.getByText('先让 AI 认识你的穿法')
-    const statusHeading = screen.getByText('今日状态')
+    const contextChip = screen.getByRole('button', { name: '地点：未设置城市' })
     expect(engineInvite).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '填写风格问卷' })).toHaveAttribute('href', '/preferences')
-    expect(engineInvite.compareDocumentPosition(statusHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(engineInvite.compareDocumentPosition(contextChip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('shows weather facts in the status card without confidence or preview blocks', () => {
@@ -347,8 +368,9 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByText('今天 · 上海 · 24°C 晴 · 按常用')).toBeInTheDocument()
-    expect(screen.getByText(/当前天气/u)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '日期：今天' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '地点：上海 · 24°C 晴' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '场景：智能默认' })).toBeInTheDocument()
     expect(screen.queryByText('Shanghai')).not.toBeInTheDocument()
     expect(screen.queryByText('匹配度')).not.toBeInTheDocument()
     expect(screen.queryByText('穿搭重点')).not.toBeInTheDocument()
@@ -408,14 +430,17 @@ describe('TodayPage', () => {
     )
 
     expect(screen.getByText('今日推荐')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '日期：今天' }))
     fireEvent.click(screen.getByRole('button', { name: '明天' }))
 
     await waitFor(() => {
       expect(refreshRecommendations).toHaveBeenCalledWith({ offset: 0, targetDate: 'tomorrow', scene: null })
     })
     expect(await screen.findByText('明天推荐')).toBeInTheDocument()
-    expect(screen.getByText('明天 · 上海 · 18°C 多云 · 按常用')).toBeInTheDocument()
-    expect(screen.getByText(/明天白天预报/u)).toBeInTheDocument()
+    expect(screen.getByText('明天先看最推荐这套')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '日期：明天' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '地点：上海 · 18°C 多云' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '场景：智能默认' })).toBeInTheDocument()
     expect(refresh).not.toHaveBeenCalled()
   })
 
@@ -449,15 +474,16 @@ describe('TodayPage', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '户外' }))
+    fireEvent.click(screen.getByRole('button', { name: '场景：智能默认' }))
+    fireEvent.click(screen.getByRole('button', { name: '运动户外' }))
 
     await waitFor(() => {
       expect(refreshRecommendations).toHaveBeenCalledWith({ offset: 0, targetDate: 'today', scene: 'outdoor' })
     })
-    expect(await screen.findByText('按今天的户外、天气和最近穿着整理')).toBeInTheDocument()
+    expect(await screen.findByText('按今天的运动户外、天气和最近穿着整理')).toBeInTheDocument()
   })
 
-  it('opens the city form inside 今日状态', () => {
+  it('opens the city form from the context bar', () => {
     render(
       <TodayPage
         view={{
@@ -482,19 +508,15 @@ describe('TodayPage', () => {
       />
     )
 
-    const statusSection = screen.getByText('今日状态').closest('section')
-    expect(statusSection).not.toBeNull()
-
-    const cityButton = within(statusSection as HTMLElement).getByRole('button', { name: '修改城市' })
+    const cityButton = screen.getByRole('button', { name: '地点：上海 · 天气暂不可用' })
     fireEvent.click(cityButton)
 
     const cityInput = screen.getByRole('textbox', { name: '常住城市' })
     expect(cityInput).toBeInTheDocument()
-    expect(statusSection?.contains(cityInput)).toBe(true)
     expect(cityButton.compareDocumentPosition(cityInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('opens the city form from 今日状态 and hides the city prompt after save', async () => {
+  it('opens the city form from context and hides the city prompt after save', async () => {
     render(
       <TodayPage
         view={{
@@ -520,10 +542,8 @@ describe('TodayPage', () => {
     )
 
     expect(screen.getByText('填写常住城市，可获得更准推荐')).toBeInTheDocument()
-    const statusSection = screen.getByText('今日状态').closest('section')
-    expect(statusSection).not.toBeNull()
 
-    fireEvent.click(within(statusSection as HTMLElement).getByRole('button', { name: '设置城市' }))
+    fireEvent.click(screen.getByRole('button', { name: '地点：未设置城市' }))
     fireEvent.change(screen.getByRole('textbox', { name: '常住城市' }), { target: { value: '上海' } })
     fireEvent.click(screen.getByRole('button', { name: '保存城市' }))
 
@@ -560,13 +580,11 @@ describe('TodayPage', () => {
     )
 
     expect(screen.getByText('完整度 82')).toBeInTheDocument()
-    expect(screen.getByText('核心单品')).toBeInTheDocument()
+    expect(screen.getAllByText(/乐福鞋/).length).toBeGreaterThan(0)
     expect(screen.getByText('待补 外层')).toBeInTheDocument()
-    expect(screen.queryByText('鞋包配饰')).not.toBeInTheDocument()
-
     fireEvent.click(screen.getByRole('button', { name: '展开单品详情' }))
 
-    expect(screen.getByText('鞋包配饰')).toBeInTheDocument()
+    expect(screen.getAllByText('鞋履').length).toBeGreaterThan(0)
     expect(screen.getAllByText(/乐福鞋/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/托特包/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/腰带/).length).toBeGreaterThan(0)
@@ -649,7 +667,7 @@ describe('TodayPage', () => {
     expect(screen.getByText('比前两套多一点变化，但没有越过避雷、天气和场景底线。')).toBeInTheDocument()
   })
 
-  it('expands the score chooser and requires a score before submit', () => {
+  it('records a positive quick rating as preference feedback', async () => {
     render(
       <TodayPage
         view={{
@@ -667,6 +685,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        submitPreChoiceFeedback={submitPreChoiceFeedback}
         changePassword={changePassword}
         signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
@@ -674,25 +693,129 @@ describe('TodayPage', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '记为今日已穿并评分' }))
+    fireEvent.click(screen.getByRole('button', { name: '还不错' }))
 
-    expect(screen.getByRole('button', { name: '1 分' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '颜色好看' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '层次太复杂' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '提交今日记录' })).toBeDisabled()
-
-    fireEvent.click(screen.getByRole('button', { name: '4 分' }))
-
-    expect(screen.getByRole('button', { name: '4 分' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: '提交今日记录' })).not.toBeDisabled()
+    await waitFor(() => {
+      expect(submitPreChoiceFeedback).toHaveBeenCalledWith({
+        recommendation,
+        scope: 'outfit',
+        itemIds: ['top-1', 'bottom-1'],
+        reasonTags: [],
+        preferenceSignal: 'positive',
+        targetDate: 'today',
+        scene: null
+      })
+    })
+    expect(submitOotd).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: '就穿这个' })).toBeInTheDocument()
   })
 
-  it('switches the page into recorded state after a successful submit', async () => {
-    submitOotd.mockResolvedValue({
-      error: null,
-      wornAt: '2026-04-21T09:00:00.000Z'
-    })
+  it('records dislike as pre-choice feedback without marking the outfit worn', async () => {
+    render(
+      <TodayPage
+        view={{
+          itemCount: 6,
+          city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'not-set' },
+          recommendations: [completeRecommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        submitPreChoiceFeedback={submitPreChoiceFeedback}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
 
+    fireEvent.click(screen.getByRole('button', { name: '不喜欢' }))
+
+    await waitFor(() => {
+      expect(submitPreChoiceFeedback).toHaveBeenCalledWith({
+        recommendation: completeRecommendation,
+        scope: 'outfit',
+        itemIds: ['top-1', 'bottom-1', 'shoes-1', 'bag-1', 'accessory-1'],
+        reasonTags: ['dislike_item'],
+        preferenceSignal: 'negative',
+        targetDate: 'today',
+        scene: null
+      })
+    })
+    expect(submitOotd).not.toHaveBeenCalled()
+    expect(screen.getByText('已记录这套暂时不想穿。可以继续看下面方案，或使用“换一批推荐”。')).toBeInTheDocument()
+  })
+
+  it('confirms before replacing a slot from the outfit image', async () => {
+    const replacement = {
+      ...completeRecommendation,
+      id: 'rec-replaced',
+      shoes: {
+        id: 'shoes-2',
+        imageUrl: null,
+        category: '鞋履',
+        subCategory: '短靴',
+        colorCategory: '黑色',
+        styleTags: ['通勤']
+      }
+    }
+    replaceRecommendationSlot.mockResolvedValueOnce({ error: null, recommendation: replacement })
+
+    render(
+      <TodayPage
+        view={{
+          itemCount: 6,
+          city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'not-set' },
+          recommendations: [completeRecommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        replaceRecommendationSlot={replaceRecommendationSlot}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '更换鞋履' }))
+
+    expect(screen.getByRole('dialog', { name: '确认更换鞋履' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    expect(replaceRecommendationSlot).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: '更换鞋履' }))
+    fireEvent.click(screen.getByRole('button', { name: '确认更换' }))
+
+    await waitFor(() => {
+      expect(replaceRecommendationSlot).toHaveBeenCalledWith({
+        recommendation: completeRecommendation,
+        slot: 'shoes',
+        rejectedItemIds: ['shoes-1'],
+        reasonTags: [],
+        targetDate: 'today',
+        scene: null
+      })
+    })
+    expect(await screen.findByText('短靴')).toBeInTheDocument()
+  })
+
+  it('locks the selected recommendation after choosing it for today', async () => {
     render(
       <TodayPage
         view={{
@@ -709,6 +832,8 @@ describe('TodayPage', () => {
         }}
         updateCity={updateCity}
         submitOotd={submitOotd}
+        chooseRecommendation={chooseRecommendation}
+        undoTodaySelection={undoTodaySelection}
         refreshRecommendations={refreshRecommendations}
         changePassword={changePassword}
         signOut={signOut}
@@ -717,31 +842,27 @@ describe('TodayPage', () => {
       />
     )
 
-    fireEvent.click(screen.getAllByRole('button', { name: '记为今日已穿并评分' })[0])
-    fireEvent.click(screen.getByRole('button', { name: '4 分' }))
-    fireEvent.click(screen.getByRole('button', { name: '颜色好看' }))
-    fireEvent.click(screen.getByRole('button', { name: '适合今天' }))
-    fireEvent.click(screen.getByRole('button', { name: '提交今日记录' }))
+    fireEvent.click(screen.getAllByRole('button', { name: '就穿这个' })[0])
 
     await waitFor(() => {
-      expect(submitOotd).toHaveBeenCalledWith({
+      expect(chooseRecommendation).toHaveBeenCalledWith({
         recommendation,
-        satisfactionScore: 4,
-        reasonTags: ['like_color', 'like_scene_fit']
+        targetDate: 'today',
+        scene: null
       })
     })
 
     await waitFor(() => {
-      expect(screen.getByText('今日已记录')).toBeInTheDocument()
+      expect(screen.getByText('今日已选择')).toBeInTheDocument()
     })
-    expect(screen.getByText('今天已记录，其他方案暂时锁定')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '记为今日已穿并评分' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '撤销' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: '还不错' }).length).toBeGreaterThan(0)
+    expect(screen.getByText('今天已选择另一套，这套仍可继续反馈。')).toBeInTheDocument()
   })
 
-  it('keeps the card expanded and shows inline error when submit fails', async () => {
-    submitOotd.mockResolvedValue({
-      error: '今日记录保存失败，请稍后重试',
-      wornAt: null
+  it('keeps the card expanded and shows inline error when positive feedback fails', async () => {
+    submitPreChoiceFeedback.mockResolvedValue({
+      error: '反馈没有保存成功，请稍后再试。'
     })
 
     render(
@@ -761,6 +882,7 @@ describe('TodayPage', () => {
         updateCity={updateCity}
         submitOotd={submitOotd}
         refreshRecommendations={refreshRecommendations}
+        submitPreChoiceFeedback={submitPreChoiceFeedback}
         changePassword={changePassword}
         signOut={signOut}
         updateHistoryEntry={updateHistoryEntry}
@@ -768,12 +890,10 @@ describe('TodayPage', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '记为今日已穿并评分' }))
-    fireEvent.click(screen.getByRole('button', { name: '5 分' }))
-    fireEvent.click(screen.getByRole('button', { name: '提交今日记录' }))
+    fireEvent.click(screen.getByRole('button', { name: '还不错' }))
 
-    expect(await screen.findByText('今日记录保存失败，请稍后重试')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '提交今日记录' })).toBeInTheDocument()
+    expect(await screen.findByText('反馈没有保存成功，请稍后再试。')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '还不错' })).toBeInTheDocument()
   })
 
   it('renders recorded state from the server when today is already saved', () => {
@@ -804,8 +924,8 @@ describe('TodayPage', () => {
       />
     )
 
-    expect(screen.getByText('今天已记录，其他方案暂时锁定')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '记为今日已穿' })).not.toBeInTheDocument()
+    expect(screen.getByText('今天已选择另一套，这套仍可继续反馈。')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '已选其他' })).toBeDisabled()
   })
 
   it('renders recent ootd history when entries exist', () => {

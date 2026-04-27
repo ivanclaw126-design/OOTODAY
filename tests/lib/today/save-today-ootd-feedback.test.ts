@@ -18,6 +18,7 @@ const from = vi.fn((table: string) => {
           })
         })
       }),
+      update,
       insert
     }
   }
@@ -146,6 +147,41 @@ describe('saveTodayOotdFeedback', () => {
       last_worn_date: result.wornAt?.slice(0, 10),
       wear_count: 3
     })
+  })
+
+  it('chooses today ootd without requiring a satisfaction score', async () => {
+    maybeSingle.mockResolvedValue({ data: null, error: null })
+    insert.mockResolvedValue({ error: null })
+
+    const { chooseTodayOotd } = await import('@/lib/today/save-today-ootd-feedback')
+
+    await expect(chooseTodayOotd({
+      userId: 'user-1',
+      recommendation: {
+        id: 'rec-choice',
+        reason: '基础组合稳定不出错',
+        top: null,
+        bottom: null,
+        dress: {
+          id: 'dress-1',
+          imageUrl: null,
+          category: '连衣裙',
+          subCategory: '针织连衣裙',
+          colorCategory: '米色',
+          styleTags: []
+        },
+        outerLayer: null
+      } as never
+    })).resolves.toEqual({
+      error: null,
+      wornAt: expect.any(String)
+    })
+
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      user_id: 'user-1',
+      satisfaction_score: null,
+      notes: 'OOTD: 针织连衣裙；理由：基础组合稳定不出错'
+    }))
   })
 
   it('returns a duplicate error when the insert hits the unique day constraint', async () => {

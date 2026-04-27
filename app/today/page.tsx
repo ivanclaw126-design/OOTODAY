@@ -6,16 +6,26 @@ import { AppShell } from '@/components/app-shell'
 import {
   changeTodayPasswordAction,
   deleteTodayHistoryEntryAction,
+  recordTodayRecommendationOpenedAction,
   refreshTodayRecommendationsAction,
+  replaceTodayRecommendationSlotAction,
   signOutTodayAction,
-  submitTodayOotdAction,
+  submitTodayPreChoiceFeedbackAction,
+  chooseTodayRecommendationAction,
+  undoTodayRecommendationAction,
   updateTodayHistoryEntryAction,
   updateTodayCityAction
 } from '@/app/today/actions'
 import { getSession } from '@/lib/auth/get-session'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getTodayView } from '@/lib/today/get-today-view'
-import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayRecommendationRefreshInput } from '@/lib/today/types'
+import type {
+  TodayChooseRecommendationInput,
+  TodayHistoryUpdateInput,
+  TodayPreChoiceFeedbackInput,
+  TodayRecommendationRefreshInput,
+  TodaySlotReplacementInput
+} from '@/lib/today/types'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 import { trackServerEvent } from '@/lib/analytics/server'
 import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
@@ -62,7 +72,7 @@ async function TodayRouteContent({
         itemCount: 0
       }
     })
-  } else if (view.recommendations.length > 0) {
+  } else if (view.recommendations.length > 0 && view.recommendationSource === 'generated') {
     await trackServerEvent({
       userId: session.user.id,
       eventName: 'today_recommendation_generated',
@@ -130,16 +140,40 @@ async function TodayRouteContent({
     return updateTodayCityAction(input)
   }
 
-  async function submitOotd(input: TodayOotdFeedbackInput) {
+  async function chooseRecommendation(input: TodayChooseRecommendationInput) {
     'use server'
 
-    return submitTodayOotdAction(input)
+    return chooseTodayRecommendationAction(input)
+  }
+
+  async function undoTodaySelection() {
+    'use server'
+
+    return undoTodayRecommendationAction()
   }
 
   async function refreshRecommendations(input: TodayRecommendationRefreshInput) {
     'use server'
 
     return refreshTodayRecommendationsAction(input)
+  }
+
+  async function replaceRecommendationSlot(input: TodaySlotReplacementInput) {
+    'use server'
+
+    return replaceTodayRecommendationSlotAction(input)
+  }
+
+  async function submitPreChoiceFeedback(input: TodayPreChoiceFeedbackInput) {
+    'use server'
+
+    return submitTodayPreChoiceFeedbackAction(input)
+  }
+
+  async function recordRecommendationOpened(input: TodayChooseRecommendationInput & { source: 'details' | 'quick_feedback' }) {
+    'use server'
+
+    return recordTodayRecommendationOpenedAction(input)
   }
 
   async function changePassword(input: { password: string; confirmPassword: string }) {
@@ -170,8 +204,12 @@ async function TodayRouteContent({
     <TodayPage
       view={view}
       updateCity={updateCity}
-      submitOotd={submitOotd}
+      chooseRecommendation={chooseRecommendation}
+      undoTodaySelection={undoTodaySelection}
       refreshRecommendations={refreshRecommendations}
+      replaceRecommendationSlot={replaceRecommendationSlot}
+      submitPreChoiceFeedback={submitPreChoiceFeedback}
+      recordRecommendationOpened={recordRecommendationOpened}
       changePassword={changePassword}
       signOut={signOut}
       updateHistoryEntry={updateHistoryEntry}

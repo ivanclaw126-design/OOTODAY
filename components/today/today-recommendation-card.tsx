@@ -1,35 +1,28 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import { sendBetaIssueFromClient } from '@/lib/beta/telemetry'
 import { ItemShowcase, type ItemShowcaseEntry } from '@/components/ui/item-showcase'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { TodayStrategyScorePanel } from '@/components/today/today-strategy-score-panel'
-import type { TodayFeedbackReasonTag, TodayOotdFeedbackInput, TodayOotdStatus, TodayRecommendation, TodayRecommendationMissingSlot } from '@/lib/today/types'
-
-const likeReasonTags: Array<{ tag: TodayFeedbackReasonTag; label: string }> = [
-  { tag: 'like_color', label: '颜色好看' },
-  { tag: 'like_silhouette', label: '比例好' },
-  { tag: 'like_layering', label: '层次好' },
-  { tag: 'like_shoes_bag', label: '鞋包搭得好' },
-  { tag: 'like_scene_fit', label: '适合今天' },
-  { tag: 'like_comfort', label: '看起来舒服' },
-  { tag: 'like_freshness', label: '有新鲜感' }
-]
-
-const dislikeReasonTags: Array<{ tag: TodayFeedbackReasonTag; label: string }> = [
-  { tag: 'dislike_color', label: '颜色不喜欢' },
-  { tag: 'dislike_silhouette', label: '比例不好' },
-  { tag: 'dislike_too_complex', label: '层次太复杂' },
-  { tag: 'dislike_too_plain', label: '太普通' },
-  { tag: 'dislike_too_bold', label: '太夸张' },
-  { tag: 'dislike_shoes', label: '鞋子不搭' },
-  { tag: 'dislike_scene_fit', label: '不适合今天' },
-  { tag: 'dislike_comfort', label: '不够舒服' },
-  { tag: 'dislike_item', label: '不想穿这件单品' }
-]
+import { getTodayDecisionRole } from '@/components/today/today-decision-role'
+import { TodayOutfitHero } from '@/components/today/today-outfit-hero'
+import { getReplaceableSlots, getSlotDisplayLabel } from '@/components/today/today-slot-replacement-actions'
+import type {
+  TodayChooseRecommendationInput,
+  TodayFeedbackReasonTag,
+  TodayOotdStatus,
+  TodayPreChoiceFeedbackInput,
+  TodayRecommendation,
+  TodayRecommendationMissingSlot,
+  TodayReplaceableSlot,
+  TodayScene,
+  TodaySlotReplacementInput,
+  TodaySlotReplacementResult,
+  TodayTargetDate,
+  TodayWeatherState
+} from '@/lib/today/types'
 
 const missingSlotLabels: Record<TodayRecommendationMissingSlot, string> = {
   top: '上装',
@@ -58,73 +51,73 @@ function toShowcaseItem(item: TodayRecommendation['top']): ItemShowcaseEntry | n
   }
 }
 
-function CompactOutfitPreview({ items }: { items: ItemShowcaseEntry[] }) {
-  if (items.length === 0) {
-    return null
+function slotRejectedIds(recommendation: TodayRecommendation, slot: TodayReplaceableSlot | null) {
+  if (!slot) {
+    return []
   }
 
-  const visibleLimit = items.length > 6 ? 5 : 6
-  const visibleItems = items.slice(0, visibleLimit)
-  const remainingCount = items.length - visibleItems.length
+  if (slot === 'accessories') {
+    return (recommendation.accessories ?? []).map((item) => item.id)
+  }
 
-  return (
-    <div className="rounded-[1.25rem] border border-[var(--color-line)] bg-white/78 p-3 shadow-[0_12px_26px_rgba(17,14,9,0.05)]">
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-        {visibleItems.map((item) => (
-          <div key={item.id} className="relative aspect-square overflow-hidden rounded-[0.85rem] border border-[var(--color-line)] bg-white">
-            {item.imageUrl ? (
-              <Image
-                src={item.imageUrl}
-                alt={item.label}
-                fill
-                unoptimized
-                className="object-contain p-1"
-                sizes="72px"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center px-1.5 text-center text-[10px] font-semibold leading-4 text-[var(--color-neutral-dark)]">
-                {item.label}
-              </div>
-            )}
-          </div>
-        ))}
-        {remainingCount > 0 ? (
-          <div className="flex aspect-square items-center justify-center rounded-[0.85rem] border border-[var(--color-line)] bg-[var(--color-secondary)] text-sm font-semibold text-[var(--color-primary)]">
-            +{remainingCount}
-          </div>
-        ) : null}
-      </div>
-      <div className="mt-3 space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">核心单品</p>
-        <p className="text-sm leading-6 text-[var(--color-primary)]">{items.map((item) => item.label).join(' / ')}</p>
-      </div>
-    </div>
-  )
+  return [recommendation[slot]?.id].filter((id): id is string => Boolean(id))
 }
 
 export function TodayRecommendationCard({
   recommendation,
   index,
+  variant = 'compact',
   ootdStatus,
   recordedRecommendationId,
-  submitOotd
+  weatherState,
+  targetDate = 'today',
+  scene = null,
+  showFirstLoopHint = false,
+  onDismissFirstLoopHint,
+  chooseRecommendation,
+  undoTodaySelection,
+  replaceSlot,
+  submitPreChoiceFeedback,
+  recordOpened
 }: {
   recommendation: TodayRecommendation
   index: number
+  variant?: 'hero' | 'compact'
   ootdStatus: TodayOotdStatus
   recordedRecommendationId: string | null
-  submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
+  weatherState: TodayWeatherState
+  targetDate?: TodayTargetDate
+  scene?: TodayScene
+  showFirstLoopHint?: boolean
+  onDismissFirstLoopHint?: () => void
+  chooseRecommendation: (input: TodayChooseRecommendationInput) => Promise<{ error: string | null; wornAt: string | null }>
+  undoTodaySelection: () => Promise<{ error: string | null }>
+  replaceSlot: (input: TodaySlotReplacementInput) => Promise<TodaySlotReplacementResult>
+  submitPreChoiceFeedback: (input: TodayPreChoiceFeedbackInput) => Promise<{ error: string | null }>
+  recordOpened: (input: TodayChooseRecommendationInput & { source: 'details' | 'quick_feedback' }) => Promise<{ error: string | null }>
 }) {
-  const [isConfirming, setIsConfirming] = useState(false)
-  const [selectedScore, setSelectedScore] = useState<number | null>(null)
-  const [selectedReasonTags, setSelectedReasonTags] = useState<TodayFeedbackReasonTag[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isChoosing, setIsChoosing] = useState(false)
+  const [isUndoing, setIsUndoing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [choiceError, setChoiceError] = useState<string | null>(null)
   const [showDetails, setShowDetails] = useState(false)
+  const [replacingSlot, setReplacingSlot] = useState<TodayReplaceableSlot | null>(null)
+  const [pendingReplacementSlot, setPendingReplacementSlot] = useState<TodayReplaceableSlot | null>(null)
+  const [replacementError, setReplacementError] = useState<string | null>(null)
+  const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false)
+  const [feedbackError, setFeedbackError] = useState<string | null>(null)
+  const [isVisuallyLowered, setIsVisuallyLowered] = useState(false)
 
   const isRecorded = ootdStatus.status === 'recorded' && recordedRecommendationId === recommendation.id
-  const isLocked = ootdStatus.status === 'recorded' && !isRecorded
-  const rankLabel = String(index).padStart(2, '0')
+  const hasRecordedOutfit = ootdStatus.status === 'recorded'
+  const rankLabel = String(index + 1).padStart(2, '0')
+  const confidence = recommendation.confidence ?? null
+  const isInspiration = recommendation.mode === 'inspiration'
+  const reasonHighlights = (recommendation.reasonHighlights ?? []).filter(Boolean).slice(0, 3)
+  const role = getTodayDecisionRole({ index, scene, recommendation })
+  const missingSlots = recommendation.missingSlots ?? []
+  const replaceableSlots = getReplaceableSlots(recommendation)
   const outfitItems = [
     toShowcaseItem(recommendation.dress),
     toShowcaseItem(recommendation.top),
@@ -139,173 +132,242 @@ export function TodayRecommendationCard({
     toShowcaseItem(recommendation.bag ?? null),
     ...(recommendation.accessories ?? []).map((item) => toShowcaseItem(item))
   ].filter((item): item is ItemShowcaseEntry => item !== null)
-  const missingSlots = recommendation.missingSlots ?? []
-  const confidence = recommendation.confidence ?? null
-  const isInspiration = recommendation.mode === 'inspiration'
-  const reasonHighlights = (recommendation.reasonHighlights ?? []).filter(Boolean).slice(0, 3)
 
-  function toggleReasonTag(tag: TodayFeedbackReasonTag) {
-    setSelectedReasonTags((current) =>
-      current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]
-    )
+  async function chooseForToday() {
+    if (hasRecordedOutfit) {
+      return
+    }
+
+    setIsChoosing(true)
+    setChoiceError(null)
+    const result = await chooseRecommendation({
+      recommendation,
+      targetDate,
+      scene
+    })
+    setIsChoosing(false)
+
+    if (result.error) {
+      setChoiceError(result.error)
+    }
   }
 
-  function renderReasonGroup(title: string, reasons: Array<{ tag: TodayFeedbackReasonTag; label: string }>) {
-    return (
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-neutral-dark)]">{title}</p>
-        <div className="flex flex-wrap gap-2">
-          {reasons.map((reason) => {
-            const selected = selectedReasonTags.includes(reason.tag)
+  async function undoChoice() {
+    setIsUndoing(true)
+    setChoiceError(null)
+    const result = await undoTodaySelection()
+    setIsUndoing(false)
 
-            return (
-              <SecondaryButton
-                key={reason.tag}
-                type="button"
-                aria-pressed={selected}
-                className={selected ? 'border-[var(--color-primary)] bg-[var(--color-accent)] text-[var(--color-primary)]' : ''}
-                onClick={() => toggleReasonTag(reason.tag)}
-              >
-                {reason.label}
-              </SecondaryButton>
-            )
-          })}
+    if (result.error) {
+      setChoiceError(result.error)
+    }
+  }
+
+  async function replaceRecommendationSlot(slot: TodayReplaceableSlot, reasonTags: TodayFeedbackReasonTag[] = []) {
+    setReplacingSlot(slot)
+    setReplacementError(null)
+    const result = await replaceSlot({
+      recommendation,
+      slot,
+      rejectedItemIds: slotRejectedIds(recommendation, slot),
+      reasonTags,
+      targetDate,
+      scene
+    })
+    setReplacingSlot(null)
+
+    if (result.error) {
+      setReplacementError(result.error)
+    }
+
+    return result
+  }
+
+  async function submitPositiveFeedback() {
+    setIsSubmitting(true)
+    setError(null)
+    const result = await submitPreChoiceFeedback({
+      recommendation,
+      scope: 'outfit',
+      itemIds: outfitItems.map((item) => item.id),
+      reasonTags: [],
+      preferenceSignal: 'positive',
+      targetDate,
+      scene
+    })
+    setIsSubmitting(false)
+
+    if (result.error) {
+      void sendBetaIssueFromClient({
+        code: 'today_preference_feedback_failed',
+        surface: 'today_card',
+        recoverable: true,
+        context: {
+          recommendationId: recommendation.id
+        }
+      })
+      setError(result.error)
+    }
+  }
+
+  async function submitDislikeFeedback() {
+    setIsFeedbackSubmitting(true)
+    setFeedbackError(null)
+    const result = await submitPreChoiceFeedback({
+      recommendation,
+      scope: 'outfit',
+      itemIds: outfitItems.map((item) => item.id),
+      reasonTags: ['dislike_item'],
+      preferenceSignal: 'negative',
+      targetDate,
+      scene
+    })
+    setIsFeedbackSubmitting(false)
+
+    if (result.error) {
+      setFeedbackError(result.error)
+      return
+    }
+
+    setIsVisuallyLowered(true)
+  }
+
+  async function confirmReplacement() {
+    if (!pendingReplacementSlot) {
+      return
+    }
+
+    const slot = pendingReplacementSlot
+    const result = await replaceRecommendationSlot(slot)
+
+    if (!result.error) {
+      setPendingReplacementSlot(null)
+    }
+  }
+
+  const replacementDialog = pendingReplacementSlot ? (
+    <div className="absolute inset-0 z-50 flex items-start justify-center rounded-[1.9rem] bg-black/28 px-4 pt-8 backdrop-blur-[2px] sm:pt-10">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`确认更换${getSlotDisplayLabel(pendingReplacementSlot)}`}
+        className="w-full max-w-sm rounded-[1.35rem] border border-white/55 bg-white/96 p-4 shadow-[0_24px_70px_rgba(0,0,0,0.24)]"
+      >
+        <div className="space-y-2">
+          <p className="text-base font-semibold text-[var(--color-primary)]">确认更换{getSlotDisplayLabel(pendingReplacementSlot)}？</p>
+          <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">系统会在你的衣橱里找一个更合适的替代单品，并保留这套方案的其他部分。</p>
+        </div>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <PrimaryButton
+            type="button"
+            disabled={Boolean(replacingSlot)}
+            onClick={() => void confirmReplacement()}
+          >
+            {replacingSlot === pendingReplacementSlot ? '正在更换...' : '确认更换'}
+          </PrimaryButton>
+          <SecondaryButton
+            type="button"
+            disabled={Boolean(replacingSlot)}
+            onClick={() => setPendingReplacementSlot(null)}
+          >
+            取消
+          </SecondaryButton>
         </div>
       </div>
-    )
-  }
-
-  const recordingControl = isRecorded ? (
-    <div className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/64 px-4 py-3 text-sm font-medium text-[var(--color-primary)]">
-      今日已记录
     </div>
-  ) : isLocked ? (
-    <div className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/64 px-4 py-3 text-sm font-medium text-[var(--color-neutral-dark)]">
-      今天已记录，其他方案暂时锁定
-    </div>
-  ) : isConfirming ? (
-    <div className="space-y-3 rounded-[1.4rem] border border-[var(--color-line)] bg-white/72 p-4">
-      <div className="space-y-1">
-        <p className="text-sm font-medium">给这套一个满意度</p>
-        <p className="text-sm text-[var(--color-neutral-dark)]">选 1-5 分后提交，系统会把它记成今天的记录。</p>
-      </div>
-      <div className="grid grid-cols-5 gap-2">
-        {[1, 2, 3, 4, 5].map((score) => {
-          const selected = selectedScore === score
+  ) : null
 
-          return (
-            <SecondaryButton
-              key={score}
-              type="button"
-              aria-pressed={selected}
-              className={selected ? 'border-[var(--color-primary)] bg-[var(--color-accent)] text-[var(--color-primary)]' : ''}
-              onClick={() => setSelectedScore(score)}
-            >
-              {score} 分
-            </SecondaryButton>
-          )
-        })}
-      </div>
-      <div className="space-y-4 rounded-[1.1rem] border border-[var(--color-line)] bg-white/62 p-3">
-        {renderReasonGroup('喜欢原因', likeReasonTags)}
-        {renderReasonGroup('不喜欢原因', dislikeReasonTags)}
-      </div>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      <div className="flex flex-col gap-2 sm:flex-row">
+  const choiceControl = isRecorded ? (
+    <div className="flex items-center justify-between gap-3 rounded-[1.2rem] border border-[var(--color-accent)]/50 bg-[var(--color-accent)]/18 px-3 py-2 text-sm font-medium text-[var(--color-primary)]">
+      <span>今日已选择</span>
+      <button
+        type="button"
+        className="inline-flex min-h-8 items-center justify-center rounded-full border border-[var(--color-primary)]/10 bg-white/78 px-3 text-xs font-semibold text-[var(--color-primary)] shadow-[0_8px_16px_rgba(17,14,9,0.08)] disabled:opacity-55"
+        disabled={isUndoing}
+        onClick={() => void undoChoice()}
+      >
+        {isUndoing ? '撤销中...' : '撤销'}
+      </button>
+    </div>
+  ) : (
+    <p className="rounded-[1rem] border border-[var(--color-line)] bg-white/56 px-3 py-2 text-xs font-medium text-[var(--color-neutral-dark)]">
+      {hasRecordedOutfit ? '今天已选择另一套，这套仍可继续反馈。' : '先选择已穿，再用反馈微调推荐。'}
+    </p>
+  )
+
+  const decisionControl = (
+    <div className="space-y-2">
+      {choiceControl}
+      <div className="grid grid-cols-3 gap-2">
         <PrimaryButton
           type="button"
-          disabled={isSubmitting || selectedScore === null}
-          onClick={async () => {
-            setIsSubmitting(true)
-            setError(null)
-            const result = await submitOotd({
-              recommendation,
-              satisfactionScore: selectedScore ?? 0,
-              reasonTags: selectedReasonTags
-            })
-            setIsSubmitting(false)
-
-            if (result.error) {
-              void sendBetaIssueFromClient({
-                code: 'today_ootd_submit_failed',
-                surface: 'today_card',
-                recoverable: true,
-                context: {
-                  recommendationId: recommendation.id
-                }
-              })
-              setError(result.error)
-              return
-            }
-
-            setIsConfirming(false)
-          }}
+          className="min-h-11 px-2 text-xs"
+          disabled={isChoosing || hasRecordedOutfit}
+          onClick={() => void chooseForToday()}
         >
-          提交今日记录
+          {isRecorded ? '已选择' : isChoosing ? '选择中...' : hasRecordedOutfit ? '已选其他' : '就穿这个'}
+        </PrimaryButton>
+        <PrimaryButton
+          type="button"
+          className="min-h-11 border border-[var(--color-primary)]/10 !bg-[var(--color-accent)] px-2 text-xs !text-[var(--color-primary)] shadow-[0_14px_28px_rgba(17,14,9,0.13)] hover:!bg-[var(--color-accent)]/90 hover:shadow-[0_18px_34px_rgba(17,14,9,0.16)]"
+          disabled={isSubmitting || isFeedbackSubmitting}
+          onClick={() => void submitPositiveFeedback()}
+        >
+          {isSubmitting ? '正在记录...' : '还不错'}
         </PrimaryButton>
         <SecondaryButton
           type="button"
-          disabled={isSubmitting}
-          onClick={() => {
-            setIsConfirming(false)
-            setSelectedScore(null)
-            setSelectedReasonTags([])
-            setError(null)
-          }}
+          className="min-h-11 px-2 text-xs"
+          disabled={isSubmitting || isFeedbackSubmitting}
+          onClick={() => void submitDislikeFeedback()}
         >
-          取消
+          {isFeedbackSubmitting ? '正在保存...' : '不喜欢'}
         </SecondaryButton>
       </div>
+      {choiceError ? <p className="text-sm text-red-600">{choiceError}</p> : null}
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {feedbackError ? <p className="text-sm text-red-600">{feedbackError}</p> : null}
     </div>
-  ) : (
-    <PrimaryButton
-      type="button"
-      onClick={() => {
-        setIsConfirming(true)
-        setSelectedScore(null)
-        setSelectedReasonTags([])
-        setError(null)
-      }}
-    >
-      记为今日已穿并评分
-    </PrimaryButton>
   )
 
   return (
-    <Card className="overflow-visible bg-[linear-gradient(180deg,rgba(255,255,255,0.76)_0%,rgba(241,234,224,0.94)_100%)]">
+    <Card className={`overflow-visible bg-[linear-gradient(180deg,rgba(255,255,255,0.76)_0%,rgba(241,234,224,0.94)_100%)] ${isRecorded ? 'ring-2 ring-[var(--color-accent)]/70' : ''} ${isVisuallyLowered ? 'opacity-60' : ''}`}>
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.1rem] border border-[var(--color-line)] bg-[var(--color-primary)] text-sm font-semibold text-white shadow-[0_14px_24px_rgba(0,0,0,0.16)]">
-              {rankLabel}
+          <div className="min-w-0 space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">
+              {isInspiration ? '灵感套装' : 'Today outfit'} · {rankLabel}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className={`${variant === 'hero' ? 'text-2xl' : 'text-xl'} font-semibold tracking-[-0.03em] ${isRecorded ? 'text-[var(--color-accent)] drop-shadow-[0_1px_0_rgba(0,0,0,0.24)]' : 'text-[var(--color-primary)]'}`}>
+                {role.label}
+              </h2>
+              {confidence !== null ? (
+                <span className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-[var(--color-neutral-dark)]">
+                  完整度 {confidence}
+                </span>
+              ) : null}
+              {isRecorded ? (
+                <span className="rounded-full bg-[var(--color-accent)] px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)]">
+                  已选择
+                </span>
+              ) : null}
             </div>
-            <div className="space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">
-                {isInspiration ? '灵感套装' : '搭配方案'}
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">第 {index} 套</p>
-                {isInspiration ? (
-                  <span className="rounded-full bg-[var(--color-accent)] px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)]">
-                    灵感套装
-                  </span>
-                ) : null}
-                {confidence !== null ? (
-                  <span className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-[var(--color-neutral-dark)]">
-                    完整度 {confidence}
-                  </span>
-                ) : null}
-              </div>
-            </div>
+            <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">{role.description}</p>
           </div>
-          {isRecorded ? (
-            <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">
-              已完成
-            </span>
-          ) : null}
         </div>
 
-        <CompactOutfitPreview items={outfitItems} />
+        <TodayOutfitHero
+          recommendation={recommendation}
+          variant={variant}
+          weatherState={weatherState}
+          replaceableSlots={!isRecorded ? replaceableSlots : []}
+          replacingSlot={replacingSlot}
+          onRequestReplace={(slot) => {
+            setReplacementError(null)
+            setPendingReplacementSlot(slot)
+          }}
+        />
 
         {missingSlots.length > 0 ? (
           <div className="rounded-[1rem] border border-[var(--color-line)] bg-white/68 px-3 py-2 text-sm font-medium text-[var(--color-neutral-dark)]">
@@ -313,7 +375,34 @@ export function TodayRecommendationCard({
           </div>
         ) : null}
 
-        {recordingControl}
+        {isVisuallyLowered ? (
+          <div className="rounded-[1rem] border border-[var(--color-line)] bg-white/68 px-3 py-2 text-sm leading-6 text-[var(--color-neutral-dark)]">
+            已记录这套暂时不想穿。可以继续看下面方案，或使用“换一批推荐”。
+          </div>
+        ) : null}
+
+        {decisionControl}
+
+        {replacementError ? <p className="text-sm text-red-600">{replacementError}</p> : null}
+        {replacementDialog}
+
+        {showFirstLoopHint ? (
+          <div className="rounded-[1rem] border border-[var(--color-line)] bg-white/68 px-3 py-2">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">第一次选择会让下一轮推荐更像你。</p>
+              {onDismissFirstLoopHint ? (
+                <button
+                  type="button"
+                  aria-label="关闭 first loop 提示"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-white/76 text-base leading-none text-[var(--color-primary)]"
+                  onClick={onDismissFirstLoopHint}
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         <div className="rounded-[1.25rem] border border-[rgba(9,9,9,0.12)] bg-[var(--color-panel)] p-3 text-white shadow-[0_16px_32px_rgba(0,0,0,0.12)]">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/52">为什么推荐这套</p>
@@ -347,7 +436,13 @@ export function TodayRecommendationCard({
           type="button"
           className="w-full"
           aria-expanded={showDetails}
-          onClick={() => setShowDetails((current) => !current)}
+          onClick={() => {
+            const shouldOpen = !showDetails
+            setShowDetails(shouldOpen)
+            if (shouldOpen) {
+              void recordOpened({ recommendation, targetDate, scene, source: 'details' })
+            }
+          }}
         >
           {showDetails ? '收起单品详情' : '展开单品详情'}
         </SecondaryButton>
@@ -368,104 +463,78 @@ export function TodayRecommendationCard({
             ) : null}
 
             {recommendation.dress ? (
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-neutral-dark)]">
-                  <span className="rounded-full bg-[var(--color-secondary)] px-2.5 py-1 text-[var(--color-primary)]">
-                    一件式
-                  </span>
-                  <span>主件 / 颜色 / 风格</span>
-                </div>
-                <ItemShowcase
-                  items={[toShowcaseItem(recommendation.dress)].filter((item): item is ItemShowcaseEntry => item !== null)}
-                  title={recommendation.dress.subCategory ?? recommendation.dress.category}
-                  subtitle={[
-                    itemLabel('颜色', recommendation.dress.colorCategory),
-                    recommendation.dress.styleTags.slice(0, 2).join(' / ')
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                />
-              </div>
+              <ItemShowcase
+                items={[toShowcaseItem(recommendation.dress)].filter((item): item is ItemShowcaseEntry => item !== null)}
+                title={recommendation.dress.subCategory ?? recommendation.dress.category}
+                subtitle={[
+                  itemLabel('颜色', recommendation.dress.colorCategory),
+                  recommendation.dress.styleTags.slice(0, 2).join(' / ')
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              />
             ) : (
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-neutral-dark)]">
-                  <span className="rounded-full bg-[var(--color-secondary)] px-2.5 py-1 text-[var(--color-primary)]">
-                    上下装
-                  </span>
-                  <span>主件 / 外层</span>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <ItemShowcase
-                    items={[
-                      toShowcaseItem(recommendation.top) ?? {
-                        id: 'missing-top',
-                        imageUrl: null,
-                        label: '待补充上装'
-                      }
-                    ]}
-                    title="上装"
-                    subtitle={itemLabel('颜色', recommendation.top?.colorCategory ?? null)}
-                  />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ItemShowcase
+                  items={[
+                    toShowcaseItem(recommendation.top) ?? {
+                      id: 'missing-top',
+                      imageUrl: null,
+                      label: '待补充上装'
+                    }
+                  ]}
+                  title="上装"
+                  subtitle={itemLabel('颜色', recommendation.top?.colorCategory ?? null)}
+                />
 
-                  <ItemShowcase
-                    items={[
-                      toShowcaseItem(recommendation.bottom) ?? {
-                        id: 'missing-bottom',
-                        imageUrl: null,
-                        label: '待补充下装'
-                      }
-                    ]}
-                    title="下装"
-                    subtitle={itemLabel('颜色', recommendation.bottom?.colorCategory ?? null)}
-                  />
-                </div>
+                <ItemShowcase
+                  items={[
+                    toShowcaseItem(recommendation.bottom) ?? {
+                      id: 'missing-bottom',
+                      imageUrl: null,
+                      label: '待补充下装'
+                    }
+                  ]}
+                  title="下装"
+                  subtitle={itemLabel('颜色', recommendation.bottom?.colorCategory ?? null)}
+                />
               </div>
             )}
 
             {recommendation.outerLayer ? (
-              <div className="rounded-[1.4rem] bg-[linear-gradient(180deg,rgba(231,255,55,0.18),rgba(231,255,55,0.1))] p-1">
-                <ItemShowcase
-                  items={[toShowcaseItem(recommendation.outerLayer)].filter((item): item is ItemShowcaseEntry => item !== null)}
-                  title="外层建议"
-                  subtitle={itemLabel('颜色', recommendation.outerLayer.colorCategory)}
-                />
-              </div>
+              <ItemShowcase
+                items={[toShowcaseItem(recommendation.outerLayer)].filter((item): item is ItemShowcaseEntry => item !== null)}
+                title="外层建议"
+                subtitle={itemLabel('颜色', recommendation.outerLayer.colorCategory)}
+              />
             ) : null}
 
             {accessoryItems.length > 0 ? (
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-neutral-dark)]">
-                  <span className="rounded-full bg-[var(--color-secondary)] px-2.5 py-1 text-[var(--color-primary)]">
-                    鞋包配饰
-                  </span>
-                  <span>完成度补充</span>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {recommendation.shoes ? (
-                    <ItemShowcase
-                      items={[toShowcaseItem(recommendation.shoes)].filter((item): item is ItemShowcaseEntry => item !== null)}
-                      title="鞋履"
-                      subtitle={itemLabel('颜色', recommendation.shoes.colorCategory)}
-                      compact
-                    />
-                  ) : null}
-                  {recommendation.bag ? (
-                    <ItemShowcase
-                      items={[toShowcaseItem(recommendation.bag)].filter((item): item is ItemShowcaseEntry => item !== null)}
-                      title="包袋"
-                      subtitle={itemLabel('颜色', recommendation.bag.colorCategory)}
-                      compact
-                    />
-                  ) : null}
-                  {(recommendation.accessories ?? []).length > 0 ? (
-                    <ItemShowcase
-                      items={(recommendation.accessories ?? []).map(toShowcaseItem).filter((item): item is ItemShowcaseEntry => item !== null)}
-                      title="配饰"
-                      subtitle={(recommendation.accessories ?? []).map((item) => item.subCategory ?? item.category).join(' / ')}
-                      compact
-                    />
-                  ) : null}
-                </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {recommendation.shoes ? (
+                  <ItemShowcase
+                    items={[toShowcaseItem(recommendation.shoes)].filter((item): item is ItemShowcaseEntry => item !== null)}
+                    title="鞋履"
+                    subtitle={itemLabel('颜色', recommendation.shoes.colorCategory)}
+                    compact
+                  />
+                ) : null}
+                {recommendation.bag ? (
+                  <ItemShowcase
+                    items={[toShowcaseItem(recommendation.bag)].filter((item): item is ItemShowcaseEntry => item !== null)}
+                    title="包袋"
+                    subtitle={itemLabel('颜色', recommendation.bag.colorCategory)}
+                    compact
+                  />
+                ) : null}
+                {(recommendation.accessories ?? []).length > 0 ? (
+                  <ItemShowcase
+                    items={(recommendation.accessories ?? []).map(toShowcaseItem).filter((item): item is ItemShowcaseEntry => item !== null)}
+                    title="配饰"
+                    subtitle={(recommendation.accessories ?? []).map((item) => item.subCategory ?? item.category).join(' / ')}
+                    compact
+                  />
+                ) : null}
               </div>
             ) : null}
 

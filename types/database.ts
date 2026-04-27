@@ -118,6 +118,41 @@ export type Database = {
           notes?: string | null
         }
       }
+      today_recommendation_cache: {
+        Row: {
+          id: string
+          user_id: string
+          target_date: 'today' | 'tomorrow'
+          scene_key: string
+          city: string | null
+          item_count: number
+          weather_state: Json
+          recommendations: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          target_date: 'today' | 'tomorrow'
+          scene_key?: string
+          city?: string | null
+          item_count?: number
+          weather_state: Json
+          recommendations: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          target_date?: 'today' | 'tomorrow'
+          scene_key?: string
+          city?: string | null
+          item_count?: number
+          weather_state?: Json
+          recommendations?: Json
+          updated_at?: string
+        }
+      }
       travel_plans: {
         Row: {
           id: string

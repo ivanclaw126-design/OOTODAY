@@ -20,7 +20,7 @@ export async function getTodayOotdStatus(userId: string): Promise<TodayOotdStatu
 
   const { data, error } = await supabase
     .from('ootd')
-    .select('worn_at')
+    .select('id, worn_at')
     .eq('user_id', userId)
     .gte('worn_at', start)
     .lt('worn_at', end)
@@ -36,6 +36,7 @@ export async function getTodayOotdStatus(userId: string): Promise<TodayOotdStatu
 
   return {
     status: 'recorded',
-    wornAt: data.worn_at
+    wornAt: data.worn_at,
+    ootdId: data.id
   }
 }

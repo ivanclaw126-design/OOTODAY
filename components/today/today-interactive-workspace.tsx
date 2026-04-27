@@ -2,22 +2,24 @@
 
 import { startTransition, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FeedbackLink } from '@/components/beta/feedback-link'
 import { TodayCityForm } from '@/components/today/today-city-form'
 import { TodayCityPromptCard } from '@/components/today/today-city-prompt-card'
+import { TodayContextBar } from '@/components/today/today-context-bar'
 import { TodayOotdHistory } from '@/components/today/today-ootd-history'
 import { TodayRecommendationList } from '@/components/today/today-recommendation-list'
-import { TodayStatusCard } from '@/components/today/today-status-card'
 import { SecondaryButton } from '@/components/ui/button'
 import { buildOotdNotes } from '@/lib/today/build-ootd-notes'
 import type {
+  TodayChooseRecommendationInput,
   TodayHistoryUpdateInput,
-  TodayOotdFeedbackInput,
   TodayOotdHistoryEntry,
   TodayOotdStatus,
+  TodayPreChoiceFeedbackInput,
   TodayRecommendation,
   TodayRecommendationRefreshInput,
   TodayRecommendationRefreshResult,
+  TodaySlotReplacementInput,
+  TodaySlotReplacementResult,
   TodayScene,
   TodayTargetDate,
   TodayView
@@ -52,15 +54,23 @@ function getRecordedRecommendationId({
 export function TodayInteractiveWorkspace({
   view,
   updateCity,
-  submitOotd,
+  chooseRecommendation,
+  undoTodaySelection,
   refreshRecommendations,
+  replaceRecommendationSlot,
+  submitPreChoiceFeedback,
+  recordRecommendationOpened,
   updateHistoryEntry,
   deleteHistoryEntry
 }: {
   view: TodayView
   updateCity: (input: { city: string }) => Promise<{ error: string | null }>
-  submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
+  chooseRecommendation: (input: TodayChooseRecommendationInput) => Promise<{ error: string | null; wornAt: string | null }>
+  undoTodaySelection: () => Promise<{ error: string | null }>
   refreshRecommendations: (input: TodayRecommendationRefreshInput) => Promise<TodayRecommendationRefreshResult>
+  replaceRecommendationSlot: (input: TodaySlotReplacementInput) => Promise<TodaySlotReplacementResult>
+  submitPreChoiceFeedback: (input: TodayPreChoiceFeedbackInput) => Promise<{ error: string | null }>
+  recordRecommendationOpened: (input: TodayChooseRecommendationInput & { source: 'details' | 'quick_feedback' }) => Promise<{ error: string | null }>
   updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>
   deleteHistoryEntry: (input: { ootdId: string }) => Promise<{ error: string | null }>
 }) {
@@ -108,12 +118,35 @@ export function TodayInteractiveWorkspace({
     return result
   }
 
-  async function submitTodayOotd(input: TodayOotdFeedbackInput) {
-    const result = await submitOotd(input)
+  async function chooseTodayRecommendation(input: TodayChooseRecommendationInput) {
+    const result = await chooseRecommendation(input)
 
     if (!result.error && result.wornAt) {
       setOotdStatus({ status: 'recorded', wornAt: result.wornAt })
       setRecordedRecommendationId(input.recommendation.id)
+    }
+
+    return result
+  }
+
+  async function undoSelection() {
+    const result = await undoTodaySelection()
+
+    if (!result.error) {
+      setOotdStatus({ status: 'not-recorded' })
+      setRecordedRecommendationId(null)
+    }
+
+    return result
+  }
+
+  async function replaceSlot(input: TodaySlotReplacementInput) {
+    const result = await replaceRecommendationSlot(input)
+
+    if (!result.error && result.recommendation) {
+      setRecommendations((current) =>
+        current.map((recommendation) => recommendation.id === input.recommendation.id ? result.recommendation as TodayRecommendation : recommendation)
+      )
     }
 
     return result
@@ -124,7 +157,16 @@ export function TodayInteractiveWorkspace({
     const nextOffset = recommendationOffset + 1
 
     try {
-      const result = await refreshRecommendations({ offset: nextOffset, targetDate, scene })
+      const lockedRecommendationIndex = recordedRecommendationId
+        ? recommendations.findIndex((recommendation) => recommendation.id === recordedRecommendationId)
+        : -1
+      const lockedRecommendation = lockedRecommendationIndex >= 0 ? recommendations[lockedRecommendationIndex] ?? null : null
+      const result = await refreshRecommendations({
+        offset: nextOffset,
+        targetDate,
+        scene,
+        ...(lockedRecommendation ? { lockedRecommendation, lockedRecommendationIndex } : {})
+      })
       startTransition(() => {
         setRecommendations(result.recommendations)
         setWeatherState(result.weatherState ?? weatherState)
@@ -149,10 +191,15 @@ export function TodayInteractiveWorkspace({
     setIsRefreshingRecommendations(true)
 
     try {
+      const lockedRecommendationIndex = recordedRecommendationId
+        ? recommendations.findIndex((recommendation) => recommendation.id === recordedRecommendationId)
+        : -1
+      const lockedRecommendation = lockedRecommendationIndex >= 0 ? recommendations[lockedRecommendationIndex] ?? null : null
       const result = await refreshRecommendations({
         offset: 0,
         targetDate: nextTargetDate,
-        scene: nextScene
+        scene: nextScene,
+        ...(lockedRecommendation ? { lockedRecommendation, lockedRecommendationIndex } : {})
       })
       startTransition(() => {
         setTargetDate(nextTargetDate)
@@ -197,14 +244,12 @@ export function TodayInteractiveWorkspace({
 
   return (
     <>
-      <TodayStatusCard
+      <TodayContextBar
         city={view.city}
         weatherState={weatherState}
         targetDate={targetDate}
         scene={scene}
         isRefreshing={isRefreshingRecommendations}
-        onEditCity={() => setIsCityFormOpen((current) => !current)}
-        isCityEditing={isCityFormOpen}
         cityEditor={isCityFormOpen ? (
           <TodayCityForm
             initialCity={view.city ?? ''}
@@ -212,6 +257,7 @@ export function TodayInteractiveWorkspace({
             onCancel={() => setIsCityFormOpen(false)}
           />
         ) : null}
+        onEditCity={() => setIsCityFormOpen((current) => !current)}
         onTargetDateChange={(nextTargetDate) => void handleContextChange({ targetDate: nextTargetDate })}
         onSceneChange={(nextScene) => void handleContextChange({ scene: nextScene })}
       />
@@ -225,35 +271,17 @@ export function TodayInteractiveWorkspace({
         recommendationError={view.recommendationError}
         ootdStatus={ootdStatus}
         recordedRecommendationId={recordedRecommendationId}
+        weatherState={weatherState}
         targetDate={targetDate}
         scene={scene}
-        submitOotd={submitTodayOotd}
+        showFirstLoopHint={!hasStartedFeedbackLoop && !isFirstLoopDismissed}
+        onDismissFirstLoopHint={dismissFirstLoop}
+        chooseRecommendation={chooseTodayRecommendation}
+        undoTodaySelection={undoSelection}
+        replaceSlot={replaceSlot}
+        submitPreChoiceFeedback={submitPreChoiceFeedback}
+        recordOpened={recordRecommendationOpened}
       />
-
-      {!hasStartedFeedbackLoop && !isFirstLoopDismissed ? (
-        <section className="rounded-[1.1rem] border border-[var(--color-line)] bg-white/70 px-3 py-3 shadow-[0_10px_22px_rgba(17,14,9,0.04)]">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">First loop</p>
-              <h2 className="text-base font-semibold leading-6 text-[var(--color-primary)]">先在今天完成第一次推荐闭环</h2>
-              <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">选一套最接近今天会穿的方案并评分，下一轮会更像你。</p>
-            </div>
-            <button
-              type="button"
-              aria-label="关闭 first loop 提示"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-white/76 text-base leading-none text-[var(--color-primary)] transition hover:bg-white"
-              onClick={dismissFirstLoop}
-            >
-              ×
-            </button>
-          </div>
-          <FeedbackLink
-            surface="today_first_loop"
-            label="反馈 Today 问题"
-            className="mt-3 inline-flex rounded-full border border-[var(--color-line)] bg-white px-3 py-1.5 text-sm font-semibold text-[var(--color-primary)]"
-          />
-        </section>
-      ) : null}
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <SecondaryButton type="button" onClick={() => void handleRefreshRecommendations()} disabled={isRefreshingRecommendations}>

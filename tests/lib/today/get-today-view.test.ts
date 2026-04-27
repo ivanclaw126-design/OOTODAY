@@ -11,6 +11,8 @@ const getCandidateModelScoreMap = vi.fn()
 const getEntityModelScoreMap = vi.fn()
 const getRecommendationTrendSignals = vi.fn()
 const getRecommendationLearningSignals = vi.fn()
+const getCachedTodayRecommendations = vi.fn()
+const saveTodayRecommendationCache = vi.fn()
 
 vi.mock('@/lib/closet/get-closet-view', () => ({
   getClosetView
@@ -50,6 +52,11 @@ vi.mock('@/lib/recommendation/learning-signal-storage', () => ({
   getRecommendationLearningSignals
 }))
 
+vi.mock('@/lib/today/recommendation-cache', () => ({
+  getCachedTodayRecommendations,
+  saveTodayRecommendationCache
+}))
+
 describe('getTodayView', () => {
   beforeEach(() => {
     getClosetView.mockReset()
@@ -67,6 +74,10 @@ describe('getTodayView', () => {
     getRecommendationTrendSignals.mockResolvedValue([])
     getRecommendationLearningSignals.mockReset()
     getRecommendationLearningSignals.mockResolvedValue([])
+    getCachedTodayRecommendations.mockReset()
+    getCachedTodayRecommendations.mockResolvedValue(null)
+    saveTodayRecommendationCache.mockReset()
+    saveTodayRecommendationCache.mockResolvedValue(undefined)
   })
 
   it('returns non-weather recommendations and not-recorded status when city is missing', async () => {
@@ -112,6 +123,7 @@ describe('getTodayView', () => {
       scene: null,
       weatherState: { status: 'not-set', targetDate: 'today' },
       recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }, { id: 'rec-3' }],
+      recommendationSource: 'generated',
       recommendationError: false,
       ootdStatus: { status: 'not-recorded' },
       recentOotdHistory: []
@@ -139,6 +151,37 @@ describe('getTodayView', () => {
       targetDate: 'today',
       scene: null
     }))
+    expect(saveTodayRecommendationCache).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 'user-1',
+      targetDate: 'today',
+      scene: null,
+      recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }, { id: 'rec-3' }]
+    }))
+  })
+
+  it('returns cached recommendations without regenerating on page load', async () => {
+    getClosetView.mockResolvedValue({ itemCount: 1, items: [{ id: 'item-1' }] })
+    getTodayOotdStatus.mockResolvedValue({ status: 'not-recorded' })
+    getRecentOotdHistory.mockResolvedValue([])
+    getPreferenceState.mockResolvedValue({ source: 'default', hasQuestionnaireAnswers: false })
+    getCachedTodayRecommendations.mockResolvedValue({
+      recommendations: [{ id: 'cached-rec-1' }, { id: 'cached-rec-2' }, { id: 'cached-rec-3' }],
+      weatherState: { status: 'not-set', targetDate: 'today' }
+    })
+
+    const { getTodayView } = await import('@/lib/today/get-today-view')
+
+    const view = await getTodayView({
+      userId: 'user-1',
+      city: null,
+      accountEmail: 'user@example.com',
+      passwordBootstrapped: true,
+      passwordChangedAt: null
+    })
+
+    expect(view.recommendations).toEqual([{ id: 'cached-rec-1' }, { id: 'cached-rec-2' }, { id: 'cached-rec-3' }])
+    expect(view.recommendationSource).toBe('cache')
+    expect(generateTodayRecommendations).not.toHaveBeenCalled()
   })
 
   it('returns recorded status when today is already saved', async () => {
@@ -182,6 +225,7 @@ describe('getTodayView', () => {
       scene: 'work',
       weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'tomorrow' },
       recommendations: [],
+      recommendationSource: 'generated',
       recommendationError: false,
       ootdStatus: {
         status: 'recorded',
