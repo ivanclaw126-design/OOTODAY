@@ -6,9 +6,9 @@ import type { ClosetItemCardData } from '@/lib/closet/types'
 function createItem(overrides: Partial<ClosetItemCardData> = {}): ClosetItemCardData {
   return {
     id: 'item-1',
-    imageUrl: 'https://example.com/rotated-shorts.jpg',
+    imageUrl: 'https://xaoqhaakrzolcyivqutn.supabase.co/storage/v1/object/public/ootd-images/user-1/rotated-shorts.jpg',
     imageFlipped: true,
-    imageOriginalUrl: 'https://example.com/original-shorts.jpg',
+    imageOriginalUrl: 'https://xaoqhaakrzolcyivqutn.supabase.co/storage/v1/object/public/ootd-images/user-1/original-shorts.jpg',
     imageRotationQuarterTurns: 1,
     imageRestoreExpiresAt: '2099-04-24T12:30:00Z',
     canRestoreOriginal: true,
@@ -24,7 +24,7 @@ function createItem(overrides: Partial<ClosetItemCardData> = {}): ClosetItemCard
 }
 
 describe('ClosetGroupBrowser', () => {
-  it('renders group thumbnails with contain fit so rotated images stay visible', () => {
+  it('defers group thumbnails until the group is active', () => {
     const groups = buildClosetBrowseGroups([createItem()], 'category')
 
     render(
@@ -37,8 +37,36 @@ describe('ClosetGroupBrowser', () => {
       />
     )
 
-    const thumbnail = screen.getByAltText('下装 缩略图')
-    expect(thumbnail).toHaveAttribute('src', 'https://example.com/rotated-shorts.jpg')
+    expect(screen.queryByAltText('下装 缩略图')).not.toBeInTheDocument()
+  })
+
+  it('renders at most two active group thumbnails with contain fit', () => {
+    const groups = buildClosetBrowseGroups([
+      createItem({ id: 'item-1', imageUrl: 'https://xaoqhaakrzolcyivqutn.supabase.co/storage/v1/object/public/ootd-images/user-1/rotated-shorts.jpg' }),
+      createItem({ id: 'item-2', imageUrl: 'https://xaoqhaakrzolcyivqutn.supabase.co/storage/v1/object/public/ootd-images/user-1/second-shorts.jpg' }),
+      createItem({ id: 'item-3', imageUrl: 'https://xaoqhaakrzolcyivqutn.supabase.co/storage/v1/object/public/ootd-images/user-1/third-shorts.jpg' })
+    ], 'category')
+
+    render(
+      <ClosetGroupBrowser
+        groups={groups}
+        mode="category"
+        activeGroupValue="下装"
+        onSelectGroup={() => {}}
+        onClearGroup={() => {}}
+      />
+    )
+
+    const thumbnails = screen.getAllByAltText('下装 缩略图')
+    const thumbnailUrls = thumbnails.map((thumbnail) => decodeURIComponent(thumbnail.getAttribute('src') ?? ''))
+    const firstThumbnailSrcSet = decodeURIComponent(thumbnails[0].getAttribute('srcset') ?? '')
+
+    expect(thumbnails).toHaveLength(2)
+    expect(thumbnailUrls[0]).toContain('/storage/v1/render/image/public/ootd-images/user-1/rotated-shorts.jpg')
+    expect(thumbnailUrls[1]).toContain('/storage/v1/render/image/public/ootd-images/user-1/second-shorts.jpg')
+    expect(firstThumbnailSrcSet).toContain('width=128')
+    expect(thumbnailUrls.some((src) => src.includes('third-shorts.jpg'))).toBe(false)
+    const thumbnail = thumbnails[0]
     expect(thumbnail.className).toContain('object-contain')
     expect(thumbnail.className).not.toContain('object-cover')
   })
