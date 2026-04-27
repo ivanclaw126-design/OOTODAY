@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-27
-- Branch / theme: Today mobile decision page iteration
+- Branch / theme: Supabase Phone OTP auth
 - Latest checkpoint: not created in-session; this snapshot is the repo-local fallback mirror.
-- Current blocker: no code blocker; still recommend manual iPhone 12 Pro QA against real demo/login data before beta handoff.
-- Next plan to read: `/Users/spicyclaw/Downloads/ootoday_today_mobile_iteration_plan_for_codex.md`
-- Intended summary if `/context-save` fails: Completed Today mobile decision-page iteration: `/today` now opens with context chips and first recommendation hero, cards use scene-aware decision roles, Outfit Hero flatlay previews, "就穿这套" creates an unscored same-day OOTD and records `worn`, later scoring updates the selected record, slot-level replacement and pre-choice "不想穿" feedback record recommendation interactions, first-loop guidance is inline, and strategy explanations remain visible. Verification passed with `npm run lint`, full `npm test` (77 files, 349 tests), and `npm run build`; local dev server was started on `http://localhost:3000`.
+- Current blocker: no code blocker; still need deployment env vars plus a real Supabase Send SMS Hook / Aliyun PNVS smoke.
+- Next plan to read: none for this auth batch.
+- Intended summary if `/context-save` fails: Added phone verification-code login on Landing with country-code selector defaulting to `+86`, client-side `signInWithOtp({ phone })`, 6-digit `verifyOtp({ phone, token, type: 'sms' })`, loading/error states, resend countdown, duplicate-send prevention, and post-login routing to `/today` for existing profiles or `/closet?onboarding=1` for new profiles. Added `profiles.phone` migration and applied it remotely as `20260427183000`; profile upsert writes phone while authorization continues to rely on `auth.uid()`. Added Supabase Auth Send SMS Hook endpoint `/api/auth/send-sms`, verified via Standard Webhooks secret, extracting `user.phone` and `sms.otp`, allowing only `+86`, mapping `+86138...` to `CountryCode=86` and `PhoneNumber=138...`, and calling Aliyun PNVS `SendSmsVerifyCode` with `TemplateParam={"code": token, "min": "5"}` without calling Aliyun verification. Verification passed with `npm run lint`, `npm test` (80 files, 392 tests), `npm run build`, and remote `supabase migration list`.
 
 ## Snapshot Template
 

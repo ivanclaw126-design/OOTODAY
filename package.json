@@ -14,13 +14,16 @@
     "travel:db:check": "bash scripts/check-travel-plans-migration.sh"
   },
   "dependencies": {
+    "@alicloud/dypnsapi20170525": "^2.0.0",
+    "@alicloud/openapi-core": "^1.0.7",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.75.0",
     "clsx": "^2.1.1",
     "jimp": "^0.22.12",
     "next": "16.2.4",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "standardwebhooks": "^1.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

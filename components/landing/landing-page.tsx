@@ -1,6 +1,7 @@
 import { FeedbackLink } from '@/components/beta/feedback-link'
 import { OnboardingChecklist } from '@/components/beta/onboarding-checklist'
 import { PageViewTracker } from '@/components/analytics/page-view-tracker'
+import { PhoneLoginForm } from '@/components/landing/phone-login-form'
 
 function getAuthErrorMessage(authError: string | null) {
   if (!authError) {
@@ -147,6 +148,8 @@ export function LandingPage({ magicLinkSent, authError }: { magicLinkSent: boole
                   </button>
                 </form>
               </div>
+
+              <PhoneLoginForm />
 
               <div className="mt-6 w-full min-w-0 rounded-[1.5rem] bg-[var(--color-secondary)]/50 p-4 text-sm leading-6 text-[var(--color-neutral-dark)]">
                 <p className="font-medium text-[var(--color-primary)]">你进来之后会先做什么</p>
