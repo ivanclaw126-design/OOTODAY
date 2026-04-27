@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, createEvent, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { TodayPage } from '@/components/today/today-page'
@@ -186,112 +186,52 @@ function makeRecommendation(id: string, reason: string, topLabel: string = '衬�
   }
 }
 
-function mockIntersectingContinuationCue() {
-  const original = globalThis.IntersectionObserver
-  let didIntersect = false
+function getHorizontalRefreshRail(container: HTMLElement) {
+  const rail = container.querySelector('[data-testid="today-recommendation-rail"]') as HTMLElement | null
 
-  vi.stubGlobal('IntersectionObserver', class MockIntersectionObserver {
-    private callback: IntersectionObserverCallback
+  if (!rail) {
+    throw new Error('Today recommendation rail not found')
+  }
 
-    constructor(callback: IntersectionObserverCallback) {
-      this.callback = callback
-    }
-
-    observe(target: Element) {
-      if (didIntersect) {
-        return
-      }
-
-      didIntersect = true
-      this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
-    }
-
-    unobserve() {}
-    disconnect() {}
-    takeRecords() {
-      return []
-    }
+  Object.defineProperties(rail, {
+    clientWidth: { value: 320, configurable: true },
+    scrollWidth: { value: 960, configurable: true },
+    scrollLeft: { value: 640, configurable: true, writable: true }
   })
 
-  return () => {
-    if (original) {
-      vi.stubGlobal('IntersectionObserver', original)
-    } else {
-      Reflect.deleteProperty(globalThis, 'IntersectionObserver')
-    }
-  }
+  return rail
 }
 
-function mockPersistentlyIntersectingContinuationCue() {
-  const original = globalThis.IntersectionObserver
+function dragPastHorizontalRefreshThreshold(rail: HTMLElement) {
+  const down = createEvent.pointerDown(rail)
+  Object.defineProperty(down, 'clientX', { value: 300 })
+  fireEvent(rail, down)
 
-  vi.stubGlobal('IntersectionObserver', class MockIntersectionObserver {
-    private callback: IntersectionObserverCallback
+  const move = createEvent.pointerMove(rail)
+  Object.defineProperty(move, 'clientX', { value: 205 })
+  fireEvent(rail, move)
 
-    constructor(callback: IntersectionObserverCallback) {
-      this.callback = callback
-    }
-
-    observe(target: Element) {
-      this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
-    }
-
-    unobserve() {}
-    disconnect() {}
-    takeRecords() {
-      return []
-    }
-  })
-
-  return () => {
-    if (original) {
-      vi.stubGlobal('IntersectionObserver', original)
-    } else {
-      Reflect.deleteProperty(globalThis, 'IntersectionObserver')
-    }
-  }
+  fireEvent.pointerUp(rail)
 }
 
-function mockControlledContinuationCue() {
-  const original = globalThis.IntersectionObserver
-  let callback: IntersectionObserverCallback | null = null
-  let target: Element | null = null
+function dragWithinHorizontalRefreshThreshold(rail: HTMLElement) {
+  const down = createEvent.pointerDown(rail)
+  Object.defineProperty(down, 'clientX', { value: 300 })
+  fireEvent(rail, down)
 
-  vi.stubGlobal('IntersectionObserver', class MockIntersectionObserver {
-    constructor(nextCallback: IntersectionObserverCallback) {
-      callback = nextCallback
-    }
+  const move = createEvent.pointerMove(rail)
+  Object.defineProperty(move, 'clientX', { value: 250 })
+  fireEvent(rail, move)
+}
 
-    observe(nextTarget: Element) {
-      target = nextTarget
-    }
+function dragPastHorizontalRefreshThresholdWithoutRelease(rail: HTMLElement) {
+  const down = createEvent.pointerDown(rail)
+  Object.defineProperty(down, 'clientX', { value: 300 })
+  fireEvent(rail, down)
 
-    unobserve() {}
-    disconnect() {}
-    takeRecords() {
-      return []
-    }
-  })
-
-  return {
-    enter() {
-      if (callback && target) {
-        callback([{ isIntersecting: true, target } as IntersectionObserverEntry], {} as IntersectionObserver)
-      }
-    },
-    leave() {
-      if (callback && target) {
-        callback([{ isIntersecting: false, target } as IntersectionObserverEntry], {} as IntersectionObserver)
-      }
-    },
-    restore() {
-      if (original) {
-        vi.stubGlobal('IntersectionObserver', original)
-      } else {
-        Reflect.deleteProperty(globalThis, 'IntersectionObserver')
-      }
-    }
-  }
+  const move = createEvent.pointerMove(rail)
+  Object.defineProperty(move, 'clientX', { value: 205 })
+  fireEvent(rail, move)
 }
 
 describe('TodayPage', () => {
@@ -914,7 +854,7 @@ describe('TodayPage', () => {
       })
     })
     expect(submitOotd).not.toHaveBeenCalled()
-    expect(screen.getByText('已记录这套暂时不想穿。可以继续看下面方案，或使用“换一批推荐”。')).toBeInTheDocument()
+    expect(screen.getByText('已记录这套暂时不想穿。可以继续横向滑动，并在最右侧继续拖动生成更多方案。')).toBeInTheDocument()
   })
 
   it('confirms before replacing a slot from the outfit image', async () => {
@@ -1134,7 +1074,7 @@ describe('TodayPage', () => {
     expect(screen.getByText('OOTD: 衬衫 + 西裤；理由：基础组合稳定不出错')).toBeInTheDocument()
   })
 
-  it('requests the next recommendation offset when refreshing', async () => {
+  it('requests the next recommendation offset when using the explicit batch refresh button', async () => {
     refreshRecommendations.mockResolvedValueOnce({
       recommendations: [{ ...recommendation, id: 'rec-next', reason: '新的轮换建议' }],
       weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' }
@@ -1172,7 +1112,7 @@ describe('TodayPage', () => {
     expect(await screen.findByText('新的轮换建议')).toBeInTheDocument()
   })
 
-  it('continues the daily recommendation sequence after a full batch refresh', async () => {
+  it('continues the daily recommendation sequence after an explicit batch refresh', async () => {
     const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
     const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
     const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
@@ -1221,8 +1161,7 @@ describe('TodayPage', () => {
     expect(screen.getByLabelText('今天第 6 套推荐')).toBeInTheDocument()
   })
 
-  it('preloads one regular recommendation from the mobile continuation cue', async () => {
-    const restoreIntersectionObserver = mockIntersectingContinuationCue()
+  it('generates one more recommendation after pulling past the horizontal end threshold', async () => {
     const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
     const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
     const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
@@ -1234,51 +1173,83 @@ describe('TodayPage', () => {
       actualMode: 'daily'
     })
 
-    try {
-      render(
-        <TodayPage
-          view={{
-            itemCount: 5,
-            city: 'Shanghai',
-            accountEmail: 'user@example.com',
-            passwordBootstrapped: true,
-            passwordChangedAt: null,
-            weatherState: { status: 'unavailable', city: 'Shanghai' },
-            recommendations: [rec1, rec2, rec3],
-            recommendationError: false,
-            ootdStatus: { status: 'not-recorded' },
-            recentOotdHistory: []
-          }}
-          updateCity={updateCity}
-          submitOotd={submitOotd}
-          refreshRecommendations={refreshRecommendations}
-          changePassword={changePassword}
-          signOut={signOut}
-          updateHistoryEntry={updateHistoryEntry}
-          deleteHistoryEntry={deleteHistoryEntry}
-        />
-      )
+    const { container } = render(
+      <TodayPage
+        view={{
+          itemCount: 5,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [rec1, rec2, rec3],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
 
-      expect(screen.getByLabelText('继续滑动生成常规推荐')).toBeInTheDocument()
+    dragPastHorizontalRefreshThreshold(getHorizontalRefreshRail(container))
 
-      await waitFor(() => {
-        expect(refreshRecommendations).toHaveBeenCalledWith({
-          offset: 1,
-          targetDate: 'today',
-          scene: null,
-          requestedMode: 'daily',
-          excludeRecommendationIds: ['rec-1', 'rec-2', 'rec-3']
-        })
+    await waitFor(() => {
+      expect(refreshRecommendations).toHaveBeenCalledWith({
+        offset: 1,
+        targetDate: 'today',
+        scene: null,
+        requestedMode: 'daily',
+        excludeRecommendationIds: ['rec-1', 'rec-2', 'rec-3']
       })
-      expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
-      expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
-    } finally {
-      restoreIntersectionObserver()
-    }
+    })
+    expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+    expect(screen.queryByText('第一套理由')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
   })
 
-  it('does not preload two recommendation groups while the continuation cue remains visible', async () => {
-    const restoreIntersectionObserver = mockPersistentlyIntersectingContinuationCue()
+  it('shows pull refresh copy before triggering horizontal refresh', () => {
+    const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
+    const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
+    const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
+
+    const { container } = render(
+      <TodayPage
+        view={{
+          itemCount: 5,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [rec1, rec2, rec3],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    dragWithinHorizontalRefreshThreshold(getHorizontalRefreshRail(container))
+    expect(screen.getByText('继续拖动')).toBeInTheDocument()
+
+    dragPastHorizontalRefreshThresholdWithoutRelease(getHorizontalRefreshRail(container))
+    expect(screen.getByText('松手生成')).toBeInTheDocument()
+  })
+
+  it('does not request another continuation while one horizontal pull refresh is in flight', async () => {
     const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
     const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
     const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
@@ -1290,43 +1261,42 @@ describe('TodayPage', () => {
       actualMode: 'daily'
     })
 
-    try {
-      render(
-        <TodayPage
-          view={{
-            itemCount: 5,
-            city: 'Shanghai',
-            accountEmail: 'user@example.com',
-            passwordBootstrapped: true,
-            passwordChangedAt: null,
-            weatherState: { status: 'unavailable', city: 'Shanghai' },
-            recommendations: [rec1, rec2, rec3],
-            recommendationError: false,
-            ootdStatus: { status: 'not-recorded' },
-            recentOotdHistory: []
-          }}
-          updateCity={updateCity}
-          submitOotd={submitOotd}
-          refreshRecommendations={refreshRecommendations}
-          changePassword={changePassword}
-          signOut={signOut}
-          updateHistoryEntry={updateHistoryEntry}
-          deleteHistoryEntry={deleteHistoryEntry}
-        />
-      )
+    const { container } = render(
+      <TodayPage
+        view={{
+          itemCount: 5,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [rec1, rec2, rec3],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
 
-      expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+    const rail = getHorizontalRefreshRail(container)
+    dragPastHorizontalRefreshThreshold(rail)
+    dragPastHorizontalRefreshThreshold(rail)
 
-      await waitFor(() => {
-        expect(refreshRecommendations).toHaveBeenCalledTimes(1)
-      })
-    } finally {
-      restoreIntersectionObserver()
-    }
+    expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(refreshRecommendations).toHaveBeenCalledTimes(1)
+    })
   })
 
   it('renumbers recycled recommendations after they return to the continuation feed', async () => {
-    const continuationCue = mockControlledContinuationCue()
     const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
     const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
     const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
@@ -1345,53 +1315,48 @@ describe('TodayPage', () => {
         actualMode: 'daily'
       })
 
-    try {
-      render(
-        <TodayPage
-          view={{
-            itemCount: 5,
-            city: 'Shanghai',
-            accountEmail: 'user@example.com',
-            passwordBootstrapped: true,
-            passwordChangedAt: null,
-            weatherState: { status: 'unavailable', city: 'Shanghai' },
-            recommendations: [rec1, rec2, rec3],
-            recommendationError: false,
-            ootdStatus: { status: 'not-recorded' },
-            recentOotdHistory: []
-          }}
-          updateCity={updateCity}
-          submitOotd={submitOotd}
-          refreshRecommendations={refreshRecommendations}
-          changePassword={changePassword}
-          signOut={signOut}
-          updateHistoryEntry={updateHistoryEntry}
-          deleteHistoryEntry={deleteHistoryEntry}
-        />
-      )
+    const { container } = render(
+      <TodayPage
+        view={{
+          itemCount: 5,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [rec1, rec2, rec3],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
 
-      continuationCue.enter()
-      expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
-      expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
+    const rail = getHorizontalRefreshRail(container)
+    dragPastHorizontalRefreshThreshold(rail)
+    expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+    expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
 
-      continuationCue.leave()
-      continuationCue.enter()
-      expect(await screen.findByText('第一套回流')).toBeInTheDocument()
+    dragPastHorizontalRefreshThreshold(rail)
+    expect(await screen.findByText('第一套回流')).toBeInTheDocument()
 
-      await waitFor(() => {
-        expect(refreshRecommendations).toHaveBeenNthCalledWith(2, expect.objectContaining({
-          excludeRecommendationIds: ['rec-1', 'rec-2', 'rec-3', 'rec-4']
-        }))
-      })
-      expect(screen.queryByLabelText('今天第 1 套推荐')).not.toBeInTheDocument()
-      expect(screen.getByLabelText('今天第 5 套推荐')).toBeInTheDocument()
-    } finally {
-      continuationCue.restore()
-    }
+    await waitFor(() => {
+      expect(refreshRecommendations).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        excludeRecommendationIds: ['rec-1', 'rec-2', 'rec-3', 'rec-4']
+      }))
+    })
+    expect(screen.queryByLabelText('今天第 1 套推荐')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('今天第 5 套推荐')).toBeInTheDocument()
   })
 
   it('keeps the worn recommendation resident during mobile continuation refresh', async () => {
-    const restoreIntersectionObserver = mockIntersectingContinuationCue()
     const locked = makeRecommendation('locked-rec', '已穿这套理由', '白衬衫')
     const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
     const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
@@ -1403,54 +1368,52 @@ describe('TodayPage', () => {
       actualMode: 'daily'
     })
 
-    try {
-      render(
-        <TodayPage
-          view={{
-            itemCount: 5,
-            city: 'Shanghai',
-            accountEmail: 'user@example.com',
-            passwordBootstrapped: true,
-            passwordChangedAt: null,
-            weatherState: { status: 'unavailable', city: 'Shanghai' },
-            recommendations: [locked, rec2, rec3],
-            recommendationError: false,
-            ootdStatus: {
-              status: 'recorded',
-              wornAt: '2026-04-21T08:00:00.000Z'
-            },
-            recentOotdHistory: [{
-              id: 'ootd-1',
-              wornAt: '2026-04-21T08:00:00.000Z',
-              satisfactionScore: null,
-              notes: buildOotdNotes(locked)
-            }]
-          }}
-          updateCity={updateCity}
-          submitOotd={submitOotd}
-          refreshRecommendations={refreshRecommendations}
-          changePassword={changePassword}
-          signOut={signOut}
-          updateHistoryEntry={updateHistoryEntry}
-          deleteHistoryEntry={deleteHistoryEntry}
-        />
-      )
+    const { container } = render(
+      <TodayPage
+        view={{
+          itemCount: 5,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [locked, rec2, rec3],
+          recommendationError: false,
+          ootdStatus: {
+            status: 'recorded',
+            wornAt: '2026-04-21T08:00:00.000Z'
+          },
+          recentOotdHistory: [{
+            id: 'ootd-1',
+            wornAt: '2026-04-21T08:00:00.000Z',
+            satisfactionScore: null,
+            notes: buildOotdNotes(locked)
+          }]
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
 
-      await waitFor(() => {
-        expect(refreshRecommendations).toHaveBeenCalled()
-      })
+    dragPastHorizontalRefreshThreshold(getHorizontalRefreshRail(container))
 
-      expect(await screen.findByText('已穿这套理由')).toBeInTheDocument()
-      expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
-      await waitFor(() => {
-        expect(screen.queryByText('第二套理由')).not.toBeInTheDocument()
-      })
-    } finally {
-      restoreIntersectionObserver()
-    }
+    await waitFor(() => {
+      expect(refreshRecommendations).toHaveBeenCalled()
+    })
+
+    expect(await screen.findByText('已穿这套理由')).toBeInTheDocument()
+    expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('第二套理由')).not.toBeInTheDocument()
+    })
   })
 
-  it('uses bright continuation cue copy for inspiration refreshes', () => {
+  it('shows horizontal pull refresh copy for inspiration refreshes', () => {
     render(
       <TodayRecommendationList
         recommendations={[
@@ -1468,13 +1431,11 @@ describe('TodayPage', () => {
         replaceSlot={replaceRecommendationSlot}
         submitPreChoiceFeedback={submitPreChoiceFeedback}
         recordOpened={recordRecommendationOpened}
-        onContinuationCueVisible={() => undefined}
+        onContinuationRefresh={() => undefined}
       />
     )
 
-    expect(screen.getByLabelText('继续滑动生成灵感推荐')).toBeInTheDocument()
-    expect(screen.getByText('灵感到来！继续滑')).toBeInTheDocument()
-    expect(screen.getByText('下一套会更有风格试探，但仍守住天气、场景和避雷底线。')).toBeInTheDocument()
+    expect(screen.getByText('滑到最右再左拖生成更多')).toBeInTheDocument()
   })
 
   it('shows default password guidance and lets the user submit a new password', async () => {

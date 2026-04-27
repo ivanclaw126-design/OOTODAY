@@ -679,7 +679,7 @@ export function TodayInteractiveWorkspace({
         isRefreshing={isRefreshingRecommendations}
         isContinuationLoading={isContinuingRecommendations}
         continuationVersion={continuationVersion}
-        onContinuationCueVisible={continuousRefresh.enabled ? handleContinuationCueVisible : undefined}
+        onContinuationRefresh={continuousRefresh.enabled ? handleContinuationCueVisible : undefined}
       />
 
       <div className="flex flex-col gap-2 sm:flex-row">

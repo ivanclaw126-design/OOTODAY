@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FeedbackLink } from '@/components/beta/feedback-link'
 import { TodayRecommendationCard } from '@/components/today/today-recommendation-card'
@@ -45,7 +45,7 @@ export function TodayRecommendationList({
   isRefreshing = false,
   isContinuationLoading = false,
   continuationVersion = 0,
-  onContinuationCueVisible
+  onContinuationRefresh
 }: {
   recommendations: TodayRecommendation[]
   recommendationError: boolean
@@ -66,41 +66,20 @@ export function TodayRecommendationList({
   isRefreshing?: boolean
   isContinuationLoading?: boolean
   continuationVersion?: number
-  onContinuationCueVisible?: () => void
+  onContinuationRefresh?: () => void
 }) {
+  const PULL_REFRESH_THRESHOLD = 82
+  const MAX_PULL_DISTANCE = 118
   const scrollerRef = useRef<HTMLDivElement | null>(null)
-  const cueRef = useRef<HTMLDivElement | null>(null)
   const thirdCardRef = useRef<HTMLDivElement | null>(null)
-  const isContinuationCueArmedRef = useRef(true)
+  const pullStartXRef = useRef<number | null>(null)
+  const pullStartedAtEndRef = useRef(false)
+  const pullDistanceRef = useRef(0)
+  const [pullDistance, setPullDistance] = useState(0)
 
-  useEffect(() => {
-    const cue = cueRef.current
-
-    if (!cue || !onContinuationCueVisible || typeof IntersectionObserver === 'undefined') {
-      return
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-      const isIntersecting = entries.some((entry) => entry.isIntersecting)
-
-      if (!isIntersecting) {
-        isContinuationCueArmedRef.current = true
-        return
-      }
-
-      if (isContinuationCueArmedRef.current) {
-        isContinuationCueArmedRef.current = false
-        onContinuationCueVisible()
-      }
-    }, {
-      root: scrollerRef.current,
-      rootMargin: '0px 65% 0px 0px',
-      threshold: 0.1
-    })
-
-    observer.observe(cue)
-    return () => observer.disconnect()
-  }, [onContinuationCueVisible, recommendations.length])
+  function isAtScrollEnd(element: HTMLDivElement) {
+    return element.scrollLeft + element.clientWidth >= element.scrollWidth - 48
+  }
 
   useEffect(() => {
     if (continuationVersion <= 0 || !thirdCardRef.current || typeof thirdCardRef.current.scrollIntoView !== 'function') {
@@ -145,7 +124,67 @@ export function TodayRecommendationList({
   const cueIsInspiration = continuationMode === 'inspiration'
   const swipeHint = isContinuationLoading
     ? cueIsInspiration ? '灵感正在到来' : '正在找下一套'
-    : '左滑继续看 · 2 / 3 套'
+    : '滑到最右再左拖生成更多'
+  const pullProgress = Math.min(1, pullDistance / PULL_REFRESH_THRESHOLD)
+  const isPullReady = pullDistance >= PULL_REFRESH_THRESHOLD
+
+  function resetPullState() {
+    pullStartXRef.current = null
+    pullStartedAtEndRef.current = false
+    pullDistanceRef.current = 0
+    setPullDistance(0)
+  }
+
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (!onContinuationRefresh || isContinuationLoading || isRefreshing || !scrollerRef.current) {
+      return
+    }
+
+    if (!Number.isFinite(event.clientX)) {
+      return
+    }
+
+    pullStartXRef.current = event.clientX
+    pullStartedAtEndRef.current = isAtScrollEnd(scrollerRef.current)
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    const startX = pullStartXRef.current
+    const scroller = scrollerRef.current
+
+    if (startX === null || !scroller || !onContinuationRefresh || isContinuationLoading || isRefreshing) {
+      return
+    }
+
+    if (!Number.isFinite(event.clientX)) {
+      return
+    }
+
+    const shouldPull = pullStartedAtEndRef.current || isAtScrollEnd(scroller)
+    const dragDistance = Math.max(0, startX - event.clientX)
+
+    if (!shouldPull || dragDistance < 10) {
+      if (pullDistanceRef.current > 0) {
+        pullDistanceRef.current = 0
+        setPullDistance(0)
+      }
+      return
+    }
+
+    event.preventDefault()
+    pullStartedAtEndRef.current = true
+    const nextPullDistance = Math.min(MAX_PULL_DISTANCE, dragDistance)
+    pullDistanceRef.current = nextPullDistance
+    setPullDistance(nextPullDistance)
+  }
+
+  function handlePointerEnd() {
+    if (pullDistanceRef.current >= PULL_REFRESH_THRESHOLD && onContinuationRefresh && !isContinuationLoading && !isRefreshing) {
+      onContinuationRefresh()
+    }
+
+    resetPullState()
+  }
 
   return (
     <section className="space-y-3">
@@ -168,76 +207,52 @@ export function TodayRecommendationList({
         </div>
       </div>
 
-      <div
-        ref={scrollerRef}
-        aria-busy={isRefreshing}
-        className={`-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 transition-opacity duration-200 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden ${isRefreshing ? 'opacity-72' : 'opacity-100'}`}
-      >
-        {recommendations.map((recommendation, index) => (
-          <div key={recommendation.id} ref={index === 2 ? thirdCardRef : undefined} className="min-w-full snap-center sm:min-w-0">
-            <TodayRecommendationCard
-              recommendation={recommendation}
-              index={index}
-              recommendationSequenceNumber={recommendationSequences[recommendation.id] ?? index + 1}
-              variant="hero"
-              ootdStatus={ootdStatus}
-              recordedRecommendationId={recordedRecommendationId}
-              weatherState={weatherState}
-              targetDate={targetDate}
-              scene={scene}
-              showFirstLoopHint={index === 0 ? showFirstLoopHint : false}
-              onDismissFirstLoopHint={index === 0 ? onDismissFirstLoopHint : undefined}
-              chooseRecommendation={chooseRecommendation}
-              undoTodaySelection={undoTodaySelection}
-              replaceSlot={replaceSlot}
-              submitPreChoiceFeedback={submitPreChoiceFeedback}
-              recordOpened={recordOpened}
-            />
-          </div>
-        ))}
-        {onContinuationCueVisible ? (
-          <div ref={cueRef} className="min-w-[78%] snap-center sm:hidden">
+      <div className="relative">
+        <div
+          ref={scrollerRef}
+          data-testid="today-recommendation-rail"
+          aria-busy={isRefreshing}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerEnd}
+          onPointerCancel={resetPullState}
+          onPointerLeave={handlePointerEnd}
+          className={`-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 transition-opacity duration-200 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden ${isRefreshing ? 'opacity-72' : 'opacity-100'}`}
+        >
+          {recommendations.map((recommendation, index) => (
+            <div key={recommendation.id} ref={index === 2 ? thirdCardRef : undefined} className="min-w-full snap-center sm:min-w-0">
+              <TodayRecommendationCard
+                recommendation={recommendation}
+                index={index}
+                recommendationSequenceNumber={recommendationSequences[recommendation.id] ?? index + 1}
+                variant="hero"
+                ootdStatus={ootdStatus}
+                recordedRecommendationId={recordedRecommendationId}
+                weatherState={weatherState}
+                targetDate={targetDate}
+                scene={scene}
+                showFirstLoopHint={index === 0 ? showFirstLoopHint : false}
+                onDismissFirstLoopHint={index === 0 ? onDismissFirstLoopHint : undefined}
+                chooseRecommendation={chooseRecommendation}
+                undoTodaySelection={undoTodaySelection}
+                replaceSlot={replaceSlot}
+                submitPreChoiceFeedback={submitPreChoiceFeedback}
+                recordOpened={recordOpened}
+              />
+            </div>
+          ))}
+        </div>
+        {onContinuationRefresh ? (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-2 right-0 top-0 flex w-[7.25rem] items-center justify-center overflow-hidden rounded-l-[1.25rem] bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(231,255,55,0.24))] transition-opacity duration-150 sm:hidden"
+            style={{ opacity: pullDistance > 0 || isContinuationLoading ? Math.max(0.22, pullProgress) : 0 }}
+          >
             <div
-              className={`relative flex h-full min-h-[22rem] flex-col justify-between overflow-hidden rounded-[1.35rem] border p-4 shadow-[0_16px_32px_rgba(17,14,9,0.08)] ${
-                cueIsInspiration
-                  ? 'ootoday-inspiration-cue border-[var(--color-accent)] bg-[linear-gradient(145deg,rgba(231,255,55,0.96),rgba(255,255,255,0.96)_52%,rgba(255,122,89,0.28))] text-[var(--color-primary)]'
-                  : 'border-[var(--color-line)] bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(239,232,220,0.92))] text-[var(--color-primary)]'
-              }`}
-              aria-label={cueIsInspiration ? '继续滑动生成灵感推荐' : '继续滑动生成常规推荐'}
+              className="grid min-w-[5.9rem] place-items-center rounded-full border border-[var(--color-line)] bg-white/92 px-3 py-2 text-center text-xs font-semibold leading-5 text-[var(--color-primary)] shadow-[0_10px_22px_rgba(17,14,9,0.12)]"
+              style={{ transform: `translateX(${Math.max(0, 38 - pullProgress * 38)}px)` }}
             >
-              <div className="space-y-3">
-                {cueIsInspiration ? (
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
-                      Inspiration
-                    </span>
-                    <span className="ootoday-inspiration-spark h-8 w-8 rounded-full border border-[var(--color-primary)]/15 bg-white/78" />
-                  </div>
-                ) : null}
-                <div className={`grid grid-cols-3 gap-2 ${cueIsInspiration ? 'ootoday-inspiration-tiles' : ''}`}>
-                  {Array.from({ length: 6 }, (_, index) => (
-                    <span
-                      key={index}
-                      className={`h-14 rounded-[0.85rem] ${
-                        cueIsInspiration
-                          ? index % 2 === 0 ? 'bg-[var(--color-primary)]' : 'bg-white/84'
-                          : index % 2 === 0 ? 'bg-[var(--color-neutral)]' : 'bg-white'
-                      } ${isContinuationLoading ? 'animate-pulse' : ''}`}
-                    />
-                  ))}
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] opacity-72">
-                    {cueIsInspiration ? 'Inspiration' : 'Next outfit'}
-                  </p>
-                  <p className={`${cueIsInspiration ? 'ootoday-inspiration-title text-3xl' : 'text-2xl'} font-semibold leading-tight tracking-normal`}>
-                    {isContinuationLoading ? cueIsInspiration ? '灵感正在到来...' : '正在刷新...' : cueIsInspiration ? '灵感到来！继续滑' : '继续滑，换一套'}
-                  </p>
-                </div>
-              </div>
-              <p className="relative text-sm font-medium leading-6 opacity-78">
-                {cueIsInspiration ? '下一套会更有风格试探，但仍守住天气、场景和避雷底线。' : '普通色块提示这次是常规推荐。'}
-              </p>
+              {isContinuationLoading ? '生成中' : isPullReady ? '松手生成' : '继续拖动'}
             </div>
           </div>
         ) : null}
