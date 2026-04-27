@@ -8,7 +8,9 @@ import { matchClosetToInspiration } from '@/lib/inspiration/match-closet-to-insp
 import { resolveInspirationInput } from '@/lib/inspiration/resolve-inspiration-input'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
-import { getCandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import { getRecommendationLearningSignals } from '@/lib/recommendation/learning-signal-storage'
+import { getCandidateModelScoreMap, getEntityModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import { getRecommendationTrendSignals } from '@/lib/recommendation/get-trend-signals'
 
 export async function analyzeInspirationAction({ sourceUrl }: { sourceUrl: string }) {
   const session = await getSession()
@@ -26,13 +28,16 @@ export async function analyzeInspirationAction({ sourceUrl }: { sourceUrl: strin
     }
   }
 
-  const [breakdown, closet, preferenceState, modelScoreMap] = await Promise.all([
+  const [breakdown, closet, preferenceState, modelScoreMap, entityModelScoreMap, trendSignals, learningSignals] = await Promise.all([
     analyzeInspirationImage(resolved.imageUrl),
     getClosetView(session.user.id),
     getPreferenceState({ userId: session.user.id }),
-    getCandidateModelScoreMap({ userId: session.user.id, surface: 'inspiration' })
+    getCandidateModelScoreMap({ userId: session.user.id, surface: 'inspiration' }),
+    getEntityModelScoreMap({ userId: session.user.id, surface: 'inspiration' }),
+    getRecommendationTrendSignals(),
+    getRecommendationLearningSignals({ userId: session.user.id, surface: 'inspiration' })
   ])
-  const closetMatches = matchClosetToInspiration(breakdown, closet.items, preferenceState, modelScoreMap)
+  const closetMatches = matchClosetToInspiration(breakdown, closet.items, preferenceState, modelScoreMap, entityModelScoreMap, trendSignals, learningSignals)
   await Promise.all(closetMatches.map((match) =>
     recordRecommendationInteraction({
       userId: session.user.id,
@@ -43,7 +48,10 @@ export async function analyzeInspirationAction({ sourceUrl }: { sourceUrl: strin
       itemIds: match.matchedItems.map((item) => item.id),
       context: {
         sourceUrl: resolved.sourceUrl,
-        matchType: match.scoreBreakdown?.matchType
+        matchType: match.scoreBreakdown?.matchType,
+        recallSource: 'rule',
+        categoryKeys: match.matchedItems.map((item) => item.category),
+        colorKeys: match.matchedItems.map((item) => item.colorCategory).filter(Boolean)
       }
     })
   ))

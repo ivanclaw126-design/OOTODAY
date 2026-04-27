@@ -393,6 +393,100 @@ export type Database = {
           metadata?: Json
         }
       }
+      recommendation_trends: {
+        Row: {
+          id: string
+          tag: string
+          source: 'editorial' | 'manual' | 'import'
+          aliases: string[]
+          start_date: string
+          end_date: string | null
+          weight: number
+          decay_rate: number
+          applicable_scenes: string[]
+          applicable_styles: string[]
+          status: 'active' | 'paused' | 'expired'
+          metadata: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tag: string
+          source?: 'editorial' | 'manual' | 'import'
+          aliases?: string[]
+          start_date?: string
+          end_date?: string | null
+          weight?: number
+          decay_rate?: number
+          applicable_scenes?: string[]
+          applicable_styles?: string[]
+          status?: 'active' | 'paused' | 'expired'
+          metadata?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          tag?: string
+          source?: 'editorial' | 'manual' | 'import'
+          aliases?: string[]
+          start_date?: string
+          end_date?: string | null
+          weight?: number
+          decay_rate?: number
+          applicable_scenes?: string[]
+          applicable_styles?: string[]
+          status?: 'active' | 'paused' | 'expired'
+          metadata?: Json
+          updated_at?: string
+        }
+      }
+      recommendation_learning_signals: {
+        Row: {
+          id: string
+          user_id: string
+          surface: 'today' | 'shop' | 'inspiration' | 'travel'
+          signal_type: 'user_item_context' | 'item_pair' | 'color' | 'silhouette' | 'hidden_item'
+          entity_key: string
+          related_entity_key: string | null
+          context_key: string | null
+          value: number
+          weight: number
+          source_event_type: string | null
+          expires_at: string | null
+          metadata: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          surface: 'today' | 'shop' | 'inspiration' | 'travel'
+          signal_type: 'user_item_context' | 'item_pair' | 'color' | 'silhouette' | 'hidden_item'
+          entity_key: string
+          related_entity_key?: string | null
+          context_key?: string | null
+          value?: number
+          weight?: number
+          source_event_type?: string | null
+          expires_at?: string | null
+          metadata?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          signal_type?: 'user_item_context' | 'item_pair' | 'color' | 'silhouette' | 'hidden_item'
+          entity_key?: string
+          related_entity_key?: string | null
+          context_key?: string | null
+          value?: number
+          weight?: number
+          source_event_type?: string | null
+          expires_at?: string | null
+          metadata?: Json
+          updated_at?: string
+        }
+      }
       analytics_events: {
         Row: {
           id: string

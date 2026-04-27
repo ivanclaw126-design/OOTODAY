@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-27
-- Branch / theme: strict production recommendation ML foundation
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260427-115700-strict-recommendation-local-ml-and-migration.md`.
-- Current blocker: real `recommendation_interactions` is still empty, so production training dry-run correctly refuses promoted output until events accumulate.
+- Branch / theme: complete six-part recommendation engine rollout
+- Latest checkpoint: pending `/context-save`; fallback summary below.
+- Current blocker: real Recommendation Training should only run with `promote=true` after live `recommendation_interactions` reach the default gates; current 90-day dry-run has 6 rows, 0 positive users, and 0 positive candidates.
 - Next plan to read: `docs/recommendation-engine-handoff.md`
-- Intended summary if `/context-save` fails: Completed local Python 3.11 ML venv setup with LightFM, implicit ALS, and XGBoost; fixed native implicit matrix orientation and XGBoost integer ranking labels; pushed `20260427103000_add_recommendation_model_tables.sql` through Supabase 6543 transaction pooler with statement cache disabled; confirmed new tables by REST smoke; native fixture dry-run trains all three models and emits all artifacts. Verification passed with `npm run lint`, `npm test`, `npm run build`, Python compile/tests, Supabase dry-run, and production training dry-run rejecting empty remote data.
+- Intended summary if `/context-save` fails: Completed Phase 11 recommendation rollout: first-class outfit formulas, Today formula/model-seeded recall, Supabase-backed editorial trend dictionary, bounded learning signals, shared scoring context across Today/Shop/Looks/Travel, entity-score reranking, richer interaction metadata, stricter Python ranking metrics and configurable training workflow inputs. Pushed `20260427142000_add_recommendation_trends_learning_signals.sql` via 6543 transaction pooler; follow-up dry-run is up to date, migration list shows local/remote match, and REST smoke returns 200 for new and existing recommendation tables. Verification passed with `npm run lint`, `npm test`, `npm run build`, Python compile, Python ML tests, native training dry-run, and remote production dry-run returning promoted=false due to insufficient positives.
 
 ## Snapshot Template
 

@@ -2,17 +2,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getClosetView = vi.fn()
 const getWeather = vi.fn()
+const getWeatherForTarget = vi.fn()
 const generateTodayRecommendations = vi.fn()
 const getTodayOotdStatus = vi.fn()
 const getRecentOotdHistory = vi.fn()
 const getPreferenceState = vi.fn()
+const getCandidateModelScoreMap = vi.fn()
+const getEntityModelScoreMap = vi.fn()
+const getRecommendationTrendSignals = vi.fn()
+const getRecommendationLearningSignals = vi.fn()
 
 vi.mock('@/lib/closet/get-closet-view', () => ({
   getClosetView
 }))
 
 vi.mock('@/lib/today/get-weather', () => ({
-  getWeather
+  getWeather,
+  getWeatherForTarget
 }))
 
 vi.mock('@/lib/today/generate-recommendations', () => ({
@@ -31,14 +37,36 @@ vi.mock('@/lib/recommendation/get-preference-state', () => ({
   getPreferenceState
 }))
 
+vi.mock('@/lib/recommendation/model-score-storage', () => ({
+  getCandidateModelScoreMap,
+  getEntityModelScoreMap
+}))
+
+vi.mock('@/lib/recommendation/get-trend-signals', () => ({
+  getRecommendationTrendSignals
+}))
+
+vi.mock('@/lib/recommendation/learning-signal-storage', () => ({
+  getRecommendationLearningSignals
+}))
+
 describe('getTodayView', () => {
   beforeEach(() => {
     getClosetView.mockReset()
     getWeather.mockReset()
+    getWeatherForTarget.mockReset()
     generateTodayRecommendations.mockReset()
     getTodayOotdStatus.mockReset()
     getRecentOotdHistory.mockReset()
     getPreferenceState.mockReset()
+    getCandidateModelScoreMap.mockReset()
+    getCandidateModelScoreMap.mockResolvedValue({})
+    getEntityModelScoreMap.mockReset()
+    getEntityModelScoreMap.mockResolvedValue({})
+    getRecommendationTrendSignals.mockReset()
+    getRecommendationTrendSignals.mockResolvedValue([])
+    getRecommendationLearningSignals.mockReset()
+    getRecommendationLearningSignals.mockResolvedValue([])
   })
 
   it('returns non-weather recommendations and not-recorded status when city is missing', async () => {
@@ -80,16 +108,18 @@ describe('getTodayView', () => {
       passwordBootstrapped: true,
       passwordChangedAt: null,
       hasCompletedStyleQuestionnaire: true,
-      weatherState: { status: 'not-set' },
+      targetDate: 'today',
+      scene: null,
+      weatherState: { status: 'not-set', targetDate: 'today' },
       recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }, { id: 'rec-3' }],
       recommendationError: false,
       ootdStatus: { status: 'not-recorded' },
       recentOotdHistory: []
     })
 
-    expect(getWeather).not.toHaveBeenCalled()
+    expect(getWeatherForTarget).not.toHaveBeenCalled()
     expect(getPreferenceState).toHaveBeenCalledWith({ userId: 'user-1' })
-    expect(generateTodayRecommendations).toHaveBeenCalledWith({
+    expect(generateTodayRecommendations).toHaveBeenCalledWith(expect.objectContaining({
       items: [
         {
           id: 'item-1',
@@ -105,13 +135,15 @@ describe('getTodayView', () => {
       ],
       weather: null,
       offset: 0,
-      preferenceState: { source: 'questionnaire', hasQuestionnaireAnswers: true }
-    })
+      preferenceState: { source: 'questionnaire', hasQuestionnaireAnswers: true },
+      targetDate: 'today',
+      scene: null
+    }))
   })
 
   it('returns recorded status when today is already saved', async () => {
     getClosetView.mockResolvedValue({ itemCount: 1, items: [] })
-    getWeather.mockResolvedValue(null)
+    getWeatherForTarget.mockResolvedValue(null)
     getTodayOotdStatus.mockResolvedValue({
       status: 'recorded',
       wornAt: '2026-04-21T08:00:00.000Z'
@@ -135,7 +167,9 @@ describe('getTodayView', () => {
         city: 'Shanghai',
         accountEmail: 'user@example.com',
         passwordBootstrapped: true,
-        passwordChangedAt: '2026-04-21T10:00:00.000Z'
+        passwordChangedAt: '2026-04-21T10:00:00.000Z',
+        targetDate: 'tomorrow',
+        scene: 'work'
       })
     ).resolves.toEqual({
       itemCount: 1,
@@ -144,7 +178,9 @@ describe('getTodayView', () => {
       passwordBootstrapped: true,
       passwordChangedAt: '2026-04-21T10:00:00.000Z',
       hasCompletedStyleQuestionnaire: true,
-      weatherState: { status: 'unavailable', city: 'Shanghai' },
+      targetDate: 'tomorrow',
+      scene: 'work',
+      weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'tomorrow' },
       recommendations: [],
       recommendationError: false,
       ootdStatus: {
@@ -160,11 +196,14 @@ describe('getTodayView', () => {
         }
       ]
     })
-    expect(generateTodayRecommendations).toHaveBeenCalledWith({
+    expect(generateTodayRecommendations).toHaveBeenCalledWith(expect.objectContaining({
       items: [],
       weather: null,
       offset: 0,
-      preferenceState: { source: 'adaptive', hasQuestionnaireAnswers: true }
-    })
+      preferenceState: { source: 'adaptive', hasQuestionnaireAnswers: true },
+      targetDate: 'tomorrow',
+      scene: 'work'
+    }))
+    expect(getWeatherForTarget).toHaveBeenCalledWith('Shanghai', 'tomorrow')
   })
 })

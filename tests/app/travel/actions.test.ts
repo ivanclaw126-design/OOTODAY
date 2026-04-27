@@ -87,14 +87,14 @@ describe('travel actions', () => {
     await saveTravelPlanAction(formData)
 
     expect(getClosetView).toHaveBeenCalledWith('user-1', { limit: 0 })
-    expect(buildTravelPackingPlan).toHaveBeenCalledWith({
+    expect(buildTravelPackingPlan).toHaveBeenCalledWith(expect.objectContaining({
       destinationCity: '上海',
       days: 4,
       scenes: ['通勤', '休闲'],
       items: [{ id: 'item-1' }],
       weather: { city: 'Shanghai', temperatureC: 18, conditionLabel: 'cloudy', isWarm: false, isCold: false },
       preferenceState: null
-    })
+    }))
     expect(saveTravelPlan).toHaveBeenCalledWith({
       userId: 'user-1',
       plan: expect.objectContaining({

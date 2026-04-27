@@ -7,6 +7,18 @@ on:
         description: Run without writing promoted scores
         required: false
         default: 'true'
+      lookback_days:
+        description: Interaction lookback window
+        required: false
+        default: '90'
+      min_interactions:
+        description: Minimum rows required before promotion
+        required: false
+        default: '50'
+      promote:
+        description: Allow publishing a promoted run when gates pass
+        required: false
+        default: 'false'
   schedule:
     - cron: '17 19 * * *'
 
@@ -19,6 +31,10 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'true' }}
+      LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '90' }}
+      MIN_INTERACTIONS: ${{ github.event.inputs.min_interactions || '50' }}
+      PROMOTE: ${{ github.event.inputs.promote || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,8 +54,11 @@ jobs:
 
       - name: Run recommendation training
         run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "false" ]; then
-            python ml/recommendation/train.py --require-native-models
-          else
-            python ml/recommendation/train.py --require-native-models --dry-run
+          args=(--require-native-models --lookback-days "$LOOKBACK_DAYS" --min-interactions "$MIN_INTERACTIONS")
+          if [ "$PROMOTE" = "true" ]; then
+            args+=(--promote)
           fi
+          if [ "$DRY_RUN" != "false" ]; then
+            args+=(--dry-run)
+          fi
+          python ml/recommendation/train.py "${args[@]}"

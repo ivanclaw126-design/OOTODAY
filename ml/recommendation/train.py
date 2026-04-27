@@ -16,7 +16,7 @@ import os
 import pickle
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 from uuid import uuid4
@@ -194,16 +194,49 @@ def build_training_rows(interactions: Iterable[Interaction]) -> list[dict[str, A
             continue
 
         features = flatten_feature_snapshot(interaction.score_breakdown)
+        context = interaction.context if isinstance(interaction.context, dict) else {}
+        risk_flags = interaction.score_breakdown.get("riskFlags")
+        if not isinstance(risk_flags, list):
+            risk_flags = []
         rows.append({
             "user_id": interaction.user_id,
             "surface": interaction.surface,
+            "event_type": interaction.event_type,
             "candidate_id": interaction.candidate_id,
             "label": interaction.event_value,
             "features": features,
             "item_ids": list(interaction.item_ids),
+            "formula_id": str(context.get("formulaId") or extract_formula_id(interaction.candidate_id) or ""),
+            "recall_source": str(context.get("recallSource") or infer_recall_source(interaction.candidate_id)),
+            "category_keys": [str(item) for item in context.get("categoryKeys", [])] if isinstance(context.get("categoryKeys"), list) else [],
+            "color_keys": [str(item) for item in context.get("colorKeys", [])] if isinstance(context.get("colorKeys"), list) else [],
+            "risk_flags": [str(item) for item in risk_flags],
         })
 
     return rows
+
+
+def extract_formula_id(candidate_id: str) -> str:
+    if not candidate_id.startswith("formula-"):
+        return ""
+
+    parts = candidate_id.split("-")
+    if len(parts) <= 2:
+        return ""
+
+    return "-".join(parts[1:-2]) if len(parts) > 3 else parts[1]
+
+
+def infer_recall_source(candidate_id: str) -> str:
+    if candidate_id.startswith("formula-"):
+        return "formula"
+    if candidate_id.startswith("model-seed-"):
+        return "model_seed"
+    if candidate_id.startswith("inspiration-"):
+        return "exploration"
+    if candidate_id.startswith("dress-") or candidate_id.startswith("set-"):
+        return "rule"
+    return "rule"
 
 
 def heuristic_model_scores(row: dict[str, Any]) -> tuple[float, float, float]:
@@ -511,7 +544,46 @@ def build_entity_scores(rows: list[dict[str, Any]], candidate_scores: list[Candi
     return entity_scores
 
 
-def ranking_metrics(rows: list[dict[str, Any]], scores: list[CandidateScore]) -> dict[str, float]:
+def row_relevance(row: dict[str, Any]) -> float:
+    label = float(row["label"])
+    if label >= 1.0:
+        return 3.0
+    if label > 0:
+        return 1.0
+    return 0.0
+
+
+def dcg(relevances: list[float]) -> float:
+    return sum((2 ** relevance - 1) / (math_log2(index + 2)) for index, relevance in enumerate(relevances))
+
+
+def math_log2(value: int) -> float:
+    import math
+
+    return math.log2(value)
+
+
+def average_precision(relevances: list[float]) -> float:
+    hits = 0
+    precision_sum = 0.0
+    for index, relevance in enumerate(relevances, start=1):
+        if relevance > 0:
+            hits += 1
+            precision_sum += hits / index
+    return precision_sum / max(1, hits)
+
+
+def jaccard_distance(left: set[str], right: set[str]) -> float:
+    if not left and not right:
+        return 0.0
+    return 1.0 - (len(left & right) / max(1, len(left | right)))
+
+
+def coverage(top_values: set[str], all_values: set[str]) -> float:
+    return len(top_values) / max(1, len(all_values))
+
+
+def ranking_metrics(rows: list[dict[str, Any]], scores: list[CandidateScore], k: int = 10) -> dict[str, float]:
     if not rows or not scores:
         return {
             "hitrate_at_k": 0.0,
@@ -519,35 +591,100 @@ def ranking_metrics(rows: list[dict[str, Any]], scores: list[CandidateScore]) ->
             "ndcg_at_k": 0.0,
             "map_at_k": 0.0,
             "coverage": 0.0,
+            "item_coverage": 0.0,
+            "category_coverage": 0.0,
+            "color_coverage": 0.0,
+            "formula_coverage": 0.0,
             "diversity": 0.0,
+            "intra_list_diversity": 0.0,
             "novelty": 0.0,
+            "edit_rate": 0.0,
+            "item_repetition_rate": 0.0,
             "wear_through_rate": 0.0,
             "satisfaction_after_wear": 0.0,
             "hard_constraint_violations": 0.0,
+            "row_count": 0.0,
+            "positive_user_count": 0.0,
+            "positive_candidate_count": 0.0,
         }
 
-    positives = {row["candidate_id"] for row in rows if float(row["label"]) >= 1.0}
-    top_scores = sorted(scores, key=lambda score: score.final_score, reverse=True)[:10]
+    by_candidate: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_candidate.setdefault(row["candidate_id"], []).append(row)
+
+    candidate_relevance = {
+        candidate_id: max(row_relevance(row) for row in candidate_rows)
+        for candidate_id, candidate_rows in by_candidate.items()
+    }
+    positives = {candidate_id for candidate_id, relevance in candidate_relevance.items() if relevance > 0}
+    top_scores = sorted(scores, key=lambda score: score.final_score, reverse=True)[:k]
     top_ids = {score.candidate_id for score in top_scores}
     hits = len(top_ids & positives)
     all_candidates = {row["candidate_id"] for row in rows}
-    worn = [row for row in rows if row["label"] >= 1.0]
+    worn = [row for row in rows if float(row["label"]) >= 1.0]
+    top_rows = [by_candidate.get(score.candidate_id, [{}])[0] for score in top_scores]
+    top_relevances = [candidate_relevance.get(score.candidate_id, 0.0) for score in top_scores]
+    ideal_relevances = sorted(candidate_relevance.values(), reverse=True)[:k]
+    top_item_sets = [set(row.get("item_ids", [])) for row in top_rows]
+    pair_distances = [
+        jaccard_distance(left, right)
+        for index, left in enumerate(top_item_sets)
+        for right in top_item_sets[index + 1:]
+    ]
+    top_items = [item_id for row in top_rows for item_id in row.get("item_ids", [])]
+    all_items = {item_id for row in rows for item_id in row.get("item_ids", [])}
+    top_categories = {item for row in top_rows for item in row.get("category_keys", [])}
+    all_categories = {item for row in rows for item in row.get("category_keys", [])}
+    top_colors = {item for row in top_rows for item in row.get("color_keys", [])}
+    all_colors = {item for row in rows for item in row.get("color_keys", [])}
+    top_formulas = {row.get("formula_id") for row in top_rows if row.get("formula_id")}
+    all_formulas = {row.get("formula_id") for row in rows if row.get("formula_id")}
+    positive_rows = [row for row in rows if row_relevance(row) > 0]
 
     return {
         "hitrate_at_k": 1.0 if hits > 0 else 0.0,
         "recall_at_k": hits / max(1, len(positives)),
-        "ndcg_at_k": hits / max(1, min(10, len(positives))),
-        "map_at_k": hits / max(1, len(top_scores)),
+        "ndcg_at_k": dcg(top_relevances) / max(1e-9, dcg(ideal_relevances)),
+        "map_at_k": average_precision(top_relevances),
         "coverage": len(top_ids) / max(1, len(all_candidates)),
+        "item_coverage": coverage(set(top_items), all_items),
+        "category_coverage": coverage(top_categories, all_categories) if all_categories else 0.0,
+        "color_coverage": coverage(top_colors, all_colors) if all_colors else 0.0,
+        "formula_coverage": coverage(top_formulas, all_formulas) if all_formulas else 0.0,
         "diversity": len({score.surface for score in top_scores}) / 4.0,
+        "intra_list_diversity": sum(pair_distances) / max(1, len(pair_distances)),
         "novelty": sum(score.final_score < 72 for score in top_scores) / max(1, len(top_scores)),
+        "edit_rate": sum(row.get("event_type") == "replaced_item" for row in rows) / max(1, len(rows)),
+        "item_repetition_rate": 1.0 - (len(set(top_items)) / max(1, len(top_items))),
         "wear_through_rate": len(worn) / max(1, len(rows)),
-        "satisfaction_after_wear": sum(row["label"] for row in worn) / max(1, len(worn)),
-        "hard_constraint_violations": 0.0,
+        "satisfaction_after_wear": sum(float(row["label"]) for row in worn) / max(1, len(worn)),
+        "hard_constraint_violations": sum(
+            1
+            for row in top_rows
+            if {"hardAvoid", "weatherMismatch", "hiddenItem"} & set(row.get("risk_flags", []))
+        ),
+        "row_count": float(len(rows)),
+        "positive_user_count": float(len({row["user_id"] for row in positive_rows})),
+        "positive_candidate_count": float(len(positives)),
     }
 
 
-def should_promote(metrics: dict[str, float], baseline_metrics: dict[str, float] | None = None) -> bool:
+def should_promote(
+    metrics: dict[str, float],
+    baseline_metrics: dict[str, float] | None = None,
+    min_rows: int = 50,
+    min_positive_users: int = 3,
+    min_positive_candidates: int = 10,
+) -> bool:
+    if metrics.get("row_count", 0.0) < min_rows:
+        return False
+
+    if metrics.get("positive_user_count", 0.0) < min_positive_users:
+        return False
+
+    if metrics.get("positive_candidate_count", 0.0) < min_positive_candidates:
+        return False
+
     if metrics.get("hard_constraint_violations", 1.0) > 0:
         return False
 
@@ -594,14 +731,16 @@ def supabase_client():
     return create_client(url, key)
 
 
-def fetch_interactions(client: Any, limit: int) -> list[Interaction]:
-    result = (
+def fetch_interactions(client: Any, limit: int, lookback_days: int | None = None) -> list[Interaction]:
+    query = (
         client.table("recommendation_interactions")
         .select("user_id,surface,event_type,event_value,recommendation_id,candidate_id,item_ids,context,score_breakdown,created_at")
-        .order("created_at", desc=True)
-        .limit(limit)
-        .execute()
     )
+    if lookback_days and lookback_days > 0:
+        since = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+        query = query.gte("created_at", since.isoformat())
+
+    result = query.order("created_at", desc=True).limit(limit).execute()
     return [to_interaction(row) for row in (result.data or [])]
 
 
@@ -704,7 +843,7 @@ def run_training(args: argparse.Namespace) -> int:
         rows = json.loads(Path(args.local_fixture).read_text(encoding="utf-8"))
         interactions = [to_interaction(row) for row in rows]
     else:
-        interactions = fetch_interactions(client, args.limit)
+        interactions = fetch_interactions(client, args.limit, args.lookback_days)
 
     training_rows = build_training_rows(interactions)
     scores, training_diagnostics, model_artifacts = build_candidate_scores_with_diagnostics(
@@ -714,7 +853,12 @@ def run_training(args: argparse.Namespace) -> int:
     )
     entity_scores = build_entity_scores(training_rows, scores, run_id)
     metrics = ranking_metrics(training_rows, scores)
-    promoted = should_promote(metrics, {"ndcg_at_k": 0.0, "coverage": 0.0, "diversity": 0.0})
+    promotion_eligible = should_promote(
+        metrics,
+        {"ndcg_at_k": 0.0, "coverage": 0.0, "diversity": 0.0},
+        min_rows=args.min_interactions,
+    )
+    promoted = bool(args.promote and promotion_eligible)
 
     with tempfile.TemporaryDirectory() as tmp:
         artifact_path = Path(tmp) / "shadow_report.json"
@@ -726,12 +870,20 @@ def run_training(args: argparse.Namespace) -> int:
             "scoreCount": len(scores),
             "entityScoreCount": len(entity_scores),
             "promoted": promoted,
+            "promotionEligible": promotion_eligible,
+            "promotionRequested": args.promote,
         }
         checksum = write_artifact(artifact_path, artifact_payload)
 
     if not promoted:
-        print(json.dumps({"promoted": False, "metrics": metrics}, ensure_ascii=False, indent=2))
-        return 2
+        print(json.dumps({
+            "promoted": False,
+            "promotionEligible": promotion_eligible,
+            "promotionRequested": args.promote,
+            "metrics": metrics,
+            "trainingDiagnostics": training_diagnostics,
+        }, ensure_ascii=False, indent=2))
+        return 0
 
     if client is None and args.dry_run:
         publish_scores(client, run_id, metrics, scores, entity_scores, artifact_payload, checksum, model_artifacts, True)
@@ -755,6 +907,9 @@ def run_training(args: argparse.Namespace) -> int:
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=5000)
+    parser.add_argument("--lookback-days", type=int, default=90)
+    parser.add_argument("--min-interactions", type=int, default=50)
+    parser.add_argument("--promote", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--require-native-models", action="store_true")
     parser.add_argument("--local-fixture")

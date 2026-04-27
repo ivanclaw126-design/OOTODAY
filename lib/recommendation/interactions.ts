@@ -3,6 +3,8 @@ import type {
   RecommendationScoreBreakdown,
   RecommendationSurface
 } from '@/lib/recommendation/canonical-types'
+import { buildInteractionLearningSignals } from '@/lib/recommendation/learning-signals'
+import { recordRecommendationLearningSignals } from '@/lib/recommendation/learning-signal-storage'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { Json } from '@/types/database'
 
@@ -84,6 +86,22 @@ export async function recordRecommendationInteraction({
       context: toJson(context),
       score_breakdown: scoreBreakdown ? toJson(scoreBreakdown) : null,
       model_run_id: scoreBreakdown?.modelScores.modelRunId ?? null
+    })
+    await recordRecommendationLearningSignals({
+      userId,
+      surface,
+      signals: buildInteractionLearningSignals({
+        surface,
+        eventType,
+        itemIds,
+        contextKey: typeof context.contextKey === 'string' ? context.contextKey : surface,
+        rating
+      }),
+      metadata: {
+        recommendationId,
+        candidateId
+      },
+      supabase
     })
   } catch {
     // Recommendation learning events must not block user flows.

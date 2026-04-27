@@ -82,6 +82,166 @@ describe('generateTodayRecommendations', () => {
     ).toBe(true)
   })
 
+  it('adds first-class outfit formula candidates with deterministic formula metadata', () => {
+    const recommendations = generateTodayRecommendations({
+      items: [
+        {
+          id: 'formula-top',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '针织衫',
+          colorCategory: '米色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'formula-bottom',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '西裤',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:01:00Z'
+        }
+      ],
+      weather: null,
+      preferenceState: resetRecommendationPreferences()
+    })
+
+    expect(recommendations.some((recommendation) => recommendation.formulaId === 'work-knit-trouser-loafer')).toBe(true)
+    expect(recommendations.some((recommendation) => recommendation.recallSource === 'formula')).toBe(true)
+  })
+
+  it('uses promoted entity scores to seed extra model-recalled candidates', () => {
+    const recommendations = generateTodayRecommendations({
+      items: [
+        {
+          id: 'seed-top',
+          imageUrl: null,
+          category: '上装',
+          subCategory: '衬衫',
+          colorCategory: '白色',
+          styleTags: ['通勤'],
+          lastWornDate: '2026-04-20',
+          wearCount: 8,
+          createdAt: '2026-04-19T10:00:00Z'
+        },
+        {
+          id: 'seed-bottom',
+          imageUrl: null,
+          category: '下装',
+          subCategory: '西裤',
+          colorCategory: '黑色',
+          styleTags: ['通勤'],
+          lastWornDate: null,
+          wearCount: 0,
+          createdAt: '2026-04-19T10:01:00Z'
+        }
+      ],
+      weather: null,
+      entityModelScoreMap: {
+        'seed-top': {
+          modelRunId: 'run-1',
+          lightfmScore: 98,
+          implicitScore: 96,
+          finalScore: 98,
+          status: 'active',
+          metadata: {}
+        }
+      },
+      modelScoreMap: {
+        'model-seed-seed-top-seed-bottom': {
+          modelRunId: 'run-1',
+          xgboostScore: 99,
+          lightfmScore: 98,
+          implicitScore: 97,
+          ruleScore: 60,
+          finalScore: 99,
+          status: 'active'
+        }
+      }
+    })
+
+    expect(recommendations[0]?.id).toBe('model-seed-seed-top-seed-bottom')
+    expect(recommendations[0]?.recallSource).toBe('model_seed')
+  })
+
+  it('uses the temporary Today scene instead of mutating long-term preference scenes', () => {
+    const sceneItems = [
+      {
+        id: 'work-top',
+        imageUrl: null,
+        category: '上装',
+        subCategory: '针织衫',
+        colorCategory: '米色',
+        styleTags: ['通勤'],
+        lastWornDate: null,
+        wearCount: 0,
+        createdAt: '2026-04-19T10:00:00Z'
+      },
+      {
+        id: 'work-bottom',
+        imageUrl: null,
+        category: '下装',
+        subCategory: '西裤',
+        colorCategory: '黑色',
+        styleTags: ['通勤'],
+        lastWornDate: null,
+        wearCount: 0,
+        createdAt: '2026-04-19T10:01:00Z'
+      },
+      {
+        id: 'outdoor-top',
+        imageUrl: null,
+        category: '上装',
+        subCategory: '卫衣',
+        colorCategory: '深灰色',
+        styleTags: ['户外', '运动'],
+        lastWornDate: null,
+        wearCount: 0,
+        createdAt: '2026-04-19T10:02:00Z'
+      },
+      {
+        id: 'outdoor-bottom',
+        imageUrl: null,
+        category: '下装',
+        subCategory: '休闲裤',
+        colorCategory: '卡其色',
+        styleTags: ['户外', '运动'],
+        lastWornDate: null,
+        wearCount: 0,
+        createdAt: '2026-04-19T10:03:00Z'
+      }
+    ]
+
+    const workRecommendations = generateTodayRecommendations({
+      items: sceneItems,
+      weather: null,
+      scene: 'work',
+      targetDate: 'tomorrow',
+      preferenceState: resetRecommendationPreferences()
+    })
+    const outdoorRecommendations = generateTodayRecommendations({
+      items: sceneItems,
+      weather: null,
+      scene: 'outdoor',
+      targetDate: 'tomorrow',
+      preferenceState: resetRecommendationPreferences()
+    })
+
+    expect(workRecommendations[0]?.top?.id).toBe('work-top')
+    expect(workRecommendations[0]?.bottom?.id).toBe('work-bottom')
+    expect(workRecommendations[0]?.scene).toBe('work')
+    expect(workRecommendations[0]?.targetDate).toBe('tomorrow')
+    expect(outdoorRecommendations[0]?.top?.id).toBe('outdoor-top')
+    expect(outdoorRecommendations[0]?.bottom?.id).toBe('outdoor-bottom')
+    expect(outdoorRecommendations[0]?.scene).toBe('outdoor')
+  })
+
   it('explains recommendation reasons through scored highlights instead of repeated boilerplate', () => {
     const sameFamilyRecommendations = generateTodayRecommendations({
       items: [

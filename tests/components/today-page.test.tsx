@@ -5,7 +5,7 @@ import { TodayPage } from '@/components/today/today-page'
 
 const refresh = vi.fn()
 const updateCity = vi.fn().mockResolvedValue({ error: null })
-const refreshRecommendations = vi.fn().mockResolvedValue({ recommendations: [] })
+const refreshRecommendations = vi.fn().mockResolvedValue({ recommendations: [], weatherState: { status: 'not-set', targetDate: 'today' } })
 const submitOotd = vi.fn()
 const changePassword = vi.fn().mockResolvedValue({ error: null })
 const signOut = vi.fn().mockResolvedValue(undefined)
@@ -99,7 +99,7 @@ describe('TodayPage', () => {
     updateCity.mockClear()
     submitOotd.mockReset()
     refreshRecommendations.mockReset()
-    refreshRecommendations.mockResolvedValue({ recommendations: [] })
+    refreshRecommendations.mockResolvedValue({ recommendations: [], weatherState: { status: 'not-set', targetDate: 'today' } })
     changePassword.mockReset()
     changePassword.mockResolvedValue({ error: null })
     signOut.mockReset()
@@ -286,6 +286,107 @@ describe('TodayPage', () => {
     expect(screen.queryByText('穿搭重点')).not.toBeInTheDocument()
     expect(screen.queryByText('接下来 1-3 天可以先这样用')).not.toBeInTheDocument()
     expect(screen.queryByText('用于判断外层、材质和鞋履舒适度。')).not.toBeInTheDocument()
+  })
+
+  it('refreshes recommendations for tomorrow without a page refresh', async () => {
+    refreshRecommendations.mockResolvedValueOnce({
+      recommendations: [{ ...recommendation, id: 'rec-tomorrow', reason: '明天通勤组合' }],
+      weatherState: {
+        status: 'ready',
+        targetDate: 'tomorrow',
+        weather: {
+          city: 'Shanghai',
+          temperatureC: 18,
+          conditionLabel: '多云',
+          isWarm: false,
+          isCold: false,
+          targetDate: 'tomorrow',
+          sourceLabel: '明天白天预报'
+        }
+      }
+    })
+
+    render(
+      <TodayPage
+        view={{
+          itemCount: 3,
+          city: '上海',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: {
+            status: 'ready',
+            weather: {
+              city: 'Shanghai',
+              temperatureC: 24,
+              conditionLabel: '晴',
+              isWarm: true,
+              isCold: false
+            }
+          },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    expect(screen.getByText('今日推荐')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '明天' }))
+
+    await waitFor(() => {
+      expect(refreshRecommendations).toHaveBeenCalledWith({ offset: 0, targetDate: 'tomorrow', scene: null })
+    })
+    expect(await screen.findByText('明天推荐')).toBeInTheDocument()
+    expect(screen.getByText('明天白天预报')).toBeInTheDocument()
+    expect(screen.getByText('18°C')).toBeInTheDocument()
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('refreshes recommendations when the Today scene changes', async () => {
+    refreshRecommendations.mockResolvedValueOnce({
+      recommendations: [{ ...recommendation, id: 'rec-outdoor', reason: '户外舒适组合' }],
+      weatherState: { status: 'not-set', targetDate: 'today' }
+    })
+
+    render(
+      <TodayPage
+        view={{
+          itemCount: 3,
+          city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'not-set' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '户外' }))
+
+    await waitFor(() => {
+      expect(refreshRecommendations).toHaveBeenCalledWith({ offset: 0, targetDate: 'today', scene: 'outdoor' })
+    })
+    expect(await screen.findByText('按今天的户外、天气和最近穿着整理')).toBeInTheDocument()
   })
 
   it('opens the city form directly under the city button', () => {
@@ -621,7 +722,8 @@ describe('TodayPage', () => {
 
   it('requests the next recommendation offset when refreshing', async () => {
     refreshRecommendations.mockResolvedValueOnce({
-      recommendations: [{ ...recommendation, id: 'rec-next', reason: '新的轮换建议' }]
+      recommendations: [{ ...recommendation, id: 'rec-next', reason: '新的轮换建议' }],
+      weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' }
     })
 
     render(
@@ -651,7 +753,7 @@ describe('TodayPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '换一批推荐' }))
 
     await waitFor(() => {
-      expect(refreshRecommendations).toHaveBeenCalledWith({ offset: 1 })
+      expect(refreshRecommendations).toHaveBeenCalledWith({ offset: 1, targetDate: 'today', scene: null })
     })
     expect(await screen.findByText('新的轮换建议')).toBeInTheDocument()
   })

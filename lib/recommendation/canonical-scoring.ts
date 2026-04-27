@@ -24,6 +24,7 @@ import {
   type RecommendationScoringContext,
   type RecommendationScoreBreakdown
 } from '@/lib/recommendation/canonical-types'
+import { getLearningSignalScoreAdjustment, hasHiddenItemSignal } from '@/lib/recommendation/learning-signals'
 import { scoreRecommendationStrategies } from '@/lib/recommendation/strategy-scorers'
 import type { PreferenceProfile, ScoreWeights } from '@/lib/recommendation/preference-types'
 
@@ -173,6 +174,10 @@ function buildPenalties(outfit: EvaluatedOutfit, context: RecommendationScoringC
     penalties.push({ key: 'hardAvoid', value: 100, reason: `命中用户避雷：${hardAvoid}` })
   }
 
+  if (hasHiddenItemSignal(outfit, context.learningSignals)) {
+    penalties.push({ key: 'hiddenItem', value: 100, reason: '命中用户隐藏单品' })
+  }
+
   if (componentScores.weatherComfort < 52) {
     penalties.push({ key: 'weatherMismatch', value: 28, reason: '天气适配低于安全线' })
   }
@@ -186,6 +191,14 @@ function buildPenalties(outfit: EvaluatedOutfit, context: RecommendationScoringC
   }
 
   return penalties
+}
+
+function learningContextKeys(context: RecommendationScoringContext) {
+  return [
+    context.surface,
+    ...(context.scenes ?? []),
+    ...(context.travelScenes ?? [])
+  ].filter((key): key is string => Boolean(key))
 }
 
 function buildCompatibilityScores(outfit: EvaluatedOutfit, context: RecommendationScoringContext, componentScores: ScoreWeights): RecommendationCompatibilityScores {
@@ -233,6 +246,11 @@ function buildRuleScores({
   }))
   const weatherScores = items.map((item) => getItemWeatherSuitability(item, context.weather))
   const freshnessScores = items.map(getItemFreshnessScore)
+  const learningAdjustment = getLearningSignalScoreAdjustment({
+    outfit,
+    signals: context.learningSignals,
+    contextKeys: learningContextKeys(context)
+  })
 
   return {
     contextFit: clampScore(average(sceneScores, componentScores.sceneFit) * 0.7 + componentScores.sceneFit * 0.3),
@@ -244,7 +262,7 @@ function buildRuleScores({
       compatibilityScores.pattern,
       compatibilityScores.shoesBag
     ])),
-    userPreference: clampScore(average([compatibilityScores.styleDistance, componentScores.focalPoint, componentScores.layering])),
+    userPreference: clampScore(average([compatibilityScores.styleDistance, componentScores.focalPoint, componentScores.layering]) + learningAdjustment),
     outfitStrategy: clampScore(strategyAverage),
     weatherPracticality: clampScore(average(weatherScores, componentScores.weatherComfort)),
     novelty: componentScores.freshness,
@@ -350,7 +368,7 @@ export function scoreRecommendationCandidate(
     explanationQuality
   })
   const ruleBaselineScore = getRuleBaselineScore(ruleScores, penalties)
-  const hardConstraintPenalty = penalties.some((penalty) => penalty.key === 'hardAvoid' || penalty.key === 'weatherMismatch')
+  const hardConstraintPenalty = penalties.some((penalty) => penalty.key === 'hardAvoid' || penalty.key === 'weatherMismatch' || penalty.key === 'hiddenItem')
   const blended = hardConstraintPenalty
     ? blendModelAndRuleScore({
         ruleBaselineScore,

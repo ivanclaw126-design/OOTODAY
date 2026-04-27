@@ -23,9 +23,11 @@ import type {
 } from '@/lib/inspiration/types'
 import { DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
 import { scoreRecommendationCandidate } from '@/lib/recommendation/canonical-scoring'
-import type { CandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import type { RecommendationLearningSignal } from '@/lib/recommendation/learning-signals'
+import type { CandidateModelScoreMap, EntityModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { evaluateOutfit, getWeightedOutfitScore, type EvaluatedOutfit } from '@/lib/recommendation/outfit-evaluator'
 import type { PreferenceProfile, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
+import type { RecommendationTrendSignal } from '@/lib/recommendation/trends'
 import type { TodayRecommendationMissingSlot } from '@/lib/today/types'
 
 const SCORE_WEIGHTS = {
@@ -44,6 +46,9 @@ type PreferenceScoreContext = {
   finalWeights: ScoreWeights | null
   weights: FormulaScoreWeights
   modelScoreMap?: CandidateModelScoreMap
+  entityModelScoreMap?: EntityModelScoreMap
+  trendSignals?: RecommendationTrendSignal[]
+  learningSignals?: RecommendationLearningSignal[]
 }
 
 type ScoredClosetItem = {
@@ -61,7 +66,13 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-function buildPreferenceContext(preferenceState?: RecommendationPreferenceState | null, modelScoreMap?: CandidateModelScoreMap): PreferenceScoreContext {
+function buildPreferenceContext(
+  preferenceState?: RecommendationPreferenceState | null,
+  modelScoreMap?: CandidateModelScoreMap,
+  entityModelScoreMap?: EntityModelScoreMap,
+  trendSignals: RecommendationTrendSignal[] = [],
+  learningSignals: RecommendationLearningSignal[] = []
+): PreferenceScoreContext {
   const finalWeights = preferenceState?.finalWeights ?? null
 
   if (!finalWeights) {
@@ -69,7 +80,10 @@ function buildPreferenceContext(preferenceState?: RecommendationPreferenceState 
       profile: preferenceState?.profile ?? null,
       finalWeights: null,
       weights: SCORE_WEIGHTS,
-      modelScoreMap
+      modelScoreMap,
+      entityModelScoreMap,
+      trendSignals,
+      learningSignals
     }
   }
 
@@ -83,6 +97,9 @@ function buildPreferenceContext(preferenceState?: RecommendationPreferenceState 
     profile: preferenceState?.profile ?? null,
     finalWeights,
     modelScoreMap,
+    entityModelScoreMap,
+    trendSignals,
+    learningSignals,
     weights: {
       categoryScore: SCORE_WEIGHTS.categoryScore,
       slotScore: nudgeWeight(SCORE_WEIGHTS.slotScore, 'completeness'),
@@ -672,15 +689,20 @@ function scoreClosetItem(
     context: {
       surface: 'inspiration',
       profile: context.profile,
-      inspirationTags: inspirationItem.styleTags
+      inspirationTags: inspirationItem.styleTags,
+      trendSignals: context.trendSignals,
+      learningSignals: context.learningSignals,
+      recallSource: 'rule'
     }
   }, context.modelScoreMap?.[modelCandidateId]).scoreBreakdown
   const ruleTotal = baseTotal * preferenceAdjustment.multiplier
+  const entityScore = context.entityModelScoreMap?.[closetItem.id]?.finalScore ?? 0
+  const entityModelNudge = entityScore > 0 ? clamp((entityScore - 50) / 1000, -0.04, 0.06) : 0
   const total = blockedByHardAvoid
     ? 0
     : modelBreakdown.modelScores.status === 'active'
       ? clamp((modelBreakdown.totalScore / 100) * 0.85 + ruleTotal * 0.15, 0, 1.35)
-      : ruleTotal
+      : clamp(ruleTotal + entityModelNudge, 0, 1.35)
   const matchType = normalizedClosetCategory === normalizedInspirationCategory ? 'sameCategory' : 'formulaSubstitute'
   const scoreBreakdown: InspirationMatchScoreBreakdown = {
     total,
@@ -781,9 +803,12 @@ export function matchClosetToInspiration(
   breakdown: InspirationBreakdown,
   closetItems: ClosetItemCardData[],
   preferenceState?: RecommendationPreferenceState | null,
-  modelScoreMap?: CandidateModelScoreMap
+  modelScoreMap?: CandidateModelScoreMap,
+  entityModelScoreMap?: EntityModelScoreMap,
+  trendSignals: RecommendationTrendSignal[] = [],
+  learningSignals: RecommendationLearningSignal[] = []
 ): InspirationClosetMatch[] {
-  const context = buildPreferenceContext(preferenceState, modelScoreMap)
+  const context = buildPreferenceContext(preferenceState, modelScoreMap, entityModelScoreMap, trendSignals, learningSignals)
 
   return breakdown.keyItems.map((inspirationItem) => {
     const normalizedCategory = normalizeCategoryValue(inspirationItem.category)

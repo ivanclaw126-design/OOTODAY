@@ -13,20 +13,25 @@ import {
 } from '@/lib/closet/taxonomy'
 import { buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
 import { getLegacyWeightedRuleScore, scoreRecommendationCandidate } from '@/lib/recommendation/canonical-scoring'
-import type { CandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import type { CandidateModelScoreMap, EntityModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { DEFAULT_PREFERENCE_PROFILE, DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
 import { isGoodInspirationCandidate } from '@/lib/recommendation/exploration'
+import type { RecommendationLearningSignal } from '@/lib/recommendation/learning-signals'
+import { itemMatchesFormulaSlot, rankOutfitFormulas } from '@/lib/recommendation/outfit-formulas'
 import {
   filterWeatherSuitableItems,
   getItemFreshnessScore,
   getItemWeatherSuitability,
   rankItemsForRecommendation
 } from '@/lib/recommendation/outfit-evaluator'
-import type { InspirationCandidateSignals, PreferenceProfile, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
+import type { RecommendationTrendSignal } from '@/lib/recommendation/trends'
+import type { InspirationCandidateSignals, PreferenceProfile, PreferredScene, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
 import type {
   TodayRecommendation,
   TodayRecommendationItem,
   TodayRecommendationMissingSlot,
+  TodayScene,
+  TodayTargetDate,
   TodayWeather
 } from '@/lib/today/types'
 
@@ -44,9 +49,16 @@ export type GenerateTodayRecommendationsParams = {
   preferenceState?: RecommendationPreferenceState
   explorationSeed?: string
   modelScoreMap?: CandidateModelScoreMap
+  entityModelScoreMap?: EntityModelScoreMap
+  trendSignals?: RecommendationTrendSignal[]
+  learningSignals?: RecommendationLearningSignal[]
+  targetDate?: TodayTargetDate
+  scene?: TodayScene
+  targetScenes?: PreferredScene[]
 }
 
 type OutfitKind = 'separates' | 'onePiece' | 'partial'
+type RecallSource = 'formula' | 'rule' | 'weather' | 'exploration' | 'model_seed'
 
 type OutfitDraft = {
   id: string
@@ -60,6 +72,8 @@ type OutfitDraft = {
   accessories: ClosetItemCardData[]
   missingSlots: TodayRecommendationMissingSlot[]
   mainIds: string[]
+  formulaId?: string | null
+  recallSource?: RecallSource
 }
 
 type ScoreHighlightKey = keyof ScoreWeights
@@ -197,6 +211,17 @@ function getSceneMatchScore(item: ClosetItemCardData, profile: PreferenceProfile
   }
 
   return hasAnyTextToken(item, wantedTokens) ? 6 : 0
+}
+
+function applyTargetScenes(profile: PreferenceProfile, targetScenes: PreferredScene[] = []) {
+  if (targetScenes.length === 0) {
+    return profile
+  }
+
+  return {
+    ...profile,
+    preferredScenes: [...targetScenes]
+  }
 }
 
 function getWeatherMatchScore(item: ClosetItemCardData, weather: TodayWeather | null) {
@@ -568,7 +593,9 @@ function toRecommendation(
   weather: TodayWeather | null,
   profile: PreferenceProfile,
   weights: ScoreWeights,
-  scoreBreakdown?: ReturnType<typeof scoreRecommendationCandidate>['scoreBreakdown']
+  scoreBreakdown?: ReturnType<typeof scoreRecommendationCandidate>['scoreBreakdown'],
+  targetDate: TodayTargetDate = 'today',
+  scene: TodayScene = null
 ): TodayRecommendation {
   const confidence = clampScore(componentScores.completeness * 0.52 + score * 0.48)
   const strategyReason = scoreBreakdown?.explanation?.[0]?.replace(/。$/u, '')
@@ -591,21 +618,50 @@ function toRecommendation(
     scoreBreakdown,
     modelScores: scoreBreakdown?.modelScores,
     modelRunId: scoreBreakdown?.modelScores.modelRunId ?? null,
+    formulaId: draft.formulaId ?? null,
+    recallSource: draft.recallSource ?? 'rule',
+    targetDate,
+    scene,
     mode: 'daily',
     inspirationReason: null,
     dailyDifference: null
   }
 }
 
+function getEntityModelSeedScore(item: ClosetItemCardData, entityModelScoreMap: EntityModelScoreMap) {
+  const score = entityModelScoreMap[item.id]
+  return score?.finalScore ?? Math.max(score?.lightfmScore ?? 0, score?.implicitScore ?? 0)
+}
+
+function rankModelSeedItems(items: ClosetItemCardData[], entityModelScoreMap: EntityModelScoreMap) {
+  return [...items]
+    .map((item) => ({ item, score: getEntityModelSeedScore(item, entityModelScoreMap) }))
+    .filter(({ score }) => score > 0)
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score
+      }
+
+      return compareWearPriority(left.item, right.item)
+    })
+    .map(({ item }) => item)
+}
+
 function buildRecommendationCandidates(
   items: ClosetItemCardData[],
   weather: TodayWeather | null,
   preferenceState?: RecommendationPreferenceState,
-  modelScoreMap: CandidateModelScoreMap = {}
+  modelScoreMap: CandidateModelScoreMap = {},
+  entityModelScoreMap: EntityModelScoreMap = {},
+  trendSignals: RecommendationTrendSignal[] = [],
+  learningSignals: RecommendationLearningSignal[] = [],
+  targetDate: TodayTargetDate = 'today',
+  scene: TodayScene = null,
+  targetScenes: PreferredScene[] = []
 ) {
-  const profile = preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE
+  const profile = applyTargetScenes(preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE, targetScenes)
   const weights = preferenceState?.finalWeights ?? DEFAULT_RECOMMENDATION_WEIGHTS
-  const rankContext = { weather, profile }
+  const rankContext = { weather, profile, scenes: targetScenes.length > 0 ? targetScenes : undefined }
   const tops = rankItemsForRecommendation(
     filterWeatherSuitableItems(items.filter((item) => isTopCategory(item.category)), weather, 46),
     rankContext
@@ -629,7 +685,13 @@ function buildRecommendationCandidates(
   const bags = rankItemsForRecommendation(items.filter((item) => isBagCategory(item.category)), rankContext)
   const accessories = rankItemsForRecommendation(items.filter((item) => isAccessoryCategory(item.category)), rankContext)
   const candidates: RecommendationCandidate[] = []
+  const seenDraftIds = new Set<string>()
   const finishDraft = (draft: OutfitDraft) => {
+    if (seenDraftIds.has(draft.id)) {
+      return
+    }
+
+    seenDraftIds.add(draft.id)
     const completedDraft = addCompletionSlots({
       draft,
       outerLayers,
@@ -646,6 +708,11 @@ function buildRecommendationCandidates(
       context: {
         weather,
         profile,
+        scenes: targetScenes.length > 0 ? targetScenes : undefined,
+        trendSignals,
+        learningSignals,
+        formulaId: completedDraft.formulaId ?? null,
+        recallSource: completedDraft.recallSource ?? 'rule',
         effortLevel: profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority ? 'low' : 'medium'
       }
     }, modelScoreMap[completedDraft.id])
@@ -665,8 +732,133 @@ function buildRecommendationCandidates(
       score,
       mainIds: completedDraft.mainIds,
       draft: completedDraft,
-      recommendation: toRecommendation(completedDraft, componentScores, score, weather, profile, weights, scoreBreakdown)
+      recommendation: toRecommendation(completedDraft, componentScores, score, weather, profile, weights, scoreBreakdown, targetDate, scene)
     })
+  }
+
+  const formulaCandidates = rankOutfitFormulas({ profile, weather }).slice(0, 5)
+
+  for (const formula of formulaCandidates) {
+    if (formula.requiredSlots.includes('dress')) {
+      dresses
+        .filter((dress) => itemMatchesFormulaSlot(dress, formula, 'dress'))
+        .slice(0, 4)
+        .forEach((dress) => finishDraft({
+          id: `formula-${formula.id}-${dress.id}`,
+          outfitKind: 'onePiece',
+          top: null,
+          bottom: null,
+          dress,
+          outerLayer: null,
+          shoes: null,
+          bag: null,
+          accessories: [],
+          missingSlots: [],
+          mainIds: [dress.id],
+          formulaId: formula.id,
+          recallSource: 'formula'
+        }))
+
+      continue
+    }
+
+    const formulaTops = tops.filter((top) => itemMatchesFormulaSlot(top, formula, 'top')).slice(0, 4)
+    const formulaBottoms = bottoms.filter((bottom) => itemMatchesFormulaSlot(bottom, formula, 'bottom')).slice(0, 4)
+
+    for (const top of formulaTops) {
+      for (const bottom of formulaBottoms) {
+        finishDraft({
+          id: `formula-${formula.id}-${top.id}-${bottom.id}`,
+          outfitKind: 'separates',
+          top,
+          bottom,
+          dress: null,
+          outerLayer: null,
+          shoes: null,
+          bag: null,
+          accessories: [],
+          missingSlots: [],
+          mainIds: [top.id, bottom.id],
+          formulaId: formula.id,
+          recallSource: 'formula'
+        })
+      }
+    }
+  }
+
+  const modelSeeds = rankModelSeedItems(items, entityModelScoreMap).slice(0, 12)
+
+  for (const seed of modelSeeds) {
+    if (isOnePieceCategory(seed.category)) {
+      finishDraft({
+        id: `model-seed-${seed.id}`,
+        outfitKind: 'onePiece',
+        top: null,
+        bottom: null,
+        dress: seed,
+        outerLayer: null,
+        shoes: null,
+        bag: null,
+        accessories: [],
+        missingSlots: [],
+        mainIds: [seed.id],
+        recallSource: 'model_seed'
+      })
+      continue
+    }
+
+    if (isTopCategory(seed.category)) {
+      const bottom = pickBestMatchingItem({
+        referenceItems: [seed],
+        candidates: bottoms,
+        profile,
+        weather,
+        includeScene: true,
+        includeWeather: true
+      })
+
+      finishDraft({
+        id: `model-seed-${seed.id}-${bottom?.id ?? 'missing-bottom'}`,
+        outfitKind: bottom ? 'separates' : 'partial',
+        top: seed,
+        bottom,
+        dress: null,
+        outerLayer: null,
+        shoes: null,
+        bag: null,
+        accessories: [],
+        missingSlots: bottom ? [] : ['bottom'],
+        mainIds: bottom ? [seed.id, bottom.id] : [seed.id],
+        recallSource: 'model_seed'
+      })
+      continue
+    }
+
+    if (isBottomCategory(seed.category)) {
+      const top = pickBestMatchingItem({
+        referenceItems: [seed],
+        candidates: tops,
+        profile,
+        weather,
+        includeScene: true,
+        includeWeather: true
+      })
+
+      finishDraft({
+        id: `model-seed-${top?.id ?? 'missing-top'}-${seed.id}`,
+        outfitKind: top ? 'separates' : 'partial',
+        top,
+        bottom: seed,
+        dress: null,
+        outerLayer: null,
+        shoes: null,
+        bag: null,
+        accessories: [],
+        missingSlots: top ? [] : ['top'],
+        mainIds: top ? [top.id, seed.id] : [seed.id],
+        recallSource: 'model_seed'
+      })
+    }
   }
 
   for (const dress of dresses) {
@@ -681,7 +873,8 @@ function buildRecommendationCandidates(
       bag: null,
       accessories: [],
       missingSlots: [],
-      mainIds: [dress.id]
+      mainIds: [dress.id],
+      recallSource: weather ? 'weather' : 'rule'
     })
   }
 
@@ -698,7 +891,8 @@ function buildRecommendationCandidates(
         bag: null,
         accessories: [],
         missingSlots: [],
-        mainIds: [top.id, bottom.id]
+        mainIds: [top.id, bottom.id],
+        recallSource: weather ? 'weather' : 'rule'
       })
     }
   }
@@ -715,7 +909,8 @@ function buildRecommendationCandidates(
       bag: null,
       accessories: [],
       missingSlots: ['bottom'],
-      mainIds: [top.id]
+      mainIds: [top.id],
+      recallSource: 'rule'
     })
   }
 
@@ -731,7 +926,8 @@ function buildRecommendationCandidates(
       bag: null,
       accessories: [],
       missingSlots: ['top'],
-      mainIds: [bottom.id]
+      mainIds: [bottom.id],
+      recallSource: 'rule'
     })
   }
 
@@ -858,6 +1054,7 @@ function toInspirationRecommendation(candidate: RecommendationCandidate, profile
     id: `inspiration-${candidate.recommendation.id}`,
     reason: `灵感套装：${candidate.recommendation.reason}`,
     mode: 'inspiration',
+    recallSource: 'exploration',
     inspirationReason: '灵感套装',
     dailyDifference: buildInspirationDifference(candidate, profile, baselineRecommendations)
   }
@@ -978,14 +1175,16 @@ function maybeInsertInspirationRecommendation({
   recommendations,
   candidates,
   preferenceState,
-  weather
+  weather,
+  targetScenes = []
 }: {
   recommendations: TodayRecommendation[]
   candidates: RecommendationCandidate[]
   preferenceState?: RecommendationPreferenceState
   weather: TodayWeather | null
+  targetScenes?: PreferredScene[]
 }) {
-  const profile = preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE
+  const profile = applyTargetScenes(preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE, targetScenes)
 
   if (!profile.exploration.enabled || profile.exploration.rate <= 0 || recommendations.length < 3) {
     return recommendations
@@ -1016,9 +1215,31 @@ function maybeInsertInspirationRecommendation({
 export function generateTodayRecommendations(
   params: GenerateTodayRecommendationsParams
 ): TodayRecommendation[] {
-  const { items, weather, preferenceState, modelScoreMap = {} } = params
+  const {
+    items,
+    weather,
+    preferenceState,
+    modelScoreMap = {},
+    entityModelScoreMap = {},
+    trendSignals = [],
+    learningSignals = []
+  } = params
   const offset = params.offset ?? 0
-  const candidates = buildRecommendationCandidates(items, weather, preferenceState, modelScoreMap)
+  const targetDate = params.targetDate ?? weather?.targetDate ?? 'today'
+  const scene = params.scene ?? null
+  const targetScenes = params.targetScenes ?? (scene ? [scene] : [])
+  const candidates = buildRecommendationCandidates(
+    items,
+    weather,
+    preferenceState,
+    modelScoreMap,
+    entityModelScoreMap,
+    trendSignals,
+    learningSignals,
+    targetDate,
+    scene,
+    targetScenes
+  )
   const recommendations = buildRecommendationBatch(candidates, offset)
 
   while (recommendations.length < 3 && recommendations.length > 0) {
@@ -1034,6 +1255,7 @@ export function generateTodayRecommendations(
     recommendations,
     candidates,
     preferenceState,
-    weather
+    weather,
+    targetScenes
   }).slice(0, 3)
 }

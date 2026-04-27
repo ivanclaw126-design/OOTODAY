@@ -15,7 +15,7 @@ import {
 import { getSession } from '@/lib/auth/get-session'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getTodayView } from '@/lib/today/get-today-view'
-import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput } from '@/lib/today/types'
+import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayRecommendationRefreshInput } from '@/lib/today/types'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 import { trackServerEvent } from '@/lib/analytics/server'
 import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
@@ -73,6 +73,8 @@ async function TodayRouteContent({
         offset: Number.isNaN(offset) ? 0 : offset,
         itemCount: view.itemCount,
         city: view.city,
+        targetDate: view.targetDate ?? 'today',
+        scene: view.scene ?? null,
         weatherAvailable: view.weatherState.status === 'ready'
       }
     })
@@ -93,7 +95,29 @@ async function TodayRouteContent({
         ].filter((id): id is string => Boolean(id)),
         context: {
           offset: Number.isNaN(offset) ? 0 : offset,
-          weatherAvailable: view.weatherState.status === 'ready'
+          targetDate: view.targetDate ?? 'today',
+          scene: view.scene ?? null,
+          weatherAvailable: view.weatherState.status === 'ready',
+          formulaId: recommendation.formulaId ?? null,
+          recallSource: recommendation.recallSource ?? null,
+          categoryKeys: [
+            recommendation.top?.category,
+            recommendation.bottom?.category,
+            recommendation.dress?.category,
+            recommendation.outerLayer?.category,
+            recommendation.shoes?.category,
+            recommendation.bag?.category,
+            ...(recommendation.accessories ?? []).map((item) => item.category)
+          ].filter((value): value is string => Boolean(value)),
+          colorKeys: [
+            recommendation.top?.colorCategory,
+            recommendation.bottom?.colorCategory,
+            recommendation.dress?.colorCategory,
+            recommendation.outerLayer?.colorCategory,
+            recommendation.shoes?.colorCategory,
+            recommendation.bag?.colorCategory,
+            ...(recommendation.accessories ?? []).map((item) => item.colorCategory)
+          ].filter((value): value is string => Boolean(value))
         },
         scoreBreakdown: recommendation.scoreBreakdown ?? null
       })
@@ -112,10 +136,10 @@ async function TodayRouteContent({
     return submitTodayOotdAction(input)
   }
 
-  async function refreshRecommendations(input: { offset: number }) {
+  async function refreshRecommendations(input: TodayRecommendationRefreshInput) {
     'use server'
 
-    return refreshTodayRecommendationsAction(input.offset)
+    return refreshTodayRecommendationsAction(input)
   }
 
   async function changePassword(input: { password: string; confirmPassword: string }) {

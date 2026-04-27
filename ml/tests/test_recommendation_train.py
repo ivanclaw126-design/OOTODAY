@@ -14,6 +14,20 @@ from ml.recommendation.train import (
 )
 
 
+def promotable_metrics(**overrides):
+    metrics = {
+        "hard_constraint_violations": 0,
+        "ndcg_at_k": 0.7,
+        "coverage": 1.0,
+        "diversity": 0.8,
+        "row_count": 50,
+        "positive_user_count": 3,
+        "positive_candidate_count": 10,
+    }
+    metrics.update(overrides)
+    return metrics
+
+
 def score_breakdown(rule_score=82):
     return {
         "ruleBaselineScore": rule_score,
@@ -63,10 +77,13 @@ def test_build_candidate_scores_outputs_model_bundle_scores():
 
 
 def test_promotion_gate_blocks_hard_constraint_violations_and_regressions():
-    assert should_promote({"hard_constraint_violations": 0, "ndcg_at_k": 0.5, "coverage": 1.0}, {"ndcg_at_k": 0.4})
-    assert not should_promote({"hard_constraint_violations": 1, "ndcg_at_k": 0.9, "coverage": 1.0}, {"ndcg_at_k": 0.4})
-    assert not should_promote({"hard_constraint_violations": 0, "ndcg_at_k": 0.3, "coverage": 1.0}, {"ndcg_at_k": 0.4})
-    assert not should_promote({"hard_constraint_violations": 0, "ndcg_at_k": 0.9, "coverage": 0.0}, {"ndcg_at_k": 0.4})
+    assert should_promote(promotable_metrics(ndcg_at_k=0.5), {"ndcg_at_k": 0.4})
+    assert not should_promote(promotable_metrics(hard_constraint_violations=1, ndcg_at_k=0.9), {"ndcg_at_k": 0.4})
+    assert not should_promote(promotable_metrics(ndcg_at_k=0.3), {"ndcg_at_k": 0.4})
+    assert not should_promote(promotable_metrics(coverage=0.0, ndcg_at_k=0.9), {"ndcg_at_k": 0.4})
+    assert not should_promote(promotable_metrics(row_count=49))
+    assert not should_promote(promotable_metrics(positive_user_count=2))
+    assert not should_promote(promotable_metrics(positive_candidate_count=9))
 
 
 def test_metrics_include_required_offline_acceptance_dimensions():
@@ -97,12 +114,22 @@ def test_metrics_include_required_offline_acceptance_dimensions():
         "ndcg_at_k",
         "map_at_k",
         "coverage",
+        "item_coverage",
+        "category_coverage",
+        "color_coverage",
+        "formula_coverage",
         "diversity",
+        "intra_list_diversity",
         "novelty",
+        "edit_rate",
+        "item_repetition_rate",
         "wear_through_rate",
         "satisfaction_after_wear",
+        "positive_user_count",
+        "positive_candidate_count",
     ]:
         assert key in metrics
+    assert metrics["ndcg_at_k"] >= metrics["map_at_k"]
 
 
 def test_candidate_and_entity_scores_include_shadow_training_diagnostics():
