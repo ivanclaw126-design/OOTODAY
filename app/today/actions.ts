@@ -26,11 +26,13 @@ import {
   type TodayChooseRecommendationInput,
   type TodayChooseRecommendationResult,
   type TodayHistoryUpdateInput,
+  type TodayInspirationPolicy,
   type TodayOotdFeedbackInput,
   type TodayOotdHistoryEntry,
   type TodayPreChoiceFeedbackInput,
   type TodayRecommendationRefreshInput,
   type TodayRecommendationRefreshResult,
+  type TodayRecommendationMode,
   type TodayReplaceableSlot,
   type TodayScene,
   type TodaySlotReplacementInput,
@@ -69,7 +71,9 @@ function normalizeTodayRefreshInput(input: number | TodayRecommendationRefreshIn
       targetDate: 'today',
       scene: null,
       lockedRecommendation: null,
-      lockedRecommendationIndex: null
+      lockedRecommendationIndex: null,
+      requestedMode: null,
+      excludeRecommendationIds: []
     }
   }
 
@@ -79,7 +83,9 @@ function normalizeTodayRefreshInput(input: number | TodayRecommendationRefreshIn
       targetDate: 'today',
       scene: null,
       lockedRecommendation: null,
-      lockedRecommendationIndex: null
+      lockedRecommendationIndex: null,
+      requestedMode: null,
+      excludeRecommendationIds: []
     }
   }
 
@@ -88,8 +94,28 @@ function normalizeTodayRefreshInput(input: number | TodayRecommendationRefreshIn
     targetDate: normalizeTodayTargetDate(input.targetDate),
     scene: normalizeTodayScene(input.scene),
     lockedRecommendation: input.lockedRecommendation ?? null,
-    lockedRecommendationIndex: typeof input.lockedRecommendationIndex === 'number' ? input.lockedRecommendationIndex : null
+    lockedRecommendationIndex: typeof input.lockedRecommendationIndex === 'number' ? input.lockedRecommendationIndex : null,
+    requestedMode: normalizeTodayRecommendationMode(input.requestedMode),
+    excludeRecommendationIds: Array.isArray(input.excludeRecommendationIds)
+      ? input.excludeRecommendationIds.filter((id): id is string => typeof id === 'string' && Boolean(id))
+      : []
   }
+}
+
+function normalizeTodayRecommendationMode(value: unknown): TodayRecommendationMode | null {
+  return value === 'daily' || value === 'inspiration' ? value : null
+}
+
+function getInspirationPolicy(requestedMode: TodayRecommendationMode | null): TodayInspirationPolicy {
+  if (requestedMode === 'inspiration') {
+    return 'force'
+  }
+
+  if (requestedMode === 'daily') {
+    return 'suppress'
+  }
+
+  return 'auto'
 }
 
 function normalizeTodayFeedbackReasonTags(value: unknown): TodayFeedbackReasonTag[] {
@@ -423,6 +449,7 @@ export async function submitTodayOotdAction({
 export async function replaceTodayRecommendationSlotAction({
   recommendation,
   slot,
+  replaceItemId,
   rejectedItemIds = [],
   reasonTags = [],
   targetDate,
@@ -467,6 +494,7 @@ export async function replaceTodayRecommendationSlotAction({
     ...(learningSignals.length > 0 ? { learningSignals } : {}),
     targetDate: normalizedTargetDate,
     scene: normalizedScene,
+    replaceItemId: typeof replaceItemId === 'string' ? replaceItemId : undefined,
     rejectedItemIds: rejectedItemIds.filter((id): id is string => typeof id === 'string')
   })
 
@@ -616,7 +644,15 @@ export async function refreshTodayRecommendationsAction(input: number | TodayRec
     throw new Error('Unauthorized')
   }
 
-  const { offset, targetDate, scene, lockedRecommendation, lockedRecommendationIndex } = normalizeTodayRefreshInput(input)
+  const {
+    offset,
+    targetDate,
+    scene,
+    lockedRecommendation,
+    lockedRecommendationIndex,
+    requestedMode,
+    excludeRecommendationIds
+  } = normalizeTodayRefreshInput(input)
   const supabase = await createSupabaseServerClient()
   const [{ data: profile }, closet, preferenceState, modelScoreMap, entityModelScoreMap, trendSignals, learningSignals] = await Promise.all([
     supabase.from('profiles').select('city').eq('id', session.user.id).maybeSingle(),
@@ -651,26 +687,35 @@ export async function refreshTodayRecommendationsAction(input: number | TodayRec
     preferenceState,
     targetDate,
     scene,
+    inspirationPolicy: getInspirationPolicy(requestedMode),
+    excludeRecommendationIds,
+    baselineRecommendations: lockedRecommendation ? [lockedRecommendation] : [],
+    limit: requestedMode ? 1 : 3,
     ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {}),
     ...(Object.keys(entityModelScoreMap).length > 0 ? { entityModelScoreMap } : {}),
     ...(trendSignals.length > 0 ? { trendSignals } : {}),
     ...(learningSignals.length > 0 ? { learningSignals } : {})
   })
-  const recommendations = mergeLockedRecommendation({
-    generated: generatedRecommendations,
-    lockedRecommendation,
-    lockedRecommendationIndex
-  })
+  const recommendations = requestedMode
+    ? generatedRecommendations.slice(0, 1)
+    : mergeLockedRecommendation({
+        generated: generatedRecommendations,
+        lockedRecommendation,
+        lockedRecommendationIndex
+      })
+  const actualMode = recommendations.some((recommendation) => recommendation.mode === 'inspiration') ? 'inspiration' : 'daily'
 
-  await saveTodayRecommendationCache({
-    userId: session.user.id,
-    targetDate,
-    scene,
-    city,
-    itemCount: closet.itemCount,
-    weatherState,
-    recommendations
-  })
+  if (!requestedMode) {
+    await saveTodayRecommendationCache({
+      userId: session.user.id,
+      targetDate,
+      scene,
+      city,
+      itemCount: closet.itemCount,
+      weatherState,
+      recommendations
+    })
+  }
 
   await trackServerEvent({
     userId: session.user.id,
@@ -681,13 +726,16 @@ export async function refreshTodayRecommendationsAction(input: number | TodayRec
       offset,
       targetDate,
       scene,
+      requestedMode,
+      actualMode,
+      excludeRecommendationCount: excludeRecommendationIds.length,
       recommendationCount: recommendations.length,
       itemCount: closet.itemCount,
       weatherAvailable: Boolean(weather)
     }
   })
 
-  return { recommendations, weatherState }
+  return { recommendations, weatherState, actualMode }
 }
 
 export async function changeTodayPasswordAction({

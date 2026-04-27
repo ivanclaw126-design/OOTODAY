@@ -19,7 +19,10 @@ const displayFont = Noto_Serif_SC({
 
 export const metadata: Metadata = {
   title: 'OOTODAY',
-  description: 'AI-powered personal wardrobe assistant'
+  description: 'AI-powered personal wardrobe assistant',
+  icons: {
+    icon: '/favicon.svg'
+  }
 }
 
 export const viewport: Viewport = {

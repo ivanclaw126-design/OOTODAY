@@ -70,7 +70,33 @@ describe('TodayOutfitHero', () => {
     expect(screen.getByAltText('上装：白色白衬衫')).toBeInTheDocument()
     expect(screen.getByText('西裤')).toBeInTheDocument()
     expect(screen.getByText('乐福鞋')).toBeInTheDocument()
-    expect(screen.getByText('+1')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '显示配饰' })).toHaveTextContent('+2')
+
+    fireEvent.click(screen.getByRole('button', { name: '显示配饰' }))
+
+    expect(screen.getByText('配饰')).toBeInTheDocument()
+    expect(screen.getByText('腰带')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '显示包袋' })).toBeInTheDocument()
+  })
+
+  it('replaces the visible bag or accessory slot only', () => {
+    const onRequestReplace = vi.fn()
+
+    render(
+      <TodayOutfitHero
+        recommendation={baseRecommendation}
+        replaceableSlots={['bag', 'accessories']}
+        onRequestReplace={onRequestReplace}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '更换包袋' }))
+    expect(onRequestReplace).toHaveBeenLastCalledWith('bag', baseRecommendation.bag)
+
+    fireEvent.click(screen.getByRole('button', { name: '显示配饰' }))
+    fireEvent.click(screen.getByRole('button', { name: '更换配饰' }))
+
+    expect(onRequestReplace).toHaveBeenLastCalledWith('accessories', baseRecommendation.accessories[0])
   })
 
   it('renders dress as the central item', () => {
@@ -155,7 +181,7 @@ describe('TodayOutfitHero', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '更换鞋履' }))
 
-    expect(onRequestReplace).toHaveBeenCalledWith('shoes')
+    expect(onRequestReplace).toHaveBeenCalledWith('shoes', baseRecommendation.shoes)
   })
 
   it('hides floating replace buttons when no slots are replaceable', () => {

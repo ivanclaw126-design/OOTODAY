@@ -450,6 +450,7 @@ describe('today actions', () => {
 
     await expect(refreshTodayRecommendationsAction({ offset: 3, targetDate: 'tomorrow', scene: 'work' })).resolves.toEqual({
       recommendations: [{ id: 'rec-1' }, { id: 'rec-2' }],
+      actualMode: 'daily',
       weatherState: {
         status: 'ready',
         targetDate: 'tomorrow',
@@ -466,7 +467,10 @@ describe('today actions', () => {
       offset: 3,
       preferenceState: { source: 'default' },
       targetDate: 'tomorrow',
-      scene: 'work'
+      scene: 'work',
+      inspirationPolicy: 'auto',
+      excludeRecommendationIds: [],
+      limit: 3
     }))
     expect(revalidatePath).not.toHaveBeenCalled()
   })
@@ -490,8 +494,39 @@ describe('today actions', () => {
       lockedRecommendationIndex: 1
     })).resolves.toEqual({
       recommendations: [{ id: 'new-1' }, lockedRecommendation, { id: 'new-2' }],
+      actualMode: 'daily',
       weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' }
     })
+  })
+
+  it('returns one continuous recommendation without overwriting the stable cache', async () => {
+    getSession.mockResolvedValue({ user: { id: 'user-1' } })
+    getClosetView.mockResolvedValue({
+      itemCount: 4,
+      items: [{ id: 'item-1' }, { id: 'item-2' }, { id: 'item-3' }, { id: 'item-4' }]
+    })
+    generateTodayRecommendations.mockReturnValue([{ id: 'inspiration-new', mode: 'inspiration' }])
+
+    const { refreshTodayRecommendationsAction } = await import('@/app/today/actions')
+
+    await expect(refreshTodayRecommendationsAction({
+      offset: 4,
+      targetDate: 'today',
+      scene: null,
+      requestedMode: 'inspiration',
+      excludeRecommendationIds: ['rec-1', 'rec-2', 'rec-3']
+    })).resolves.toEqual({
+      recommendations: [{ id: 'inspiration-new', mode: 'inspiration' }],
+      actualMode: 'inspiration',
+      weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' }
+    })
+
+    expect(generateTodayRecommendations).toHaveBeenCalledWith(expect.objectContaining({
+      offset: 4,
+      inspirationPolicy: 'force',
+      excludeRecommendationIds: ['rec-1', 'rec-2', 'rec-3'],
+      limit: 1
+    }))
   })
 
   it('replaces one recommendation slot and records the replacement interaction', async () => {

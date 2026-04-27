@@ -3,6 +3,7 @@ import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 import { getRecommendationLearningSignals } from '@/lib/recommendation/learning-signal-storage'
 import { getCandidateModelScoreMap, getEntityModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { getRecommendationTrendSignals } from '@/lib/recommendation/get-trend-signals'
+import { DEFAULT_PREFERENCE_PROFILE } from '@/lib/recommendation/default-weights'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { getRecentOotdHistory } from '@/lib/today/get-recent-ootd-history'
 import { getCachedTodayRecommendations, saveTodayRecommendationCache } from '@/lib/today/recommendation-cache'
@@ -108,6 +109,10 @@ export async function getTodayView({
     getRecommendationLearningSignals({ userId, surface: 'today' })
   ])
   const hasCompletedStyleQuestionnaire = preferenceState.hasQuestionnaireAnswers === true
+  const continuousRefresh = {
+    enabled: true,
+    exploration: preferenceState.profile?.exploration ?? DEFAULT_PREFERENCE_PROFILE.exploration
+  }
   const recommendationSignalParams = {
     ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {}),
     ...(Object.keys(entityModelScoreMap).length > 0 ? { entityModelScoreMap } : {}),
@@ -130,7 +135,8 @@ export async function getTodayView({
       recommendationSource: 'empty',
       recommendationError: false,
       ootdStatus,
-      recentOotdHistory
+      recentOotdHistory,
+      continuousRefresh
     }
   }
 
@@ -164,7 +170,8 @@ export async function getTodayView({
       recommendationSource: stableRecommendations.source,
       recommendationError: false,
       ootdStatus,
-      recentOotdHistory
+      recentOotdHistory,
+      continuousRefresh
     }
   }
 
@@ -200,7 +207,8 @@ export async function getTodayView({
       recommendationSource: stableRecommendations.source,
       recommendationError: false,
       ootdStatus,
-      recentOotdHistory
+      recentOotdHistory,
+      continuousRefresh
     }
   }
 
@@ -233,6 +241,7 @@ export async function getTodayView({
     recommendationSource: stableRecommendations.source,
     recommendationError: false,
     ootdStatus,
-    recentOotdHistory
+    recentOotdHistory,
+    continuousRefresh
   }
 }

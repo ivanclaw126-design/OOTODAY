@@ -1,4 +1,7 @@
+'use client'
+
 import Image from 'next/image'
+import { useState } from 'react'
 import { getSlotDisplayLabel } from '@/components/today/today-slot-replacement-actions'
 import type { TodayRecommendation, TodayRecommendationItem, TodayReplaceableSlot, TodayWeatherState } from '@/lib/today/types'
 
@@ -62,7 +65,7 @@ function SlotTile({
   canReplace: boolean
   isReplacing: boolean
   emptyLabel?: string
-  onRequestReplace?: (slot: TodayReplaceableSlot) => void
+  onRequestReplace?: (slot: TodayReplaceableSlot, item?: TodayRecommendationItem | null) => void
 }) {
   const label = itemName(slot.item, emptyLabel ?? `待补充${slot.label}`)
 
@@ -92,7 +95,7 @@ function SlotTile({
           aria-busy={isReplacing}
           disabled={isReplacing}
           className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-primary)]/15 bg-[var(--color-accent)] text-[10px] font-semibold text-[var(--color-primary)] shadow-[0_8px_16px_rgba(17,14,9,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(17,14,9,0.2)] disabled:translate-y-0 disabled:opacity-55"
-          onClick={() => onRequestReplace?.(slot.key)}
+          onClick={() => onRequestReplace?.(slot.key, slot.item)}
         >
           换
         </button>
@@ -113,28 +116,54 @@ export function TodayOutfitHero({
   weatherState?: TodayWeatherState
   replaceableSlots?: TodayReplaceableSlot[]
   replacingSlot?: TodayReplaceableSlot | null
-  onRequestReplace?: (slot: TodayReplaceableSlot) => void
+  onRequestReplace?: (slot: TodayReplaceableSlot, item?: TodayRecommendationItem | null) => void
 }) {
   const accessories = recommendation.accessories ?? []
-  const visibleAccessory = accessories[0] ?? null
-  const extraAccessoryCount = Math.max(0, accessories.length - 1)
+  const [activeFinisherSlot, setActiveFinisherSlot] = useState<'bag' | 'accessories'>(() => recommendation.bag ? 'bag' : 'accessories')
+  const [activeAccessoryIndex, setActiveAccessoryIndex] = useState(0)
+  const visibleAccessory = accessories[Math.min(activeAccessoryIndex, Math.max(0, accessories.length - 1))] ?? null
+  const hasBag = Boolean(recommendation.bag)
+  const hasAccessories = accessories.length > 0
+  const showAccessoryInFinisherSlot = hasAccessories && (!hasBag || activeFinisherSlot === 'accessories')
+  const hiddenFinisherCount = showAccessoryInFinisherSlot
+    ? (hasBag ? 1 : 0) + Math.max(0, accessories.length - 1)
+    : accessories.length
   const hasDress = Boolean(recommendation.dress)
   const replaceableSlotSet = new Set(replaceableSlots)
   const outerLayerEmptyLabel = getOuterLayerEmptyLabel(recommendation, weatherState)
+  const finisherSlot: HeroSlot = showAccessoryInFinisherSlot
+    ? { key: 'accessories', label: '配饰', item: visibleAccessory, className: 'col-span-1 row-span-1' }
+    : { key: 'bag', label: '包袋', item: recommendation.bag, className: 'col-span-1 row-span-1' }
   const slots: HeroSlot[] = hasDress
     ? [
         { key: 'outerLayer', label: '外套', item: recommendation.outerLayer, className: 'col-span-2 row-span-1' },
         { key: 'dress', label: '主件', item: recommendation.dress, className: 'col-span-2 row-span-2' },
         { key: 'shoes', label: '鞋履', item: recommendation.shoes, className: 'col-span-1 row-span-1' },
-        { key: 'bag', label: '包袋', item: recommendation.bag ?? visibleAccessory, className: 'col-span-1 row-span-1' }
+        finisherSlot
       ]
     : [
         { key: 'outerLayer', label: '外套', item: recommendation.outerLayer, className: 'col-span-2 row-span-1' },
         { key: 'top', label: '上装', item: recommendation.top, className: 'col-span-1 row-span-2' },
         { key: 'bottom', label: '下装', item: recommendation.bottom, className: 'col-span-1 row-span-2' },
         { key: 'shoes', label: '鞋履', item: recommendation.shoes, className: 'col-span-1 row-span-1' },
-        { key: 'bag', label: '包袋', item: recommendation.bag ?? visibleAccessory, className: 'col-span-1 row-span-1' }
+        finisherSlot
       ]
+
+  function switchFinisherSlot() {
+    if (!showAccessoryInFinisherSlot && hasAccessories) {
+      setActiveFinisherSlot('accessories')
+      return
+    }
+
+    if (showAccessoryInFinisherSlot && hasBag) {
+      setActiveFinisherSlot('bag')
+      return
+    }
+
+    if (showAccessoryInFinisherSlot && accessories.length > 1) {
+      setActiveAccessoryIndex((current) => (current + 1) % accessories.length)
+    }
+  }
 
   return (
     <div className="relative rounded-[1.35rem] border border-[var(--color-line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(244,238,229,0.9))] p-3 shadow-[0_12px_26px_rgba(17,14,9,0.05)]">
@@ -150,10 +179,15 @@ export function TodayOutfitHero({
           />
         ))}
       </div>
-      {extraAccessoryCount > 0 ? (
-        <div className="absolute bottom-4 right-4 rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-xs font-semibold text-white shadow-[0_10px_18px_rgba(0,0,0,0.16)]">
-          +{extraAccessoryCount}
-        </div>
+      {hiddenFinisherCount > 0 ? (
+        <button
+          type="button"
+          aria-label={showAccessoryInFinisherSlot ? (hasBag ? '显示包袋' : '显示下一件配饰') : '显示配饰'}
+          className="absolute bottom-4 right-4 rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-xs font-semibold text-white shadow-[0_10px_18px_rgba(0,0,0,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_22px_rgba(0,0,0,0.2)]"
+          onClick={switchFinisherSlot}
+        >
+          +{hiddenFinisherCount}
+        </button>
       ) : null}
     </div>
   )

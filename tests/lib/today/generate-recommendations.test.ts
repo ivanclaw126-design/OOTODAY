@@ -831,6 +831,92 @@ describe('generateTodayRecommendations', () => {
     expect(recommendations.every((recommendation) => recommendation.mode !== 'inspiration')).toBe(true)
   })
 
+  it('suppresses inspiration recommendations for regular continuous refreshes', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items,
+      weather: null,
+      inspirationPolicy: 'suppress',
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: true,
+            rate: 1
+          }
+        }
+      }
+    })
+
+    expect(recommendations).toHaveLength(3)
+    expect(recommendations.every((recommendation) => recommendation.mode === 'daily')).toBe(true)
+  })
+
+  it('returns one forced inspiration recommendation for continuous inspiration refreshes', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items,
+      weather: null,
+      inspirationPolicy: 'force',
+      limit: 1,
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: true,
+            rate: 1
+          }
+        }
+      }
+    })
+
+    expect(recommendations).toHaveLength(1)
+    expect(recommendations[0]?.mode).toBe('inspiration')
+  })
+
+  it('falls back to one daily recommendation when forced inspiration has no safe candidate', () => {
+    const preferenceState = resetRecommendationPreferences()
+    const recommendations = generateTodayRecommendations({
+      items,
+      weather: null,
+      inspirationPolicy: 'force',
+      limit: 1,
+      preferenceState: {
+        ...preferenceState,
+        profile: {
+          ...preferenceState.profile,
+          hardAvoids: ['通勤', '极简'],
+          exploration: {
+            ...preferenceState.profile.exploration,
+            enabled: true,
+            rate: 1
+          }
+        }
+      }
+    })
+
+    expect(recommendations).toHaveLength(1)
+    expect(recommendations[0]?.mode).toBe('daily')
+  })
+
+  it('filters currently displayed recommendation ids from continuous refresh output', () => {
+    const firstBatch = generateTodayRecommendations({ items, weather: null, inspirationPolicy: 'suppress' })
+    const nextRecommendation = generateTodayRecommendations({
+      items,
+      weather: null,
+      inspirationPolicy: 'suppress',
+      excludeRecommendationIds: firstBatch.map((recommendation) => recommendation.id),
+      limit: 1
+    })
+
+    expect(nextRecommendation).toHaveLength(1)
+    expect(firstBatch.map((recommendation) => recommendation.id)).not.toContain(nextRecommendation[0]?.id)
+  })
+
   it('does not insert inspiration recommendations that hit hard avoids', () => {
     const preferenceState = resetRecommendationPreferences()
     const recommendations = generateTodayRecommendations({

@@ -1,7 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { TodayPage } from '@/components/today/today-page'
+import { TodayRecommendationList } from '@/components/today/today-recommendation-list'
+import { buildOotdNotes } from '@/lib/today/build-ootd-notes'
 import {
   RECOMMENDATION_STRATEGY_KEYS,
   type RecommendationModelScores,
@@ -170,6 +172,56 @@ const inspirationRecommendation = {
   dailyDifference: '比前两套多一点变化，但没有越过避雷、天气和场景底线。'
 }
 
+function makeRecommendation(id: string, reason: string, topLabel: string = '衬衫') {
+  return {
+    ...completeRecommendation,
+    id,
+    reason,
+    reasonHighlights: [reason],
+    top: completeRecommendation.top ? {
+      ...completeRecommendation.top,
+      id: `${id}-top`,
+      subCategory: topLabel
+    } : null
+  }
+}
+
+function mockIntersectingContinuationCue() {
+  const original = globalThis.IntersectionObserver
+  let didIntersect = false
+
+  vi.stubGlobal('IntersectionObserver', class MockIntersectionObserver {
+    private callback: IntersectionObserverCallback
+
+    constructor(callback: IntersectionObserverCallback) {
+      this.callback = callback
+    }
+
+    observe(target: Element) {
+      if (didIntersect) {
+        return
+      }
+
+      didIntersect = true
+      this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+    }
+
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return []
+    }
+  })
+
+  return () => {
+    if (original) {
+      vi.stubGlobal('IntersectionObserver', original)
+    } else {
+      Reflect.deleteProperty(globalThis, 'IntersectionObserver')
+    }
+  }
+}
+
 describe('TodayPage', () => {
   beforeEach(() => {
     refresh.mockReset()
@@ -298,6 +350,39 @@ describe('TodayPage', () => {
 
     expect(screen.queryByText('第一次选择会让下一轮推荐更像你。')).not.toBeInTheDocument()
     expect(window.localStorage.getItem('ootoday-today-first-loop-dismissed')).toBe('1')
+  })
+
+  it('honors the dismissed first loop hint after hydration', async () => {
+    window.localStorage.setItem('ootoday-today-first-loop-dismissed', '1')
+
+    render(
+      <TodayPage
+        view={{
+          itemCount: 3,
+          city: '上海',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: '上海' },
+          recommendations: [recommendation],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        submitPreChoiceFeedback={submitPreChoiceFeedback}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByText('第一次选择会让下一轮推荐更像你。')).not.toBeInTheDocument()
+    })
   })
 
   it('invites users to fill the style questionnaire before it is completed', () => {
@@ -708,6 +793,10 @@ describe('TodayPage', () => {
     })
     expect(submitOotd).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: '就穿这个' })).toBeInTheDocument()
+    const prompt = screen.getByTestId('today-decision-prompt')
+    expect(within(prompt).getByText('AI 穿搭引擎又多懂了你一点。')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '已反馈' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: '还不错' })).not.toBeInTheDocument()
   })
 
   it('records dislike as pre-choice feedback without marking the outfit worn', async () => {
@@ -806,6 +895,7 @@ describe('TodayPage', () => {
       expect(replaceRecommendationSlot).toHaveBeenCalledWith({
         recommendation: completeRecommendation,
         slot: 'shoes',
+        replaceItemId: 'shoes-1',
         rejectedItemIds: ['shoes-1'],
         reasonTags: [],
         targetDate: 'today',
@@ -813,6 +903,7 @@ describe('TodayPage', () => {
       })
     })
     expect(await screen.findByText('短靴')).toBeInTheDocument()
+    expect(screen.getByLabelText('今天第 2 套推荐')).toBeInTheDocument()
   })
 
   it('locks the selected recommendation after choosing it for today', async () => {
@@ -1004,6 +1095,198 @@ describe('TodayPage', () => {
       expect(refreshRecommendations).toHaveBeenCalledWith({ offset: 1, targetDate: 'today', scene: null })
     })
     expect(await screen.findByText('新的轮换建议')).toBeInTheDocument()
+  })
+
+  it('continues the daily recommendation sequence after a full batch refresh', async () => {
+    const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
+    const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
+    const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
+    const rec4 = makeRecommendation('rec-4', '第四套理由', '灰色开衫')
+    const rec5 = makeRecommendation('rec-5', '第五套理由', '白色针织')
+    const rec6 = makeRecommendation('rec-6', '第六套理由', '蓝色开衫')
+
+    refreshRecommendations.mockResolvedValueOnce({
+      recommendations: [rec4, rec5, rec6],
+      weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' }
+    })
+
+    render(
+      <TodayPage
+        view={{
+          itemCount: 5,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [rec1, rec2, rec3],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    expect(screen.getByLabelText('今天第 1 套推荐')).toBeInTheDocument()
+    expect(screen.getByLabelText('今天第 2 套推荐')).toBeInTheDocument()
+    expect(screen.getByLabelText('今天第 3 套推荐')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '换一批推荐' }))
+
+    expect(await screen.findByText('第四套理由')).toBeInTheDocument()
+    expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
+    expect(screen.getByLabelText('今天第 5 套推荐')).toBeInTheDocument()
+    expect(screen.getByLabelText('今天第 6 套推荐')).toBeInTheDocument()
+  })
+
+  it('preloads one regular recommendation from the mobile continuation cue', async () => {
+    const restoreIntersectionObserver = mockIntersectingContinuationCue()
+    const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
+    const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
+    const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
+    const rec4 = makeRecommendation('rec-4', '连续新推荐', '灰色开衫')
+
+    refreshRecommendations.mockResolvedValueOnce({
+      recommendations: [rec4],
+      weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' },
+      actualMode: 'daily'
+    })
+
+    try {
+      render(
+        <TodayPage
+          view={{
+            itemCount: 5,
+            city: 'Shanghai',
+            accountEmail: 'user@example.com',
+            passwordBootstrapped: true,
+            passwordChangedAt: null,
+            weatherState: { status: 'unavailable', city: 'Shanghai' },
+            recommendations: [rec1, rec2, rec3],
+            recommendationError: false,
+            ootdStatus: { status: 'not-recorded' },
+            recentOotdHistory: []
+          }}
+          updateCity={updateCity}
+          submitOotd={submitOotd}
+          refreshRecommendations={refreshRecommendations}
+          changePassword={changePassword}
+          signOut={signOut}
+          updateHistoryEntry={updateHistoryEntry}
+          deleteHistoryEntry={deleteHistoryEntry}
+        />
+      )
+
+      expect(screen.getByLabelText('继续滑动生成常规推荐')).toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(refreshRecommendations).toHaveBeenCalledWith({
+          offset: 1,
+          targetDate: 'today',
+          scene: null,
+          requestedMode: 'daily',
+          excludeRecommendationIds: ['rec-1', 'rec-2', 'rec-3']
+        })
+      })
+      expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+      expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
+    } finally {
+      restoreIntersectionObserver()
+    }
+  })
+
+  it('keeps the worn recommendation resident during mobile continuation refresh', async () => {
+    const restoreIntersectionObserver = mockIntersectingContinuationCue()
+    const locked = makeRecommendation('locked-rec', '已穿这套理由', '白衬衫')
+    const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
+    const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
+    const rec4 = makeRecommendation('rec-4', '连续新推荐', '灰色开衫')
+
+    refreshRecommendations.mockResolvedValueOnce({
+      recommendations: [rec4],
+      weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' },
+      actualMode: 'daily'
+    })
+
+    try {
+      render(
+        <TodayPage
+          view={{
+            itemCount: 5,
+            city: 'Shanghai',
+            accountEmail: 'user@example.com',
+            passwordBootstrapped: true,
+            passwordChangedAt: null,
+            weatherState: { status: 'unavailable', city: 'Shanghai' },
+            recommendations: [locked, rec2, rec3],
+            recommendationError: false,
+            ootdStatus: {
+              status: 'recorded',
+              wornAt: '2026-04-21T08:00:00.000Z'
+            },
+            recentOotdHistory: [{
+              id: 'ootd-1',
+              wornAt: '2026-04-21T08:00:00.000Z',
+              satisfactionScore: null,
+              notes: buildOotdNotes(locked)
+            }]
+          }}
+          updateCity={updateCity}
+          submitOotd={submitOotd}
+          refreshRecommendations={refreshRecommendations}
+          changePassword={changePassword}
+          signOut={signOut}
+          updateHistoryEntry={updateHistoryEntry}
+          deleteHistoryEntry={deleteHistoryEntry}
+        />
+      )
+
+      await waitFor(() => {
+        expect(refreshRecommendations).toHaveBeenCalled()
+      })
+
+      expect(await screen.findByText('已穿这套理由')).toBeInTheDocument()
+      expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.queryByText('第二套理由')).not.toBeInTheDocument()
+      })
+    } finally {
+      restoreIntersectionObserver()
+    }
+  })
+
+  it('uses bright continuation cue copy for inspiration refreshes', () => {
+    render(
+      <TodayRecommendationList
+        recommendations={[
+          makeRecommendation('rec-1', '第一套理由'),
+          makeRecommendation('rec-2', '第二套理由'),
+          makeRecommendation('rec-3', '第三套理由')
+        ]}
+        recommendationError={false}
+        ootdStatus={{ status: 'not-recorded' }}
+        recordedRecommendationId={null}
+        weatherState={{ status: 'not-set', targetDate: 'today' }}
+        continuationMode="inspiration"
+        chooseRecommendation={chooseRecommendation}
+        undoTodaySelection={undoTodaySelection}
+        replaceSlot={replaceRecommendationSlot}
+        submitPreChoiceFeedback={submitPreChoiceFeedback}
+        recordOpened={recordRecommendationOpened}
+        onContinuationCueVisible={() => undefined}
+      />
+    )
+
+    expect(screen.getByLabelText('继续滑动生成灵感推荐')).toBeInTheDocument()
+    expect(screen.getByText('灵感到来！继续滑')).toBeInTheDocument()
+    expect(screen.getByText('下一套会更有风格试探，但仍守住天气、场景和避雷底线。')).toBeInTheDocument()
   })
 
   it('shows default password guidance and lets the user submit a new password', async () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { startTransition, useState } from 'react'
+import { startTransition, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { TodayCityForm } from '@/components/today/today-city-form'
 import { TodayCityPromptCard } from '@/components/today/today-city-prompt-card'
@@ -8,7 +8,9 @@ import { TodayContextBar } from '@/components/today/today-context-bar'
 import { TodayOotdHistory } from '@/components/today/today-ootd-history'
 import { TodayRecommendationList } from '@/components/today/today-recommendation-list'
 import { SecondaryButton } from '@/components/ui/button'
+import { DEFAULT_PREFERENCE_PROFILE } from '@/lib/recommendation/default-weights'
 import { buildOotdNotes } from '@/lib/today/build-ootd-notes'
+import { getNextContinuationMode, mergeContinuousRecommendations } from '@/lib/today/continuous-refresh'
 import type {
   TodayChooseRecommendationInput,
   TodayHistoryUpdateInput,
@@ -27,6 +29,118 @@ import type {
 
 function isSameCalendarDay(left: string, right: string) {
   return new Date(left).toDateString() === new Date(right).toDateString()
+}
+
+const FIRST_LOOP_DISMISSED_STORAGE_KEY = 'ootoday-today-first-loop-dismissed'
+const FIRST_LOOP_DISMISSED_EVENT = 'ootoday:first-loop-dismissed'
+const DAILY_RECOMMENDATION_SEQUENCE_STORAGE_KEY = 'ootoday-today-recommendation-sequence'
+
+type DailyRecommendationSequenceState = {
+  dateKey: string
+  nextSequence: number
+  recommendationSequences: Record<string, number>
+}
+
+function subscribeToFirstLoopDismissed(onStoreChange: () => void) {
+  window.addEventListener(FIRST_LOOP_DISMISSED_EVENT, onStoreChange)
+  window.addEventListener('storage', onStoreChange)
+
+  return () => {
+    window.removeEventListener(FIRST_LOOP_DISMISSED_EVENT, onStoreChange)
+    window.removeEventListener('storage', onStoreChange)
+  }
+}
+
+function getFirstLoopDismissedSnapshot() {
+  return window.localStorage.getItem(FIRST_LOOP_DISMISSED_STORAGE_KEY) === '1'
+}
+
+function getFirstLoopDismissedServerSnapshot() {
+  return false
+}
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function createDailyRecommendationSequenceState(
+  recommendations: TodayRecommendation[],
+  dateKey = getLocalDateKey()
+): DailyRecommendationSequenceState {
+  const recommendationSequences: Record<string, number> = {}
+
+  recommendations.forEach((recommendation, index) => {
+    recommendationSequences[recommendation.id] = index + 1
+  })
+
+  return {
+    dateKey,
+    nextSequence: recommendations.length + 1,
+    recommendationSequences
+  }
+}
+
+function readDailyRecommendationSequenceState(
+  recommendations: TodayRecommendation[]
+): DailyRecommendationSequenceState {
+  const dateKey = getLocalDateKey()
+
+  if (typeof window === 'undefined') {
+    return createDailyRecommendationSequenceState(recommendations, dateKey)
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(DAILY_RECOMMENDATION_SEQUENCE_STORAGE_KEY) ?? 'null') as Partial<DailyRecommendationSequenceState> | null
+
+    if (!parsed || parsed.dateKey !== dateKey || typeof parsed.nextSequence !== 'number' || !parsed.recommendationSequences) {
+      return createDailyRecommendationSequenceState(recommendations, dateKey)
+    }
+
+    return {
+      dateKey,
+      nextSequence: Math.max(1, parsed.nextSequence),
+      recommendationSequences: { ...parsed.recommendationSequences }
+    }
+  } catch {
+    return createDailyRecommendationSequenceState(recommendations, dateKey)
+  }
+}
+
+function persistDailyRecommendationSequenceState(state: DailyRecommendationSequenceState) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(DAILY_RECOMMENDATION_SEQUENCE_STORAGE_KEY, JSON.stringify(state))
+}
+
+function assignDailyRecommendationSequences({
+  state,
+  recommendations,
+  forceRecommendationIds = []
+}: {
+  state: DailyRecommendationSequenceState
+  recommendations: TodayRecommendation[]
+  forceRecommendationIds?: string[]
+}) {
+  const nextState: DailyRecommendationSequenceState = {
+    dateKey: getLocalDateKey(),
+    nextSequence: state.dateKey === getLocalDateKey() ? state.nextSequence : 1,
+    recommendationSequences: state.dateKey === getLocalDateKey() ? { ...state.recommendationSequences } : {}
+  }
+  const forced = new Set(forceRecommendationIds)
+
+  recommendations.forEach((recommendation) => {
+    if (!nextState.recommendationSequences[recommendation.id] || forced.has(recommendation.id)) {
+      nextState.recommendationSequences[recommendation.id] = nextState.nextSequence
+      nextState.nextSequence += 1
+    }
+  })
+
+  return nextState
 }
 
 function getRecordedRecommendationId({
@@ -78,18 +192,22 @@ export function TodayInteractiveWorkspace({
   const [isCityFormOpen, setIsCityFormOpen] = useState(false)
   const [ootdStatus, setOotdStatus] = useState<TodayOotdStatus>(view.ootdStatus)
   const [recommendations, setRecommendations] = useState(view.recommendations)
+  const [recommendationSequenceState, setRecommendationSequenceState] = useState(() =>
+    createDailyRecommendationSequenceState(view.recommendations)
+  )
   const [weatherState, setWeatherState] = useState(view.weatherState)
   const [targetDate, setTargetDate] = useState<TodayTargetDate>(view.targetDate ?? 'today')
   const [scene, setScene] = useState<TodayScene>(view.scene ?? null)
   const [recommendationOffset, setRecommendationOffset] = useState(0)
   const [isRefreshingRecommendations, setIsRefreshingRecommendations] = useState(false)
-  const [isFirstLoopDismissed, setIsFirstLoopDismissed] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false
-    }
-
-    return window.localStorage.getItem('ootoday-today-first-loop-dismissed') === '1'
-  })
+  const [isContinuingRecommendations, setIsContinuingRecommendations] = useState(false)
+  const [continuousRefreshCount, setContinuousRefreshCount] = useState(0)
+  const [continuationVersion, setContinuationVersion] = useState(0)
+  const isFirstLoopDismissed = useSyncExternalStore(
+    subscribeToFirstLoopDismissed,
+    getFirstLoopDismissedSnapshot,
+    getFirstLoopDismissedServerSnapshot
+  )
   const [isCityPromptDismissed, setIsCityPromptDismissed] = useState(false)
   const [historyEntries, setHistoryEntries] = useState(view.recentOotdHistory)
   const [recordedRecommendationId, setRecordedRecommendationId] = useState<string | null>(() =>
@@ -99,11 +217,59 @@ export function TodayInteractiveWorkspace({
       historyEntries: view.recentOotdHistory
     })
   )
+  const initialRecommendationsRef = useRef(view.recommendations)
+  const latestRecommendationsRef = useRef(recommendations)
+  const latestRecordedRecommendationIdRef = useRef(recordedRecommendationId)
   const hasStartedFeedbackLoop = ootdStatus.status === 'recorded' || historyEntries.length > 0
+  const continuousRefresh = view.continuousRefresh ?? {
+    enabled: true,
+    exploration: DEFAULT_PREFERENCE_PROFILE.exploration
+  }
+  const continuationMode = getNextContinuationMode({
+    refreshCount: continuousRefreshCount,
+    exploration: continuousRefresh.exploration
+  })
+
+  useEffect(() => {
+    latestRecommendationsRef.current = recommendations
+  }, [recommendations])
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setRecommendationSequenceState((current) => {
+        const initialRecommendations = initialRecommendationsRef.current
+        const persisted = readDailyRecommendationSequenceState(initialRecommendations)
+        const nextState = assignDailyRecommendationSequences({
+          state: persisted.dateKey === getLocalDateKey() ? persisted : current,
+          recommendations: initialRecommendations
+        })
+        persistDailyRecommendationSequenceState(nextState)
+        return nextState
+      })
+    }, 0)
+
+    return () => window.clearTimeout(handle)
+  }, [])
+
+  function commitRecommendationSequences(nextRecommendations: TodayRecommendation[], forceRecommendationIds: string[] = []) {
+    setRecommendationSequenceState((current) => {
+      const nextState = assignDailyRecommendationSequences({
+        state: current,
+        recommendations: nextRecommendations,
+        forceRecommendationIds
+      })
+      persistDailyRecommendationSequenceState(nextState)
+      return nextState
+    })
+  }
+
+  useEffect(() => {
+    latestRecordedRecommendationIdRef.current = recordedRecommendationId
+  }, [recordedRecommendationId])
 
   function dismissFirstLoop() {
-    setIsFirstLoopDismissed(true)
-    window.localStorage.setItem('ootoday-today-first-loop-dismissed', '1')
+    window.localStorage.setItem(FIRST_LOOP_DISMISSED_STORAGE_KEY, '1')
+    window.dispatchEvent(new Event(FIRST_LOOP_DISMISSED_EVENT))
   }
 
   async function saveCity(input: { city: string }) {
@@ -123,6 +289,7 @@ export function TodayInteractiveWorkspace({
 
     if (!result.error && result.wornAt) {
       setOotdStatus({ status: 'recorded', wornAt: result.wornAt })
+      latestRecordedRecommendationIdRef.current = input.recommendation.id
       setRecordedRecommendationId(input.recommendation.id)
     }
 
@@ -134,6 +301,7 @@ export function TodayInteractiveWorkspace({
 
     if (!result.error) {
       setOotdStatus({ status: 'not-recorded' })
+      latestRecordedRecommendationIdRef.current = null
       setRecordedRecommendationId(null)
     }
 
@@ -144,9 +312,14 @@ export function TodayInteractiveWorkspace({
     const result = await replaceRecommendationSlot(input)
 
     if (!result.error && result.recommendation) {
+      const nextRecommendations = recommendations.map((recommendation) =>
+        recommendation.id === input.recommendation.id ? result.recommendation as TodayRecommendation : recommendation
+      )
+
       setRecommendations((current) =>
         current.map((recommendation) => recommendation.id === input.recommendation.id ? result.recommendation as TodayRecommendation : recommendation)
       )
+      commitRecommendationSequences(nextRecommendations, [result.recommendation.id])
     }
 
     return result
@@ -169,8 +342,10 @@ export function TodayInteractiveWorkspace({
       })
       startTransition(() => {
         setRecommendations(result.recommendations)
+        commitRecommendationSequences(result.recommendations)
         setWeatherState(result.weatherState ?? weatherState)
         setRecommendationOffset(nextOffset)
+        setContinuousRefreshCount(0)
         setRecordedRecommendationId((current) =>
           current && result.recommendations.some((recommendation) => recommendation.id === current) ? current : null
         )
@@ -206,7 +381,9 @@ export function TodayInteractiveWorkspace({
         setScene(nextScene)
         setWeatherState(result.weatherState ?? weatherState)
         setRecommendations(result.recommendations)
+        commitRecommendationSequences(result.recommendations)
         setRecommendationOffset(0)
+        setContinuousRefreshCount(0)
         setRecordedRecommendationId((current) =>
           current && result.recommendations.some((recommendation) => recommendation.id === current) ? current : null
         )
@@ -215,6 +392,69 @@ export function TodayInteractiveWorkspace({
       setIsRefreshingRecommendations(false)
     }
   }
+
+  const handleContinuationCueVisible = useCallback(async () => {
+    const currentRecommendations = latestRecommendationsRef.current
+    const currentRecordedRecommendationId = latestRecordedRecommendationIdRef.current
+
+    if (!continuousRefresh.enabled || isContinuingRecommendations || isRefreshingRecommendations || currentRecommendations.length < 3) {
+      return
+    }
+
+    setIsContinuingRecommendations(true)
+    const nextOffset = recommendationOffset + 1
+    const requestedMode = getNextContinuationMode({
+      refreshCount: continuousRefreshCount,
+      exploration: continuousRefresh.exploration
+    })
+
+    try {
+      const result = await refreshRecommendations({
+        offset: nextOffset,
+        targetDate,
+        scene,
+        requestedMode,
+        excludeRecommendationIds: currentRecommendations.map((recommendation) => recommendation.id)
+      })
+      const nextRecommendation = result.recommendations[0] ?? null
+
+      startTransition(() => {
+        const mergedRecommendations = mergeContinuousRecommendations({
+          currentRecommendations,
+          newRecommendation: nextRecommendation,
+          recordedRecommendationId: currentRecordedRecommendationId
+        })
+
+        latestRecommendationsRef.current = mergedRecommendations
+        setRecommendations(mergedRecommendations)
+        commitRecommendationSequences(nextRecommendation ? [nextRecommendation] : [])
+        setWeatherState(result.weatherState ?? weatherState)
+        setRecommendationOffset(nextOffset)
+        setContinuousRefreshCount((current) => current + 1)
+
+        if (nextRecommendation) {
+          setContinuationVersion((current) => current + 1)
+        }
+
+        setRecordedRecommendationId((current) =>
+          current && mergedRecommendations.some((recommendation) => recommendation.id === current) ? current : null
+        )
+      })
+    } finally {
+      setIsContinuingRecommendations(false)
+    }
+  }, [
+    continuousRefreshCount,
+    isContinuingRecommendations,
+    isRefreshingRecommendations,
+    recommendationOffset,
+    refreshRecommendations,
+    scene,
+    targetDate,
+    continuousRefresh.enabled,
+    continuousRefresh.exploration,
+    weatherState
+  ])
 
   async function handleUpdateHistoryEntry(input: TodayHistoryUpdateInput) {
     const result = await updateHistoryEntry(input)
@@ -281,6 +521,11 @@ export function TodayInteractiveWorkspace({
         replaceSlot={replaceSlot}
         submitPreChoiceFeedback={submitPreChoiceFeedback}
         recordOpened={recordRecommendationOpened}
+        recommendationSequences={recommendationSequenceState.recommendationSequences}
+        continuationMode={continuationMode}
+        isContinuationLoading={isContinuingRecommendations}
+        continuationVersion={continuationVersion}
+        onContinuationCueVisible={continuousRefresh.enabled ? handleContinuationCueVisible : undefined}
       />
 
       <div className="flex flex-col gap-2 sm:flex-row">
