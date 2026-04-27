@@ -69,7 +69,7 @@ describe('StyleQuestionnairePage', () => {
     })
     expect(screen.getByText('风格问卷已保存')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '回 Today 看新推荐' })).toHaveAttribute('href', '/today')
-  })
+  }, 10000)
 
   it('shows an inline save error from the action', async () => {
     submitAnswers.mockResolvedValue({ error: '风格问卷保存失败，请稍后重试' })

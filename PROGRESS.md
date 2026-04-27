@@ -29,7 +29,7 @@
 
 - 已完成 Next.js App Router、React 19、Tailwind CSS 4 基础工程。
 - 已完成 Supabase browser/server client、middleware、magic link 回调、受保护路由。
-- 登录方式已从纯 magic link 扩展到 magic link + 邮箱密码；首次 magic link 登录后会启用默认密码 `123456`，用户也可在 Today 中自行修改密码。
+- 登录方式已从纯 magic link 扩展到 magic link + 邮箱密码 + 手机号短信验证码；手机号短信发送已接入 Supabase Auth Send SMS Hook，经 `/api/auth/send-sms` 调用阿里云号码认证服务 PNVS `SendSmsVerifyCode`，只允许 `+86` 手机号，并使用 Supabase Hook token 作为模板验证码；首次 magic link 登录后会启用默认密码 `123456`，用户也可在 Today 中自行修改密码；手机号登录会写入 `profiles.phone`，权限仍只依赖 `auth.uid()`。
 - 已完成基础 schema：`profiles`、`items`、`outfits`、`ootd`；Travel 额外依赖 `travel_plans`，远端未落表时会回退到 `outfits`。
 - 已通过基础测试与生产构建验证。
 
@@ -142,7 +142,7 @@
 - Phase 9 beta readiness checklist 已创建：`docs/beta-readiness-checklist.md` 覆盖 Auth、偏好、Today、Looks、Shop、Travel、移动端和 CI/部署验收；真实邮箱 Auth、Vercel build、移动端手感仍需在目标环境逐项打勾。
 - Supabase 迁移检查已修正为 IPv4 transaction pooler + disabled statement cache 路径；`supabase db push --include-all` 与 `npm run travel:db:check` 当前均可确认远端 schema reachable/up to date。
 - 严格版推荐模型与完整六项上线迁移 `20260427103000_add_recommendation_model_tables.sql`、`20260427142000_add_recommendation_trends_learning_signals.sql` 已执行远端 push；当前 90 天远端 training dry-run 只有 6 行事件、0 个 positive user/candidate，真实 promoted 训练仍需等推荐事件达到默认门槛后再触发。
-- Auth 还需要一轮真实邮箱与部署环境验证，覆盖“默认密码直登”和“改密后使用其他密码”两个分支。
+- Auth 还需要一轮真实邮箱、真实手机号短信与部署环境验证，覆盖“默认密码直登”、“改密后使用其他密码”、Supabase Phone OTP 和阿里云 PNVS Send SMS Hook。
 - Shop 对淘宝 / 得物的商品图兼容仍有继续提升空间，但当前先保持核心服饰范围，不扩品类。
 
 ## 环境与运行约定
@@ -174,7 +174,7 @@
 1. 用 `ADMIN_EMAILS` 内账号在部署环境打开 `/admin/analytics` 做一次真实数据 smoke，确认 DAU / WAU 柱状图、Looks 使用行和 Looks 漏斗有数据。
 2. 按 `docs/beta-readiness-checklist.md` 跑目标环境 beta go/no-go：优先 Auth、推荐偏好、Today、移动端和 CI/部署。
 3. 用 `test@test.com` 维护女装 demo 图片衣橱，用 `test-men@test.com` 维护男装 demo 图片衣橱，并在部署环境验证“复制演示衣橱”和“清空我的衣橱”两条 Settings 路径。
-4. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
+4. 用部署环境做一轮真实邮箱与真实手机号 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录、Phone OTP 和登录后分流。
 5. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
 6. 为 Today、Shop、Looks、Travel 的关键推荐和文案状态补视觉回归截图或手动截图 QA。
 7. 等真实 `recommendation_interactions` 达到训练门槛后，手动触发 Recommendation Training workflow，并仅在 `promote=true`、指标过门槛时发布 promoted candidate/entity scores。

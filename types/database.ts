@@ -7,6 +7,7 @@ export type Database = {
         Row: {
           id: string
           city: string | null
+          phone: string | null
           style_preferences: string[]
           created_at: string
           updated_at: string
@@ -14,10 +15,12 @@ export type Database = {
         Insert: {
           id: string
           city?: string | null
+          phone?: string | null
           style_preferences?: string[]
         }
         Update: {
           city?: string | null
+          phone?: string | null
           style_preferences?: string[]
           updated_at?: string
         }
