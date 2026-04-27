@@ -109,11 +109,11 @@ export function BottomNav() {
     <nav
       aria-label="Primary"
       data-app-swipe-zone
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2 sm:px-4"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2 sm:px-4 md:inset-x-auto md:bottom-auto md:left-3 md:top-1/2 md:w-20 md:-translate-y-1/2 md:px-0 md:pb-0 md:pt-0 lg:left-[max(1rem,calc((100vw-56rem)/2-6rem))]"
     >
       <ul
         ref={navRef}
-        className="pointer-events-auto relative mx-auto grid max-w-[24rem] min-w-0 grid-cols-5 items-center gap-1 rounded-[1.5rem] border border-white/72 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(243,239,231,0.94)_100%)] px-1.5 py-1 shadow-[0_16px_34px_rgba(17,14,9,0.14),0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur-md before:pointer-events-none before:absolute before:inset-x-3 before:top-1 before:h-px before:rounded-full before:bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.95)_20%,rgba(255,255,255,0.95)_80%,rgba(255,255,255,0)_100%)] before:content-['']"
+        className="pointer-events-auto relative mx-auto grid max-w-[24rem] min-w-0 grid-cols-5 items-center gap-1 rounded-[1.5rem] border border-white/72 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(243,239,231,0.94)_100%)] px-1.5 py-1 shadow-[0_16px_34px_rgba(17,14,9,0.14),0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur-md before:pointer-events-none before:absolute before:inset-x-3 before:top-1 before:h-px before:rounded-full before:bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.95)_20%,rgba(255,255,255,0.95)_80%,rgba(255,255,255,0)_100%)] before:content-[''] md:flex md:w-20 md:max-w-none md:flex-col md:rounded-[1.35rem] md:px-1.5 md:py-1.5 md:before:inset-x-2"
         onTouchStart={(event) => {
           event.stopPropagation()
           const touch = event.touches[0]
@@ -151,7 +151,7 @@ export function BottomNav() {
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-1 top-1 rounded-[1rem] bg-[var(--color-primary)] shadow-[0_10px_24px_rgba(0,0,0,0.16)] transition-[left,width,opacity] duration-200 ease-out"
+          className="pointer-events-none absolute bottom-1 top-1 rounded-[1rem] bg-[var(--color-primary)] shadow-[0_10px_24px_rgba(0,0,0,0.16)] transition-[left,width,opacity] duration-200 ease-out md:hidden"
           style={{
             left: `${indicatorStyle.left}px`,
             width: `${indicatorStyle.width}px`,
@@ -167,9 +167,9 @@ export function BottomNav() {
               prefetch
               data-nav-index={links.findIndex((candidate) => candidate.href === link.href)}
               aria-current={pathname === link.href ? 'page' : undefined}
-              className={`group relative flex min-h-[2.95rem] w-full flex-col items-center justify-center rounded-[1rem] px-1.5 py-1.5 text-[0.64rem] font-semibold uppercase tracking-[0.08em] transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] sm:min-h-[3rem] sm:text-[0.72rem] ${
+              className={`group relative flex min-h-[2.95rem] w-full flex-col items-center justify-center rounded-[1rem] px-1.5 py-1.5 text-[0.64rem] font-semibold uppercase tracking-[0.08em] transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] sm:min-h-[3rem] sm:text-[0.72rem] md:min-h-[3.3rem] ${
                 pathname === link.href
-                  ? 'translate-y-[-1px] text-white'
+                  ? 'translate-y-[-1px] text-white md:bg-[var(--color-primary)] md:shadow-[0_10px_24px_rgba(0,0,0,0.16)]'
                   : 'text-[rgba(82,82,82,0.74)] hover:bg-black/4 hover:text-[var(--color-primary)]'
               }`}
               href={link.href}
