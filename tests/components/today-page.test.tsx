@@ -234,6 +234,25 @@ function dragPastHorizontalRefreshThresholdWithoutRelease(rail: HTMLElement) {
   fireEvent(rail, move)
 }
 
+function touchDragPastHorizontalRefreshThresholdWithoutRelease(rail: HTMLElement) {
+  fireEvent.touchStart(rail, {
+    touches: [{ clientX: 300, clientY: 320 }]
+  })
+  fireEvent.touchMove(rail, {
+    touches: [{ clientX: 205, clientY: 322 }]
+  })
+}
+
+function touchDragPastHorizontalRefreshThresholdAfterPointerCancel(rail: HTMLElement) {
+  fireEvent.touchStart(rail, {
+    touches: [{ clientX: 300, clientY: 320 }]
+  })
+  fireEvent.pointerCancel(rail)
+  fireEvent.touchMove(rail, {
+    touches: [{ clientX: 205, clientY: 322 }]
+  })
+}
+
 describe('TodayPage', () => {
   beforeEach(() => {
     refresh.mockReset()
@@ -1246,6 +1265,105 @@ describe('TodayPage', () => {
     expect(screen.getByText('继续拖动')).toBeInTheDocument()
 
     dragPastHorizontalRefreshThresholdWithoutRelease(getHorizontalRefreshRail(container))
+    expect(screen.getByText('松手生成')).toBeInTheDocument()
+  })
+
+  it('shows a mobile edge cue after scrolling to the horizontal end', () => {
+    const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
+    const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
+    const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
+
+    const { container } = render(
+      <TodayPage
+        view={{
+          itemCount: 5,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [rec1, rec2, rec3],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    fireEvent.scroll(getHorizontalRefreshRail(container))
+    expect(screen.getByText('继续左拖')).toBeInTheDocument()
+  })
+
+  it('shows pull refresh copy for mobile touch drags at the horizontal end', () => {
+    const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
+    const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
+    const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
+
+    const { container } = render(
+      <TodayPage
+        view={{
+          itemCount: 5,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [rec1, rec2, rec3],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    touchDragPastHorizontalRefreshThresholdWithoutRelease(getHorizontalRefreshRail(container))
+    expect(screen.getByText('松手生成')).toBeInTheDocument()
+  })
+
+  it('keeps mobile touch pull state when native horizontal scroll cancels the pointer stream', () => {
+    const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
+    const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
+    const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
+
+    const { container } = render(
+      <TodayPage
+        view={{
+          itemCount: 5,
+          city: 'Shanghai',
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'unavailable', city: 'Shanghai' },
+          recommendations: [rec1, rec2, rec3],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    touchDragPastHorizontalRefreshThresholdAfterPointerCancel(getHorizontalRefreshRail(container))
     expect(screen.getByText('松手生成')).toBeInTheDocument()
   })
 

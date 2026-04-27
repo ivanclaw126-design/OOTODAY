@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent, type TouchEvent } from 'react'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FeedbackLink } from '@/components/beta/feedback-link'
 import { TodayRecommendationCard } from '@/components/today/today-recommendation-card'
@@ -75,11 +75,21 @@ export function TodayRecommendationList({
   const pullStartXRef = useRef<number | null>(null)
   const pullStartedAtEndRef = useRef(false)
   const pullDistanceRef = useRef(0)
+  const touchGestureActiveRef = useRef(false)
   const [pullDistance, setPullDistance] = useState(0)
+  const [isAtEnd, setIsAtEnd] = useState(false)
 
   function isAtScrollEnd(element: HTMLDivElement) {
     return element.scrollLeft + element.clientWidth >= element.scrollWidth - 48
   }
+
+  const syncScrollEndState = useCallback((element = scrollerRef.current) => {
+    if (!element) {
+      return
+    }
+
+    setIsAtEnd(isAtScrollEnd(element))
+  }, [])
 
   useEffect(() => {
     if (continuationVersion <= 0 || !thirdCardRef.current || typeof thirdCardRef.current.scrollIntoView !== 'function') {
@@ -92,6 +102,10 @@ export function TodayRecommendationList({
       inline: 'center'
     })
   }, [continuationVersion])
+
+  useEffect(() => {
+    syncScrollEndState()
+  }, [recommendations.length, syncScrollEndState])
 
   if (recommendationError) {
     return (
@@ -135,52 +149,121 @@ export function TodayRecommendationList({
     setPullDistance(0)
   }
 
-  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+  function startPullGesture(clientX: number) {
     if (!onContinuationRefresh || isContinuationLoading || isRefreshing || !scrollerRef.current) {
       return
     }
 
-    if (!Number.isFinite(event.clientX)) {
+    if (!Number.isFinite(clientX)) {
       return
     }
 
-    pullStartXRef.current = event.clientX
+    pullStartXRef.current = clientX
     pullStartedAtEndRef.current = isAtScrollEnd(scrollerRef.current)
+    setIsAtEnd(pullStartedAtEndRef.current)
   }
 
-  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+  function updatePullGesture(clientX: number) {
     const startX = pullStartXRef.current
     const scroller = scrollerRef.current
 
     if (startX === null || !scroller || !onContinuationRefresh || isContinuationLoading || isRefreshing) {
-      return
+      return false
     }
 
-    if (!Number.isFinite(event.clientX)) {
-      return
+    if (!Number.isFinite(clientX)) {
+      return false
     }
 
     const shouldPull = pullStartedAtEndRef.current || isAtScrollEnd(scroller)
-    const dragDistance = Math.max(0, startX - event.clientX)
+    const dragDistance = Math.max(0, startX - clientX)
 
     if (!shouldPull || dragDistance < 10) {
       if (pullDistanceRef.current > 0) {
         pullDistanceRef.current = 0
         setPullDistance(0)
       }
-      return
+      return false
     }
 
-    event.preventDefault()
     pullStartedAtEndRef.current = true
+    setIsAtEnd(true)
     const nextPullDistance = Math.min(MAX_PULL_DISTANCE, dragDistance)
     pullDistanceRef.current = nextPullDistance
     setPullDistance(nextPullDistance)
+    return true
+  }
+
+  function finishPullGesture() {
+    if (pullDistanceRef.current >= PULL_REFRESH_THRESHOLD && onContinuationRefresh && !isContinuationLoading && !isRefreshing) {
+      onContinuationRefresh()
+    }
+
+    resetPullState()
+  }
+
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (touchGestureActiveRef.current) {
+      return
+    }
+
+    startPullGesture(event.clientX)
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (touchGestureActiveRef.current) {
+      return
+    }
+
+    if (updatePullGesture(event.clientX)) {
+      event.preventDefault()
+    }
   }
 
   function handlePointerEnd() {
-    if (pullDistanceRef.current >= PULL_REFRESH_THRESHOLD && onContinuationRefresh && !isContinuationLoading && !isRefreshing) {
-      onContinuationRefresh()
+    if (touchGestureActiveRef.current) {
+      return
+    }
+
+    finishPullGesture()
+  }
+
+  function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.touches[0]
+
+    if (!touch) {
+      return
+    }
+
+    touchGestureActiveRef.current = true
+    startPullGesture(touch.clientX)
+  }
+
+  function handleTouchMove(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.touches[0]
+
+    if (!touch) {
+      return
+    }
+
+    if (updatePullGesture(touch.clientX)) {
+      event.preventDefault()
+    }
+  }
+
+  function handleTouchEnd() {
+    finishPullGesture()
+    touchGestureActiveRef.current = false
+  }
+
+  function handleTouchCancel() {
+    touchGestureActiveRef.current = false
+    resetPullState()
+  }
+
+  function handlePointerCancel() {
+    if (touchGestureActiveRef.current) {
+      return
     }
 
     resetPullState()
@@ -215,8 +298,13 @@ export function TodayRecommendationList({
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerEnd}
-          onPointerCancel={resetPullState}
+          onPointerCancel={handlePointerCancel}
           onPointerLeave={handlePointerEnd}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
+          onScroll={(event) => syncScrollEndState(event.currentTarget)}
           className={`-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 transition-opacity duration-200 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden ${isRefreshing ? 'opacity-72' : 'opacity-100'}`}
         >
           {recommendations.map((recommendation, index) => (
@@ -246,13 +334,13 @@ export function TodayRecommendationList({
           <div
             aria-hidden="true"
             className="pointer-events-none absolute bottom-2 right-0 top-0 flex w-[7.25rem] items-center justify-center overflow-hidden rounded-l-[1.25rem] bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(231,255,55,0.24))] transition-opacity duration-150 sm:hidden"
-            style={{ opacity: pullDistance > 0 || isContinuationLoading ? Math.max(0.22, pullProgress) : 0 }}
+            style={{ opacity: pullDistance > 0 || isContinuationLoading ? Math.max(0.22, pullProgress) : isAtEnd ? 0.32 : 0 }}
           >
             <div
               className="grid min-w-[5.9rem] place-items-center rounded-full border border-[var(--color-line)] bg-white/92 px-3 py-2 text-center text-xs font-semibold leading-5 text-[var(--color-primary)] shadow-[0_10px_22px_rgba(17,14,9,0.12)]"
-              style={{ transform: `translateX(${Math.max(0, 38 - pullProgress * 38)}px)` }}
+              style={{ transform: `translateX(${Math.max(0, pullDistance > 0 ? 38 - pullProgress * 38 : isAtEnd ? 20 : 38)}px)` }}
             >
-              {isContinuationLoading ? '生成中' : isPullReady ? '松手生成' : '继续拖动'}
+              {isContinuationLoading ? '生成中' : isPullReady ? '松手生成' : pullDistance > 0 ? '继续拖动' : isAtEnd ? '继续左拖' : '继续拖动'}
             </div>
           </div>
         ) : null}
