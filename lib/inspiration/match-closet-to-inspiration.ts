@@ -22,7 +22,9 @@ import type {
   InspirationOutfitSlot
 } from '@/lib/inspiration/types'
 import { DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
-import { evaluateOutfit, getWeightedOutfitScore } from '@/lib/recommendation/outfit-evaluator'
+import { scoreRecommendationCandidate } from '@/lib/recommendation/canonical-scoring'
+import type { CandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import { evaluateOutfit, getWeightedOutfitScore, type EvaluatedOutfit } from '@/lib/recommendation/outfit-evaluator'
 import type { PreferenceProfile, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
 import type { TodayRecommendationMissingSlot } from '@/lib/today/types'
 
@@ -41,6 +43,7 @@ type PreferenceScoreContext = {
   profile: PreferenceProfile | null
   finalWeights: ScoreWeights | null
   weights: FormulaScoreWeights
+  modelScoreMap?: CandidateModelScoreMap
 }
 
 type ScoredClosetItem = {
@@ -58,14 +61,15 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-function buildPreferenceContext(preferenceState?: RecommendationPreferenceState | null): PreferenceScoreContext {
+function buildPreferenceContext(preferenceState?: RecommendationPreferenceState | null, modelScoreMap?: CandidateModelScoreMap): PreferenceScoreContext {
   const finalWeights = preferenceState?.finalWeights ?? null
 
   if (!finalWeights) {
     return {
       profile: preferenceState?.profile ?? null,
       finalWeights: null,
-      weights: SCORE_WEIGHTS
+      weights: SCORE_WEIGHTS,
+      modelScoreMap
     }
   }
 
@@ -78,6 +82,7 @@ function buildPreferenceContext(preferenceState?: RecommendationPreferenceState 
   return {
     profile: preferenceState?.profile ?? null,
     finalWeights,
+    modelScoreMap,
     weights: {
       categoryScore: SCORE_WEIGHTS.categoryScore,
       slotScore: nudgeWeight(SCORE_WEIGHTS.slotScore, 'completeness'),
@@ -503,7 +508,7 @@ function missingSlots(...slots: TodayRecommendationMissingSlot[]) {
   return slots
 }
 
-function buildSingleItemOutfit(item: ClosetItemCardData, slot: InspirationOutfitSlot | 'unknown') {
+function buildSingleItemOutfit(item: ClosetItemCardData, slot: InspirationOutfitSlot | 'unknown'): EvaluatedOutfit {
   if (slot === 'top') {
     return { top: item, missingSlots: missingSlots('bottom', 'shoes', 'bag') }
   }
@@ -659,7 +664,23 @@ function scoreClosetItem(
   const styleScore = (Math.min(sharedTagCount, styleDenominator) / styleDenominator) * context.weights.styleScore
   const layerRoleScore = layerRole && layerRole === closetLayerRole ? context.weights.layerRoleScore : 0
   const baseTotal = categoryScore + slotScore + colorScore + silhouetteScore + styleScore + layerRoleScore
-  const total = blockedByHardAvoid ? 0 : baseTotal * preferenceAdjustment.multiplier
+  const modelCandidateId = `inspiration-${inspirationItem.id}-${closetItem.id}`
+  const modelBreakdown = scoreRecommendationCandidate({
+    id: modelCandidateId,
+    surface: 'inspiration',
+    outfit: buildSingleItemOutfit(closetItem, closetSlot),
+    context: {
+      surface: 'inspiration',
+      profile: context.profile,
+      inspirationTags: inspirationItem.styleTags
+    }
+  }, context.modelScoreMap?.[modelCandidateId]).scoreBreakdown
+  const ruleTotal = baseTotal * preferenceAdjustment.multiplier
+  const total = blockedByHardAvoid
+    ? 0
+    : modelBreakdown.modelScores.status === 'active'
+      ? clamp((modelBreakdown.totalScore / 100) * 0.85 + ruleTotal * 0.15, 0, 1.35)
+      : ruleTotal
   const matchType = normalizedClosetCategory === normalizedInspirationCategory ? 'sameCategory' : 'formulaSubstitute'
   const scoreBreakdown: InspirationMatchScoreBreakdown = {
     total,
@@ -759,9 +780,10 @@ function canUseFormulaSubstitute(inspirationSlot: InspirationOutfitSlot | 'unkno
 export function matchClosetToInspiration(
   breakdown: InspirationBreakdown,
   closetItems: ClosetItemCardData[],
-  preferenceState?: RecommendationPreferenceState | null
+  preferenceState?: RecommendationPreferenceState | null,
+  modelScoreMap?: CandidateModelScoreMap
 ): InspirationClosetMatch[] {
-  const context = buildPreferenceContext(preferenceState)
+  const context = buildPreferenceContext(preferenceState, modelScoreMap)
 
   return breakdown.keyItems.map((inspirationItem) => {
     const normalizedCategory = normalizeCategoryValue(inspirationItem.category)

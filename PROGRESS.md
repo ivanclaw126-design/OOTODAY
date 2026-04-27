@@ -1,6 +1,6 @@
 # OOTODAY 进度追踪
 
-> 最后更新：2026-04-26
+> 最后更新：2026-04-27
 > 角色：项目总览页。这里只记录当前稳定状态、已完成里程碑、未闭环事项和运行约定，不记录 session 级流水账。
 
 ## 当前状态
@@ -10,6 +10,7 @@
 - Closet 已具备第一阶段整理能力：重复提醒、闲置提醒、基础缺口、优先动作清单、按类型/按颜色分组浏览、编辑识别结果、重新识别、删除、图片右转 90°。
 - Today + OOTD 已形成主链路：基于衣橱生成规则型推荐，支持天气增强、城市保存、换一批推荐、记录今日已穿、满意度反馈、最近历史查看与编辑/删除。
 - 推荐偏好引擎已完成共享评价体系阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序、Today 第 3 套安全灵感套装、跨 Today / Shop / Looks / Travel 的推荐文案统一，以及共享 outfit evaluator 对颜色、轮廓、层次、视觉中心、场景、天气、完整度和新鲜度的统一评分。
+- 推荐引擎已新增严格版生产 ML 基础：`推荐引擎ref.md` 中 13 个成熟穿搭策略、规则基线评分、兼容性评分和 penalty 已进入共享 canonical scoring contract；Today、Shop、Looks、Travel 会读取 promoted LightFM / implicit ALS / XGBoost candidate scores 并以模型主导排序，缺少 promoted 模型时回退可解释规则基线。
 - Beta 首轮体验已开始收敛：登录后入口会按衣橱状态自动分流到 `Closet onboarding` 或 `Today`，Landing / Closet / Today 已接入统一 first-run checklist、明确的下一步 CTA 与可达的反馈入口。
 - Beta 最小观测层已升级为自建 analytics 基础：Landing、登录邮件发送、Closet 导入启动与保存、Today 浏览/推荐/刷新/OOTD 提交、Travel 生成/保存、Shop 分析成功/失败、Looks 浏览和反馈入口已接入统一事件；登录失败、导入失败、识别失败、Today 提交失败等高价值路径会映射为卡点事件，且失败不会阻塞主流程。
 - Today / Closet 已完成第一轮 server-client 边界收敛：页面壳、状态头和主路径提示已回到服务端，交互性的推荐/历史/设置与衣橱导入/浏览/编辑收敛到更小的客户端工作区；路由层已补 Suspense fallback，并已完成一轮 dev browser QA 与 bundle manifest 复核。
@@ -17,6 +18,7 @@
 - Looks 已完成偏好感知的公式化灵感复刻：支持上传灵感图或图片链接，输出色彩/轮廓/叠穿/视觉中心公式、关键单品、衣橱借用与替代建议，并会结合用户推荐偏好轻微调整排序、过滤 hard avoids、解释适合日常复刻还是更适合作为灵感尝试。
 - Travel 已完成偏好感知的扩展打包方案：支持目的地、天数、场景生成旅行清单、按天轮换建议、鞋履/包袋/外层缺口提示，以及最近方案保存/重开/更新/删除；偏好会影响轻装、完整造型、叠穿复杂度和舒适鞋优先级。
 - 配色、缺失 slot、灵感尝试文案和核心评分已进入共享层：Today、Shop、Looks、Travel 均开始复用统一的 taxonomy、color strategy helper、recommendation copy helper 与 outfit evaluator。
+- 严格版推荐模型数据层已推送远端：`recommendation_interactions` 统一记录推荐曝光、保存、穿着、评分、跳过和 dislike 等事件，`recommendation_model_*` 表承接离线训练批次、产物和候选分数；远端 REST smoke 已确认新表可访问。
 
 ## 已完成里程碑
 
@@ -110,6 +112,14 @@
 - 推荐质量看板直接复用 `outfit_feedback_events` 的 rating、reason tags 和 context，不复制推荐评分数据。
 - 已通过 `npm test`、`npm run build`、`npm run lint`、Supabase 6543 transaction-pooler dry-run 与远端 migration push 验证。
 
+### 10. Strict Recommendation ML Foundation
+
+- 已将 `推荐引擎ref.md` 升级为推荐模型规格源：Capsule Wardrobe、Outfit Formula、Three-Word Method、Personal Color Palette、Sandwich Dressing、Wrong Shoe Theory、2/3 Rule、Proportion Balance、Layering、Tonal Dressing、Occasion Niche、Pinterest Recreation、Trend Overlay 均已有可测试 scorer。
+- 已新增统一推荐分数契约：`ruleScores`、`compatibilityScores`、`strategyScores`、`modelScores`、`penalties`、`riskFlags` 和解释文案可被 Today、Shop、Looks、Travel 共享。
+- 已新增生产模型读取与融合层：promoted 模型存在时按 `XGBoost 0.72 + LightFM 0.12 + implicit 0.10 + rule 0.06` 主导排序；hard avoids 和天气硬约束不会被模型覆盖。
+- 已新增 Python 批量训练入口、ML 依赖说明、训练单测和 GitHub Actions 定时/手动训练 workflow；`--require-native-models` 会强制使用 LightFM、implicit ALS 和 XGBoost Ranker，训练 dry-run 会输出候选分数、实体分数、feature schema artifact、HitRate@K、Recall@K、NDCG@K、MAP@K、coverage、diversity、novelty、wear-through rate、satisfaction-after-wear 和 hard-constraint metrics；本地 Python 3.11 venv 已完成三套原生模型安装与 native dry-run。
+- 已通过 `npm test`、`npm run build`、`npm run lint`、13 个策略 scorer 测试、Python 单测、Python compile、Supabase 6543 transaction-pooler push/dry-run、远端 REST smoke 和本地 native training dry-run 验证。
+
 ## 当前风险 / 待验证
 
 - 远端 Supabase schema 已完成 recommendation storage、`items.algorithm_meta` reconciliation 与 `analytics_events` migration push。
@@ -120,6 +130,7 @@
 - Today、Shop、Looks、Travel 已完成共享 evaluator 的单元测试覆盖；后续仍可补视觉回归截图覆盖更多文案状态。
 - Phase 9 beta readiness checklist 已创建：`docs/beta-readiness-checklist.md` 覆盖 Auth、偏好、Today、Looks、Shop、Travel、移动端和 CI/部署验收；真实邮箱 Auth、Vercel build、移动端手感仍需在目标环境逐项打勾。
 - Supabase 迁移检查已修正为 IPv4 transaction pooler + disabled statement cache 路径；`supabase db push --include-all` 与 `npm run travel:db:check` 当前均可确认远端 schema reachable/up to date。
+- 严格版推荐模型新迁移 `20260427103000_add_recommendation_model_tables.sql` 已执行远端 push；当前真实 `recommendation_interactions` 为空，生产入口 dry-run 会正确拒绝空数据 promoted，需等真实推荐事件积累后再触发正式 promoted 训练。
 - Auth 还需要一轮真实邮箱与部署环境验证，覆盖“默认密码直登”和“改密后使用其他密码”两个分支。
 - Shop 对淘宝 / 得物的商品图兼容仍有继续提升空间，但当前先保持核心服饰范围，不扩品类。
 
@@ -155,3 +166,4 @@
 4. 用部署环境做一轮真实邮箱 Auth QA，覆盖 magic link、默认密码直登、改密后密码登录和 bootstrap 分流。
 5. 继续压缩 Closet 客户端岛：优先把拼图拆分、远程图片处理、重识别等低频路径拆成懒加载模块。
 6. 为 Today、Shop、Looks、Travel 的关键推荐和文案状态补视觉回归截图或手动截图 QA。
+7. 等真实 `recommendation_interactions` 积累后，手动触发 Recommendation Training workflow，确认真实事件能产出 promoted candidate scores。

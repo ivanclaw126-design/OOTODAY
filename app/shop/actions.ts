@@ -6,7 +6,9 @@ import { getSession } from '@/lib/auth/get-session'
 import { analyzeItemImage } from '@/lib/closet/analyze-item-image'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
-import { analyzePurchaseCandidate, getUnsupportedShopCategoryMessage } from '@/lib/shop/analyze-purchase-candidate'
+import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
+import { getCandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
+import { analyzePurchaseCandidate, getShopCandidateId, getUnsupportedShopCategoryMessage } from '@/lib/shop/analyze-purchase-candidate'
 import { resolveShopInput } from '@/lib/shop/resolve-shop-input'
 
 export async function analyzeShopCandidateAction({
@@ -44,10 +46,11 @@ export async function analyzeShopCandidateAction({
     }
   }
 
-  const [candidate, closet, preferenceState] = await Promise.all([
+  const [candidate, closet, preferenceState, modelScoreMap] = await Promise.all([
     analyzeItemImage(resolved.imageUrl),
     getClosetView(session.user.id, { limit: 0 }),
-    getPreferenceState({ userId: session.user.id })
+    getPreferenceState({ userId: session.user.id }),
+    getCandidateModelScoreMap({ userId: session.user.id, surface: 'shop' })
   ])
 
   const unsupportedCategoryMessage = getUnsupportedShopCategoryMessage(candidate.category)
@@ -79,8 +82,22 @@ export async function analyzeShopCandidateAction({
       sourceTitle: resolved.sourceTitle
     },
     closet.items,
-    preferenceState
+    preferenceState,
+    modelScoreMap
   )
+  await recordRecommendationInteraction({
+    userId: session.user.id,
+    surface: 'shop',
+    eventType: analysis.recommendation === 'buy' ? 'saved' : analysis.recommendation === 'skip' ? 'skipped' : 'opened',
+    recommendationId: analysis.candidate.sourceUrl,
+    candidateId: analysis.scoreBreakdown ? getShopCandidateId(analysis.candidate) : analysis.candidate.sourceUrl,
+    context: {
+      recommendation: analysis.recommendation,
+      duplicateRisk: analysis.duplicateRisk,
+      estimatedOutfitCount: analysis.estimatedOutfitCount
+    },
+    scoreBreakdown: analysis.scoreBreakdown ?? null
+  })
 
   await trackServerEvent({
     userId: session.user.id,

@@ -2,6 +2,52 @@
 
 ## Current Phase Completed
 
+Phase 10 strict production ML recommendation engine foundation completed on 2026-04-27.
+
+OOTODAY now treats `推荐引擎ref.md` as the canonical recommendation spec for the production scoring contract. The online app keeps hard constraints first, generates deterministic candidates, computes the full mature-strategy feature set, then lets promoted LightFM / implicit ALS / XGBoost candidate scores dominate ordering when available. When no promoted model score exists, the system falls back to the canonical rule baseline and records model-fallback risk flags instead of silently pretending ML is active.
+
+## Phase 10 Strict Production ML Engine
+
+### Files Changed
+
+- `lib/recommendation/canonical-types.ts`, `canonical-scoring.ts`, and `strategy-scorers.ts`
+  - Add the unified `RecommendationCandidate`, `RecommendationScoreBreakdown`, and `RecommendationResult` contract.
+  - Implement the 13 mature strategy scorers from `推荐引擎ref.md`: Capsule Wardrobe, Outfit Formula, Three-Word Method, Personal Color Palette, Sandwich Dressing, Wrong Shoe Theory, 2/3 Rule, Proportion Balance, Layering, Tonal Dressing, Occasion Niche, Pinterest Recreation, and Trend Overlay.
+  - Add the md rule baseline: context fit, visual compatibility, user preference, outfit strategy, weather practicality, novelty, wardrobe rotation, trend overlay, explanation quality, minus penalties.
+  - Add model-dominant blending: `0.72 * XGBoost + 0.12 * LightFM + 0.10 * implicit + 0.06 * rule`, while hard avoids and weather hard constraints force fallback.
+- `supabase/migrations/20260427103000_add_recommendation_model_tables.sql` and `types/database.ts`
+  - Add `recommendation_interactions`, `recommendation_model_runs`, `recommendation_model_artifacts`, `recommendation_model_candidate_scores`, and `recommendation_model_entity_scores`.
+  - Add RLS and indexes for user-owned interaction/score reads plus promoted model lookup.
+- Today / Shop / Inspiration / Travel
+  - Today reads promoted model candidate scores and sorts generated outfits by model-dominant score when available.
+  - Shop uses the same score contract to let production ML adjust buy / consider / skip, while duplicate risk and hard avoids still override.
+  - Inspiration formula matching uses model candidate scores for closet substitute ranking, without allowing hard avoids.
+  - Travel applies model ranking inside weather/packing-constrained slot selection and records saved-plan interactions.
+- `ml/recommendation/train.py`, `ml/requirements.txt`, `ml/tests/test_recommendation_train.py`, and `.github/workflows/recommendation-training.yml`
+  - Add the batch training/publishing entrypoint for LightFM, implicit ALS, and XGBoost Ranker production scores.
+  - Add feature schema extraction from the md strategy/scoring contract.
+  - Add event weights, real native LightFM / implicit ALS / XGBoost fitting when `--require-native-models` is used, ranking metrics, promotion gate, candidate/entity score publishing, dry-run, feature-schema artifacts, and shadow-report output.
+  - Add a scheduled/manual GitHub Actions workflow for recommendation training.
+- `tests/lib/recommendation/strategy-scorers.test.ts`
+  - Adds explicit positive, negative, and boundary examples for each of the 13 `推荐引擎ref.md` mature strategy scorers.
+
+### Phase 10 Verification
+
+- `npm run lint` passed with 0 errors and 4 existing Closet `<img>` warnings.
+- `npm test` passed: 70 test files, 315 tests.
+- `npm run build` passed.
+- Python compile passed: `python3 -m py_compile ml/recommendation/train.py`.
+- Python tests passed in a temp venv: `python -m pytest ml/tests`, 6 tests.
+- Local Python 3.11 venv under `tmp/ml-venv-py311` installed `lightfm==1.17`, `implicit==0.7.2`, and `xgboost==3.2.0`.
+- Supabase migration push passed through the 6543 transaction-pooler path with `statement_cache_capacity=0`; `20260427103000_add_recommendation_model_tables.sql` is now present remotely and follow-up dry-run reports `Remote database is up to date`.
+- Remote REST smoke passed for `recommendation_interactions`, `recommendation_model_runs`, `recommendation_model_artifacts`, `recommendation_model_candidate_scores`, and `recommendation_model_entity_scores`.
+- Native training dry-run with local fixture trained LightFM, implicit ALS, and XGBoost Ranker, and produced promoted candidate scores, entity scores, feature-schema artifact, model artifacts, HitRate@K, Recall@K, NDCG@K, MAP@K, coverage, diversity, novelty, wear-through rate, satisfaction-after-wear, and hard-constraint metrics.
+
+### Phase 10 Remaining Issues
+
+- The GitHub recommendation training workflow has not run against real production events yet.
+- The real remote `recommendation_interactions` table is currently empty; production dry-run correctly returns `promoted: false` until enough events exist to train and publish real candidate scores.
+
 Phase 9 shared methodology evaluator completed on 2026-04-25.
 
 Today / Shop / Inspiration / Travel now share recommendation copy and a shared deterministic outfit evaluator for color harmony, silhouette balance, layering, focal point, scene fit, weather comfort, completeness, and freshness. Page-specific wording remains intact for Today completion, Shop purchase value, Travel packing completeness, and Inspiration remix guidance.

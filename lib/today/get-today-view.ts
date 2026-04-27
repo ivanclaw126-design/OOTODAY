@@ -1,5 +1,6 @@
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
+import { getCandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { getRecentOotdHistory } from '@/lib/today/get-recent-ootd-history'
 import { getTodayOotdStatus } from '@/lib/today/get-today-ootd-status'
@@ -21,13 +22,15 @@ export async function getTodayView({
   passwordChangedAt: string | null
   offset?: number
 }): Promise<TodayView> {
-  const [closet, ootdStatus, recentOotdHistory, preferenceState] = await Promise.all([
+  const [closet, ootdStatus, recentOotdHistory, preferenceState, modelScoreMap] = await Promise.all([
     getClosetView(userId, { limit: 0 }),
     getTodayOotdStatus(userId),
     getRecentOotdHistory(userId),
-    getPreferenceState({ userId })
+    getPreferenceState({ userId }),
+    getCandidateModelScoreMap({ userId, surface: 'today' })
   ])
   const hasCompletedStyleQuestionnaire = preferenceState.hasQuestionnaireAnswers === true
+  const modelScoreParam = Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {}
 
   if (closet.itemCount === 0) {
     return {
@@ -58,7 +61,8 @@ export async function getTodayView({
         items: closet.items,
         weather: null,
         offset,
-        preferenceState
+        preferenceState,
+        ...modelScoreParam
       }),
       recommendationError: false,
       ootdStatus,
@@ -81,7 +85,8 @@ export async function getTodayView({
         items: closet.items,
         weather: null,
         offset,
-        preferenceState
+        preferenceState,
+        ...modelScoreParam
       }),
       recommendationError: false,
       ootdStatus,
@@ -101,7 +106,8 @@ export async function getTodayView({
       items: closet.items,
       weather,
       offset,
-      preferenceState
+      preferenceState,
+      ...modelScoreParam
     }),
     recommendationError: false,
     ootdStatus,

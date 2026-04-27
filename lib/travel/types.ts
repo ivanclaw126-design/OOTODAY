@@ -1,4 +1,5 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import type { CandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import type { RecommendationPreferenceState } from '@/lib/recommendation/preference-types'
 import type { TodayWeather } from '@/lib/today/types'
 
@@ -100,4 +101,5 @@ export type TravelPlannerInput = {
   items: ClosetItemCardData[]
   weather: TodayWeather | null
   preferenceState?: RecommendationPreferenceState | null
+  modelScoreMap?: CandidateModelScoreMap
 }

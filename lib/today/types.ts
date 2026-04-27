@@ -1,4 +1,5 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
+import type { RecommendationModelScores, RecommendationScoreBreakdown } from '@/lib/recommendation/canonical-types'
 import type { ScoreWeights, TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 
 export type TodayWeather = {
@@ -32,6 +33,10 @@ export type TodayRecommendation = {
   missingSlots: TodayRecommendationMissingSlot[]
   confidence: number
   componentScores: ScoreWeights
+  totalScore?: number
+  scoreBreakdown?: RecommendationScoreBreakdown
+  modelScores?: RecommendationModelScores
+  modelRunId?: string | null
   mode: TodayRecommendationMode
   inspirationReason?: string | null
   dailyDifference?: string | null

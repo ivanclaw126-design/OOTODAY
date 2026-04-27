@@ -18,6 +18,7 @@ import { getTodayView } from '@/lib/today/get-today-view'
 import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput } from '@/lib/today/types'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 import { trackServerEvent } from '@/lib/analytics/server'
+import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
 
 async function TodayRouteContent({
   searchParams
@@ -75,6 +76,28 @@ async function TodayRouteContent({
         weatherAvailable: view.weatherState.status === 'ready'
       }
     })
+    await Promise.all(view.recommendations.map((recommendation) =>
+      recordRecommendationInteraction({
+        userId: session.user.id,
+        surface: 'today',
+        eventType: 'exposed',
+        recommendationId: recommendation.id,
+        itemIds: [
+          recommendation.top?.id,
+          recommendation.bottom?.id,
+          recommendation.dress?.id,
+          recommendation.outerLayer?.id,
+          recommendation.shoes?.id,
+          recommendation.bag?.id,
+          ...(recommendation.accessories ?? []).map((item) => item.id)
+        ].filter((id): id is string => Boolean(id)),
+        context: {
+          offset: Number.isNaN(offset) ? 0 : offset,
+          weatherAvailable: view.weatherState.status === 'ready'
+        },
+        scoreBreakdown: recommendation.scoreBreakdown ?? null
+      })
+    ))
   }
 
   async function updateCity(input: { city: string }) {

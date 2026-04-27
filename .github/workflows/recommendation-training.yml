@@ -1,0 +1,45 @@
+name: Recommendation Training
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Run without writing promoted scores
+        required: false
+        default: 'true'
+  schedule:
+    - cron: '17 19 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install ML dependencies
+        run: |
+          python -m pip install 'pip<25' setuptools wheel
+          python -m pip install 'numpy>=1.26,<2.0' 'scipy>=1.11,<1.13' 'Cython>=3.0.0'
+          python -m pip install --no-build-isolation --no-use-pep517 lightfm==1.17
+          python -m pip install -r ml/requirements.txt
+
+      - name: Run recommendation training
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "false" ]; then
+            python ml/recommendation/train.py --require-native-models
+          else
+            python ml/recommendation/train.py --require-native-models --dry-run
+          fi

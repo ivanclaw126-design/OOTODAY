@@ -6,6 +6,8 @@ import { trackServerEvent } from '@/lib/analytics/server'
 import { getSession } from '@/lib/auth/get-session'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
+import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
+import { getCandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { buildTravelPackingPlan } from '@/lib/travel/build-travel-packing-plan'
 import { deleteTravelPlan } from '@/lib/travel/delete-travel-plan'
 import { saveTravelPlan } from '@/lib/travel/save-travel-plan'
@@ -43,9 +45,10 @@ export async function saveTravelPlanAction(formData: FormData) {
 
   const normalizedDays = Math.min(Math.max(parsedDays, 1), 14)
   const normalizedCity = city.trim()
-  const [closet, preferenceState] = await Promise.all([
+  const [closet, preferenceState, modelScoreMap] = await Promise.all([
     getClosetView(session.user.id, { limit: 0 }),
-    getPreferenceState({ userId: session.user.id })
+    getPreferenceState({ userId: session.user.id }),
+    getCandidateModelScoreMap({ userId: session.user.id, surface: 'travel' })
   ])
 
   if (closet.itemCount === 0) {
@@ -58,7 +61,8 @@ export async function saveTravelPlanAction(formData: FormData) {
     scenes,
     items: closet.items,
     weather: await getWeather(normalizedCity),
-    preferenceState
+    preferenceState,
+    ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {})
   })
 
   const savedPlan = await saveTravelPlan({
@@ -80,6 +84,19 @@ export async function saveTravelPlanAction(formData: FormData) {
       scenes,
       savedPlanId: savedPlan.id,
       source: savedPlan.source
+    }
+  })
+  await recordRecommendationInteraction({
+    userId: session.user.id,
+    surface: 'travel',
+    eventType: 'saved',
+    recommendationId: savedPlan.id,
+    itemIds: plan.dailyPlan.flatMap((entry) => entry.selectedItems.map((item) => item.id)),
+    context: {
+      destinationCity: normalizedCity,
+      days: normalizedDays,
+      scenes,
+      savedPlanId: savedPlan.id
     }
   })
 

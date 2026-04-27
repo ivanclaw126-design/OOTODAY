@@ -20,7 +20,9 @@ import {
   TOP_CATEGORY
 } from '@/lib/closet/taxonomy'
 import { buildMissingSlotCopy } from '@/lib/recommendation/copy'
-import { evaluateOutfit, getWeightedOutfitScore } from '@/lib/recommendation/outfit-evaluator'
+import { evaluateOutfit, getWeightedOutfitScore, type EvaluatedOutfit } from '@/lib/recommendation/outfit-evaluator'
+import { scoreRecommendationCandidate } from '@/lib/recommendation/canonical-scoring'
+import type { CandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
 import type { RecommendationPreferenceState } from '@/lib/recommendation/preference-types'
 import type { ShopCandidateItem, ShopPurchaseAnalysis, ShopWardrobeGapType } from '@/lib/shop/types'
@@ -166,6 +168,46 @@ function candidateToClosetItem(candidate: ShopCandidateItem): ClosetItemCardData
     wearCount: 0,
     createdAt: '9999-12-31T00:00:00.000Z'
   }
+}
+
+export function getShopCandidateId(candidate: ShopCandidateItem) {
+  return [
+    'shop',
+    normalizeCategoryValue(candidate.category),
+    candidate.subCategory ?? 'unknown',
+    candidate.colorCategory ?? 'unknown',
+    candidate.sourceUrl
+  ].join('-')
+}
+
+function buildCandidateScoringOutfit(candidate: ShopCandidateItem): EvaluatedOutfit {
+  const candidateItem = candidateToClosetItem(candidate)
+
+  if (isTop(candidate.category)) {
+    return { top: candidateItem, missingSlots: ['bottom', 'shoes', 'bag'] }
+  }
+
+  if (isBottom(candidate.category)) {
+    return { bottom: candidateItem, missingSlots: ['top', 'shoes', 'bag'] }
+  }
+
+  if (isDress(candidate.category)) {
+    return { dress: candidateItem, missingSlots: ['shoes', 'bag'] }
+  }
+
+  if (isOuter(candidate.category)) {
+    return { outerLayer: candidateItem, missingSlots: ['top', 'bottom', 'shoes', 'bag'] }
+  }
+
+  if (isShoes(candidate.category)) {
+    return { shoes: candidateItem, missingSlots: ['top', 'bottom', 'bag'] }
+  }
+
+  if (isBag(candidate.category)) {
+    return { bag: candidateItem, missingSlots: ['top', 'bottom', 'shoes'] }
+  }
+
+  return { accessories: [candidateItem], missingSlots: ['top', 'bottom', 'shoes', 'bag'] }
 }
 
 function scoreCandidateOutfit({
@@ -588,10 +630,47 @@ function applyPreferenceToRecommendation({
   }
 }
 
+function applyModelToRecommendation({
+  recommendation,
+  recommendationReason,
+  duplicateRisk,
+  scoreBreakdown
+}: {
+  recommendation: 'buy' | 'consider' | 'skip'
+  recommendationReason: string
+  duplicateRisk: 'low' | 'medium' | 'high'
+  scoreBreakdown: ReturnType<typeof scoreRecommendationCandidate>['scoreBreakdown']
+}) {
+  if (duplicateRisk === 'high' || scoreBreakdown.penalties.some((penalty) => penalty.key === 'hardAvoid')) {
+    return { recommendation, recommendationReason }
+  }
+
+  if (scoreBreakdown.modelScores.status !== 'active') {
+    return { recommendation, recommendationReason }
+  }
+
+  if (scoreBreakdown.totalScore >= 78 && recommendation === 'consider') {
+    return {
+      recommendation: 'buy' as const,
+      recommendationReason: `${recommendationReason} 生产模型综合 LightFM、implicit 和 XGBoost 排序后，把它判为高优先级补充。`
+    }
+  }
+
+  if (scoreBreakdown.totalScore < 46 && recommendation !== 'skip') {
+    return {
+      recommendation: recommendation === 'buy' ? 'consider' as const : 'skip' as const,
+      recommendationReason: `${recommendationReason} 生产模型给出的全局排序偏低，先降低购买优先级。`
+    }
+  }
+
+  return { recommendation, recommendationReason }
+}
+
 export function analyzePurchaseCandidate(
   candidate: ShopCandidateItem,
   closetItems: ClosetItemCardData[],
-  preferenceState?: RecommendationPreferenceState | null
+  preferenceState?: RecommendationPreferenceState | null,
+  modelScoreMap: CandidateModelScoreMap = {}
 ): ShopPurchaseAnalysis {
   const duplicateItems = findDuplicateItems(candidate, closetItems)
   const duplicateRisk = getDuplicateRisk(candidate, duplicateItems)
@@ -617,6 +696,23 @@ export function analyzePurchaseCandidate(
     ...baseRecommendation,
     preferenceState
   })
+  const candidateId = getShopCandidateId(candidate)
+  const scoredCandidate = scoreRecommendationCandidate({
+    id: candidateId,
+    surface: 'shop',
+    outfit: buildCandidateScoringOutfit(candidate),
+    context: {
+      surface: 'shop',
+      profile: preferenceState?.profile ?? null,
+      effortLevel: preferenceState?.profile.practicalityPreference.comfortPriority && preferenceState.profile.practicalityPreference.comfortPriority > preferenceState.profile.practicalityPreference.stylePriority ? 'low' : 'medium'
+    }
+  }, modelScoreMap[candidateId])
+  const modelAdjusted = applyModelToRecommendation({
+    recommendation,
+    recommendationReason,
+    duplicateRisk,
+    scoreBreakdown: scoredCandidate.scoreBreakdown
+  })
 
   return {
     candidate,
@@ -630,7 +726,8 @@ export function analyzePurchaseCandidate(
     missingCategoryHints,
     colorStrategyHints,
     preferenceNotes,
-    recommendation,
-    recommendationReason
+    scoreBreakdown: scoredCandidate.scoreBreakdown,
+    recommendation: modelAdjusted.recommendation,
+    recommendationReason: modelAdjusted.recommendationReason
   }
 }
