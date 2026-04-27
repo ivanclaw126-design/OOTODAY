@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { RECOMMENDATION_STRATEGY_KEYS } from '@/lib/recommendation/canonical-types'
 import { resetRecommendationPreferences } from '@/lib/recommendation/reset-preferences'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 
@@ -324,6 +325,8 @@ describe('generateTodayRecommendations', () => {
     expect(sameFamilyRecommendations.some((recommendation) => /配色 \d+：/u.test(recommendation.reason))).toBe(true)
     expect(neutralAnchorRecommendations.some((recommendation) => /配色 \d+：/u.test(recommendation.reason))).toBe(true)
     expect(neutralAnchorRecommendations.some((recommendation) => /视觉重点 \d+：|完整度 \d+：/u.test(recommendation.reason))).toBe(true)
+    expect(sameFamilyRecommendations[0]?.reasonHighlights?.length).toBeGreaterThan(0)
+    expect(sameFamilyRecommendations[0]?.reasonHighlights?.length).toBeLessThanOrEqual(3)
   })
 
   it('adds outer layers in cold weather when available', () => {
@@ -572,6 +575,9 @@ describe('generateTodayRecommendations', () => {
       'silhouetteBalance',
       'weatherComfort'
     ])
+    expect(Object.keys(firstRecommendation?.scoreBreakdown?.strategyScores ?? {}).sort()).toEqual([...RECOMMENDATION_STRATEGY_KEYS].sort())
+    expect(firstRecommendation?.reasonHighlights?.length).toBeGreaterThan(0)
+    expect(firstRecommendation?.reasonHighlights?.length).toBeLessThanOrEqual(3)
     expect(firstRecommendation?.mode).toBe('daily')
   })
 

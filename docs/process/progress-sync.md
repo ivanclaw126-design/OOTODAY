@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-27
-- Branch / theme: complete six-part recommendation engine rollout
+- Branch / theme: Today strategy score display refinement
 - Latest checkpoint: pending `/context-save`; fallback summary below.
 - Current blocker: real Recommendation Training should only run with `promote=true` after live `recommendation_interactions` reach the default gates; current 90-day dry-run has 6 rows, 0 positive users, and 0 positive candidates.
 - Next plan to read: `docs/recommendation-engine-handoff.md`
-- Intended summary if `/context-save` fails: Completed Phase 11 recommendation rollout: first-class outfit formulas, Today formula/model-seeded recall, Supabase-backed editorial trend dictionary, bounded learning signals, shared scoring context across Today/Shop/Looks/Travel, entity-score reranking, richer interaction metadata, stricter Python ranking metrics and configurable training workflow inputs. Pushed `20260427142000_add_recommendation_trends_learning_signals.sql` via 6543 transaction pooler; follow-up dry-run is up to date, migration list shows local/remote match, and REST smoke returns 200 for new and existing recommendation tables. Verification passed with `npm run lint`, `npm test`, `npm run build`, Python compile, Python ML tests, native training dry-run, and remote production dry-run returning promoted=false due to insufficient positives.
+- Intended summary if `/context-save` fails: Completed Today recommendation display refinement: each card now keeps compatible `reason` text while exposing 2-3 compact `reasonHighlights`, renders all 13 `strategyScores` in a ranked strategy panel, highlights the primary matched strategy, and opens CSS-only explanation popovers for each strategy. This changed display/type/test/doc layers only, with no ranking, schema, feedback learning, or ML training changes. Verification passed with targeted tests, `npm run lint`, `npm test`, `npm run build`, `git diff --check`, and browser QA on desktop/mobile for the strategy popover.
 
 ## Snapshot Template
 

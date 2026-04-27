@@ -517,7 +517,7 @@ function buildScoreHighlight(
     : `新鲜度 ${scoreText}：穿着频率仍在可接受范围`
 }
 
-function buildHighScoreReason(
+function buildHighScoreHighlights(
   draft: OutfitDraft,
   componentScores: ScoreWeights,
   weather: TodayWeather | null,
@@ -560,7 +560,7 @@ function buildHighScoreReason(
     parts.push('这套分数集中在基础可穿性，适合先作为日常安全组合')
   }
 
-  return buildReason(parts)
+  return parts
 }
 
 function buildMissingSlotReason(draft: OutfitDraft) {
@@ -586,6 +586,24 @@ function buildMissingSlotReason(draft: OutfitDraft) {
   return parts
 }
 
+function buildReasonHighlights({
+  strategyReason,
+  scoreHighlights,
+  missingSlotReasons
+}: {
+  strategyReason?: string | null
+  scoreHighlights: string[]
+  missingSlotReasons: string[]
+}) {
+  const highlights = [
+    strategyReason ?? '',
+    ...scoreHighlights,
+    ...missingSlotReasons
+  ].filter(Boolean)
+
+  return [...new Set(highlights)].slice(0, 3)
+}
+
 function toRecommendation(
   draft: OutfitDraft,
   componentScores: ScoreWeights,
@@ -599,11 +617,18 @@ function toRecommendation(
 ): TodayRecommendation {
   const confidence = clampScore(componentScores.completeness * 0.52 + score * 0.48)
   const strategyReason = scoreBreakdown?.explanation?.[0]?.replace(/。$/u, '')
-  const coreReason = buildHighScoreReason(draft, componentScores, weather, profile, weights)
+  const scoreHighlights = buildHighScoreHighlights(draft, componentScores, weather, profile, weights)
+  const coreReason = buildReason(scoreHighlights)
+  const missingSlotReasons = buildMissingSlotReason(draft)
 
   return {
     id: draft.id,
-    reason: buildReason([strategyReason ?? '', coreReason, ...buildMissingSlotReason(draft)]),
+    reason: buildReason([strategyReason ?? '', coreReason, ...missingSlotReasons]),
+    reasonHighlights: buildReasonHighlights({
+      strategyReason,
+      scoreHighlights,
+      missingSlotReasons
+    }),
     top: draft.top ? toRecommendationItem(draft.top) : null,
     bottom: draft.bottom ? toRecommendationItem(draft.bottom) : null,
     dress: draft.dress ? toRecommendationItem(draft.dress) : null,
@@ -1049,14 +1074,22 @@ function buildInspirationDifference(candidate: RecommendationCandidate, profile:
 }
 
 function toInspirationRecommendation(candidate: RecommendationCandidate, profile: PreferenceProfile, baselineRecommendations: TodayRecommendation[] = []): TodayRecommendation {
+  const dailyDifference = buildInspirationDifference(candidate, profile, baselineRecommendations)
+  const baseHighlights = candidate.recommendation.reasonHighlights ?? [candidate.recommendation.reason]
+
   return {
     ...candidate.recommendation,
     id: `inspiration-${candidate.recommendation.id}`,
     reason: `灵感套装：${candidate.recommendation.reason}`,
+    reasonHighlights: [
+      `灵感套装：${baseHighlights[0] ?? candidate.recommendation.reason}`,
+      ...baseHighlights.slice(1, 2),
+      dailyDifference
+    ].filter(Boolean).slice(0, 3),
     mode: 'inspiration',
     recallSource: 'exploration',
     inspirationReason: '灵感套装',
-    dailyDifference: buildInspirationDifference(candidate, profile, baselineRecommendations)
+    dailyDifference
   }
 }
 

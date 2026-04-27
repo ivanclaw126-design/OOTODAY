@@ -108,6 +108,8 @@ Today / Shop / Inspiration / Travel now share recommendation copy and a shared d
 
 Follow-up Today refinement completed on 2026-04-25: Today recommendation reasons now surface the highest-contributing score highlights instead of repeated boilerplate, and the third Today card becomes a safe `灵感套装` when exploration is enabled.
 
+Follow-up Today strategy display refinement completed on 2026-04-27: Today cards now keep `reason` compatibility while adding compact `reasonHighlights`, expose all 13 `strategyScores` in a ranked strategy panel, highlight the primary matched strategy, and open a CSS-only explanation popover for each strategy. This is display-only and does not change ranking, model blending, feedback learning, or schema.
+
 ## Phase 9 Shared Methodology Evaluator
 
 ### Files Changed

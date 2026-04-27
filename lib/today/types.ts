@@ -31,6 +31,7 @@ export type TodayRecommendationItem = Pick<
 export type TodayRecommendation = {
   id: string
   reason: string
+  reasonHighlights?: string[]
   top: TodayRecommendationItem | null
   bottom: TodayRecommendationItem | null
   dress: TodayRecommendationItem | null
