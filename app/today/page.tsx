@@ -6,9 +6,12 @@ import { AppShell } from '@/components/app-shell'
 import {
   changeTodayPasswordAction,
   deleteTodayHistoryEntryAction,
+  getTodayRecentHistoryAction,
+  recordTodayRecommendationExposedAction,
   recordTodayRecommendationOpenedAction,
   refreshTodayRecommendationsAction,
   replaceTodayRecommendationSlotAction,
+  resolveTodayWeatherAction,
   signOutTodayAction,
   submitTodayPreChoiceFeedbackAction,
   chooseTodayRecommendationAction,
@@ -22,13 +25,13 @@ import { getTodayView } from '@/lib/today/get-today-view'
 import type {
   TodayChooseRecommendationInput,
   TodayHistoryUpdateInput,
+  TodayRecommendation,
   TodayPreChoiceFeedbackInput,
   TodayRecommendationRefreshInput,
   TodaySlotReplacementInput
 } from '@/lib/today/types'
 import { ensureProfile } from '@/lib/profiles/ensure-profile'
 import { trackServerEvent } from '@/lib/analytics/server'
-import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
 
 async function TodayRouteContent({
   searchParams
@@ -63,7 +66,7 @@ async function TodayRouteContent({
   })
 
   if (view.itemCount === 0) {
-    await trackServerEvent({
+    void trackServerEvent({
       userId: session.user.id,
       eventName: 'today_empty_closet_blocked',
       module: 'today',
@@ -73,7 +76,7 @@ async function TodayRouteContent({
       }
     })
   } else if (view.recommendations.length > 0 && view.recommendationSource === 'generated') {
-    await trackServerEvent({
+    void trackServerEvent({
       userId: session.user.id,
       eventName: 'today_recommendation_generated',
       module: 'today',
@@ -88,50 +91,6 @@ async function TodayRouteContent({
         weatherAvailable: view.weatherState.status === 'ready'
       }
     })
-    await Promise.all(view.recommendations.map((recommendation) =>
-      recordRecommendationInteraction({
-        userId: session.user.id,
-        surface: 'today',
-        eventType: 'exposed',
-        recommendationId: recommendation.id,
-        itemIds: [
-          recommendation.top?.id,
-          recommendation.bottom?.id,
-          recommendation.dress?.id,
-          recommendation.outerLayer?.id,
-          recommendation.shoes?.id,
-          recommendation.bag?.id,
-          ...(recommendation.accessories ?? []).map((item) => item.id)
-        ].filter((id): id is string => Boolean(id)),
-        context: {
-          offset: Number.isNaN(offset) ? 0 : offset,
-          targetDate: view.targetDate ?? 'today',
-          scene: view.scene ?? null,
-          weatherAvailable: view.weatherState.status === 'ready',
-          formulaId: recommendation.formulaId ?? null,
-          recallSource: recommendation.recallSource ?? null,
-          categoryKeys: [
-            recommendation.top?.category,
-            recommendation.bottom?.category,
-            recommendation.dress?.category,
-            recommendation.outerLayer?.category,
-            recommendation.shoes?.category,
-            recommendation.bag?.category,
-            ...(recommendation.accessories ?? []).map((item) => item.category)
-          ].filter((value): value is string => Boolean(value)),
-          colorKeys: [
-            recommendation.top?.colorCategory,
-            recommendation.bottom?.colorCategory,
-            recommendation.dress?.colorCategory,
-            recommendation.outerLayer?.colorCategory,
-            recommendation.shoes?.colorCategory,
-            recommendation.bag?.colorCategory,
-            ...(recommendation.accessories ?? []).map((item) => item.colorCategory)
-          ].filter((value): value is string => Boolean(value))
-        },
-        scoreBreakdown: recommendation.scoreBreakdown ?? null
-      })
-    ))
   }
 
   async function updateCity(input: { city: string }) {
@@ -176,6 +135,30 @@ async function TodayRouteContent({
     return recordTodayRecommendationOpenedAction(input)
   }
 
+  async function recordRecommendationExposed(input: {
+    recommendations: TodayRecommendation[]
+    targetDate?: TodayRecommendationRefreshInput['targetDate']
+    scene?: TodayRecommendationRefreshInput['scene']
+    offset?: number
+    weatherAvailable?: boolean
+  }) {
+    'use server'
+
+    return recordTodayRecommendationExposedAction(input)
+  }
+
+  async function getRecentHistory() {
+    'use server'
+
+    return getTodayRecentHistoryAction()
+  }
+
+  async function resolveWeather(input: { targetDate?: TodayRecommendationRefreshInput['targetDate'] }) {
+    'use server'
+
+    return resolveTodayWeatherAction(input)
+  }
+
   async function changePassword(input: { password: string; confirmPassword: string }) {
     'use server'
 
@@ -210,6 +193,9 @@ async function TodayRouteContent({
       replaceRecommendationSlot={replaceRecommendationSlot}
       submitPreChoiceFeedback={submitPreChoiceFeedback}
       recordRecommendationOpened={recordRecommendationOpened}
+      recordRecommendationExposed={recordRecommendationExposed}
+      getRecentHistory={getRecentHistory}
+      resolveWeather={resolveWeather}
       changePassword={changePassword}
       signOut={signOut}
       updateHistoryEntry={updateHistoryEntry}

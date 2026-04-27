@@ -17,6 +17,7 @@ import { getRecommendationTrendSignals } from '@/lib/recommendation/get-trend-si
 import { TODAY_FEEDBACK_REASON_TAGS, type TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { mergeLockedRecommendation, saveTodayRecommendationCache } from '@/lib/today/recommendation-cache'
+import { getRecentOotdHistory } from '@/lib/today/get-recent-ootd-history'
 import { replaceRecommendationSlot } from '@/lib/today/replace-recommendation-slot'
 import { chooseTodayOotd, saveTodayOotdFeedback } from '@/lib/today/save-today-ootd-feedback'
 import { getWeatherForTarget } from '@/lib/today/get-weather'
@@ -30,6 +31,7 @@ import {
   type TodayOotdFeedbackInput,
   type TodayOotdHistoryEntry,
   type TodayPreChoiceFeedbackInput,
+  type TodayRecommendation,
   type TodayRecommendationRefreshInput,
   type TodayRecommendationRefreshResult,
   type TodayRecommendationMode,
@@ -637,6 +639,113 @@ export async function recordTodayRecommendationOpenedAction({
   return { error: null }
 }
 
+export async function recordTodayRecommendationExposedAction({
+  recommendations,
+  targetDate,
+  scene,
+  offset = 0,
+  weatherAvailable = false
+}: {
+  recommendations: TodayRecommendation[]
+  targetDate?: TodayTargetDate
+  scene?: TodayScene
+  offset?: number
+  weatherAvailable?: boolean
+}): Promise<{ error: string | null }> {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  await Promise.all(recommendations.map((recommendation) =>
+    recordRecommendationInteraction({
+      userId: session.user.id,
+      surface: 'today',
+      eventType: 'exposed',
+      recommendationId: recommendation.id,
+      itemIds: getRecommendationItemIds(recommendation),
+      context: buildRecommendationInteractionContext({
+        recommendation,
+        targetDate,
+        scene,
+        extra: {
+          offset,
+          weatherAvailable
+        }
+      }),
+      scoreBreakdown: recommendation.scoreBreakdown ?? null
+    })
+  ))
+
+  return { error: null }
+}
+
+export async function getTodayRecentHistoryAction(): Promise<{ error: string | null; entries: TodayOotdHistoryEntry[] }> {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  try {
+    return {
+      error: null,
+      entries: await getRecentOotdHistory(session.user.id)
+    }
+  } catch {
+    await reportBetaIssue({
+      code: 'today_history_lazy_load_failed',
+      surface: 'today',
+      userId: session.user.id,
+      recoverable: true
+    })
+
+    return { error: '最近穿搭记录暂时没有加载成功。', entries: [] }
+  }
+}
+
+export async function resolveTodayWeatherAction({
+  targetDate
+}: {
+  targetDate?: TodayTargetDate
+}): Promise<{ error: string | null; weatherState: TodayWeatherState }> {
+  const session = await getSession()
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  const normalizedTargetDate = normalizeTodayTargetDate(targetDate)
+  const supabase = await createSupabaseServerClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('city')
+    .eq('id', session.user.id)
+    .maybeSingle()
+  const city = profile?.city ?? null
+
+  if (!city) {
+    return { error: null, weatherState: { status: 'not-set', targetDate: normalizedTargetDate } }
+  }
+
+  try {
+    const weather = await getWeatherForTarget(city, normalizedTargetDate)
+
+    return {
+      error: null,
+      weatherState: weather
+        ? { status: 'ready', weather, targetDate: normalizedTargetDate }
+        : { status: 'unavailable', city, targetDate: normalizedTargetDate }
+    }
+  } catch {
+    return {
+      error: '天气暂时没有更新成功。',
+      weatherState: { status: 'unavailable', city, targetDate: normalizedTargetDate }
+    }
+  }
+}
+
 export async function refreshTodayRecommendationsAction(input: number | TodayRecommendationRefreshInput): Promise<TodayRecommendationRefreshResult> {
   const session = await getSession()
 
@@ -717,7 +826,7 @@ export async function refreshTodayRecommendationsAction(input: number | TodayRec
     })
   }
 
-  await trackServerEvent({
+  void trackServerEvent({
     userId: session.user.id,
     eventName: 'today_recommendation_refreshed',
     module: 'today',

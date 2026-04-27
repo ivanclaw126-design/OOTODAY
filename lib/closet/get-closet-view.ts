@@ -124,3 +124,17 @@ export async function getClosetView(userId: string, options?: { limit?: number }
     items
   }
 }
+
+export async function getClosetItemCount(userId: string) {
+  const supabase = await createSupabaseServerClient()
+  const { count, error } = await supabase
+    .from('items')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
+  if (error) {
+    throw error
+  }
+
+  return count ?? 0
+}

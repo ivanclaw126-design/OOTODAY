@@ -13,6 +13,7 @@
 - 推荐偏好引擎已完成共享评价体系阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序、Today 第 3 套安全灵感套装、跨 Today / Shop / Looks / Travel 的推荐文案统一，以及共享 outfit evaluator 对颜色、轮廓、层次、视觉中心、场景、天气、完整度和新鲜度的统一评分。
 - 推荐引擎已完成严格版生产 ML 基础和完整六项上线批次：`推荐引擎ref.md` 中 13 个成熟穿搭策略、规则基线评分、兼容性评分和 penalty 已进入共享 canonical scoring contract；Today 已升级为 formula / model-seeded / rule / weather / exploration 多路候选池，Shop、Looks、Travel 共享趋势、学习信号和模型上下文；缺少 promoted 模型时回退可解释规则基线。
 - Today 推荐已补批内策略差异化：主命中策略不再单纯取最高分，胶囊衣橱泛化命中已收紧，批量选择会惩罚重复鞋包/配饰与重复策略，并在相邻推荐中补充“和上一套拉开差异”的解释。
+- Today 已完成一轮减少视觉等待优化：首屏优先走稳定推荐缓存和轻量衣橱计数，天气/模型增强有超时降级，推荐曝光与历史记录改为渲染后补充上报/加载，日期/场景切换会保留当前卡片直到新推荐回来。
 - Beta 首轮体验已开始收敛：登录后入口会按衣橱状态自动分流到 `Closet onboarding` 或 `Today`，Landing / Closet / Today 已接入统一 first-run checklist、明确的下一步 CTA 与可达的反馈入口。
 - Beta 最小观测层已升级为自建 analytics 基础：Landing、登录邮件发送、Closet 导入启动与保存、Today 浏览/推荐/刷新/OOTD 提交、Travel 生成/保存、Shop 分析成功/失败、Looks 浏览和反馈入口已接入统一事件；登录失败、导入失败、识别失败、Today 提交失败等高价值路径会映射为卡点事件，且失败不会阻塞主流程。
 - Today / Closet 已完成第一轮 server-client 边界收敛：页面壳、状态头和主路径提示已回到服务端，交互性的推荐/历史/设置与衣橱导入/浏览/编辑收敛到更小的客户端工作区；路由层已补 Suspense fallback，并已完成一轮 dev browser QA 与 bundle manifest 复核。

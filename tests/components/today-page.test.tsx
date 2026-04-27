@@ -222,6 +222,78 @@ function mockIntersectingContinuationCue() {
   }
 }
 
+function mockPersistentlyIntersectingContinuationCue() {
+  const original = globalThis.IntersectionObserver
+
+  vi.stubGlobal('IntersectionObserver', class MockIntersectionObserver {
+    private callback: IntersectionObserverCallback
+
+    constructor(callback: IntersectionObserverCallback) {
+      this.callback = callback
+    }
+
+    observe(target: Element) {
+      this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+    }
+
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return []
+    }
+  })
+
+  return () => {
+    if (original) {
+      vi.stubGlobal('IntersectionObserver', original)
+    } else {
+      Reflect.deleteProperty(globalThis, 'IntersectionObserver')
+    }
+  }
+}
+
+function mockControlledContinuationCue() {
+  const original = globalThis.IntersectionObserver
+  let callback: IntersectionObserverCallback | null = null
+  let target: Element | null = null
+
+  vi.stubGlobal('IntersectionObserver', class MockIntersectionObserver {
+    constructor(nextCallback: IntersectionObserverCallback) {
+      callback = nextCallback
+    }
+
+    observe(nextTarget: Element) {
+      target = nextTarget
+    }
+
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return []
+    }
+  })
+
+  return {
+    enter() {
+      if (callback && target) {
+        callback([{ isIntersecting: true, target } as IntersectionObserverEntry], {} as IntersectionObserver)
+      }
+    },
+    leave() {
+      if (callback && target) {
+        callback([{ isIntersecting: false, target } as IntersectionObserverEntry], {} as IntersectionObserver)
+      }
+    },
+    restore() {
+      if (original) {
+        vi.stubGlobal('IntersectionObserver', original)
+      } else {
+        Reflect.deleteProperty(globalThis, 'IntersectionObserver')
+      }
+    }
+  }
+}
+
 describe('TodayPage', () => {
   beforeEach(() => {
     refresh.mockReset()
@@ -750,6 +822,9 @@ describe('TodayPage', () => {
 
     expect(screen.getAllByText('灵感套装').length).toBeGreaterThan(0)
     expect(screen.getByText('比前两套多一点变化，但没有越过避雷、天气和场景底线。')).toBeInTheDocument()
+    const sequencePill = screen.getByLabelText('今天第 1 套推荐')
+    expect(sequencePill.className).toContain('border-[var(--color-accent)]')
+    expect(within(sequencePill).getByText('✧')).toBeInTheDocument()
   })
 
   it('records a positive quick rating as preference feedback', async () => {
@@ -1199,6 +1274,119 @@ describe('TodayPage', () => {
       expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
     } finally {
       restoreIntersectionObserver()
+    }
+  })
+
+  it('does not preload two recommendation groups while the continuation cue remains visible', async () => {
+    const restoreIntersectionObserver = mockPersistentlyIntersectingContinuationCue()
+    const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
+    const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
+    const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
+    const rec4 = makeRecommendation('rec-4', '连续新推荐', '灰色开衫')
+
+    refreshRecommendations.mockResolvedValue({
+      recommendations: [rec4],
+      weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' },
+      actualMode: 'daily'
+    })
+
+    try {
+      render(
+        <TodayPage
+          view={{
+            itemCount: 5,
+            city: 'Shanghai',
+            accountEmail: 'user@example.com',
+            passwordBootstrapped: true,
+            passwordChangedAt: null,
+            weatherState: { status: 'unavailable', city: 'Shanghai' },
+            recommendations: [rec1, rec2, rec3],
+            recommendationError: false,
+            ootdStatus: { status: 'not-recorded' },
+            recentOotdHistory: []
+          }}
+          updateCity={updateCity}
+          submitOotd={submitOotd}
+          refreshRecommendations={refreshRecommendations}
+          changePassword={changePassword}
+          signOut={signOut}
+          updateHistoryEntry={updateHistoryEntry}
+          deleteHistoryEntry={deleteHistoryEntry}
+        />
+      )
+
+      expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(refreshRecommendations).toHaveBeenCalledTimes(1)
+      })
+    } finally {
+      restoreIntersectionObserver()
+    }
+  })
+
+  it('renumbers recycled recommendations after they return to the continuation feed', async () => {
+    const continuationCue = mockControlledContinuationCue()
+    const rec1 = makeRecommendation('rec-1', '第一套理由', '白衬衫')
+    const rec2 = makeRecommendation('rec-2', '第二套理由', '蓝衬衫')
+    const rec3 = makeRecommendation('rec-3', '第三套理由', '黑针织')
+    const rec4 = makeRecommendation('rec-4', '连续新推荐', '灰色开衫')
+    const recycledRec1 = makeRecommendation('rec-1', '第一套回流', '白衬衫')
+
+    refreshRecommendations
+      .mockResolvedValueOnce({
+        recommendations: [rec4],
+        weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' },
+        actualMode: 'daily'
+      })
+      .mockResolvedValueOnce({
+        recommendations: [recycledRec1],
+        weatherState: { status: 'unavailable', city: 'Shanghai', targetDate: 'today' },
+        actualMode: 'daily'
+      })
+
+    try {
+      render(
+        <TodayPage
+          view={{
+            itemCount: 5,
+            city: 'Shanghai',
+            accountEmail: 'user@example.com',
+            passwordBootstrapped: true,
+            passwordChangedAt: null,
+            weatherState: { status: 'unavailable', city: 'Shanghai' },
+            recommendations: [rec1, rec2, rec3],
+            recommendationError: false,
+            ootdStatus: { status: 'not-recorded' },
+            recentOotdHistory: []
+          }}
+          updateCity={updateCity}
+          submitOotd={submitOotd}
+          refreshRecommendations={refreshRecommendations}
+          changePassword={changePassword}
+          signOut={signOut}
+          updateHistoryEntry={updateHistoryEntry}
+          deleteHistoryEntry={deleteHistoryEntry}
+        />
+      )
+
+      continuationCue.enter()
+      expect(await screen.findByText('连续新推荐')).toBeInTheDocument()
+      expect(screen.getByLabelText('今天第 4 套推荐')).toBeInTheDocument()
+
+      continuationCue.leave()
+      continuationCue.enter()
+      expect(await screen.findByText('第一套回流')).toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(refreshRecommendations).toHaveBeenNthCalledWith(2, expect.objectContaining({
+          excludeRecommendationIds: ['rec-1', 'rec-2', 'rec-3', 'rec-4']
+        }))
+      })
+      expect(screen.queryByLabelText('今天第 1 套推荐')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('今天第 5 套推荐')).toBeInTheDocument()
+    } finally {
+      continuationCue.restore()
     }
   })
 

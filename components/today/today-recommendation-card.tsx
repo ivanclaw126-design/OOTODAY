@@ -123,6 +123,9 @@ export function TodayRecommendationCard({
   const sequenceLabel = recommendationSequenceNumber ? `今日第 ${recommendationSequenceNumber} 套` : null
   const confidence = recommendation.confidence ?? null
   const isInspiration = recommendation.mode === 'inspiration'
+  const sequencePillClassName = isInspiration
+    ? 'relative isolate shrink-0 overflow-hidden rounded-full border border-[var(--color-accent)] bg-[linear-gradient(135deg,rgba(231,255,55,0.98),rgba(255,255,255,0.94)_62%,rgba(255,122,89,0.24))] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-primary)] shadow-[0_0_0_3px_rgba(231,255,55,0.24),0_12px_26px_rgba(17,14,9,0.13)]'
+    : 'shrink-0 rounded-full border border-[var(--color-line)] bg-white/84 px-3 py-1.5 text-xs font-semibold text-[var(--color-primary)] shadow-[0_10px_22px_rgba(17,14,9,0.08)]'
   const reasonHighlights = (recommendation.reasonHighlights ?? []).filter(Boolean).slice(0, 3)
   const role = getTodayDecisionRole({ index, scene, recommendation })
   const missingSlots = recommendation.missingSlots ?? []
@@ -396,9 +399,16 @@ export function TodayRecommendationCard({
           {sequenceLabel ? (
             <span
               aria-label={`今天第 ${recommendationSequenceNumber} 套推荐`}
-              className="shrink-0 rounded-full border border-[var(--color-line)] bg-white/84 px-3 py-1.5 text-xs font-semibold text-[var(--color-primary)] shadow-[0_10px_22px_rgba(17,14,9,0.08)]"
+              className={sequencePillClassName}
             >
-              {sequenceLabel}
+              {isInspiration ? (
+                <span aria-hidden="true" className="pointer-events-none absolute inset-0 text-[10px] leading-none text-[var(--color-primary)]/28">
+                  <span className="absolute left-2 top-1">✦</span>
+                  <span className="absolute right-3 top-1.5">✧</span>
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2">✦</span>
+                </span>
+              ) : null}
+              <span className="relative z-10">{sequenceLabel}</span>
             </span>
           ) : null}
         </div>
@@ -409,6 +419,7 @@ export function TodayRecommendationCard({
           weatherState={weatherState}
           replaceableSlots={!isRecorded ? replaceableSlots : []}
           replacingSlot={replacingSlot}
+          priority={index === 0}
           onRequestReplace={(slot, item) => {
             setReplacementError(null)
             setPendingReplacementSlot(slot)

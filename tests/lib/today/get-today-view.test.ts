@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getClosetView = vi.fn()
+const getClosetItemCount = vi.fn()
 const getWeather = vi.fn()
 const getWeatherForTarget = vi.fn()
 const generateTodayRecommendations = vi.fn()
@@ -12,10 +13,12 @@ const getEntityModelScoreMap = vi.fn()
 const getRecommendationTrendSignals = vi.fn()
 const getRecommendationLearningSignals = vi.fn()
 const getCachedTodayRecommendations = vi.fn()
+const getCachedTodayRecommendationsSnapshot = vi.fn()
 const saveTodayRecommendationCache = vi.fn()
 
 vi.mock('@/lib/closet/get-closet-view', () => ({
-  getClosetView
+  getClosetView,
+  getClosetItemCount
 }))
 
 vi.mock('@/lib/today/get-weather', () => ({
@@ -54,12 +57,14 @@ vi.mock('@/lib/recommendation/learning-signal-storage', () => ({
 
 vi.mock('@/lib/today/recommendation-cache', () => ({
   getCachedTodayRecommendations,
+  getCachedTodayRecommendationsSnapshot,
   saveTodayRecommendationCache
 }))
 
 describe('getTodayView', () => {
   beforeEach(() => {
     getClosetView.mockReset()
+    getClosetItemCount.mockReset()
     getWeather.mockReset()
     getWeatherForTarget.mockReset()
     generateTodayRecommendations.mockReset()
@@ -76,11 +81,14 @@ describe('getTodayView', () => {
     getRecommendationLearningSignals.mockResolvedValue([])
     getCachedTodayRecommendations.mockReset()
     getCachedTodayRecommendations.mockResolvedValue(null)
+    getCachedTodayRecommendationsSnapshot.mockReset()
+    getCachedTodayRecommendationsSnapshot.mockResolvedValue(null)
     saveTodayRecommendationCache.mockReset()
     saveTodayRecommendationCache.mockResolvedValue(undefined)
   })
 
   it('returns non-weather recommendations and not-recorded status when city is missing', async () => {
+    getClosetItemCount.mockResolvedValue(2)
     getClosetView.mockResolvedValue({
       itemCount: 2,
       items: [
@@ -127,6 +135,7 @@ describe('getTodayView', () => {
       recommendationError: false,
       ootdStatus: { status: 'not-recorded' },
       recentOotdHistory: [],
+      weatherDeferred: false,
       continuousRefresh: {
         enabled: true,
         exploration: expect.any(Object)
@@ -164,13 +173,13 @@ describe('getTodayView', () => {
   })
 
   it('returns cached recommendations without regenerating on page load', async () => {
-    getClosetView.mockResolvedValue({ itemCount: 1, items: [{ id: 'item-1' }] })
+    getClosetItemCount.mockResolvedValue(1)
     getTodayOotdStatus.mockResolvedValue({ status: 'not-recorded' })
-    getRecentOotdHistory.mockResolvedValue([])
     getPreferenceState.mockResolvedValue({ source: 'default', hasQuestionnaireAnswers: false })
-    getCachedTodayRecommendations.mockResolvedValue({
+    getCachedTodayRecommendationsSnapshot.mockResolvedValue({
       recommendations: [{ id: 'cached-rec-1' }, { id: 'cached-rec-2' }, { id: 'cached-rec-3' }],
-      weatherState: { status: 'not-set', targetDate: 'today' }
+      weatherState: { status: 'not-set', targetDate: 'today' },
+      itemCount: 1
     })
 
     const { getTodayView } = await import('@/lib/today/get-today-view')
@@ -186,9 +195,13 @@ describe('getTodayView', () => {
     expect(view.recommendations).toEqual([{ id: 'cached-rec-1' }, { id: 'cached-rec-2' }, { id: 'cached-rec-3' }])
     expect(view.recommendationSource).toBe('cache')
     expect(generateTodayRecommendations).not.toHaveBeenCalled()
+    expect(getClosetView).not.toHaveBeenCalled()
+    expect(getRecentOotdHistory).not.toHaveBeenCalled()
+    expect(view.recentOotdHistoryDeferred).toBe(true)
   })
 
   it('returns recorded status when today is already saved', async () => {
+    getClosetItemCount.mockResolvedValue(1)
     getClosetView.mockResolvedValue({ itemCount: 1, items: [] })
     getWeatherForTarget.mockResolvedValue(null)
     getTodayOotdStatus.mockResolvedValue({
@@ -243,6 +256,7 @@ describe('getTodayView', () => {
           notes: 'OOTD: 衬衫 + 西裤；理由：基础组合稳定不出错'
         }
       ],
+      weatherDeferred: true,
       continuousRefresh: {
         enabled: true,
         exploration: expect.any(Object)
