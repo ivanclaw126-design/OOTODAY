@@ -502,7 +502,9 @@ describe('TodayPage', () => {
       })
     })
 
-    expect(screen.getByText('今日已记录')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('今日已记录')).toBeInTheDocument()
+    })
     expect(screen.getByText('今天已记录，其他方案暂时锁定')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '记为今日已穿并评分' })).not.toBeInTheDocument()
   })

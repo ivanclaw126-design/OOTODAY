@@ -37,12 +37,12 @@
 
 ## Latest Sync Snapshot
 
-- Date: 2026-04-26
-- Branch / theme: self-hosted analytics dashboard polish
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260426-003712-analytics-dashboard-polish.md`.
-- Current blocker: no code blocker; analytics migration has been pushed and production env has `ADMIN_EMAILS`. Remaining validation is admin-account smoke in deployed `/admin/analytics`.
-- Next plan to read: `docs/superpowers/plans/2026-04-25-analytics-dashboard.md`
-- Intended summary if `/context-save` fails: Polished `/admin/analytics` with DAU/WAU historical bar chart, fixed module display so Looks appears even with zero events, added Looks inspiration analysis started/succeeded/failed events, Looks funnel, Looks failure friction metric, and tests. Verification passed with `npm run lint && npm test && npm run build`.
+- Date: 2026-04-27
+- Branch / theme: strict production recommendation ML foundation
+- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260427-115700-strict-recommendation-local-ml-and-migration.md`.
+- Current blocker: real `recommendation_interactions` is still empty, so production training dry-run correctly refuses promoted output until events accumulate.
+- Next plan to read: `docs/recommendation-engine-handoff.md`
+- Intended summary if `/context-save` fails: Completed local Python 3.11 ML venv setup with LightFM, implicit ALS, and XGBoost; fixed native implicit matrix orientation and XGBoost integer ranking labels; pushed `20260427103000_add_recommendation_model_tables.sql` through Supabase 6543 transaction pooler with statement cache disabled; confirmed new tables by REST smoke; native fixture dry-run trains all three models and emits all artifacts. Verification passed with `npm run lint`, `npm test`, `npm run build`, Python compile/tests, Supabase dry-run, and production training dry-run rejecting empty remote data.
 
 ## Snapshot Template
 

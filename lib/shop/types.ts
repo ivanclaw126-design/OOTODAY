@@ -1,4 +1,5 @@
 import type { ClosetAnalysisResult, ClosetItemCardData } from '@/lib/closet/types'
+import type { RecommendationScoreBreakdown } from '@/lib/recommendation/canonical-types'
 
 export type ShopCandidateItem = ClosetAnalysisResult & {
   imageUrl: string
@@ -29,6 +30,7 @@ export type ShopPurchaseAnalysis = {
   missingCategoryHints: string[]
   colorStrategyHints: string[]
   preferenceNotes?: string[]
+  scoreBreakdown?: RecommendationScoreBreakdown
   recommendation: ShopPurchaseRecommendation
   recommendationReason: string
 }

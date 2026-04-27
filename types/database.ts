@@ -224,6 +224,175 @@ export type Database = {
           component_scores?: Json | null
         }
       }
+      recommendation_interactions: {
+        Row: {
+          id: string
+          user_id: string
+          surface: 'today' | 'shop' | 'inspiration' | 'travel'
+          event_type: 'exposed' | 'opened' | 'skipped' | 'saved' | 'worn' | 'rated_good' | 'repeated' | 'replaced_item' | 'disliked' | 'hidden_item'
+          event_value: number
+          recommendation_id: string | null
+          candidate_id: string | null
+          item_ids: string[]
+          context: Json
+          score_breakdown: Json | null
+          model_run_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          surface: 'today' | 'shop' | 'inspiration' | 'travel'
+          event_type: 'exposed' | 'opened' | 'skipped' | 'saved' | 'worn' | 'rated_good' | 'repeated' | 'replaced_item' | 'disliked' | 'hidden_item'
+          event_value?: number
+          recommendation_id?: string | null
+          candidate_id?: string | null
+          item_ids?: string[]
+          context?: Json
+          score_breakdown?: Json | null
+          model_run_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          surface?: 'today' | 'shop' | 'inspiration' | 'travel'
+          event_type?: 'exposed' | 'opened' | 'skipped' | 'saved' | 'worn' | 'rated_good' | 'repeated' | 'replaced_item' | 'disliked' | 'hidden_item'
+          event_value?: number
+          recommendation_id?: string | null
+          candidate_id?: string | null
+          item_ids?: string[]
+          context?: Json
+          score_breakdown?: Json | null
+          model_run_id?: string | null
+        }
+      }
+      recommendation_model_runs: {
+        Row: {
+          id: string
+          model_version: string
+          status: 'training' | 'failed' | 'completed' | 'promoted' | 'retired'
+          algorithm_bundle: string
+          metrics: Json
+          feature_schema: Json
+          promoted_at: string | null
+          trained_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          model_version: string
+          status?: 'training' | 'failed' | 'completed' | 'promoted' | 'retired'
+          algorithm_bundle?: string
+          metrics?: Json
+          feature_schema?: Json
+          promoted_at?: string | null
+          trained_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          model_version?: string
+          status?: 'training' | 'failed' | 'completed' | 'promoted' | 'retired'
+          algorithm_bundle?: string
+          metrics?: Json
+          feature_schema?: Json
+          promoted_at?: string | null
+          trained_at?: string | null
+        }
+      }
+      recommendation_model_artifacts: {
+        Row: {
+          id: string
+          run_id: string
+          artifact_type: 'lightfm' | 'implicit_als' | 'xgboost_ranker' | 'feature_schema' | 'shadow_report'
+          storage_bucket: string
+          storage_path: string
+          checksum: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          run_id: string
+          artifact_type: 'lightfm' | 'implicit_als' | 'xgboost_ranker' | 'feature_schema' | 'shadow_report'
+          storage_bucket: string
+          storage_path: string
+          checksum?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          artifact_type?: 'lightfm' | 'implicit_als' | 'xgboost_ranker' | 'feature_schema' | 'shadow_report'
+          storage_bucket?: string
+          storage_path?: string
+          checksum?: string | null
+          metadata?: Json
+        }
+      }
+      recommendation_model_candidate_scores: {
+        Row: {
+          run_id: string
+          user_id: string
+          surface: 'today' | 'shop' | 'inspiration' | 'travel'
+          candidate_id: string
+          xgboost_score: number
+          lightfm_score: number
+          implicit_score: number
+          rule_score: number
+          final_score: number
+          feature_snapshot: Json
+          created_at: string
+        }
+        Insert: {
+          run_id: string
+          user_id: string
+          surface: 'today' | 'shop' | 'inspiration' | 'travel'
+          candidate_id: string
+          xgboost_score?: number
+          lightfm_score?: number
+          implicit_score?: number
+          rule_score?: number
+          final_score?: number
+          feature_snapshot?: Json
+          created_at?: string
+        }
+        Update: {
+          xgboost_score?: number
+          lightfm_score?: number
+          implicit_score?: number
+          rule_score?: number
+          final_score?: number
+          feature_snapshot?: Json
+        }
+      }
+      recommendation_model_entity_scores: {
+        Row: {
+          run_id: string
+          user_id: string
+          surface: 'today' | 'shop' | 'inspiration' | 'travel'
+          entity_type: string
+          entity_id: string
+          lightfm_score: number
+          implicit_score: number
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          run_id: string
+          user_id: string
+          surface: 'today' | 'shop' | 'inspiration' | 'travel'
+          entity_type: string
+          entity_id: string
+          lightfm_score?: number
+          implicit_score?: number
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          surface?: 'today' | 'shop' | 'inspiration' | 'travel'
+          lightfm_score?: number
+          implicit_score?: number
+          metadata?: Json
+        }
+      }
       analytics_events: {
         Row: {
           id: string

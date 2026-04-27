@@ -1,0 +1,8 @@
+supabase>=2.4.0
+numpy>=1.26.0,<2.0
+scipy>=1.11.0,<1.13
+Cython>=3.0.0
+lightfm>=1.17
+implicit>=0.7.2
+xgboost>=2.0.0
+pytest>=8.0.0

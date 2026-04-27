@@ -10,6 +10,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getClosetView } from '@/lib/closet/get-closet-view'
 import { applyFeedback } from '@/lib/recommendation/apply-feedback'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
+import { recordRecommendationInteraction } from '@/lib/recommendation/interactions'
+import { getCandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { TODAY_FEEDBACK_REASON_TAGS, type TodayFeedbackReasonTag } from '@/lib/recommendation/preference-types'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { saveTodayOotdFeedback } from '@/lib/today/save-today-ootd-feedback'
@@ -94,6 +96,26 @@ export async function submitTodayOotdAction({
         componentScores: recommendation.componentScores ?? null,
         context: 'today'
       })
+      await recordRecommendationInteraction({
+        userId: session.user.id,
+        surface: 'today',
+        eventType: satisfactionScore >= 4 ? 'rated_good' : 'disliked',
+        recommendationId: recommendation.id,
+        itemIds: [
+          recommendation.top?.id,
+          recommendation.bottom?.id,
+          recommendation.dress?.id,
+          recommendation.outerLayer?.id,
+          recommendation.shoes?.id,
+          recommendation.bag?.id,
+          ...(recommendation.accessories ?? []).map((item) => item.id)
+        ].filter((id): id is string => Boolean(id)),
+        context: {
+          reasonTags: normalizedReasonTags
+        },
+        scoreBreakdown: recommendation.scoreBreakdown ?? null,
+        rating: satisfactionScore
+      })
     } catch {
       await reportBetaIssue({
         code: 'today_preference_feedback_failed',
@@ -141,10 +163,11 @@ export async function refreshTodayRecommendationsAction(offset: number) {
   }
 
   const supabase = await createSupabaseServerClient()
-  const [{ data: profile }, closet, preferenceState] = await Promise.all([
+  const [{ data: profile }, closet, preferenceState, modelScoreMap] = await Promise.all([
     supabase.from('profiles').select('city').eq('id', session.user.id).maybeSingle(),
     getClosetView(session.user.id, { limit: 0 }),
-    getPreferenceState({ userId: session.user.id })
+    getPreferenceState({ userId: session.user.id }),
+    getCandidateModelScoreMap({ userId: session.user.id, surface: 'today', supabase })
   ])
 
   if (closet.itemCount === 0) {
@@ -158,7 +181,8 @@ export async function refreshTodayRecommendationsAction(offset: number) {
       items: closet.items,
       weather,
       offset,
-      preferenceState
+      preferenceState,
+      ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {})
     })
 
   await trackServerEvent({

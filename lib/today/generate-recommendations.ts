@@ -12,14 +12,14 @@ import {
   scoreColorCompatibility
 } from '@/lib/closet/taxonomy'
 import { buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
+import { getLegacyWeightedRuleScore, scoreRecommendationCandidate } from '@/lib/recommendation/canonical-scoring'
+import type { CandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
 import { DEFAULT_PREFERENCE_PROFILE, DEFAULT_RECOMMENDATION_WEIGHTS } from '@/lib/recommendation/default-weights'
 import { isGoodInspirationCandidate } from '@/lib/recommendation/exploration'
 import {
-  evaluateOutfit,
   filterWeatherSuitableItems,
   getItemFreshnessScore,
   getItemWeatherSuitability,
-  getWeightedOutfitScore,
   rankItemsForRecommendation
 } from '@/lib/recommendation/outfit-evaluator'
 import type { InspirationCandidateSignals, PreferenceProfile, RecommendationPreferenceState, ScoreWeights } from '@/lib/recommendation/preference-types'
@@ -43,6 +43,7 @@ export type GenerateTodayRecommendationsParams = {
   offset?: number
   preferenceState?: RecommendationPreferenceState
   explorationSeed?: string
+  modelScoreMap?: CandidateModelScoreMap
 }
 
 type OutfitKind = 'separates' | 'onePiece' | 'partial'
@@ -389,14 +390,6 @@ function addCompletionSlots({
   return draft
 }
 
-function buildComponentScores(draft: OutfitDraft, weather: TodayWeather | null, profile: PreferenceProfile): ScoreWeights {
-  return evaluateOutfit(draft, { weather, profile }).componentScores
-}
-
-function getFinalScore(componentScores: ScoreWeights, weights: ScoreWeights) {
-  return getWeightedOutfitScore(componentScores, weights)
-}
-
 function buildScoreHighlight(
   key: ScoreHighlightKey,
   draft: OutfitDraft,
@@ -574,14 +567,16 @@ function toRecommendation(
   score: number,
   weather: TodayWeather | null,
   profile: PreferenceProfile,
-  weights: ScoreWeights
+  weights: ScoreWeights,
+  scoreBreakdown?: ReturnType<typeof scoreRecommendationCandidate>['scoreBreakdown']
 ): TodayRecommendation {
   const confidence = clampScore(componentScores.completeness * 0.52 + score * 0.48)
+  const strategyReason = scoreBreakdown?.explanation?.[0]?.replace(/。$/u, '')
   const coreReason = buildHighScoreReason(draft, componentScores, weather, profile, weights)
 
   return {
     id: draft.id,
-    reason: buildReason([coreReason, ...buildMissingSlotReason(draft)]),
+    reason: buildReason([strategyReason ?? '', coreReason, ...buildMissingSlotReason(draft)]),
     top: draft.top ? toRecommendationItem(draft.top) : null,
     bottom: draft.bottom ? toRecommendationItem(draft.bottom) : null,
     dress: draft.dress ? toRecommendationItem(draft.dress) : null,
@@ -592,6 +587,10 @@ function toRecommendation(
     missingSlots: draft.missingSlots,
     confidence,
     componentScores,
+    totalScore: scoreBreakdown?.totalScore ?? score,
+    scoreBreakdown,
+    modelScores: scoreBreakdown?.modelScores,
+    modelRunId: scoreBreakdown?.modelScores.modelRunId ?? null,
     mode: 'daily',
     inspirationReason: null,
     dailyDifference: null
@@ -601,7 +600,8 @@ function toRecommendation(
 function buildRecommendationCandidates(
   items: ClosetItemCardData[],
   weather: TodayWeather | null,
-  preferenceState?: RecommendationPreferenceState
+  preferenceState?: RecommendationPreferenceState,
+  modelScoreMap: CandidateModelScoreMap = {}
 ) {
   const profile = preferenceState?.profile ?? DEFAULT_PREFERENCE_PROFILE
   const weights = preferenceState?.finalWeights ?? DEFAULT_RECOMMENDATION_WEIGHTS
@@ -639,14 +639,33 @@ function buildRecommendationCandidates(
       weather,
       profile
     })
-    const componentScores = buildComponentScores(completedDraft, weather, profile)
-    const score = getFinalScore(componentScores, weights)
+    const scoredCandidate = scoreRecommendationCandidate({
+      id: completedDraft.id,
+      surface: 'today',
+      outfit: completedDraft,
+      context: {
+        weather,
+        profile,
+        effortLevel: profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority ? 'low' : 'medium'
+      }
+    }, modelScoreMap[completedDraft.id])
+    const componentScores = scoredCandidate.scoreBreakdown.componentScores
+    const preferenceWeightedScore = getLegacyWeightedRuleScore(componentScores, weights)
+    const score = scoredCandidate.scoreBreakdown.modelScores.status === 'active'
+      ? scoredCandidate.scoreBreakdown.totalScore
+      : clampScore(scoredCandidate.scoreBreakdown.totalScore * 0.45 + preferenceWeightedScore * 0.55)
+    const scoreBreakdown = scoredCandidate.scoreBreakdown.modelScores.status === 'active'
+      ? scoredCandidate.scoreBreakdown
+      : {
+          ...scoredCandidate.scoreBreakdown,
+          totalScore: score
+        }
 
     candidates.push({
       score,
       mainIds: completedDraft.mainIds,
       draft: completedDraft,
-      recommendation: toRecommendation(completedDraft, componentScores, score, weather, profile, weights)
+      recommendation: toRecommendation(completedDraft, componentScores, score, weather, profile, weights, scoreBreakdown)
     })
   }
 
@@ -811,7 +830,7 @@ function buildInspirationDifference(candidate: RecommendationCandidate, profile:
   const hasNewColor = candidateColors.some((color) => !baselineColors.has(color))
 
   if (candidate.draft.outfitKind === 'onePiece') {
-    return '用一件式替代上下装组合，给当天多一个更省决策的轮廓选择，但仍守住配色和天气底线。'
+    return '比前两套多一个一件式选择，给当天更省决策的轮廓变化，但仍守住配色和天气底线。'
   }
 
   if (vividItem) {
@@ -997,9 +1016,9 @@ function maybeInsertInspirationRecommendation({
 export function generateTodayRecommendations(
   params: GenerateTodayRecommendationsParams
 ): TodayRecommendation[] {
-  const { items, weather, preferenceState } = params
+  const { items, weather, preferenceState, modelScoreMap = {} } = params
   const offset = params.offset ?? 0
-  const candidates = buildRecommendationCandidates(items, weather, preferenceState)
+  const candidates = buildRecommendationCandidates(items, weather, preferenceState, modelScoreMap)
   const recommendations = buildRecommendationBatch(candidates, offset)
 
   while (recommendations.length < 3 && recommendations.length > 0) {

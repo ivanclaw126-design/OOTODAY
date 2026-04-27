@@ -1,6 +1,7 @@
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import { buildMissingSlotCopy, buildRecommendationColorNotes } from '@/lib/recommendation/copy'
-import { filterWeatherSuitableItems, rankItemsForRecommendation } from '@/lib/recommendation/outfit-evaluator'
+import { scoreRecommendationCandidate } from '@/lib/recommendation/canonical-scoring'
+import { filterWeatherSuitableItems, rankItemsForRecommendation, type EvaluatedOutfit } from '@/lib/recommendation/outfit-evaluator'
 import {
   isBagCategory,
   isBottomCategory,
@@ -11,6 +12,7 @@ import {
 } from '@/lib/closet/taxonomy'
 import type { TravelDailyPlanEntry, TravelPackingEntry, TravelPackingPlan, TravelPackingSlot, TravelPlannerInput, TravelScene } from '@/lib/travel/types'
 import type { PreferenceProfile } from '@/lib/recommendation/preference-types'
+import type { CandidateModelScoreMap } from '@/lib/recommendation/model-score-storage'
 
 function describeItem(item: ClosetItemCardData) {
   return [item.colorCategory, item.subCategory ?? item.category].filter(Boolean).join(' ')
@@ -250,13 +252,76 @@ function buildColorStrategyNotes(items: ClosetItemCardData[]) {
   return buildRecommendationColorNotes(items.map((item) => item.colorCategory), 'travel')
 }
 
+function buildSingleSlotOutfit(item: ClosetItemCardData, slot: TravelPackingSlot): EvaluatedOutfit {
+  if (slot === 'tops') {
+    return { top: item, missingSlots: ['bottom', 'shoes', 'bag'] }
+  }
+
+  if (slot === 'bottoms') {
+    return { bottom: item, missingSlots: ['top', 'shoes', 'bag'] }
+  }
+
+  if (slot === 'dresses') {
+    return { dress: item, missingSlots: ['shoes', 'bag'] }
+  }
+
+  if (slot === 'outerwear') {
+    return { outerLayer: item, missingSlots: ['top', 'bottom', 'shoes', 'bag'] }
+  }
+
+  if (slot === 'comfortShoes' || slot === 'formalShoes' || slot === 'backupShoes') {
+    return { shoes: item, missingSlots: ['top', 'bottom', 'bag'] }
+  }
+
+  return { bag: item, missingSlots: ['top', 'bottom', 'shoes'] }
+}
+
+function rankTravelItemsWithModel({
+  items,
+  slot,
+  modelScoreMap,
+  weather,
+  profile,
+  scenes
+}: {
+  items: ClosetItemCardData[]
+  slot: TravelPackingSlot
+  modelScoreMap?: CandidateModelScoreMap
+  weather: TravelPlannerInput['weather']
+  profile: PreferenceProfile | null | undefined
+  scenes: TravelScene[]
+}) {
+  return [...items].sort((left, right) => {
+    const scoreItem = (item: ClosetItemCardData) => scoreRecommendationCandidate({
+      id: `travel-${slot}-${item.id}`,
+      surface: 'travel',
+      outfit: buildSingleSlotOutfit(item, slot),
+      context: {
+        surface: 'travel',
+        weather,
+        profile,
+        travelScenes: scenes,
+        effortLevel: profile && profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority ? 'low' : 'medium'
+      }
+    }, modelScoreMap?.[`travel-${slot}-${item.id}`]).scoreBreakdown.totalScore
+    const delta = scoreItem(right) - scoreItem(left)
+
+    if (delta !== 0) {
+      return delta
+    }
+
+    return sortForTravel(left, right)
+  })
+}
+
 export function buildTravelPackingPlan({
   destinationCity,
   days,
   scenes,
   items,
   weather,
-  preferenceState
+  preferenceState,
+  modelScoreMap
 }: TravelPlannerInput): TravelPackingPlan {
   const profile = preferenceState?.profile
   const rankContext = { weather, profile, travelScenes: scenes }
@@ -264,27 +329,69 @@ export function buildTravelPackingPlan({
   const completeStyling = prefersCompleteStyling(profile)
   const dislikesComplexLayering = (profile?.layeringPreference.complexity ?? 1) === 0
   const comfortLeads = Boolean(profile && profile.practicalityPreference.comfortPriority > profile.practicalityPreference.stylePriority)
-  const tops = rankItemsForRecommendation(
+  const tops = rankTravelItemsWithModel({
+    items: rankItemsForRecommendation(
     filterWeatherSuitableItems(items.filter((item) => isTopCategory(item.category)), weather, 46),
     rankContext
-  )
-  const bottoms = rankItemsForRecommendation(
+    ),
+    slot: 'tops',
+    modelScoreMap,
+    weather,
+    profile,
+    scenes
+  })
+  const bottoms = rankTravelItemsWithModel({
+    items: rankItemsForRecommendation(
     filterWeatherSuitableItems(items.filter((item) => isBottomCategory(item.category)), weather, 52),
     rankContext
-  )
-  const dresses = rankItemsForRecommendation(
+    ),
+    slot: 'bottoms',
+    modelScoreMap,
+    weather,
+    profile,
+    scenes
+  })
+  const dresses = rankTravelItemsWithModel({
+    items: rankItemsForRecommendation(
     filterWeatherSuitableItems(items.filter((item) => isOnePieceCategory(item.category)), weather, 50),
     rankContext
-  )
-  const outerwear = rankItemsForRecommendation(
+    ),
+    slot: 'dresses',
+    modelScoreMap,
+    weather,
+    profile,
+    scenes
+  })
+  const outerwear = rankTravelItemsWithModel({
+    items: rankItemsForRecommendation(
     filterWeatherSuitableItems(items.filter((item) => isOuterwearCategory(item.category)), weather, 45),
     rankContext
-  )
-  const shoes = rankItemsForRecommendation(
+    ),
+    slot: 'outerwear',
+    modelScoreMap,
+    weather,
+    profile,
+    scenes
+  })
+  const shoes = rankTravelItemsWithModel({
+    items: rankItemsForRecommendation(
     filterWeatherSuitableItems(items.filter((item) => isShoesCategory(item.category)), weather, 52),
     rankContext
-  )
-  const bags = rankItemsForRecommendation(items.filter((item) => isBagCategory(item.category)), rankContext)
+    ),
+    slot: 'comfortShoes',
+    modelScoreMap,
+    weather,
+    profile,
+    scenes
+  })
+  const bags = rankTravelItemsWithModel({
+    items: rankItemsForRecommendation(items.filter((item) => isBagCategory(item.category)), rankContext),
+    slot: 'bags',
+    modelScoreMap,
+    weather,
+    profile,
+    scenes
+  })
   const formalTrip = includesFormalScene(scenes)
   const walkingTrip = includesWalkingHeavyScene(scenes, days)
   const formalShoeCandidates = shoes.filter(isFormalShoe)
