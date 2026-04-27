@@ -940,6 +940,57 @@ describe('TodayPage', () => {
     expect(screen.getByLabelText('今天第 2 套推荐')).toBeInTheDocument()
   })
 
+  it('closes the replacement confirmation dialog when no better slot item exists', async () => {
+    const recommendationWithOuterLayer = {
+      ...completeRecommendation,
+      missingSlots: [],
+      outerLayer: {
+        id: 'outer-1',
+        imageUrl: null,
+        category: '外层',
+        subCategory: '西装外套',
+        colorCategory: '黑色',
+        styleTags: ['通勤']
+      }
+    }
+    replaceRecommendationSlot.mockResolvedValueOnce({ error: '暂时没有更合适的外套，可以试试换一套。', recommendation: null })
+
+    render(
+      <TodayPage
+        view={{
+          itemCount: 6,
+          city: null,
+          accountEmail: 'user@example.com',
+          passwordBootstrapped: true,
+          passwordChangedAt: null,
+          weatherState: { status: 'not-set' },
+          recommendations: [recommendationWithOuterLayer],
+          recommendationError: false,
+          ootdStatus: { status: 'not-recorded' },
+          recentOotdHistory: []
+        }}
+        updateCity={updateCity}
+        submitOotd={submitOotd}
+        refreshRecommendations={refreshRecommendations}
+        replaceRecommendationSlot={replaceRecommendationSlot}
+        changePassword={changePassword}
+        signOut={signOut}
+        updateHistoryEntry={updateHistoryEntry}
+        deleteHistoryEntry={deleteHistoryEntry}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '更换外套' }))
+    expect(screen.getByRole('dialog', { name: '确认更换外套' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '确认更换' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: '确认更换外套' })).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('暂时没有更合适的外套，可以试试换一套。')).toBeInTheDocument()
+  })
+
   it('locks the selected recommendation after choosing it for today', async () => {
     render(
       <TodayPage

@@ -262,12 +262,9 @@ export function TodayRecommendationCard({
     }
 
     const slot = pendingReplacementSlot
-    const result = await replaceRecommendationSlot(slot, pendingReplacementItemId ?? undefined)
-
-    if (!result.error) {
-      setPendingReplacementSlot(null)
-      setPendingReplacementItemId(null)
-    }
+    await replaceRecommendationSlot(slot, pendingReplacementItemId ?? undefined)
+    setPendingReplacementSlot(null)
+    setPendingReplacementItemId(null)
   }
 
   const replacementDialog = pendingReplacementSlot ? (
