@@ -1,6 +1,9 @@
+'use client'
+
 import type { ClosetItemCardData } from '@/lib/closet/types'
 import { ClosetItemImage } from '@/components/closet/closet-item-image'
 import { ClosetCategoryIcon, ClosetColorIcon } from '@/components/closet/closet-taxonomy-icons'
+import { useEffect, useState } from 'react'
 
 export type ClosetBrowseMode = 'category' | 'color'
 
@@ -59,6 +62,25 @@ export function ClosetGroupBrowser({
   onClearGroup: () => void
 }) {
   const modeLabel = mode === 'category' ? '类型' : '颜色'
+  const [imageRefreshNonce, setImageRefreshNonce] = useState(0)
+  const [isRefreshingImages, setIsRefreshingImages] = useState(false)
+
+  useEffect(() => {
+    if (!isRefreshingImages) {
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      setIsRefreshingImages(false)
+    }, 1000)
+
+    return () => window.clearTimeout(timeout)
+  }, [isRefreshingImages])
+
+  function handleRefreshImages() {
+    setImageRefreshNonce((current) => current + 1)
+    setIsRefreshingImages(true)
+  }
 
   if (groups.length === 0) {
     return (
@@ -73,15 +95,25 @@ export function ClosetGroupBrowser({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-[var(--color-neutral-dark)]">先按{modeLabel}扫一眼全局，再点进组里继续编辑和整理。</p>
-        {activeGroupValue ? (
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            className="text-xs font-medium text-[var(--color-primary)] underline underline-offset-2"
-            onClick={onClearGroup}
+            className="rounded-full border border-[var(--color-neutral-mid)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--color-primary)] shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={handleRefreshImages}
+            disabled={isRefreshingImages}
           >
-            清除分组筛选
+            {isRefreshingImages ? '刷新中…' : '刷新图片'}
           </button>
-        ) : null}
+          {activeGroupValue ? (
+            <button
+              type="button"
+              className="text-xs font-medium text-[var(--color-primary)] underline underline-offset-2"
+              onClick={onClearGroup}
+            >
+              清除分组筛选
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
@@ -122,7 +154,12 @@ export function ClosetGroupBrowser({
                     className="aspect-square overflow-hidden rounded-[0.75rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.88)_0%,rgba(240,233,223,0.92)_100%)] p-1"
                   >
                     {item.imageUrl ? (
-                      <ClosetItemImage src={item.imageUrl} alt={`${group.label} 缩略图`} fit="contain" />
+                      <ClosetItemImage
+                        src={item.imageUrl}
+                        alt={`${group.label} 缩略图`}
+                        fit="contain"
+                        refreshKey={imageRefreshNonce > 0 ? imageRefreshNonce : undefined}
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-neutral-dark)]">暂无图</div>
                     )}
