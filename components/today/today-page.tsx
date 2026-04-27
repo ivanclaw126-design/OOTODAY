@@ -7,13 +7,27 @@ import { TodaySettingsPanel } from '@/components/today/today-settings-panel'
 import { TodayStatusCard } from '@/components/today/today-status-card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PrimaryLink } from '@/components/ui/button'
-import type { TodayHistoryUpdateInput, TodayOotdFeedbackInput, TodayOotdHistoryEntry, TodayRecommendationRefreshInput, TodayRecommendationRefreshResult, TodayView } from '@/lib/today/types'
+import type {
+  TodayChooseRecommendationInput,
+  TodayHistoryUpdateInput,
+  TodayOotdHistoryEntry,
+  TodayPreChoiceFeedbackInput,
+  TodayRecommendationRefreshInput,
+  TodayRecommendationRefreshResult,
+  TodaySlotReplacementInput,
+  TodaySlotReplacementResult,
+  TodayView
+} from '@/lib/today/types'
 
 export function TodayPage({
   view,
   updateCity,
-  submitOotd,
+  chooseRecommendation = async () => ({ error: null, wornAt: new Date().toISOString() }),
+  undoTodaySelection = async () => ({ error: null }),
   refreshRecommendations,
+  replaceRecommendationSlot = async () => ({ error: '暂时没有更合适的单品，可以试试换一套。', recommendation: null }),
+  submitPreChoiceFeedback = async () => ({ error: null }),
+  recordRecommendationOpened = async () => ({ error: null }),
   changePassword,
   signOut,
   updateHistoryEntry,
@@ -21,8 +35,12 @@ export function TodayPage({
 }: {
   view: TodayView
   updateCity: (input: { city: string }) => Promise<{ error: string | null }>
-  submitOotd: (input: TodayOotdFeedbackInput) => Promise<{ error: string | null; wornAt: string | null }>
+  chooseRecommendation?: (input: TodayChooseRecommendationInput) => Promise<{ error: string | null; wornAt: string | null }>
+  undoTodaySelection?: () => Promise<{ error: string | null }>
   refreshRecommendations: (input: TodayRecommendationRefreshInput) => Promise<TodayRecommendationRefreshResult>
+  replaceRecommendationSlot?: (input: TodaySlotReplacementInput) => Promise<TodaySlotReplacementResult>
+  submitPreChoiceFeedback?: (input: TodayPreChoiceFeedbackInput) => Promise<{ error: string | null }>
+  recordRecommendationOpened?: (input: TodayChooseRecommendationInput & { source: 'details' | 'quick_feedback' }) => Promise<{ error: string | null }>
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>
@@ -87,8 +105,12 @@ export function TodayPage({
           <TodayInteractiveWorkspace
             view={view}
             updateCity={updateCity}
-            submitOotd={submitOotd}
+            chooseRecommendation={chooseRecommendation}
+            undoTodaySelection={undoTodaySelection}
             refreshRecommendations={refreshRecommendations}
+            replaceRecommendationSlot={replaceRecommendationSlot}
+            submitPreChoiceFeedback={submitPreChoiceFeedback}
+            recordRecommendationOpened={recordRecommendationOpened}
             updateHistoryEntry={updateHistoryEntry}
             deleteHistoryEntry={deleteHistoryEntry}
           />

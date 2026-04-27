@@ -62,15 +62,31 @@ export type TodayRecommendationMode = 'daily' | 'inspiration'
 
 export type { TodayFeedbackReasonTag }
 
+export type TodayReplaceableSlot = TodayRecommendationMissingSlot
+
+export type TodayChooseRecommendationInput = {
+  recommendation: TodayRecommendation
+  targetDate?: TodayTargetDate
+  scene?: TodayScene
+}
+
+export type TodayChooseRecommendationResult = {
+  error: string | null
+  wornAt: string | null
+  ootdId?: string | null
+}
+
 export type TodayOotdFeedbackInput = {
   recommendation: TodayRecommendation
   satisfactionScore: number
   reasonTags: TodayFeedbackReasonTag[]
+  targetDate?: TodayTargetDate
+  scene?: TodayScene
 }
 
 export type TodayOotdStatus =
   | { status: 'not-recorded' }
-  | { status: 'recorded'; wornAt: string }
+  | { status: 'recorded'; wornAt: string; ootdId?: string | null }
 
 export type TodayOotdHistoryEntry = {
   id: string
@@ -89,11 +105,38 @@ export type TodayRecommendationRefreshInput = {
   offset: number
   targetDate?: TodayTargetDate
   scene?: TodayScene
+  lockedRecommendation?: TodayRecommendation | null
+  lockedRecommendationIndex?: number | null
 }
 
 export type TodayRecommendationRefreshResult = {
   recommendations: TodayRecommendation[]
   weatherState: TodayWeatherState
+}
+
+export type TodaySlotReplacementInput = {
+  recommendation: TodayRecommendation
+  slot: TodayReplaceableSlot
+  rejectedItemIds: string[]
+  reasonTags?: TodayFeedbackReasonTag[]
+  targetDate?: TodayTargetDate
+  scene?: TodayScene
+}
+
+export type TodaySlotReplacementResult = {
+  error: string | null
+  recommendation: TodayRecommendation | null
+}
+
+export type TodayPreChoiceFeedbackInput = {
+  recommendation: TodayRecommendation
+  scope: 'outfit' | 'slot'
+  slot?: TodayReplaceableSlot
+  itemIds?: string[]
+  reasonTags: TodayFeedbackReasonTag[]
+  preferenceSignal?: 'positive' | 'negative' | 'none'
+  targetDate?: TodayTargetDate
+  scene?: TodayScene
 }
 
 export type TodayView = {
@@ -107,6 +150,7 @@ export type TodayView = {
   scene?: TodayScene
   weatherState: TodayWeatherState
   recommendations: TodayRecommendation[]
+  recommendationSource?: 'cache' | 'generated' | 'empty'
   recommendationError: boolean
   ootdStatus: TodayOotdStatus
   recentOotdHistory: TodayOotdHistoryEntry[]

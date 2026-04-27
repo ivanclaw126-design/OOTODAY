@@ -48,7 +48,7 @@ describe('AppChrome', () => {
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
   })
 
-  it('navigates between primary pages on a horizontal touch swipe', () => {
+  it('does not navigate when swiping outside the bottom nav', () => {
     usePathnameMock.mockReturnValue('/closet')
 
     const { container } = render(
@@ -66,7 +66,7 @@ describe('AppChrome', () => {
       changedTouches: [{ clientX: 120, clientY: 326 }]
     })
 
-    expect(push).toHaveBeenCalledWith('/travel')
+    expect(push).not.toHaveBeenCalled()
   })
 
   it('allows swipe navigation when the gesture starts inside the bottom nav', () => {
@@ -103,7 +103,7 @@ describe('AppChrome', () => {
     expect(screen.queryByRole('link', { name: 'Inspiration' })).not.toBeInTheDocument()
   })
 
-  it('ignores swipe navigation from interactive targets', () => {
+  it('ignores touch swipes from interactive page content', () => {
     usePathnameMock.mockReturnValue('/closet')
 
     render(

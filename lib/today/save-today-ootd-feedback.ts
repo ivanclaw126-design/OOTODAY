@@ -27,6 +27,112 @@ function getRecommendationItemIds(recommendation: TodayRecommendation) {
   ].filter((id): id is string => Boolean(id))
 }
 
+async function updateRecommendationItemWearSignals({
+  userId,
+  recommendation,
+  wornAt
+}: {
+  userId: string
+  recommendation: TodayRecommendation
+  wornAt: string
+}) {
+  const supabase = await createSupabaseServerClient()
+  const itemIds = getRecommendationItemIds(recommendation)
+
+  if (itemIds.length === 0) {
+    return
+  }
+
+  const wornDate = wornAt.slice(0, 10)
+  const { data: existingItems, error: itemsError } = await supabase
+    .from('items')
+    .select('id, wear_count')
+    .eq('user_id', userId)
+    .in('id', itemIds)
+
+  if (itemsError) {
+    throw itemsError
+  }
+
+  const updateResults = await Promise.all(
+    (existingItems ?? []).map((item) =>
+      supabase
+        .from('items')
+        .update({
+          last_worn_date: wornDate,
+          wear_count: (item.wear_count ?? 0) + 1
+        })
+        .eq('user_id', userId)
+        .eq('id', item.id)
+    )
+  )
+
+  const updateError = updateResults.find((result) => result.error)?.error
+
+  if (updateError) {
+    throw updateError
+  }
+}
+
+export async function chooseTodayOotd({
+  userId,
+  recommendation
+}: {
+  userId: string
+  recommendation: TodayRecommendation
+}) {
+  const supabase = await createSupabaseServerClient()
+  const { start, end } = todayRange()
+
+  const { data: existing, error: existingError } = await supabase
+    .from('ootd')
+    .select('id, worn_at, satisfaction_score')
+    .eq('user_id', userId)
+    .gte('worn_at', start)
+    .lt('worn_at', end)
+    .maybeSingle()
+
+  if (existingError) {
+    throw existingError
+  }
+
+  if (existing) {
+    if (existing.satisfaction_score === null) {
+      const { error: updateError } = await supabase
+        .from('ootd')
+        .update({ notes: buildOotdNotes(recommendation) })
+        .eq('user_id', userId)
+        .eq('id', existing.id)
+
+      if (updateError) {
+        throw updateError
+      }
+    }
+
+    return { error: null, wornAt: existing.worn_at, ootdId: existing.id }
+  }
+
+  const wornAt = new Date().toISOString()
+  const { error } = await supabase.from('ootd').insert({
+    user_id: userId,
+    worn_at: wornAt,
+    satisfaction_score: null,
+    notes: buildOotdNotes(recommendation)
+  })
+
+  if (error) {
+    if ('code' in error && error.code === '23505') {
+      return { error: null, wornAt }
+    }
+
+    throw error
+  }
+
+  await updateRecommendationItemWearSignals({ userId, recommendation, wornAt })
+
+  return { error: null, wornAt }
+}
+
 export async function saveTodayOotdFeedback({
   userId,
   recommendation,
@@ -45,7 +151,7 @@ export async function saveTodayOotdFeedback({
 
   const { data: existing, error: existingError } = await supabase
     .from('ootd')
-    .select('id, worn_at')
+    .select('id, worn_at, satisfaction_score')
     .eq('user_id', userId)
     .gte('worn_at', start)
     .lt('worn_at', end)
@@ -56,7 +162,24 @@ export async function saveTodayOotdFeedback({
   }
 
   if (existing) {
-    return { error: '今天已经记录过穿搭了', wornAt: null }
+    if (existing.satisfaction_score !== null) {
+      return { error: '今天已经记录过穿搭了', wornAt: null }
+    }
+
+    const { error: updateError } = await supabase
+      .from('ootd')
+      .update({
+        satisfaction_score: satisfactionScore,
+        notes: buildOotdNotes(recommendation)
+      })
+      .eq('user_id', userId)
+      .eq('id', existing.id)
+
+    if (updateError) {
+      throw updateError
+    }
+
+    return { error: null, wornAt: existing.worn_at, ootdId: existing.id }
   }
 
   const wornAt = new Date().toISOString()
@@ -75,39 +198,7 @@ export async function saveTodayOotdFeedback({
     throw error
   }
 
-  const itemIds = getRecommendationItemIds(recommendation)
-
-  if (itemIds.length > 0) {
-    const wornDate = wornAt.slice(0, 10)
-    const { data: existingItems, error: itemsError } = await supabase
-      .from('items')
-      .select('id, wear_count')
-      .eq('user_id', userId)
-      .in('id', itemIds)
-
-    if (itemsError) {
-      throw itemsError
-    }
-
-    const updateResults = await Promise.all(
-      (existingItems ?? []).map((item) =>
-        supabase
-          .from('items')
-          .update({
-            last_worn_date: wornDate,
-            wear_count: (item.wear_count ?? 0) + 1
-          })
-          .eq('user_id', userId)
-          .eq('id', item.id)
-      )
-    )
-
-    const updateError = updateResults.find((result) => result.error)?.error
-
-    if (updateError) {
-      throw updateError
-    }
-  }
+  await updateRecommendationItemWearSignals({ userId, recommendation, wornAt })
 
   return { error: null, wornAt }
 }

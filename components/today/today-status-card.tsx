@@ -7,12 +7,12 @@ const targetDateOptions: Array<{ value: TodayTargetDate; label: string }> = [
 ]
 
 const sceneOptions: Array<{ value: TodayScene; label: string }> = [
-  { value: null, label: '按常用' },
-  { value: 'work', label: '通勤' },
-  { value: 'casual', label: '日常' },
-  { value: 'date', label: '约会/聚会' },
-  { value: 'travel', label: '旅行' },
-  { value: 'outdoor', label: '户外' }
+  { value: null, label: '智能默认' },
+  { value: 'work', label: '通勤干净' },
+  { value: 'casual', label: '轻松日常' },
+  { value: 'date', label: '约会聚会' },
+  { value: 'travel', label: '城市旅行' },
+  { value: 'outdoor', label: '运动户外' }
 ]
 
 function formatStatusDate(targetDate: TodayTargetDate) {
@@ -39,7 +39,7 @@ function optionClass(isSelected: boolean) {
 }
 
 function getSceneLabel(scene: TodayScene) {
-  return sceneOptions.find((option) => option.value === scene)?.label ?? '按常用'
+  return sceneOptions.find((option) => option.value === scene)?.label ?? '智能默认'
 }
 
 export function TodayStatusCard({

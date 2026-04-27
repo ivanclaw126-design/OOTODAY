@@ -8,7 +8,8 @@
 - App shell + Supabase foundation 已完成并在主线可用：Landing、Today、Closet、Shop、Looks、Travel 页面都已有可运行骨架与受保护路由。
 - Closet 已具备第一阶段低成本导入闭环：本地图片上传、相册批量导入、商品链接或图片链接导入、拼图拆分导入，以及保存后继续浏览和编辑；单品还支持可选 `algorithm_meta`，用于后续更准确判断 slot、层次角色、轮廓、材质重量、正式度、保暖度、舒适度、视觉重量和图案。
 - Closet 已具备第一阶段整理能力：重复提醒、闲置提醒、基础缺口、优先动作清单、按类型/按颜色分组浏览、编辑识别结果、重新识别、删除、图片右转 90°。
-- Today + OOTD 已形成主链路：基于衣橱生成规则型推荐，支持天气增强、城市保存、换一批推荐、记录今日已穿、满意度反馈、最近历史查看与编辑/删除。
+- Today + OOTD 已形成主链路：基于衣橱生成规则型推荐，支持天气增强、城市保存、稳定推荐缓存、换一批推荐、记录今日已穿、满意度反馈、最近历史查看与编辑/删除。
+- Today 移动端已从推荐展示页升级为穿搭决策页：首屏优先展示第一套 Outfit Hero、日期/天气/场景 chips、明确方案角色、“就穿这套”先选择后评分、局部换鞋/换外套/换包/换主件、以及“不想穿”前置反馈；新增交互继续写入 `recommendation_interactions`，策略分和“为什么推荐这套”保持默认可见。
 - 推荐偏好引擎已完成共享评价体系阶段：纯函数权重层、Supabase 存储、风格问卷、Settings 重置/重填入口、Today 评分 reason tags 到偏好学习的接入、完整 outfit slots + `finalWeights` 加权排序、Today 第 3 套安全灵感套装、跨 Today / Shop / Looks / Travel 的推荐文案统一，以及共享 outfit evaluator 对颜色、轮廓、层次、视觉中心、场景、天气、完整度和新鲜度的统一评分。
 - 推荐引擎已完成严格版生产 ML 基础和完整六项上线批次：`推荐引擎ref.md` 中 13 个成熟穿搭策略、规则基线评分、兼容性评分和 penalty 已进入共享 canonical scoring contract；Today 已升级为 formula / model-seeded / rule / weather / exploration 多路候选池，Shop、Looks、Travel 共享趋势、学习信号和模型上下文；缺少 promoted 模型时回退可解释规则基线。
 - Today 推荐已补批内策略差异化：主命中策略不再单纯取最高分，胶囊衣橱泛化命中已收紧，批量选择会惩罚重复鞋包/配饰与重复策略，并在相邻推荐中补充“和上一套拉开差异”的解释。

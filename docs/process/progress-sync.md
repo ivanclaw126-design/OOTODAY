@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-27
-- Branch / theme: Today strategy differentiation and explanation refinement
-- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260427-143156-today-strategy-differentiation.md`.
-- Current blocker: real Recommendation Training should only run with `promote=true` after live `recommendation_interactions` reach the default gates; current 90-day dry-run has 6 rows, 0 positive users, and 0 positive candidates.
-- Next plan to read: `docs/recommendation-engine-handoff.md`
-- Intended summary if `/context-save` fails: Completed Today strategy differentiation: canonical scoring now records `primaryStrategy` / `strategySummaryKeys`, Capsule Wardrobe scoring is less generic, Today batch selection rewards different strategies/colors/outfit kinds/finishers and penalizes repeated shoes/bags/accessories, and adjacent cards get "和上一套拉开差异" highlights. No schema, preference contract, feedback learning, or ML training changes. Verification passed with targeted tests, `npm run lint`, full `npm test` (73 files, 333 tests), `npm run build`, and mobile Playwright QA at 390px on `/today`.
+- Branch / theme: Today mobile decision page iteration
+- Latest checkpoint: not created in-session; this snapshot is the repo-local fallback mirror.
+- Current blocker: no code blocker; still recommend manual iPhone 12 Pro QA against real demo/login data before beta handoff.
+- Next plan to read: `/Users/spicyclaw/Downloads/ootoday_today_mobile_iteration_plan_for_codex.md`
+- Intended summary if `/context-save` fails: Completed Today mobile decision-page iteration: `/today` now opens with context chips and first recommendation hero, cards use scene-aware decision roles, Outfit Hero flatlay previews, "就穿这套" creates an unscored same-day OOTD and records `worn`, later scoring updates the selected record, slot-level replacement and pre-choice "不想穿" feedback record recommendation interactions, first-loop guidance is inline, and strategy explanations remain visible. Verification passed with `npm run lint`, full `npm test` (77 files, 349 tests), and `npm run build`; local dev server was started on `http://localhost:3000`.
 
 ## Snapshot Template
 
