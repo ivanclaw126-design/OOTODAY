@@ -159,8 +159,29 @@ function scoreCapsuleWardrobe(outfit: EvaluatedOutfit): StrategyScoreResult {
   const baseColors = colors.filter((color) => getOutfitColorRole(color) === 'base').length
   const styleTags = items.flatMap((item) => item.styleTags)
   const repeatedStyle = styleTags.some((tag, index) => styleTags.indexOf(tag) !== index)
-  const reusableItems = items.filter((item) => getOutfitColorRole(item.colorCategory) !== 'accent' && item.wearCount >= 0).length
-  const score = clampScore(42 + baseColors * 12 + reusableItems * 5 + (repeatedStyle ? 12 : 0))
+  const reusableItems = items.filter((item) => {
+    const text = itemText(item)
+
+    return getOutfitColorRole(item.colorCategory) !== 'accent' && (
+      item.wearCount >= 2 ||
+      hasToken(text, ['基础', '通勤', '极简', 'classic', 'minimal', 'basic', '百搭'])
+    )
+  }).length
+  const baseColorRatio = items.length > 0 ? baseColors / items.length : 0
+  const reusableRatio = items.length > 0 ? reusableItems / items.length : 0
+  const slotCoverage = [
+    outfit.dress || (outfit.top && outfit.bottom),
+    outfit.shoes,
+    outfit.bag || (outfit.accessories ?? []).length > 0
+  ].filter(Boolean).length
+  const completionBonus = slotCoverage >= 3 ? 8 : slotCoverage === 2 ? 4 : 0
+  const score = clampScore(
+    34 +
+    baseColorRatio * 30 +
+    reusableRatio * 24 +
+    (repeatedStyle ? 14 : 0) +
+    completionBonus
+  )
 
   return {
     key: 'capsuleWardrobe',

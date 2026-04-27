@@ -341,7 +341,7 @@ export function TodayRecommendationCard({
           ) : null}
         </div>
 
-        <TodayStrategyScorePanel strategyScores={recommendation.scoreBreakdown?.strategyScores} />
+        <TodayStrategyScorePanel scoreBreakdown={recommendation.scoreBreakdown} />
 
         <SecondaryButton
           type="button"

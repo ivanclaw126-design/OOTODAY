@@ -38,11 +38,11 @@
 ## Latest Sync Snapshot
 
 - Date: 2026-04-27
-- Branch / theme: Today strategy score display refinement
-- Latest checkpoint: pending `/context-save`; fallback summary below.
+- Branch / theme: Today strategy differentiation and explanation refinement
+- Latest checkpoint: `~/.gstack/projects/OOTODAY/checkpoints/20260427-143156-today-strategy-differentiation.md`.
 - Current blocker: real Recommendation Training should only run with `promote=true` after live `recommendation_interactions` reach the default gates; current 90-day dry-run has 6 rows, 0 positive users, and 0 positive candidates.
 - Next plan to read: `docs/recommendation-engine-handoff.md`
-- Intended summary if `/context-save` fails: Completed Today recommendation display refinement: each card now keeps compatible `reason` text while exposing 2-3 compact `reasonHighlights`, renders all 13 `strategyScores` in a ranked strategy panel, highlights the primary matched strategy, and opens CSS-only explanation popovers for each strategy. This changed display/type/test/doc layers only, with no ranking, schema, feedback learning, or ML training changes. Verification passed with targeted tests, `npm run lint`, `npm test`, `npm run build`, `git diff --check`, and browser QA on desktop/mobile for the strategy popover.
+- Intended summary if `/context-save` fails: Completed Today strategy differentiation: canonical scoring now records `primaryStrategy` / `strategySummaryKeys`, Capsule Wardrobe scoring is less generic, Today batch selection rewards different strategies/colors/outfit kinds/finishers and penalizes repeated shoes/bags/accessories, and adjacent cards get "和上一套拉开差异" highlights. No schema, preference contract, feedback learning, or ML training changes. Verification passed with targeted tests, `npm run lint`, full `npm test` (73 files, 333 tests), `npm run build`, and mobile Playwright QA at 390px on `/today`.
 
 ## Snapshot Template
 

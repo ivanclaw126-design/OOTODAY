@@ -16,7 +16,7 @@ export function TodayCityForm({ initialCity, onSubmit, onCancel }: TodayCityForm
 
   return (
     <form
-      className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow-sm"
+      className="flex flex-col gap-3 rounded-[1rem] border border-[var(--color-line)] bg-white/72 p-3"
       onSubmit={async (event) => {
         event.preventDefault()
         setIsSaving(true)

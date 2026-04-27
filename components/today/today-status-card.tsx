@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { TodayScene, TodayTargetDate, TodayWeatherState } from '@/lib/today/types'
 
 const targetDateOptions: Array<{ value: TodayTargetDate; label: string }> = [
@@ -46,6 +47,9 @@ export function TodayStatusCard({
   weatherState,
   targetDate = 'today',
   scene = null,
+  onEditCity,
+  isCityEditing = false,
+  cityEditor,
   onTargetDateChange,
   onSceneChange,
   isRefreshing = false
@@ -54,6 +58,9 @@ export function TodayStatusCard({
   weatherState: TodayWeatherState
   targetDate?: TodayTargetDate
   scene?: TodayScene
+  onEditCity?: () => void
+  isCityEditing?: boolean
+  cityEditor?: ReactNode
   onTargetDateChange?: (targetDate: TodayTargetDate) => void
   onSceneChange?: (scene: TodayScene) => void
   isRefreshing?: boolean
@@ -83,6 +90,7 @@ export function TodayStatusCard({
 
   const sceneLabel = getSceneLabel(scene)
   const contextSummary = `${targetDate === 'tomorrow' ? '明天' : '今天'} · ${locationLabel} · ${temperatureLabel} ${weatherLabel} · ${sceneLabel}`
+  const cityActionLabel = city ? '修改城市' : '设置城市'
 
   return (
     <section className="relative overflow-hidden rounded-[1.35rem] border border-[var(--color-line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(244,238,229,0.94)_100%)] p-3 shadow-[var(--shadow-soft)] backdrop-blur sm:p-4">
@@ -93,11 +101,30 @@ export function TodayStatusCard({
             <p className="text-[1.05rem] font-semibold leading-tight text-[var(--color-primary)] sm:text-xl">{contextSummary}</p>
             <p className="text-xs text-[var(--color-neutral-dark)]">{todayLabel} · {sourceLabel}</p>
           </div>
-          <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-white/76 px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)]">
-            <span className={`h-2 w-2 rounded-full ${isRefreshing ? 'bg-[var(--color-neutral-mid)]' : 'bg-[var(--color-accent)]'}`} />
-            {isRefreshing ? '更新中' : '已同步'}
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-white/76 px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)]">
+              <span className={`h-2 w-2 rounded-full ${isRefreshing ? 'bg-[var(--color-neutral-mid)]' : 'bg-[var(--color-accent)]'}`} />
+              {isRefreshing ? '更新中' : '已同步'}
+            </div>
+            {onEditCity ? (
+              <button
+                type="button"
+                aria-expanded={isCityEditing}
+                className="inline-flex min-h-8 items-center justify-center rounded-full border border-[var(--color-line)] bg-white/82 px-3 py-1.5 text-xs font-semibold text-[var(--color-primary)] transition hover:bg-white disabled:opacity-55"
+                disabled={isRefreshing}
+                onClick={onEditCity}
+              >
+                {cityActionLabel}
+              </button>
+            ) : null}
           </div>
         </div>
+
+        {cityEditor ? (
+          <div className="border-t border-[var(--color-line)] pt-3">
+            {cityEditor}
+          </div>
+        ) : null}
 
         {controlsEnabled ? (
           <details className="group rounded-[1.1rem] border border-[var(--color-line)] bg-white/58">

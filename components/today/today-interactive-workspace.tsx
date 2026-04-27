@@ -65,7 +65,7 @@ export function TodayInteractiveWorkspace({
   deleteHistoryEntry: (input: { ootdId: string }) => Promise<{ error: string | null }>
 }) {
   const router = useRouter()
-  const [cityFormSource, setCityFormSource] = useState<'prompt' | 'actions' | null>(null)
+  const [isCityFormOpen, setIsCityFormOpen] = useState(false)
   const [ootdStatus, setOotdStatus] = useState<TodayOotdStatus>(view.ootdStatus)
   const [recommendations, setRecommendations] = useState(view.recommendations)
   const [weatherState, setWeatherState] = useState(view.weatherState)
@@ -101,7 +101,7 @@ export function TodayInteractiveWorkspace({
 
     if (!result.error) {
       setIsCityPromptDismissed(true)
-      setCityFormSource(null)
+      setIsCityFormOpen(false)
       router.refresh()
     }
 
@@ -203,21 +203,21 @@ export function TodayInteractiveWorkspace({
         targetDate={targetDate}
         scene={scene}
         isRefreshing={isRefreshingRecommendations}
+        onEditCity={() => setIsCityFormOpen((current) => !current)}
+        isCityEditing={isCityFormOpen}
+        cityEditor={isCityFormOpen ? (
+          <TodayCityForm
+            initialCity={view.city ?? ''}
+            onSubmit={saveCity}
+            onCancel={() => setIsCityFormOpen(false)}
+          />
+        ) : null}
         onTargetDateChange={(nextTargetDate) => void handleContextChange({ targetDate: nextTargetDate })}
         onSceneChange={(nextScene) => void handleContextChange({ scene: nextScene })}
       />
 
       {!view.city && !isCityPromptDismissed ? (
-        <div className="space-y-3">
-          <TodayCityPromptCard onEditCity={() => setCityFormSource('prompt')} />
-          {cityFormSource === 'prompt' ? (
-            <TodayCityForm
-              initialCity={view.city ?? ''}
-              onSubmit={saveCity}
-              onCancel={() => setCityFormSource(null)}
-            />
-          ) : null}
-        </div>
+        <TodayCityPromptCard />
       ) : null}
 
       <TodayRecommendationList
@@ -259,18 +259,6 @@ export function TodayInteractiveWorkspace({
         <SecondaryButton type="button" onClick={() => void handleRefreshRecommendations()} disabled={isRefreshingRecommendations}>
           {isRefreshingRecommendations ? '正在整理新推荐...' : '换一批推荐'}
         </SecondaryButton>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[18rem]">
-          <SecondaryButton type="button" onClick={() => setCityFormSource('actions')}>
-            {view.city ? '修改城市' : '设置城市'}
-          </SecondaryButton>
-          {cityFormSource === 'actions' ? (
-            <TodayCityForm
-              initialCity={view.city ?? ''}
-              onSubmit={saveCity}
-              onCancel={() => setCityFormSource(null)}
-            />
-          ) : null}
-        </div>
       </div>
 
       <TodayOotdHistory entries={historyEntries} onUpdateEntry={handleUpdateHistoryEntry} onDeleteEntry={handleDeleteHistoryEntry} />
