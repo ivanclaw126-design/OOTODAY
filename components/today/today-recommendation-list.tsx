@@ -42,6 +42,7 @@ export function TodayRecommendationList({
   recordOpened,
   recommendationSequences = {},
   continuationMode,
+  isRefreshing = false,
   isContinuationLoading = false,
   continuationVersion = 0,
   onContinuationCueVisible
@@ -62,6 +63,7 @@ export function TodayRecommendationList({
   recordOpened: (input: TodayChooseRecommendationInput & { source: 'details' | 'quick_feedback' }) => Promise<{ error: string | null }>
   recommendationSequences?: Record<string, number>
   continuationMode?: TodayRecommendationMode
+  isRefreshing?: boolean
   isContinuationLoading?: boolean
   continuationVersion?: number
   onContinuationCueVisible?: () => void
@@ -69,6 +71,7 @@ export function TodayRecommendationList({
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const cueRef = useRef<HTMLDivElement | null>(null)
   const thirdCardRef = useRef<HTMLDivElement | null>(null)
+  const isContinuationCueArmedRef = useRef(true)
 
   useEffect(() => {
     const cue = cueRef.current
@@ -78,12 +81,21 @@ export function TodayRecommendationList({
     }
 
     const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
+      const isIntersecting = entries.some((entry) => entry.isIntersecting)
+
+      if (!isIntersecting) {
+        isContinuationCueArmedRef.current = true
+        return
+      }
+
+      if (isContinuationCueArmedRef.current) {
+        isContinuationCueArmedRef.current = false
         onContinuationCueVisible()
       }
     }, {
       root: scrollerRef.current,
-      threshold: 0.55
+      rootMargin: '0px 65% 0px 0px',
+      threshold: 0.1
     })
 
     observer.observe(cue)
@@ -156,7 +168,11 @@ export function TodayRecommendationList({
         </div>
       </div>
 
-      <div ref={scrollerRef} className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden">
+      <div
+        ref={scrollerRef}
+        aria-busy={isRefreshing}
+        className={`-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 transition-opacity duration-200 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden ${isRefreshing ? 'opacity-72' : 'opacity-100'}`}
+      >
         {recommendations.map((recommendation, index) => (
           <div key={recommendation.id} ref={index === 2 ? thirdCardRef : undefined} className="min-w-full snap-center sm:min-w-0">
             <TodayRecommendationCard

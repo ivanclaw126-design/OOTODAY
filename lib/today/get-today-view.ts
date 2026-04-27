@@ -1,4 +1,4 @@
-import { getClosetView } from '@/lib/closet/get-closet-view'
+import { getClosetItemCount, getClosetView } from '@/lib/closet/get-closet-view'
 import { getPreferenceState } from '@/lib/recommendation/get-preference-state'
 import { getRecommendationLearningSignals } from '@/lib/recommendation/learning-signal-storage'
 import { getCandidateModelScoreMap, getEntityModelScoreMap } from '@/lib/recommendation/model-score-storage'
@@ -6,10 +6,50 @@ import { getRecommendationTrendSignals } from '@/lib/recommendation/get-trend-si
 import { DEFAULT_PREFERENCE_PROFILE } from '@/lib/recommendation/default-weights'
 import { generateTodayRecommendations } from '@/lib/today/generate-recommendations'
 import { getRecentOotdHistory } from '@/lib/today/get-recent-ootd-history'
-import { getCachedTodayRecommendations, saveTodayRecommendationCache } from '@/lib/today/recommendation-cache'
+import { getCachedTodayRecommendations, getCachedTodayRecommendationsSnapshot, saveTodayRecommendationCache } from '@/lib/today/recommendation-cache'
 import { getTodayOotdStatus } from '@/lib/today/get-today-ootd-status'
 import { getWeatherForTarget } from '@/lib/today/get-weather'
 import type { TodayRecommendation, TodayScene, TodayTargetDate, TodayView, TodayWeatherState } from '@/lib/today/types'
+
+const INITIAL_WEATHER_TIMEOUT_MS = 900
+const ENHANCEMENT_TIMEOUT_MS = 700
+
+async function withTimeout<T>(promise: Promise<T>, fallback: T, timeoutMs: number): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | null = null
+
+  try {
+    return await Promise.race([
+      promise.catch(() => fallback),
+      new Promise<T>((resolve) => {
+        timeout = setTimeout(() => resolve(fallback), timeoutMs)
+      })
+    ])
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout)
+    }
+  }
+}
+
+async function getWeatherStateWithTimeout(city: string | null, targetDate: TodayTargetDate) {
+  if (!city) {
+    return {
+      weather: null,
+      weatherState: { status: 'not-set' as const, targetDate },
+      deferred: false
+    }
+  }
+
+  const weather = await withTimeout(getWeatherForTarget(city, targetDate), null, INITIAL_WEATHER_TIMEOUT_MS)
+
+  return {
+    weather,
+    weatherState: weather
+      ? { status: 'ready' as const, weather, targetDate }
+      : { status: 'unavailable' as const, city, targetDate },
+    deferred: weather === null
+  }
+}
 
 async function getStableRecommendations({
   userId,
@@ -98,29 +138,26 @@ export async function getTodayView({
   targetDate?: TodayTargetDate
   scene?: TodayScene
 }): Promise<TodayView> {
-  const [closet, ootdStatus, recentOotdHistory, preferenceState, modelScoreMap, entityModelScoreMap, trendSignals, learningSignals] = await Promise.all([
-    getClosetView(userId, { limit: 0 }),
+  const [itemCount, ootdStatus, preferenceState, cachedRecommendations] = await Promise.all([
+    getClosetItemCount(userId),
     getTodayOotdStatus(userId),
-    getRecentOotdHistory(userId),
     getPreferenceState({ userId }),
-    getCandidateModelScoreMap({ userId, surface: 'today' }),
-    getEntityModelScoreMap({ userId, surface: 'today' }),
-    getRecommendationTrendSignals(),
-    getRecommendationLearningSignals({ userId, surface: 'today' })
+    offset === 0
+      ? getCachedTodayRecommendationsSnapshot({
+          userId,
+          targetDate,
+          scene,
+          city
+        })
+      : Promise.resolve(null)
   ])
   const hasCompletedStyleQuestionnaire = preferenceState.hasQuestionnaireAnswers === true
   const continuousRefresh = {
     enabled: true,
     exploration: preferenceState.profile?.exploration ?? DEFAULT_PREFERENCE_PROFILE.exploration
   }
-  const recommendationSignalParams = {
-    ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {}),
-    ...(Object.keys(entityModelScoreMap).length > 0 ? { entityModelScoreMap } : {}),
-    ...(trendSignals.length > 0 ? { trendSignals } : {}),
-    ...(learningSignals.length > 0 ? { learningSignals } : {})
-  }
 
-  if (closet.itemCount === 0) {
+  if (itemCount === 0) {
     return {
       itemCount: 0,
       city,
@@ -135,66 +172,16 @@ export async function getTodayView({
       recommendationSource: 'empty',
       recommendationError: false,
       ootdStatus,
-      recentOotdHistory,
+      recentOotdHistory: [],
+      recentOotdHistoryDeferred: true,
+      weatherDeferred: Boolean(city),
       continuousRefresh
     }
   }
 
-  if (!city) {
-    const weatherState = { status: 'not-set' as const, targetDate }
-    const stableRecommendations = await getStableRecommendations({
-      userId,
-      city: null,
-      itemCount: closet.itemCount,
-      items: closet.items,
-      weather: null,
-      weatherState,
-      offset,
-      preferenceState,
-      targetDate,
-      scene,
-      recommendationSignalParams
-    })
-
+  if (cachedRecommendations && cachedRecommendations.itemCount === itemCount) {
     return {
-      itemCount: closet.itemCount,
-      city: null,
-      accountEmail,
-      passwordBootstrapped,
-      passwordChangedAt,
-      hasCompletedStyleQuestionnaire,
-      targetDate,
-      scene,
-      weatherState,
-      recommendations: stableRecommendations.recommendations,
-      recommendationSource: stableRecommendations.source,
-      recommendationError: false,
-      ootdStatus,
-      recentOotdHistory,
-      continuousRefresh
-    }
-  }
-
-  const weather = await getWeatherForTarget(city, targetDate)
-
-  if (!weather) {
-    const weatherState = { status: 'unavailable' as const, city, targetDate }
-    const stableRecommendations = await getStableRecommendations({
-      userId,
-      city,
-      itemCount: closet.itemCount,
-      items: closet.items,
-      weather: null,
-      weatherState,
-      offset,
-      preferenceState,
-      targetDate,
-      scene,
-      recommendationSignalParams
-    })
-
-    return {
-      itemCount: closet.itemCount,
+      itemCount,
       city,
       accountEmail,
       passwordBootstrapped,
@@ -202,24 +189,49 @@ export async function getTodayView({
       hasCompletedStyleQuestionnaire,
       targetDate,
       scene,
-      weatherState,
-      recommendations: stableRecommendations.recommendations,
-      recommendationSource: stableRecommendations.source,
+      weatherState: cachedRecommendations.weatherState,
+      recommendations: cachedRecommendations.recommendations,
+      recommendationSource: 'cache',
       recommendationError: false,
       ootdStatus,
-      recentOotdHistory,
+      recentOotdHistory: [],
+      recentOotdHistoryDeferred: true,
+      weatherDeferred: Boolean(city) && cachedRecommendations.weatherState.status !== 'ready',
       continuousRefresh
     }
   }
 
-  const weatherState = { status: 'ready' as const, weather, targetDate }
+  const [
+    closet,
+    recentOotdHistory,
+    modelScoreMap,
+    entityModelScoreMap,
+    trendSignals,
+    learningSignals,
+    weatherResult
+  ] = await Promise.all([
+    getClosetView(userId, { limit: 0 }),
+    getRecentOotdHistory(userId),
+    withTimeout(getCandidateModelScoreMap({ userId, surface: 'today' }), {}, ENHANCEMENT_TIMEOUT_MS),
+    withTimeout(getEntityModelScoreMap({ userId, surface: 'today' }), {}, ENHANCEMENT_TIMEOUT_MS),
+    withTimeout(getRecommendationTrendSignals(), [], ENHANCEMENT_TIMEOUT_MS),
+    withTimeout(getRecommendationLearningSignals({ userId, surface: 'today' }), [], ENHANCEMENT_TIMEOUT_MS),
+    getWeatherStateWithTimeout(city, targetDate)
+  ])
+  const recommendationSignalParams = {
+    ...(Object.keys(modelScoreMap).length > 0 ? { modelScoreMap } : {}),
+    ...(Object.keys(entityModelScoreMap).length > 0 ? { entityModelScoreMap } : {}),
+    ...(trendSignals.length > 0 ? { trendSignals } : {}),
+    ...(learningSignals.length > 0 ? { learningSignals } : {})
+  }
+
   const stableRecommendations = await getStableRecommendations({
     userId,
     city,
-    itemCount: closet.itemCount,
+    itemCount,
     items: closet.items,
-    weather,
-    weatherState,
+    weather: weatherResult.weather,
+    weatherState: weatherResult.weatherState,
     offset,
     preferenceState,
     targetDate,
@@ -228,7 +240,7 @@ export async function getTodayView({
   })
 
   return {
-    itemCount: closet.itemCount,
+    itemCount,
     city,
     accountEmail,
     passwordBootstrapped,
@@ -236,12 +248,13 @@ export async function getTodayView({
     hasCompletedStyleQuestionnaire,
     targetDate,
     scene,
-    weatherState,
+    weatherState: weatherResult.weatherState,
     recommendations: stableRecommendations.recommendations,
     recommendationSource: stableRecommendations.source,
     recommendationError: false,
     ootdStatus,
     recentOotdHistory,
+    weatherDeferred: weatherResult.deferred,
     continuousRefresh
   }
 }

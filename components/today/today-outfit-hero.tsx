@@ -58,12 +58,14 @@ function SlotTile({
   slot,
   canReplace,
   isReplacing,
+  priority,
   emptyLabel,
   onRequestReplace
 }: {
   slot: HeroSlot
   canReplace: boolean
   isReplacing: boolean
+  priority?: boolean
   emptyLabel?: string
   onRequestReplace?: (slot: TodayReplaceableSlot, item?: TodayRecommendationItem | null) => void
 }) {
@@ -77,6 +79,7 @@ function SlotTile({
           alt={itemAlt(slot.label, slot.item)}
           fill
           unoptimized
+          priority={priority}
           sizes="180px"
           className="object-contain p-1.5"
         />
@@ -109,6 +112,7 @@ export function TodayOutfitHero({
   weatherState,
   replaceableSlots = [],
   replacingSlot = null,
+  priority = false,
   onRequestReplace
 }: {
   recommendation: TodayRecommendation
@@ -116,6 +120,7 @@ export function TodayOutfitHero({
   weatherState?: TodayWeatherState
   replaceableSlots?: TodayReplaceableSlot[]
   replacingSlot?: TodayReplaceableSlot | null
+  priority?: boolean
   onRequestReplace?: (slot: TodayReplaceableSlot, item?: TodayRecommendationItem | null) => void
 }) {
   const accessories = recommendation.accessories ?? []
@@ -174,6 +179,7 @@ export function TodayOutfitHero({
             slot={slot}
             canReplace={Boolean(slot.item) && replaceableSlotSet.has(slot.key)}
             isReplacing={replacingSlot === slot.key}
+            priority={priority}
             emptyLabel={slot.key === 'outerLayer' ? outerLayerEmptyLabel : undefined}
             onRequestReplace={onRequestReplace}
           />

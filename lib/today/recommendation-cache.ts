@@ -67,6 +67,41 @@ export async function getCachedTodayRecommendations({
   }
 }
 
+export async function getCachedTodayRecommendationsSnapshot({
+  userId,
+  targetDate,
+  scene,
+  city
+}: {
+  userId: string
+  targetDate: TodayTargetDate
+  scene: TodayScene
+  city: string | null
+}): Promise<{ recommendations: TodayRecommendation[]; weatherState: TodayWeatherState; itemCount: number } | null> {
+  try {
+    const supabase = await createSupabaseServerClient()
+    const { data, error } = await supabase
+      .from('today_recommendation_cache')
+      .select('city, item_count, weather_state, recommendations')
+      .eq('user_id', userId)
+      .eq('target_date', targetDate)
+      .eq('scene_key', sceneKey(scene))
+      .maybeSingle()
+
+    if (error || !data || data.city !== city || !isRecommendationArray(data.recommendations)) {
+      return null
+    }
+
+    return {
+      recommendations: data.recommendations,
+      weatherState: data.weather_state as TodayWeatherState,
+      itemCount: data.item_count
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function saveTodayRecommendationCache({
   userId,
   targetDate,

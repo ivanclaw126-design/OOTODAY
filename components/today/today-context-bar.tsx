@@ -187,6 +187,9 @@ export function TodayContextBar({
       {weatherState.status === 'unavailable' ? (
         <p className="px-1 pt-2 text-xs leading-5 text-[var(--color-neutral-dark)]">暂时没有天气数据，先按智能默认场景整理推荐。</p>
       ) : null}
+      {isRefreshing ? (
+        <p className="px-1 pt-2 text-xs font-semibold leading-5 text-[var(--color-primary)]">正在更新推荐，当前搭配先保留。</p>
+      ) : null}
       {cityEditor ? (
         <div className="mt-3 border-t border-[var(--color-line)] pt-3">
           {cityEditor}

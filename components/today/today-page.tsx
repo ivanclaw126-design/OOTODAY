@@ -12,10 +12,13 @@ import type {
   TodayHistoryUpdateInput,
   TodayOotdHistoryEntry,
   TodayPreChoiceFeedbackInput,
+  TodayRecommendation,
   TodayRecommendationRefreshInput,
   TodayRecommendationRefreshResult,
   TodaySlotReplacementInput,
   TodaySlotReplacementResult,
+  TodayTargetDate,
+  TodayWeatherState,
   TodayView
 } from '@/lib/today/types'
 
@@ -28,6 +31,9 @@ export function TodayPage({
   replaceRecommendationSlot = async () => ({ error: '暂时没有更合适的单品，可以试试换一套。', recommendation: null }),
   submitPreChoiceFeedback = async () => ({ error: null }),
   recordRecommendationOpened = async () => ({ error: null }),
+  recordRecommendationExposed = async () => ({ error: null }),
+  getRecentHistory = async () => ({ error: null, entries: [] }),
+  resolveWeather = async () => ({ error: null, weatherState: { status: 'not-set' } }),
   changePassword,
   signOut,
   updateHistoryEntry,
@@ -41,6 +47,15 @@ export function TodayPage({
   replaceRecommendationSlot?: (input: TodaySlotReplacementInput) => Promise<TodaySlotReplacementResult>
   submitPreChoiceFeedback?: (input: TodayPreChoiceFeedbackInput) => Promise<{ error: string | null }>
   recordRecommendationOpened?: (input: TodayChooseRecommendationInput & { source: 'details' | 'quick_feedback' }) => Promise<{ error: string | null }>
+  recordRecommendationExposed?: (input: {
+    recommendations: TodayRecommendation[]
+    targetDate?: TodayTargetDate
+    scene?: TodayRecommendationRefreshInput['scene']
+    offset?: number
+    weatherAvailable?: boolean
+  }) => Promise<{ error: string | null }>
+  getRecentHistory?: () => Promise<{ error: string | null; entries: TodayOotdHistoryEntry[] }>
+  resolveWeather?: (input: { targetDate?: TodayTargetDate }) => Promise<{ error: string | null; weatherState: TodayWeatherState }>
   changePassword: (input: { password: string; confirmPassword: string }) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   updateHistoryEntry: (input: TodayHistoryUpdateInput) => Promise<{ error: string | null; entry: TodayOotdHistoryEntry | null }>
@@ -111,6 +126,9 @@ export function TodayPage({
             replaceRecommendationSlot={replaceRecommendationSlot}
             submitPreChoiceFeedback={submitPreChoiceFeedback}
             recordRecommendationOpened={recordRecommendationOpened}
+            recordRecommendationExposed={recordRecommendationExposed}
+            getRecentHistory={getRecentHistory}
+            resolveWeather={resolveWeather}
             updateHistoryEntry={updateHistoryEntry}
             deleteHistoryEntry={deleteHistoryEntry}
           />

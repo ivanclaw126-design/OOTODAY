@@ -160,6 +160,8 @@ export type TodayView = {
   recommendationError: boolean
   ootdStatus: TodayOotdStatus
   recentOotdHistory: TodayOotdHistoryEntry[]
+  recentOotdHistoryDeferred?: boolean
+  weatherDeferred?: boolean
   continuousRefresh?: {
     enabled: boolean
     exploration: PreferenceProfile['exploration']
