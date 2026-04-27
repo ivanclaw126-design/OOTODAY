@@ -3,7 +3,6 @@
 import { startTransition, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FeedbackLink } from '@/components/beta/feedback-link'
-import { Card } from '@/components/ui/card'
 import { TodayCityForm } from '@/components/today/today-city-form'
 import { TodayCityPromptCard } from '@/components/today/today-city-prompt-card'
 import { TodayOotdHistory } from '@/components/today/today-ootd-history'
@@ -208,38 +207,6 @@ export function TodayInteractiveWorkspace({
         onSceneChange={(nextScene) => void handleContextChange({ scene: nextScene })}
       />
 
-      {!hasStartedFeedbackLoop && !isFirstLoopDismissed ? (
-        <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.8)_0%,rgba(245,239,230,0.94)_100%)]">
-          <div className="space-y-3">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-neutral-dark)]">First loop</p>
-                <h2 className="text-xl font-semibold tracking-[-0.05em] text-[var(--color-primary)]">先在今天完成第一次推荐闭环</h2>
-                <p className="max-w-2xl text-sm leading-6 text-[var(--color-neutral-dark)]">
-                  先选一套最接近今天会穿的方案，打一个满意度，再看系统下一轮有没有更像你。
-                </p>
-              </div>
-              <button
-                type="button"
-                aria-label="关闭 first loop 提示"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-white/72 text-lg leading-none text-[var(--color-primary)] transition hover:bg-white"
-                onClick={dismissFirstLoop}
-              >
-                ×
-              </button>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-[var(--color-neutral-dark)]">如果推荐不对劲，也可以直接发反馈，我会优先看 Today 的卡点。</p>
-              <FeedbackLink
-                surface="today_first_loop"
-                label="反馈 Today 问题"
-                className="inline-flex rounded-full border border-[var(--color-line)] bg-white px-3 py-2 text-sm font-semibold text-[var(--color-primary)]"
-              />
-            </div>
-          </div>
-        </Card>
-      ) : null}
-
       {!view.city && !isCityPromptDismissed ? (
         <div className="space-y-3">
           <TodayCityPromptCard onEditCity={() => setCityFormSource('prompt')} />
@@ -262,6 +229,31 @@ export function TodayInteractiveWorkspace({
         scene={scene}
         submitOotd={submitTodayOotd}
       />
+
+      {!hasStartedFeedbackLoop && !isFirstLoopDismissed ? (
+        <section className="rounded-[1.1rem] border border-[var(--color-line)] bg-white/70 px-3 py-3 shadow-[0_10px_22px_rgba(17,14,9,0.04)]">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">First loop</p>
+              <h2 className="text-base font-semibold leading-6 text-[var(--color-primary)]">先在今天完成第一次推荐闭环</h2>
+              <p className="text-sm leading-6 text-[var(--color-neutral-dark)]">选一套最接近今天会穿的方案并评分，下一轮会更像你。</p>
+            </div>
+            <button
+              type="button"
+              aria-label="关闭 first loop 提示"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-white/76 text-base leading-none text-[var(--color-primary)] transition hover:bg-white"
+              onClick={dismissFirstLoop}
+            >
+              ×
+            </button>
+          </div>
+          <FeedbackLink
+            surface="today_first_loop"
+            label="反馈 Today 问题"
+            className="mt-3 inline-flex rounded-full border border-[var(--color-line)] bg-white px-3 py-1.5 text-sm font-semibold text-[var(--color-primary)]"
+          />
+        </section>
+      ) : null}
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <SecondaryButton type="button" onClick={() => void handleRefreshRecommendations()} disabled={isRefreshingRecommendations}>

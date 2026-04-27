@@ -195,7 +195,9 @@ export function TodayStrategyScorePanel({
   strategyScores?: Partial<RecommendationStrategyScores> | null
 }) {
   const [openKey, setOpenKey] = useState<RecommendationStrategyKey | null>(null)
+  const [showAll, setShowAll] = useState(false)
   const rows = buildRecommendationStrategyRows(strategyScores)
+  const summaryRows = rows.slice(0, 3)
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -213,16 +215,61 @@ export function TodayStrategyScorePanel({
   }
 
   return (
-    <section className="rounded-[1.35rem] border border-[var(--color-line)] bg-white/64 p-3 shadow-[0_18px_36px_rgba(16,16,16,0.06)]">
+    <section className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/64 p-3 shadow-[0_12px_24px_rgba(16,16,16,0.05)]">
       <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">策略评分</p>
-          <h3 className="text-sm font-semibold text-[var(--color-primary)]">13 个穿搭子策略命中情况</h3>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">策略摘要</p>
+          <h3 className="text-sm font-semibold text-[var(--color-primary)]">推荐引擎最主要的 3 个判断</h3>
         </div>
-        <p className="text-xs leading-5 text-[var(--color-neutral-dark)]">分数来自当前推荐引擎，不改变排序。</p>
+        <p className="text-xs leading-5 text-[var(--color-neutral-dark)]">完整评分默认收起，避免打断穿搭决策。</p>
       </div>
 
-      <div className="grid gap-2 lg:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-3">
+        {summaryRows.map((row) => (
+          <div key={row.key} className="rounded-[0.95rem] border border-[var(--color-line)] bg-white/78 px-3 py-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[var(--color-primary)]">{row.name}</p>
+                <p className="mt-0.5 text-xs text-[var(--color-neutral-dark)]">{getLevelLabel(row)}</p>
+              </div>
+              <span className="text-sm font-semibold tabular-nums text-[var(--color-primary)]">{row.score}</span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[rgba(9,9,9,0.08)]">
+              <div
+                className={cx(
+                  'h-full rounded-full',
+                  row.level === 'primary' ? 'bg-[var(--color-primary)]' : row.level === 'weak' ? 'bg-[var(--color-neutral-mid)]' : 'bg-[var(--color-accent)]'
+                )}
+                style={{ width: `${row.score}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className="mt-3 inline-flex w-full items-center justify-center rounded-full border border-[var(--color-line)] bg-white/76 px-3 py-2 text-sm font-semibold text-[var(--color-primary)] transition hover:bg-white sm:w-auto"
+        aria-expanded={showAll}
+        onClick={() => {
+          setShowAll((current) => !current)
+          setOpenKey(null)
+        }}
+      >
+        {showAll ? '收起策略评分' : `查看全部 ${rows.length} 项策略`}
+      </button>
+
+      {showAll ? (
+        <div className="mt-3 space-y-3 border-t border-[var(--color-line)] pt-3">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-neutral-dark)]">策略评分</p>
+              <h3 className="text-sm font-semibold text-[var(--color-primary)]">13 个穿搭子策略命中情况</h3>
+            </div>
+            <p className="text-xs leading-5 text-[var(--color-neutral-dark)]">分数来自当前推荐引擎，不改变排序。</p>
+          </div>
+
+          <div className="grid gap-2 lg:grid-cols-2">
         {rows.map((row) => {
           const open = openKey === row.key
           const popoverId = `today-strategy-${row.key}`
@@ -308,7 +355,9 @@ export function TodayStrategyScorePanel({
             </div>
           )
         })}
-      </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }
